@@ -145,10 +145,12 @@ export default function LocationsPage() {
                 </CardHeader>
                 <CardContent>
                   {sortedLocations.ashley.length > 0 ? (
-                    <div className="divide-y">
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                       {sortedLocations.ashley.map(loc => (
-                        <div key={loc.id} className="py-2 flex justify-between items-center">
-                          <span className="font-medium flex items-center gap-2"><MapPin className="w-4 h-4 text-muted-foreground"/>{loc.name}</span>
+                        <div key={loc.id} className="py-2 flex justify-between items-center group">
+                           <Link href={`/locations/${loc.id}`} className="font-medium flex items-center gap-2 hover:text-primary transition-colors">
+                              <MapPin className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors"/>{loc.name}
+                            </Link>
                            <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8">
@@ -178,10 +180,12 @@ export default function LocationsPage() {
                 </CardHeader>
                 <CardContent>
                    {sortedLocations.huana.length > 0 ? (
-                    <div className="divide-y">
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                       {sortedLocations.huana.map(loc => (
-                        <div key={loc.id} className="py-2 flex justify-between items-center">
-                           <span className="font-medium flex items-center gap-2"><MapPin className="w-4 h-4 text-muted-foreground"/>{loc.name}</span>
+                        <div key={loc.id} className="py-2 flex justify-between items-center group">
+                           <Link href={`/locations/${loc.id}`} className="font-medium flex items-center gap-2 hover:text-primary transition-colors">
+                              <MapPin className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors"/>{loc.name}
+                           </Link>
                            <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8">

@@ -178,6 +178,18 @@ export default function FileDetailPage() {
     }
   };
   
+  const getConditionCellClass = (condition?: 'Wrapped' | 'Damaged') => {
+    if (!isEditing) return '';
+    switch (condition) {
+      case 'Wrapped':
+        return 'bg-yellow-200 dark:bg-yellow-800/50';
+      case 'Damaged':
+        return 'bg-red-200 dark:bg-red-800/50';
+      default:
+        return '';
+    }
+  };
+
   const handleDownloadPdf = () => {
     if (!file || !sortedItems) return;
     const doc = new jsPDF();
@@ -360,7 +372,7 @@ export default function FileDetailPage() {
                             ) : (
                                 <span className="flex items-center gap-2">{item.storageStatus || 'N/A'}</span>
                             )}</TableCell>
-                            <TableCell>{isEditing ? (
+                            <TableCell className={cn("transition-colors", getConditionCellClass(item.modelCondition))}>{isEditing ? (
                                 <Select value={item.modelCondition} onValueChange={v => handleItemChange(item.id, 'modelCondition', v)}>
                                     <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
                                     <SelectContent>
