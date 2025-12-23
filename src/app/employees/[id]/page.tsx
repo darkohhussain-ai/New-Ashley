@@ -1,13 +1,13 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { doc, Timestamp } from 'firebase/firestore';
-import { ArrowLeft, User, Calendar as CalendarIcon, Edit, Trash2, Save, X, Upload } from 'lucide-react';
+import { ArrowLeft, User, Calendar as CalendarIcon, Edit, Trash2, Save, X, Upload, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -20,6 +20,9 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { EmployeePdfCard } from '@/components/employees/employee-pdf-card';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 type Employee = {
   id: string;
@@ -44,6 +47,8 @@ export default function EmployeeDetailPage() {
   const [employmentStartDate, setEmploymentStartDate] = useState<Date | undefined>(undefined);
   const [photoUrl, setPhotoUrl] = useState('');
   const [notes, setNotes] = useState('');
+  
+  const pdfCardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (employee) {
@@ -91,6 +96,27 @@ export default function EmployeeDetailPage() {
       router.push('/employees');
   }
 
+  const handleDownloadPdf = async () => {
+    if (!pdfCardRef.current || !employee) return;
+    
+    const canvas = await html2canvas(pdfCardRef.current, {
+        scale: 2, // Higher scale for better quality
+        useCORS: true,
+        backgroundColor: null, 
+    });
+    
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'px',
+      format: [canvas.width, canvas.height]
+    });
+    
+    pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+    pdf.save(`${employee.name.replace(/ /g, '_')}_card.pdf`);
+  };
+
+
   if (isLoading) {
     return (
       <div className="p-8">
@@ -132,96 +158,105 @@ export default function EmployeeDetailPage() {
   }
 
   return (
-    <div className="p-4 md:p-8">
-      <header className="flex items-center justify-between gap-4 mb-8">
-        <Button variant="outline" size="icon" asChild>
-          <Link href="/employees">
-            <ArrowLeft />
-          </Link>
-        </Button>
-        <div className='flex items-center gap-2'>
-            {isEditing ? (
-                <>
-                    <Button onClick={handleUpdate}><Save className="mr-2 h-4 w-4"/> Save Changes</Button>
-                    <Button variant="ghost" onClick={() => setIsEditing(false)}><X className="mr-2 h-4 w-4"/> Cancel</Button>
-                </>
-            ) : (
-                <>
-                    <Button onClick={() => setIsEditing(true)}><Edit className="mr-2 h-4 w-4"/> Edit</Button>
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button variant="destructive"><Trash2 className="mr-2 h-4 w-4"/> Delete</Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete {employee.name}'s record from the database.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleDelete}>Continue</AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                </>
-            )}
-        </div>
-      </header>
-
-      <Card>
-        <CardHeader className="flex-col md:flex-row gap-6 space-y-0">
-          <Avatar className="w-24 h-24 md:w-32 md:h-32 border-4 border-primary/20">
-            <AvatarImage src={isEditing ? photoUrl : employee.photoUrl} alt={employee.name} />
-            <AvatarFallback>
-                <User className="w-16 h-16"/>
-            </AvatarFallback>
-          </Avatar>
-          <div className="w-full">
-            {isEditing ? (
-                <div className='space-y-4'>
-                    <Input className="text-2xl font-bold h-12" value={name} onChange={e => setName(e.target.value)} placeholder="Employee Name" />
-                    <Popover>
-                        <PopoverTrigger asChild>
-                        <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !employmentStartDate && "text-muted-foreground")}>
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {employmentStartDate ? format(employmentStartDate, 'PPP') : <span>Pick a date</span>}
-                        </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                            <Calendar mode="single" selected={employmentStartDate} onSelect={setEmploymentStartDate} initialFocus captionLayout="dropdown-nav" fromYear={1990} toYear={2040} />
-                        </PopoverContent>
-                    </Popover>
-                    <div className="space-y-2">
-                      <Label htmlFor="photo-url">Photo URL</Label>
-                      <Input id="photo-url" placeholder="Paste an image URL" value={photoUrl} onChange={e => setPhotoUrl(e.target.value)} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="photo-upload">Or Upload Photo</Label>
-                      <Input id="photo-upload" type="file" onChange={handlePhotoUpload} accept="image/*" />
-                    </div>
-                </div>
-            ) : (
-                <>
-                    <CardTitle className="text-3xl md:text-4xl font-bold">{employee.name}</CardTitle>
-                    <CardDescription className="text-lg md:text-xl mt-2 flex items-center gap-2">
-                        <CalendarIcon className="w-5 h-5"/>
-                        Started on {format(employee.employmentStartDate.toDate(), 'MMMM d, yyyy')}
-                    </CardDescription>
-                </>
-            )}
+    <>
+      {/* Hidden component for PDF generation */}
+      <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+          <div ref={pdfCardRef}>
+            <EmployeePdfCard employee={employee} />
           </div>
-        </CardHeader>
-        <CardContent className="mt-6">
-            <Label className='text-sm text-muted-foreground'>Notes</Label>
-            {isEditing ? (
-                <Textarea className="mt-1 min-h-[120px] text-base" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Add notes about the employee..."/>
-            ) : (
-                <p className="text-base mt-1 whitespace-pre-wrap">{employee.notes || 'No additional notes.'}</p>
-            )}
-        </CardContent>
-      </Card>
-    </div>
+      </div>
+      <div className="p-4 md:p-8">
+        <header className="flex items-center justify-between gap-4 mb-8">
+          <Button variant="outline" size="icon" asChild>
+            <Link href="/employees">
+              <ArrowLeft />
+            </Link>
+          </Button>
+          <div className='flex items-center gap-2 flex-wrap justify-end'>
+              {isEditing ? (
+                  <>
+                      <Button onClick={handleUpdate}><Save className="mr-2 h-4 w-4"/> Save Changes</Button>
+                      <Button variant="ghost" onClick={() => setIsEditing(false)}><X className="mr-2 h-4 w-4"/> Cancel</Button>
+                  </>
+              ) : (
+                  <>
+                      <Button onClick={() => setIsEditing(true)}><Edit className="mr-2 h-4 w-4"/> Edit</Button>
+                      <Button onClick={handleDownloadPdf} variant="outline"><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
+                      <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                              <Button variant="destructive"><Trash2 className="mr-2 h-4 w-4"/> Delete</Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                              <AlertDialogHeader>
+                                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                  This action cannot be undone. This will permanently delete {employee.name}'s record from the database.
+                                  </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={handleDelete}>Continue</AlertDialogAction>
+                              </AlertDialogFooter>
+                          </AlertDialogContent>
+                      </AlertDialog>
+                  </>
+              )}
+          </div>
+        </header>
+
+        <Card>
+          <CardHeader className="flex-col md:flex-row gap-6 space-y-0">
+            <Avatar className="w-24 h-24 md:w-32 md:h-32 border-4 border-primary/20">
+              <AvatarImage src={isEditing ? photoUrl : employee.photoUrl} alt={employee.name} />
+              <AvatarFallback>
+                  <User className="w-16 h-16"/>
+              </AvatarFallback>
+            </Avatar>
+            <div className="w-full">
+              {isEditing ? (
+                  <div className='space-y-4'>
+                      <Input className="text-2xl font-bold h-12" value={name} onChange={e => setName(e.target.value)} placeholder="Employee Name" />
+                      <Popover>
+                          <PopoverTrigger asChild>
+                          <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !employmentStartDate && "text-muted-foreground")}>
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {employmentStartDate ? format(employmentStartDate, 'PPP') : <span>Pick a date</span>}
+                          </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0">
+                              <Calendar mode="single" selected={employmentStartDate} onSelect={setEmploymentStartDate} initialFocus captionLayout="dropdown-nav" fromYear={1990} toYear={2040} />
+                          </PopoverContent>
+                      </Popover>
+                      <div className="space-y-2">
+                        <Label htmlFor="photo-url">Photo URL</Label>
+                        <Input id="photo-url" placeholder="Paste an image URL" value={photoUrl} onChange={e => setPhotoUrl(e.target.value)} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="photo-upload">Or Upload Photo</Label>
+                        <Input id="photo-upload" type="file" onChange={handlePhotoUpload} accept="image/*" />
+                      </div>
+                  </div>
+              ) : (
+                  <>
+                      <CardTitle className="text-3xl md:text-4xl font-bold">{employee.name}</CardTitle>
+                      <CardDescription className="text-lg md:text-xl mt-2 flex items-center gap-2">
+                          <CalendarIcon className="w-5 h-5"/>
+                          Started on {format(employee.employmentStartDate.toDate(), 'MMMM d, yyyy')}
+                      </CardDescription>
+                  </>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="mt-6">
+              <Label className='text-sm text-muted-foreground'>Notes</Label>
+              {isEditing ? (
+                  <Textarea className="mt-1 min-h-[120px] text-base" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Add notes about the employee..."/>
+              ) : (
+                  <p className="text-base mt-1 whitespace-pre-wrap">{employee.notes || 'No additional notes.'}</p>
+              )}
+          </CardContent>
+        </Card>
+      </div>
+    </>
   );
 }
