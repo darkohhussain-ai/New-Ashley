@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useFirestore, useDoc, useCollection, useMemoFirebase, deleteDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useDoc, useCollection, useMemoFirebase, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { doc, collection, Timestamp, writeBatch } from 'firebase/firestore';
 import { ArrowLeft, User, Calendar as CalendarIcon, Building, FileText, MapPin, Edit, Trash2, Save, X, ArrowUpDown, ArrowDown, ArrowUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -126,7 +126,8 @@ export default function FileDetailPage() {
     const batch = writeBatch(firestore);
     sortedEditableItems.forEach(item => {
       const itemRef = doc(firestore, `excel_files/${fileId}/items`, item.id);
-      batch.update(itemRef, { ...item });
+      const { id, ...itemData } = item;
+      batch.update(itemRef, { ...itemData });
     });
     try {
         await batch.commit();
@@ -246,7 +247,10 @@ export default function FileDetailPage() {
             <CardDescription className="grid grid-cols-2 md:flex md:items-center gap-x-6 gap-y-2 text-sm pt-2">
                 <span className="flex items-center gap-2"><User className="w-4 h-4"/>{getEmployeeName(file.storekeeperId)}</span>
                 <span className="flex items-center gap-2"><Building className="w-4 h-4"/>{file.source}</span>
-                <span className="flex items-center gap-2"><CalendarIcon className="w-4 h-4"/>{format(file.date.toDate(), 'PPP')}</span>
+                <span className="flex items-center gap-2">
+                  <CalendarIcon className="w-4 h-4"/>
+                  {file.date && typeof file.date.toDate === 'function' ? format(file.date.toDate(), 'PPP') : 'Invalid Date'}
+                </span>
             </CardDescription>
         </CardHeader>
       </Card>
@@ -338,5 +342,3 @@ export default function FileDetailPage() {
     </div>
   );
 }
-
-    
