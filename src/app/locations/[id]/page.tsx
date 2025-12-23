@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, collection, query, where } from 'firebase/firestore';
+import { doc, collection, query, where, collectionGroup } from 'firebase/firestore';
 import { ArrowLeft, Box, Building, Calendar, FileText, MapPin, Warehouse } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
@@ -47,8 +47,8 @@ export default function LocationDetailPage() {
   const locationRef = useMemoFirebase(() => (firestore && locationId ? doc(firestore, 'storage_locations', locationId) : null), [firestore, locationId]);
   const { data: location, isLoading: isLoadingLocation } = useDoc<StorageLocation>(locationRef);
 
-  // Query for items that have this locationId
-  const itemsQuery = useMemoFirebase(() => (firestore && locationId ? query(collection(firestore, 'items'), where('locationId', '==', locationId)) : null), [firestore, locationId]);
+  // Query for items that have this locationId using a collectionGroup query
+  const itemsQuery = useMemoFirebase(() => (firestore && locationId ? query(collectionGroup(firestore, 'items'), where('locationId', '==', locationId)) : null), [firestore, locationId]);
   const { data: items, isLoading: isLoadingItems } = useCollection<Item>(itemsQuery);
   
   // Fetch all excel files to map fileId to file details
