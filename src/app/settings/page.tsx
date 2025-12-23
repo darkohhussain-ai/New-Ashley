@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import placeHolderImages from '@/lib/placeholder-images.json'
 import { Slider } from '@/components/ui/slider'
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 
 const availableFonts = [
   { name: 'Inter', family: "'Inter', sans-serif" },
@@ -378,10 +379,10 @@ export default function SettingsPage() {
           </Button>
         </div>
       </header>
-      <main className="p-4 md:p-6 space-y-8">
-        <div className="grid gap-8 md:grid-cols-3">
-          <div className="md:col-span-1 space-y-8">
-              <Card>
+      <main className="p-4 md:p-6">
+        <ScrollArea className="w-full whitespace-nowrap">
+          <div className="flex w-max space-x-8 pb-4">
+              <Card className='w-[350px]'>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-lg"><Palette /> Appearance</CardTitle>
                     <CardDescription>Customize the look and feel.</CardDescription>
@@ -398,7 +399,7 @@ export default function SettingsPage() {
                   </div>
                 </CardContent>
               </Card>
-              <Card>
+              <Card className='w-[350px]'>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg"><ImageIcon /> Branding</CardTitle>
                   <CardDescription>Manage your application's logo.</CardDescription>
@@ -411,7 +412,7 @@ export default function SettingsPage() {
                         <Slider
                             id="logo-size"
                             min={40}
-                            max={120}
+                            max={240}
                             step={1}
                             value={[logoSize]}
                             onValueChange={(value) => setLogoSize(value[0])}
@@ -424,7 +425,7 @@ export default function SettingsPage() {
                   </div>
                 </CardContent>
               </Card>
-               <Card>
+               <Card className='w-[350px]'>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg"><LayoutDashboard /> Dashboard</CardTitle>
                   <CardDescription>Customize dashboard card appearance.</CardDescription>
@@ -454,7 +455,7 @@ export default function SettingsPage() {
                   </div>
                 </CardContent>
               </Card>
-               <Card>
+               <Card className='w-[350px]'>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-lg"><ShieldCheck /> Data Management</CardTitle>
                     <CardDescription>Backup or restore your settings.</CardDescription>
@@ -469,9 +470,7 @@ export default function SettingsPage() {
                     <input type="file" ref={importInputRef} className="hidden" accept=".json" onChange={handleImport} />
                   </CardContent>
                 </Card>
-          </div>
-          <div className="md:col-span-2 space-y-8">
-             <Card>
+             <Card className='w-[450px]'>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><Palette/> Color Palette</CardTitle>
                     <CardDescription>Adjust colors for light and dark themes. Changes are previewed live.</CardDescription>
@@ -499,7 +498,7 @@ export default function SettingsPage() {
                     </Tabs>
                 </CardContent>
              </Card>
-             <Card>
+             <Card className='w-[350px]'>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><Type /> Typography</CardTitle>
                     <CardDescription>Manage the font used in the application.</CardDescription>
@@ -527,7 +526,8 @@ export default function SettingsPage() {
                 </CardContent>
             </Card>
           </div>
-        </div>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
       </main>
     </div>
   )
