@@ -1,11 +1,11 @@
 
 "use client"
-import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Users, Box, ArrowRightLeft, Settings as SettingsIcon, CreditCard } from "lucide-react"
 import { DashboardCard } from "./dashboard-card"
 import placeHolderImages from '@/lib/placeholder-images.json'
 import useLocalStorage from "@/hooks/use-local-storage"
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 
 export function Dashboard() {
   const menuItems = [
@@ -31,11 +31,16 @@ export function Dashboard() {
         <h1 className="text-lg font-bold">Ashley HR</h1>
       </header>
       <main className="p-8 md:p-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {menuItems.map((item) => (
-            <DashboardCard key={item.title} {...item} cardSize={cardSize} iconSize={iconSize} />
-          ))}
-        </div>
+         <ScrollArea className="w-full whitespace-nowrap">
+            <div className="flex w-max space-x-8 pb-4">
+              {menuItems.map((item) => (
+                <div key={item.title} style={{ width: `${cardSize}px` }}>
+                   <DashboardCard {...item} cardSize={cardSize} iconSize={iconSize} />
+                </div>
+              ))}
+            </div>
+            <ScrollBar orientation="horizontal" />
+         </ScrollArea>
       </main>
     </div>
   )
