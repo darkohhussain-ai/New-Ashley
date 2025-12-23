@@ -3,7 +3,7 @@
 
 import { useState, useMemo } from "react"
 import Link from "next/link"
-import { ArrowLeft, Plus, User, Calendar as CalendarIcon, Briefcase } from "lucide-react"
+import { ArrowLeft, Plus, User, Calendar as CalendarIcon, Briefcase, Mail, Phone, Cake } from "lucide-react"
 import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking } from "@/firebase"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,11 +19,15 @@ import { collection, Timestamp } from "firebase/firestore"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 type Employee = {
-  id: string
-  name: string
-  employmentStartDate: Timestamp
-  photoUrl?: string
-  notes?: string
+  id: string;
+  name: string;
+  jobTitle?: string;
+  employmentStartDate: Timestamp;
+  dateOfBirth?: Timestamp;
+  email?: string;
+  phone?: string;
+  photoUrl?: string;
+  notes?: string;
 }
 
 export default function EmployeesPage() {
@@ -32,7 +36,11 @@ export default function EmployeesPage() {
   const { data: employees, isLoading } = useCollection<Employee>(employeesRef);
   
   const [name, setName] = useState("")
+  const [jobTitle, setJobTitle] = useState("")
   const [employmentStartDate, setEmploymentStartDate] = useState<Date | undefined>(new Date());
+  const [dateOfBirth, setDateOfBirth] = useState<Date | undefined>();
+  const [email, setEmail] = useState("")
+  const [phone, setPhone] = useState("")
   const [photoUrl, setPhotoUrl] = useState<string>("");
   const [notes, setNotes] = useState("")
   
@@ -42,12 +50,18 @@ export default function EmployeesPage() {
     e.preventDefault()
     if (!name || !employmentStartDate || !firestore) return;
 
-    const employeeData = {
+    const employeeData: Partial<Employee> = {
       name,
+      jobTitle,
       employmentStartDate: Timestamp.fromDate(employmentStartDate),
       notes,
-      photoUrl: photoUrl || `https://picsum.photos/seed/${name}/100/100`
+      email,
+      phone,
+      photoUrl: photoUrl || `https://picsum.photos/seed/${name}/200/200`
     };
+    if (dateOfBirth) {
+        employeeData.dateOfBirth = Timestamp.fromDate(dateOfBirth);
+    }
     
     addDocumentNonBlocking(employeesRef!, employeeData);
     
@@ -56,7 +70,11 @@ export default function EmployeesPage() {
 
   const resetForm = () => {
     setName("")
+    setJobTitle("")
     setEmploymentStartDate(new Date())
+    setDateOfBirth(undefined)
+    setEmail("")
+    setPhone("")
     setPhotoUrl("")
     setNotes("")
     setOpen(false)
@@ -121,32 +139,54 @@ export default function EmployeesPage() {
               <Input id="name" value={name} onChange={e => setName(e.target.value)} required placeholder="e.g. John Doe" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="date">Employment Start Date</Label>
-               <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={"outline"}
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !employmentStartDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {employmentStartDate ? format(employmentStartDate, "PPP") : <span>Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={employmentStartDate}
-                    onSelect={setEmploymentStartDate}
-                    captionLayout="dropdown-nav"
-                    fromYear={1990}
-                    toYear={2040}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <Label htmlFor="jobTitle">Job Title</Label>
+              <Input id="jobTitle" value={jobTitle} onChange={e => setJobTitle(e.target.value)} placeholder="e.g. Graphic Designer" />
+            </div>
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/>
+                    <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="employee@example.com" className="pl-10" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/>
+                    <Input id="phone" type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="0000-000-000" className="pl-10"/>
+                  </div>
+                </div>
+              </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="date">Start Date</Label>
+                   <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!employmentStartDate && "text-muted-foreground")}>
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {employmentStartDate ? format(employmentStartDate, "PPP") : <span>Pick a date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar mode="single" selected={employmentStartDate} onSelect={setEmploymentStartDate} captionLayout="dropdown-nav" fromYear={1990} toYear={2040} initialFocus/>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dob">Date of Birth</Label>
+                   <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!dateOfBirth && "text-muted-foreground")}>
+                        <Cake className="mr-2 h-4 w-4" />
+                        {dateOfBirth ? format(dateOfBirth, "PPP") : <span>Pick a date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar mode="single" selected={dateOfBirth} onSelect={setDateOfBirth} captionLayout="dropdown-nav" fromYear={1950} toYear={new Date().getFullYear()} initialFocus/>
+                    </PopoverContent>
+                  </Popover>
+                </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="notes">Notes</Label>
@@ -192,14 +232,15 @@ export default function EmployeesPage() {
                     <div>
                       <CardTitle className="text-xl">{v.name}</CardTitle>
                       <CardDescription>
-                        Started: {format(v.employmentStartDate.toDate(), "PP")}
+                        {v.jobTitle || 'No Title'}
                       </CardDescription>
                     </div>
                   </CardHeader>
                   <CardContent className="flex-grow">
-                    <p className="text-sm text-muted-foreground line-clamp-3">
-                      {v.notes || "No notes for this employee."}
-                    </p>
+                     <p className="text-sm text-muted-foreground flex items-center gap-2">
+                        <CalendarIcon className="w-4 h-4" />
+                        Started: {format(v.employmentStartDate.toDate(), "PP")}
+                     </p>
                   </CardContent>
                 </Card>
               </Link>

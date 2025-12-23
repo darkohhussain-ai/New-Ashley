@@ -14,10 +14,28 @@
           "type": "string",
           "description": "The name of the employee."
         },
+        "jobTitle": {
+          "type": "string",
+          "description": "The job title of the employee."
+        },
         "employmentStartDate": {
           "type": "string",
           "description": "The date the employee started employment.",
           "format": "date-time"
+        },
+        "dateOfBirth": {
+          "type": "string",
+          "description": "The employee's date of birth.",
+          "format": "date-time"
+        },
+        "email": {
+          "type": "string",
+          "description": "The employee's email address.",
+          "format": "email"
+        },
+        "phone": {
+          "type": "string",
+          "description": "The employee's phone number."
         },
         "photoUrl": {
           "type": "string",
@@ -32,7 +50,11 @@
       "required": [
         "id",
         "name",
-        "employmentStartDate"
+        "jobTitle",
+        "employmentStartDate",
+        "dateOfBirth",
+        "email",
+        "phone"
       ]
     },
     "Expense": {

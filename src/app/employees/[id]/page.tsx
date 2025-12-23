@@ -7,7 +7,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { doc, Timestamp } from 'firebase/firestore';
-import { ArrowLeft, User, Calendar as CalendarIcon, Edit, Trash2, Save, X, Upload, Download } from 'lucide-react';
+import { ArrowLeft, User, Calendar as CalendarIcon, Edit, Trash2, Save, X, Upload, Download, Mail, Phone, Cake, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -23,11 +23,16 @@ import { useToast } from '@/hooks/use-toast';
 import { EmployeePdfCard } from '@/components/employees/employee-pdf-card';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import useLocalStorage from '@/hooks/use-local-storage';
 
 type Employee = {
   id: string;
   name: string;
+  jobTitle?: string;
   employmentStartDate: Timestamp;
+  dateOfBirth?: Timestamp;
+  email?: string;
+  phone?: string;
   photoUrl?: string;
   notes?: string;
 };
@@ -44,16 +49,27 @@ export default function EmployeeDetailPage() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState('');
+  const [jobTitle, setJobTitle] = useState('');
   const [employmentStartDate, setEmploymentStartDate] = useState<Date | undefined>(undefined);
+  const [dateOfBirth, setDateOfBirth] = useState<Date | undefined>(undefined);
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [photoUrl, setPhotoUrl] = useState('');
   const [notes, setNotes] = useState('');
+  
+  const defaultLogo = "https://images.unsplash.com/photo-1748326650737-33500fdfda30?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGxvZ298ZW58MHx8fHwxNzY2MzgxMzI1fDA&ixlib=rb-4.1.0&q=80&w=1080";
+  const [logoSrc] = useLocalStorage('app-logo', defaultLogo);
   
   const pdfCardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (employee) {
       setName(employee.name);
-      setEmploymentStartDate(employee.employmentStartDate.toDate());
+      setJobTitle(employee.jobTitle || '');
+      setEmploymentStartDate(employee.employmentStartDate?.toDate());
+      setDateOfBirth(employee.dateOfBirth?.toDate());
+      setEmail(employee.email || '');
+      setPhone(employee.phone || '');
       setPhotoUrl(employee.photoUrl || '');
       setNotes(employee.notes || '');
     }
@@ -74,12 +90,19 @@ export default function EmployeeDetailPage() {
   const handleUpdate = () => {
     if (!firestore || !employeeId || !name || !employmentStartDate) return;
     
-    const updatedData = {
+    const updatedData: Partial<Employee> = {
         name,
+        jobTitle,
         employmentStartDate: Timestamp.fromDate(employmentStartDate),
+        email,
+        phone,
         photoUrl,
         notes,
     };
+
+    if (dateOfBirth) {
+        updatedData.dateOfBirth = Timestamp.fromDate(dateOfBirth);
+    }
 
     const docRef = doc(firestore, 'employees', employeeId);
     updateDocumentNonBlocking(docRef, updatedData);
@@ -100,7 +123,7 @@ export default function EmployeeDetailPage() {
     if (!pdfCardRef.current || !employee) return;
     
     const canvas = await html2canvas(pdfCardRef.current, {
-        scale: 2, // Higher scale for better quality
+        scale: 3, 
         useCORS: true,
         backgroundColor: null, 
     });
@@ -159,10 +182,9 @@ export default function EmployeeDetailPage() {
 
   return (
     <>
-      {/* Hidden component for PDF generation */}
       <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
           <div ref={pdfCardRef}>
-            <EmployeePdfCard employee={employee} />
+            <EmployeePdfCard employee={employee} logoSrc={logoSrc} />
           </div>
       </div>
       <div className="p-4 md:p-8">
@@ -205,44 +227,81 @@ export default function EmployeeDetailPage() {
         </header>
 
         <Card>
-          <CardHeader className="flex-col md:flex-row gap-6 space-y-0">
-            <Avatar className="w-24 h-24 md:w-32 md:h-32 border-4 border-primary/20">
-              <AvatarImage src={isEditing ? photoUrl : employee.photoUrl} alt={employee.name} />
-              <AvatarFallback>
-                  <User className="w-16 h-16"/>
-              </AvatarFallback>
-            </Avatar>
+          <CardHeader className="flex-col md:flex-row gap-6 space-y-0 items-start">
+            <div className='flex flex-col items-center gap-4'>
+                <Avatar className="w-24 h-24 md:w-32 md:h-32 border-4 border-primary/20">
+                  <AvatarImage src={isEditing ? photoUrl : employee.photoUrl} alt={employee.name} />
+                  <AvatarFallback>
+                      <User className="w-16 h-16"/>
+                  </AvatarFallback>
+                </Avatar>
+                {isEditing && (
+                    <div className="w-full space-y-2">
+                        <Label htmlFor="photo-upload" className='text-center block'>Upload New Photo</Label>
+                        <Input id="photo-upload" type="file" onChange={handlePhotoUpload} accept="image/*" />
+                        <Input id="photo-url" placeholder="Or paste an image URL" value={photoUrl} onChange={e => setPhotoUrl(e.target.value)} />
+                    </div>
+                )}
+            </div>
             <div className="w-full">
               {isEditing ? (
                   <div className='space-y-4'>
                       <Input className="text-2xl font-bold h-12" value={name} onChange={e => setName(e.target.value)} placeholder="Employee Name" />
-                      <Popover>
-                          <PopoverTrigger asChild>
-                          <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !employmentStartDate && "text-muted-foreground")}>
-                              <CalendarIcon className="mr-2 h-4 w-4" />
-                              {employmentStartDate ? format(employmentStartDate, 'PPP') : <span>Pick a date</span>}
-                          </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0">
-                              <Calendar mode="single" selected={employmentStartDate} onSelect={setEmploymentStartDate} initialFocus captionLayout="dropdown-nav" fromYear={1990} toYear={2040} />
-                          </PopoverContent>
-                      </Popover>
-                      <div className="space-y-2">
-                        <Label htmlFor="photo-url">Photo URL</Label>
-                        <Input id="photo-url" placeholder="Paste an image URL" value={photoUrl} onChange={e => setPhotoUrl(e.target.value)} />
+                      <Input value={jobTitle} onChange={e => setJobTitle(e.target.value)} placeholder="Job Title" />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>Email</Label>
+                            <div className="relative">
+                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/>
+                                <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="employee@example.com" className="pl-10" />
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Phone</Label>
+                             <div className="relative">
+                                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/>
+                                <Input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="0000-000-000" className="pl-10"/>
+                            </div>
+                        </div>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="photo-upload">Or Upload Photo</Label>
-                        <Input id="photo-upload" type="file" onChange={handlePhotoUpload} accept="image/*" />
-                      </div>
+                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !employmentStartDate && "text-muted-foreground")}>
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {employmentStartDate ? `Started: ${format(employmentStartDate, 'PPP')}` : <span>Pick start date</span>}
+                                </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0">
+                                    <Calendar mode="single" selected={employmentStartDate} onSelect={setEmploymentStartDate} initialFocus captionLayout="dropdown-nav" fromYear={1990} toYear={2040} />
+                                </PopoverContent>
+                            </Popover>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !dateOfBirth && "text-muted-foreground")}>
+                                    <Cake className="mr-2 h-4 w-4" />
+                                    {dateOfBirth ? `Born: ${format(dateOfBirth, 'PPP')}` : <span>Pick birth date</span>}
+                                </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0">
+                                    <Calendar mode="single" selected={dateOfBirth} onSelect={setDateOfBirth} initialFocus captionLayout="dropdown-nav" fromYear={1950} toYear={new Date().getFullYear()} />
+                                </PopoverContent>
+                            </Popover>
+                        </div>
                   </div>
               ) : (
                   <>
                       <CardTitle className="text-3xl md:text-4xl font-bold">{employee.name}</CardTitle>
                       <CardDescription className="text-lg md:text-xl mt-2 flex items-center gap-2">
-                          <CalendarIcon className="w-5 h-5"/>
-                          Started on {format(employee.employmentStartDate.toDate(), 'MMMM d, yyyy')}
+                          <Briefcase className="w-5 h-5"/>
+                          {employee.jobTitle || 'No title specified'}
                       </CardDescription>
+                      <div className="mt-4 space-y-2 text-muted-foreground">
+                        <p className="flex items-center gap-2"><Mail className="w-4 h-4"/> {employee.email || 'No email'}</p>
+                        <p className="flex items-center gap-2"><Phone className="w-4 h-4"/> {employee.phone || 'No phone'}</p>
+                        <p className="flex items-center gap-2"><CalendarIcon className="w-4 h-4"/> Started on {format(employee.employmentStartDate.toDate(), 'MMMM d, yyyy')}</p>
+                        {employee.dateOfBirth && <p className="flex items-center gap-2"><Cake className="w-4 h-4"/> Born on {format(employee.dateOfBirth.toDate(), 'MMMM d, yyyy')}</p>}
+                      </div>
                   </>
               )}
             </div>
