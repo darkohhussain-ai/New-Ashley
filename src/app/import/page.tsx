@@ -168,11 +168,13 @@ export default function ImportPage() {
         await batch.commit();
 
         toast({ title: 'Success!', description: 'The imported file and its items have been saved.' });
-        router.push('/archive');
+        
       } catch (error) {
           console.error("Error saving data:", error);
           toast({ variant: 'destructive', title: 'Save Error', description: 'Could not save the data to the database.' });
-          setIsProcessing(false);
+          
+      } finally {
+        setIsProcessing(false);
       }
   };
   
@@ -390,7 +392,11 @@ export default function ImportPage() {
                 <Button variant="outline" onClick={() => setStep(1)}>Back</Button>
                 <Button onClick={handleSave} disabled={isProcessing}>
                   {isProcessing ? <Loader2 className="animate-spin mr-2" /> : <Save className="mr-2" />}
-                  Save & Archive
+                  Save
+                </Button>
+                 <Button onClick={() => router.push('/archive')} disabled={isProcessing}>
+                  Next
+                  <ChevronRight className="ml-2" />
                 </Button>
             </div>
         </div>
