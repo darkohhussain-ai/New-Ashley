@@ -81,21 +81,23 @@ export default function ArchivePage() {
         ) : sortedFiles.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {sortedFiles.map(file => (
-              <Link key={file.id} href={`/archive/${file.id}`} passHref>
-                <Card className="hover:border-primary hover:shadow-lg transition-all h-full flex flex-col">
-                  <CardHeader>
-                    <div className="flex justify-between items-start gap-2">
-                        <CardTitle className="text-lg leading-tight">{file.storageName}</CardTitle>
-                        <Badge variant={file.type === 'imported' ? 'default' : 'secondary'}>{file.type}</Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="flex-grow space-y-3 text-sm text-muted-foreground">
-                    <p className="flex items-center gap-2"><User className="w-4 h-4 text-primary" /> {getEmployeeName(file.storekeeperId)}</p>
-                    <p className="flex items-center gap-2"><Building className="w-4 h-4 text-primary" /> {file.source}</p>
-                    <p className="flex items-center gap-2"><CalendarIcon className="w-4 h-4 text-primary" /> {file.date && typeof file.date.toDate === 'function' ? format(file.date.toDate(), 'PPP') : 'Invalid Date'}</p>
-                  </CardContent>
-                </Card>
-              </Link>
+              <Card key={file.id} className="hover:border-primary/50 hover:shadow-lg transition-all h-full flex flex-col">
+                <CardHeader>
+                  <div className="flex justify-between items-start gap-2">
+                      <CardTitle className="text-lg leading-tight">
+                        <Link href={`/archive/${file.id}`} className="hover:underline">
+                          {file.storageName}
+                        </Link>
+                      </CardTitle>
+                      <Badge variant={file.type === 'imported' ? 'default' : 'secondary'}>{file.type}</Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="flex-grow space-y-3 text-sm text-muted-foreground">
+                  <p className="flex items-center gap-2"><User className="w-4 h-4 text-primary" /> {getEmployeeName(file.storekeeperId)}</p>
+                  <p className="flex items-center gap-2"><Building className="w-4 h-4 text-primary" /> {file.source}</p>
+                  <p className="flex items-center gap-2"><CalendarIcon className="w-4 h-4 text-primary" /> {file.date && typeof file.date.toDate === 'function' ? format(file.date.toDate(), 'PPP') : 'Invalid Date'}</p>
+                </CardContent>
+              </Card>
             ))}
           </div>
         ) : (
