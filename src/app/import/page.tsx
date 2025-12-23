@@ -357,7 +357,8 @@ export default function ImportPage() {
                                                 <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
                                                 <SelectContent>
                                                     <SelectItem value="Wrapped">Wrapped</SelectItem>
-                                                    <SelectItem value="Damaged">Damaged</[["body", "The body of the message to send."]]</SelectContent>
+                                                    <SelectItem value="Damaged">Damaged</SelectItem>
+                                                </SelectContent>
                                             </Select>
                                         </TableCell>
                                         <TableCell>
@@ -367,7 +368,7 @@ export default function ImportPage() {
                                             <Select value={item.locationId} onValueChange={v => handleItemChange(index, 'locationId', v)} disabled={!warehouseType}>
                                                 <SelectTrigger>
                                                     <SelectValue placeholder={warehouseType ? "Select location..." : "Select source first"} />
-                                                </SelectTrigger>
+                                                </T_SelectTrigger>
                                                 <SelectContent>
                                                 {warehouseType && filteredLocations(warehouseType).map(loc => (
                                                     <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
@@ -387,8 +388,8 @@ export default function ImportPage() {
             </Card>
             <div className="mt-8 flex justify-end gap-4">
                 <Button variant="outline" onClick={() => setStep(1)}>Back</Button>
-                <Button onClick={handleSave} disabled={isProcessing}>
-                  {isProcessing ? <Loader2 className="animate-spin mr-2" /> : <Save className="mr-2" />}
+                <Button onClick={handleSave} disabled={isSaving}>
+                  {isSaving ? <Loader2 className="animate-spin mr-2" /> : <Save className="mr-2" />}
                   Save & Archive
                 </Button>
             </div>
