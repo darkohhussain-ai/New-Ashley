@@ -166,6 +166,9 @@ export default function EmployeesPage() {
                       selected={employmentStartDate}
                       onSelect={setEmploymentStartDate}
                       initialFocus
+                      captionLayout="dropdown-nav"
+                      fromYear={1990}
+                      toYear={2040}
                     />
                   </PopoverContent>
                 </Popover>
