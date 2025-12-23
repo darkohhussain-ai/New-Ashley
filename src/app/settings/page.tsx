@@ -132,9 +132,11 @@ export default function SettingsPage() {
 
   const applyColors = (colors: ThemeColors) => {
     const root = document.documentElement;
-    const isDark = root.classList.contains('dark');
+    if (!colors) return;
     Object.entries(colors).forEach(([key, value]) => {
-      root.style.setProperty(`--${key}`, value);
+      if (key && value) {
+        root.style.setProperty(`--${key}`, value);
+      }
     });
   };
   
@@ -174,11 +176,26 @@ export default function SettingsPage() {
   // Apply saved settings on initial mount
   useEffect(() => {
     setMounted(true)
-    applyFont(savedFont, savedCustomFont)
+    // We need to re-read from local storage here on mount to get the latest values
+    const currentFont = localStorage.getItem('app-font');
+    const currentCustomFont = localStorage.getItem('custom-font');
+    const currentLightColors = localStorage.getItem('light-theme-colors');
+    const currentDarkColors = localStorage.getItem('dark-theme-colors');
+
+    if(currentFont) setFont(JSON.parse(currentFont));
+    if(currentCustomFont) setCustomFont(JSON.parse(currentCustomFont));
+    if(currentLightColors) setLightColors(JSON.parse(currentLightColors));
+    if(currentDarkColors) setDarkColors(JSON.parse(currentDarkColors));
+    
+    applyFont(
+        currentFont ? JSON.parse(currentFont) : savedFont, 
+        currentCustomFont ? JSON.parse(currentCustomFont) : savedCustomFont
+    );
+
     if (document.documentElement.classList.contains('dark')) {
-      applyColors(savedDarkColors);
+      applyColors(currentDarkColors ? JSON.parse(currentDarkColors) : savedDarkColors);
     } else {
-      applyColors(savedLightColors);
+      applyColors(currentLightColors ? JSON.parse(currentLightColors) : savedLightColors);
     }
   }, [])
   
@@ -229,20 +246,23 @@ export default function SettingsPage() {
   const handleExport = () => {
     try {
         const data: { [key: string]: any } = {}
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i)
-            if(key) {
-                data[key] = localStorage.getItem(key)
-            }
-        }
-
-        Object.keys(data).forEach(key => {
-            try {
-                if (data[key] !== null) {
-                  data[key] = JSON.parse(data[key]);
+        // Only backup relevant keys
+        const keysToExport = ['app-logo', 'app-font', 'custom-font', 'light-theme-colors', 'dark-theme-colors', 'ashley-drp-theme', 'volunteers'];
+        
+        keysToExport.forEach(key => {
+             const item = localStorage.getItem(key);
+             if(item) {
+                // custom-font is a large base64 string, don't parse it.
+                if (key === 'custom-font' || key === 'app-logo') {
+                    data[key] = item;
+                } else {
+                    try {
+                        data[key] = JSON.parse(item);
+                    } catch {
+                        data[key] = item;
+                    }
                 }
-            } catch (e) {
-            }
+             }
         });
 
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
@@ -256,6 +276,7 @@ export default function SettingsPage() {
         URL.revokeObjectURL(url)
         toast({ title: 'Data exported successfully!' })
     } catch (error) {
+        console.error("Export failed:", error);
         toast({ variant: 'destructive', title: 'Export failed', description: 'Could not export data.' })
     }
   }
@@ -270,12 +291,17 @@ export default function SettingsPage() {
         try {
           const importedData = JSON.parse(event.target?.result as string)
           for (const key in importedData) {
-            const value = typeof importedData[key] === 'object' ? JSON.stringify(importedData[key]) : importedData[key];
-            localStorage.setItem(key, value)
+            if (Object.prototype.hasOwnProperty.call(importedData, key)) {
+                const value = typeof importedData[key] === 'object' 
+                    ? JSON.stringify(importedData[key]) 
+                    : importedData[key];
+                localStorage.setItem(key, value);
+            }
           }
           toast({ title: 'Data imported successfully!', description: 'The page will now reload to apply changes.' })
           setTimeout(() => window.location.reload(), 2000)
         } catch (error) {
+          console.error("Import failed:", error);
           toast({ variant: 'destructive', title: 'Import failed', description: 'Invalid or corrupted file.' })
         }
       }
@@ -294,6 +320,7 @@ export default function SettingsPage() {
                 </Button>
                 <h1 className="text-2xl md:text-3xl font-bold">Settings</h1>
             </header>
+            <div className="flex items-center justify-center">Loading...</div>
         </div>
     );
   }
