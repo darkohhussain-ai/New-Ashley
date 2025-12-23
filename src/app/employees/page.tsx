@@ -41,7 +41,7 @@ export default function EmployeesPage() {
   const [dateOfBirth, setDateOfBirth] = useState<Date | undefined>();
   const [email, setEmail] = useState("")
   const [phone, setPhone] = useState("")
-  const [photoUrl, setPhotoUrl] = useState<string>("");
+  const [photoUrl, setPhotoUrl] = useState<string | undefined>();
   const [notes, setNotes] = useState("")
   
   const [open, setOpen] = useState(false)
@@ -75,7 +75,7 @@ export default function EmployeesPage() {
     setDateOfBirth(undefined)
     setEmail("")
     setPhone("")
-    setPhotoUrl("")
+    setPhotoUrl(undefined)
     setNotes("")
     setOpen(false)
   }
@@ -267,3 +267,5 @@ export default function EmployeesPage() {
     </div>
   )
 }
+
+    
