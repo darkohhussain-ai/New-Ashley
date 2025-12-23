@@ -107,85 +107,84 @@ export default function EmployeesPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
-      <header className="flex items-center justify-between gap-4 mb-8">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" asChild>
-            <Link href="/">
-              <ArrowLeft />
-              <span className="sr-only">Back to Dashboard</span>
-            </Link>
-          </Button>
-          <h1 className="text-2xl md:text-3xl font-bold">Employees Dashboard</h1>
-        </div>
-        <Dialog open={open} onOpenChange={(isOpen) => { setOpen(isOpen); if(!isOpen) resetForm(); }}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" /> Add Employee
+       <Dialog open={open} onOpenChange={(isOpen) => { setOpen(isOpen); if(!isOpen) resetForm(); }}>
+        <header className="flex items-center justify-between gap-4 mb-8">
+          <div className="flex items-center gap-4">
+            <Button variant="outline" size="icon" asChild>
+              <Link href="/">
+                <ArrowLeft />
+                <span className="sr-only">Back to Dashboard</span>
+              </Link>
             </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[480px]">
-            <DialogHeader>
-              <DialogTitle>{isEditing ? "Edit Employee" : "Add New Employee"}</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-              <div className="flex flex-col items-center gap-4">
-                <Avatar className="w-24 h-24">
-                  <AvatarImage src={photoUrl} alt="Employee photo" />
-                  <AvatarFallback>
-                    <User className="w-12 h-12" />
-                  </AvatarFallback>
-                </Avatar>
-                 <div className="grid w-full max-w-sm items-center gap-1.5">
-                    <Label htmlFor="photo">Employee Photo</Label>
-                    <Input id="photo" type="file" onChange={handlePhotoUpload} accept="image/*" />
-                </div>
+            <h1 className="text-2xl md:text-3xl font-bold">Employees Dashboard</h1>
+          </div>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" /> Add Employee
+              </Button>
+            </DialogTrigger>
+        </header>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle>{isEditing ? "Edit Employee" : "Add New Employee"}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4 pt-4">
+            <div className="flex flex-col items-center gap-4">
+              <Avatar className="w-24 h-24">
+                <AvatarImage src={photoUrl} alt="Employee photo" />
+                <AvatarFallback>
+                  <User className="w-12 h-12" />
+                </AvatarFallback>
+              </Avatar>
+               <div className="grid w-full max-w-sm items-center gap-1.5">
+                  <Label htmlFor="photo">Employee Photo</Label>
+                  <Input id="photo" type="file" onChange={handlePhotoUpload} accept="image/*" />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
-                <Input id="name" value={name} onChange={e => setName(e.target.value)} required placeholder="e.g. John Doe" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="date">Employment Start Date</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !employmentStartDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {employmentStartDate ? format(employmentStartDate, "PPP") : <span>Pick a date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={employmentStartDate}
-                      onSelect={setEmploymentStartDate}
-                      captionLayout="dropdown-nav"
-                      fromYear={1990}
-                      toYear={2040}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. Specializes in frontend development." />
-              </div>
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button type="button" variant="secondary">Cancel</Button>
-                </DialogClose>
-                <Button type="submit">{isEditing ? "Save Changes" : "Add Employee"}</Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </header>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input id="name" value={name} onChange={e => setName(e.target.value)} required placeholder="e.g. John Doe" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="date">Employment Start Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !employmentStartDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {employmentStartDate ? format(employmentStartDate, "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={employmentStartDate}
+                    onSelect={setEmploymentStartDate}
+                    captionLayout="dropdown-nav"
+                    fromYear={1990}
+                    toYear={2040}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. Specializes in frontend development." />
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="secondary">Cancel</Button>
+              </DialogClose>
+              <Button type="submit">{isEditing ? "Save Changes" : "Add Employee"}</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
       <main>
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -258,6 +257,7 @@ export default function EmployeesPage() {
           </div>
         )}
       </main>
+    </Dialog>
     </div>
   )
 }
