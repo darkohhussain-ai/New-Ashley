@@ -364,6 +364,19 @@ export default function SettingsPage() {
     );
   }
   
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const onWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (scrollRef.current) {
+      if (e.deltaY === 0) return;
+      e.preventDefault();
+      scrollRef.current.scrollTo({
+        left: scrollRef.current.scrollLeft + e.deltaY * 2,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="flex items-center gap-4 p-4 md:p-6 border-b">
@@ -380,8 +393,8 @@ export default function SettingsPage() {
         </div>
       </header>
       <main className="p-4 md:p-6">
-        <ScrollArea className="w-full whitespace-nowrap">
-          <div className="flex w-max space-x-8 pb-4">
+        <ScrollArea className="w-full whitespace-nowrap" onWheel={onWheel}>
+          <div className="flex w-max space-x-8 pb-4" ref={scrollRef}>
               <Card className='w-[350px]'>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-lg"><Palette /> Appearance</CardTitle>

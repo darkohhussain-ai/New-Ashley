@@ -6,6 +6,7 @@ import { DashboardCard } from "./dashboard-card"
 import placeHolderImages from '@/lib/placeholder-images.json'
 import useLocalStorage from "@/hooks/use-local-storage"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
+import { useRef } from "react"
 
 export function Dashboard() {
   const menuItems = [
@@ -22,6 +23,19 @@ export function Dashboard() {
 
   const [cardSize, setCardSize] = useLocalStorage('dashboard-card-size', 192);
   const [iconSize, setIconSize] = useLocalStorage('dashboard-icon-size', 64);
+  
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const onWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (scrollRef.current) {
+      if (e.deltaY === 0) return;
+      e.preventDefault();
+      scrollRef.current.scrollTo({
+        left: scrollRef.current.scrollLeft + e.deltaY * 2,
+        behavior: 'smooth'
+      });
+    }
+  };
 
 
   return (
@@ -31,8 +45,8 @@ export function Dashboard() {
         <h1 className="text-lg font-bold">Ashley HR</h1>
       </header>
       <main className="p-8 md:p-12">
-         <ScrollArea className="w-full whitespace-nowrap">
-            <div className="flex w-max space-x-8 pb-4">
+         <ScrollArea className="w-full whitespace-nowrap" onWheel={onWheel}>
+            <div className="flex w-max space-x-8 pb-4" ref={scrollRef}>
               {menuItems.map((item) => (
                 <div key={item.title} style={{ width: `${cardSize}px` }}>
                    <DashboardCard {...item} cardSize={cardSize} iconSize={iconSize} />
