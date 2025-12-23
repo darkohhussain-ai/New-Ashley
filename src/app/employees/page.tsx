@@ -239,7 +239,7 @@ export default function EmployeesPage() {
                   <CardContent className="flex-grow">
                      <p className="text-sm text-muted-foreground flex items-center gap-2">
                         <CalendarIcon className="w-4 h-4" />
-                        Started: {format(v.employmentStartDate.toDate(), "PP")}
+                        Started: {v.employmentStartDate && typeof v.employmentStartDate.toDate === 'function' ? format(v.employmentStartDate.toDate(), "PP") : 'N/A'}
                      </p>
                   </CardContent>
                 </Card>
@@ -267,5 +267,3 @@ export default function EmployeesPage() {
     </div>
   )
 }
-
-    
