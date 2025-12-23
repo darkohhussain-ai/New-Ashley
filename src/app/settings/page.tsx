@@ -147,6 +147,20 @@ export default function SettingsPage() {
   const [cardSize, setCardSize] = useState(savedCardSize);
   const [iconSize, setIconSize] = useState(savedIconSize);
 
+  const importInputRef = useRef<HTMLInputElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const onWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (scrollRef.current) {
+      if (e.deltaY === 0) return;
+      e.preventDefault();
+      scrollRef.current.scrollTo({
+        left: scrollRef.current.scrollLeft + e.deltaY * 2,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   const applyColors = (colors: ThemeColors) => {
     const root = document.documentElement;
     if (!colors) return;
@@ -320,8 +334,6 @@ export default function SettingsPage() {
     }
   }
 
-  const importInputRef = useRef<HTMLInputElement>(null)
-
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
@@ -363,19 +375,6 @@ export default function SettingsPage() {
         </div>
     );
   }
-  
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  const onWheel = (e: React.WheelEvent<HTMLDivElement>) => {
-    if (scrollRef.current) {
-      if (e.deltaY === 0) return;
-      e.preventDefault();
-      scrollRef.current.scrollTo({
-        left: scrollRef.current.scrollLeft + e.deltaY * 2,
-        behavior: 'smooth'
-      });
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
