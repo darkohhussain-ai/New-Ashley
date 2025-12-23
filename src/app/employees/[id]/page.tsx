@@ -76,7 +76,7 @@ export default function EmployeeDetailPage() {
       const docRef = doc(firestore, 'employees', employeeId);
       deleteDocumentNonBlocking(docRef);
       toast({ title: "Employee Deleted", description: `${employee?.name} has been removed.` });
-      router.push('/volunteers');
+      router.push('/employees');
   }
 
   if (isLoading) {
@@ -110,7 +110,7 @@ export default function EmployeeDetailPage() {
         <h2 className="text-2xl font-bold mb-2">Employee Not Found</h2>
         <p className="text-muted-foreground mb-6">The employee you're looking for doesn't seem to exist.</p>
         <Button asChild>
-          <Link href="/volunteers">
+          <Link href="/employees">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Employees
           </Link>
@@ -123,7 +123,7 @@ export default function EmployeeDetailPage() {
     <div className="p-4 md:p-8">
       <header className="flex items-center justify-between gap-4 mb-8">
         <Button variant="outline" size="icon" asChild>
-          <Link href="/volunteers">
+          <Link href="/employees">
             <ArrowLeft />
           </Link>
         </Button>

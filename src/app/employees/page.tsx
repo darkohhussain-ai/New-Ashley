@@ -65,8 +65,6 @@ export default function EmployeesPage() {
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      // For now, we'll just use a placeholder. Real upload would require Firebase Storage.
-      // This is a good placeholder strategy.
       const reader = new FileReader();
       reader.onload = (event) => {
         const result = event.target?.result as string;
@@ -184,7 +182,7 @@ export default function EmployeesPage() {
         ) : sortedEmployees.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {sortedEmployees.map(v => (
-              <Link key={v.id} href={`/volunteers/${v.id}`} className="group">
+              <Link key={v.id} href={`/employees/${v.id}`} className="group">
                 <Card className="flex flex-col h-full transition-all duration-200 group-hover:border-primary group-hover:shadow-lg">
                   <CardHeader className="flex flex-row items-center gap-4">
                     <Avatar className="w-16 h-16">
@@ -208,18 +206,20 @@ export default function EmployeesPage() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-16 border-2 border-dashed rounded-lg">
-            <Briefcase className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-medium">No Employees Found</h3>
-            <p className="mt-2 text-sm text-muted-foreground">Get started by adding your first employee.</p>
-            <div className="mt-6">
-                 <DialogTrigger asChild>
-                    <Button>
-                      <Plus className="mr-2 h-4 w-4" /> Add Employee
-                    </Button>
-                  </DialogTrigger>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <div className="text-center py-16 border-2 border-dashed rounded-lg">
+              <Briefcase className="mx-auto h-12 w-12 text-muted-foreground" />
+              <h3 className="mt-4 text-lg font-medium">No Employees Found</h3>
+              <p className="mt-2 text-sm text-muted-foreground">Get started by adding your first employee.</p>
+              <div className="mt-6">
+                   <DialogTrigger asChild>
+                      <Button>
+                        <Plus className="mr-2 h-4 w-4" /> Add Employee
+                      </Button>
+                    </DialogTrigger>
+              </div>
             </div>
-          </div>
+          </Dialog>
         )}
       </main>
     </Dialog>

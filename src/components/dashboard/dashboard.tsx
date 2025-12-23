@@ -1,3 +1,4 @@
+
 "use client"
 import { useState, useEffect } from "react"
 import Image from "next/image"
@@ -8,7 +9,7 @@ import useLocalStorage from "@/hooks/use-local-storage"
 
 export function Dashboard() {
   const menuItems = [
-    { title: "Employees HR", icon: Users, href: "/volunteers" },
+    { title: "Employees", icon: Users, href: "/employees" },
     { title: "Item Placement", icon: Box, href: "/items" },
     { title: "Transmit", icon: ArrowRightLeft, href: "/transmit" },
     { title: "Settings", icon: SettingsIcon, href: "/settings" },
