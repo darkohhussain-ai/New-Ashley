@@ -3,19 +3,19 @@
 
 import { useState, useMemo } from "react"
 import Link from "next/link"
-import { ArrowLeft, Plus, Trash2, Edit, User, Calendar as CalendarIcon, Briefcase } from "lucide-react"
-import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase"
+import { ArrowLeft, Plus, User, Calendar as CalendarIcon, Briefcase } from "lucide-react"
+import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking } from "@/firebase"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
-import { collection, doc, Timestamp } from "firebase/firestore"
+import { collection, Timestamp } from "firebase/firestore"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 type Employee = {
@@ -31,12 +31,9 @@ export default function EmployeesPage() {
   const employeesRef = useMemoFirebase(() => firestore ? collection(firestore, "employees") : null, [firestore]);
   const { data: employees, isLoading } = useCollection<Employee>(employeesRef);
   
-  const [isEditing, setIsEditing] = useState<Employee | null>(null)
-  
   const [name, setName] = useState("")
-  const [employmentStartDate, setEmploymentStartDate] = useState<Date | undefined>(undefined);
+  const [employmentStartDate, setEmploymentStartDate] = useState<Date | undefined>(new Date());
   const [photoUrl, setPhotoUrl] = useState<string>("");
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [notes, setNotes] = useState("")
   
   const [open, setOpen] = useState(false)
@@ -49,48 +46,33 @@ export default function EmployeesPage() {
       name,
       employmentStartDate: Timestamp.fromDate(employmentStartDate),
       notes,
-      photoUrl: isEditing?.photoUrl || 'https://picsum.photos/seed/employee/100/100'
+      photoUrl: photoUrl || `https://picsum.photos/seed/${name}/100/100`
     };
     
-    if (isEditing) {
-      const docRef = doc(firestore, "employees", isEditing.id);
-      updateDocumentNonBlocking(docRef, { ...employeeData, employeeId: isEditing.id });
-    } else {
-      addDocumentNonBlocking(employeesRef!, employeeData);
-    }
+    addDocumentNonBlocking(employeesRef!, employeeData);
+    
     resetForm()
   }
 
   const resetForm = () => {
     setName("")
-    setEmploymentStartDate(undefined)
+    setEmploymentStartDate(new Date())
     setPhotoUrl("")
-    setPhotoFile(null)
     setNotes("")
-    setIsEditing(null)
     setOpen(false)
-  }
-
-  const handleEdit = (employee: Employee) => {
-    setIsEditing(employee)
-    setName(employee.name)
-    setEmploymentStartDate(employee.employmentStartDate.toDate())
-    setPhotoUrl(employee.photoUrl || "")
-    setNotes(employee.notes || "")
-    setOpen(true)
-  }
-
-  const handleDelete = (id: string) => {
-    if(!firestore) return;
-    const docRef = doc(firestore, "employees", id);
-    deleteDocumentNonBlocking(docRef);
   }
   
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      setPhotoFile(file);
-      setPhotoUrl(URL.createObjectURL(file));
+      // For now, we'll just use a placeholder. Real upload would require Firebase Storage.
+      // This is a good placeholder strategy.
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
+        setPhotoUrl(result);
+      };
+      reader.readAsDataURL(file);
     }
   }
 
@@ -121,7 +103,7 @@ export default function EmployeesPage() {
         </header>
         <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
-            <DialogTitle>{isEditing ? "Edit Employee" : "Add New Employee"}</DialogTitle>
+            <DialogTitle>Add New Employee</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4 pt-4">
             <div className="flex flex-col items-center gap-4">
@@ -142,7 +124,7 @@ export default function EmployeesPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="date">Employment Start Date</Label>
-              <Popover>
+               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant={"outline"}
@@ -176,7 +158,7 @@ export default function EmployeesPage() {
               <DialogClose asChild>
                 <Button type="button" variant="secondary">Cancel</Button>
               </DialogClose>
-              <Button type="submit">{isEditing ? "Save Changes" : "Add Employee"}</Button>
+              <Button type="submit">Add Employee</Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -196,45 +178,33 @@ export default function EmployeesPage() {
                          <div className="h-4 w-full rounded bg-muted"></div>
                          <div className="h-4 w-3/4 rounded bg-muted"></div>
                     </CardContent>
-                    <CardFooter className="flex justify-end gap-2">
-                         <div className="h-8 w-16 rounded bg-muted"></div>
-                         <div className="h-8 w-16 rounded bg-muted"></div>
-                    </CardFooter>
                 </Card>
             ))}
           </div>
         ) : sortedEmployees.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {sortedEmployees.map(v => (
-              <Card key={v.id} className="flex flex-col">
-                <CardHeader className="flex flex-row items-center gap-4">
-                  <Avatar className="w-16 h-16">
-                    <AvatarImage src={v.photoUrl} alt={v.name} />
-                    <AvatarFallback>{v.name.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <CardTitle className="text-xl">{v.name}</CardTitle>
-                    <CardDescription>
-                      Started: {format(v.employmentStartDate.toDate(), "PP")}
-                    </CardDescription>
-                  </div>
-                </CardHeader>
-                <CardContent className="flex-grow">
-                  <p className="text-sm text-muted-foreground line-clamp-3">
-                    {v.notes || "No notes for this employee."}
-                  </p>
-                </CardContent>
-                <CardFooter className="flex justify-end gap-2 bg-muted/50 p-3 mt-auto">
-                  <Button variant="outline" size="sm" onClick={() => handleEdit(v)}>
-                    <Edit className="mr-2 h-4 w-4" />
-                    Edit
-                  </Button>
-                  <Button variant="destructive" size="sm" onClick={() => handleDelete(v.id)}>
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete
-                  </Button>
-                </CardFooter>
-              </Card>
+              <Link key={v.id} href={`/volunteers/${v.id}`} className="group">
+                <Card className="flex flex-col h-full transition-all duration-200 group-hover:border-primary group-hover:shadow-lg">
+                  <CardHeader className="flex flex-row items-center gap-4">
+                    <Avatar className="w-16 h-16">
+                      <AvatarImage src={v.photoUrl} alt={v.name} />
+                      <AvatarFallback>{v.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <CardTitle className="text-xl">{v.name}</CardTitle>
+                      <CardDescription>
+                        Started: {format(v.employmentStartDate.toDate(), "PP")}
+                      </CardDescription>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="flex-grow">
+                    <p className="text-sm text-muted-foreground line-clamp-3">
+                      {v.notes || "No notes for this employee."}
+                    </p>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
         ) : (
@@ -256,5 +226,3 @@ export default function EmployeesPage() {
     </div>
   )
 }
-
-    
