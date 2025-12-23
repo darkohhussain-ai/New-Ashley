@@ -1,3 +1,4 @@
+
 /**
  * @file firestore.rules
  * @description Firestore Security Rules for an internal HR expense management application.
@@ -69,7 +70,8 @@ service cloud.firestore {
     match /employees/{employeeId} {
       allow get, list: if isSignedIn();
       allow create: if isSignedIn();
-      allow update, delete: if isExistingDocAndSignedIn();
+      allow update: if isExistingDocAndSignedIn() && request.resource.data.employeeId == employeeId;
+      allow delete: if isExistingDocAndSignedIn();
     }
 
     /**
@@ -113,3 +115,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

@@ -1,8 +1,9 @@
+
 "use client"
 
 import { useState, useMemo } from "react"
 import Link from "next/link"
-import { ArrowLeft, Plus, Trash2, Edit, User, Calendar as CalendarIcon, Briefcase, FileText } from "lucide-react"
+import { ArrowLeft, Plus, Trash2, Edit, User, Calendar as CalendarIcon, Briefcase } from "lucide-react"
 import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,14 +15,13 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
-import { collection, doc } from "firebase/firestore"
-import Image from 'next/image'
+import { collection, doc, Timestamp } from "firebase/firestore"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 type Employee = {
   id: string
   name: string
-  employmentStartDate: Date | number
+  employmentStartDate: Timestamp
   photoUrl?: string
   notes?: string
 }
@@ -45,20 +45,16 @@ export default function EmployeesPage() {
     e.preventDefault()
     if (!name || !employmentStartDate || !firestore) return;
 
-    // In a real app, you would upload the photoFile to Firebase Storage and get a URL.
-    // For this prototype, we'll simulate it or use a placeholder.
-    // If a new photo is selected, we'll use a local object URL for preview, but this won't be saved to Firestore.
-    // The actual photoUrl would come from a real upload service.
     const employeeData = {
       name,
-      employmentStartDate: employmentStartDate.getTime(),
+      employmentStartDate: Timestamp.fromDate(employmentStartDate),
       notes,
-      photoUrl: isEditing?.photoUrl || 'https://picsum.photos/seed/employee/100/100' // Placeholder
+      photoUrl: isEditing?.photoUrl || 'https://picsum.photos/seed/employee/100/100'
     };
     
     if (isEditing) {
       const docRef = doc(firestore, "employees", isEditing.id);
-      updateDocumentNonBlocking(docRef, employeeData);
+      updateDocumentNonBlocking(docRef, { ...employeeData, employeeId: isEditing.id });
     } else {
       addDocumentNonBlocking(employeesRef!, employeeData);
     }
@@ -78,7 +74,7 @@ export default function EmployeesPage() {
   const handleEdit = (employee: Employee) => {
     setIsEditing(employee)
     setName(employee.name)
-    setEmploymentStartDate(new Date(employee.employmentStartDate))
+    setEmploymentStartDate(employee.employmentStartDate.toDate())
     setPhotoUrl(employee.photoUrl || "")
     setNotes(employee.notes || "")
     setOpen(true)
@@ -94,7 +90,6 @@ export default function EmployeesPage() {
     const file = e.target.files?.[0]
     if (file) {
       setPhotoFile(file);
-      // Create a temporary URL for preview
       setPhotoUrl(URL.createObjectURL(file));
     }
   }
@@ -118,11 +113,11 @@ export default function EmployeesPage() {
             </Button>
             <h1 className="text-2xl md:text-3xl font-bold">Employees Dashboard</h1>
           </div>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" /> Add Employee
-              </Button>
-            </DialogTrigger>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" /> Add Employee
+            </Button>
+          </DialogTrigger>
         </header>
         <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
@@ -220,7 +215,7 @@ export default function EmployeesPage() {
                   <div>
                     <CardTitle className="text-xl">{v.name}</CardTitle>
                     <CardDescription>
-                      Started: {format(new Date(v.employmentStartDate), "PP")}
+                      Started: {format(v.employmentStartDate.toDate(), "PP")}
                     </CardDescription>
                   </div>
                 </CardHeader>
@@ -261,3 +256,5 @@ export default function EmployeesPage() {
     </div>
   )
 }
+
+    
