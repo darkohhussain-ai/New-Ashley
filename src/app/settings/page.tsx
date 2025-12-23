@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Download, Upload, Save } from 'lucide-react'
+import { ArrowLeft, Download, Upload, Save, Palette, Type, ShieldCheck } from 'lucide-react'
 import useLocalStorage from '@/hooks/use-local-storage'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -23,16 +23,24 @@ const availableFonts = [
 
 type ThemeColors = {
   background: string;
+  foreground: string;
   primary: string;
   accent: string;
+  card: string;
 }
 
-const defaultLightColors: ThemeColors = { background: '208 100% 97%', primary: '197 71% 73%', accent: '285 16% 64%' };
-const defaultDarkColors: ThemeColors = { background: '222.2 84% 4.9%', primary: '217.2 91.2% 59.8%', accent: '217.2 32.6% 17.5%' };
+const defaultLightColors: ThemeColors = { background: '0 0% 100%', foreground: '224 71.4% 4.1%', primary: '220 82% 55%', accent: '220 13% 91%', card: '0 0% 100%' };
+const defaultDarkColors: ThemeColors = { background: '222.2 84% 4.9%', foreground: '210 40% 98%', primary: '217.2 91.2% 59.8%', accent: '217.2 32.6% 17.5%', card: '222.2 84% 4.9%' };
+
 
 function parseHsl(hsl: string): { h: string, s: string, l: string } {
-  const [h, s, l] = hsl.replace(/%/g, '').split(' ').map(s => s.trim());
-  return { h, s, l };
+    if (typeof hsl !== 'string' || hsl.split(' ').length !== 3) {
+        // Fallback to a default color if format is invalid
+        const [h, s, l] = '0 0% 0%'.replace(/%/g, '').split(' ').map(s => s.trim());
+        return { h, s, l };
+    }
+    const [h, s, l] = hsl.replace(/%/g, '').split(' ').map(s => s.trim());
+    return { h, s, l };
 }
 
 function ColorPicker({ label, value, onChange }: { label: string, value: string, onChange: (value: string) => void }) {
@@ -86,19 +94,19 @@ function ColorPicker({ label, value, onChange }: { label: string, value: string,
   }
 
   return (
-    <div className="flex items-center justify-between rounded-lg border p-4">
-      <Label className="capitalize">{label}</Label>
+    <div className="flex items-center justify-between">
+      <Label className="capitalize text-sm">{label}</Label>
       <div className='flex items-center gap-2'>
         <Input 
           type="color" 
           value={hslToHex(Number(h), Number(s), Number(l))}
           onChange={(e) => handleHexChange(e.target.value)}
-          className="w-10 h-10 p-1"
+          className="w-8 h-8 p-1 rounded-md"
         />
-        <div className="flex flex-col gap-1 text-xs">
-           <div className="flex items-center gap-1">H<Input className="h-6 text-xs" value={h} onChange={e => handleHslChange('h', e.target.value)} /></div>
-           <div className="flex items-center gap-1">S<Input className="h-6 text-xs" value={s} onChange={e => handleHslChange('s', e.target.value)} /></div>
-           <div className="flex items-center gap-1">L<Input className="h-6 text-xs" value={l} onChange={e => handleHslChange('l', e.target.value)} /></div>
+        <div className="flex items-center gap-1 text-xs">
+           <Input className="h-7 w-14 text-xs" placeholder="H" value={h} onChange={e => handleHslChange('h', e.target.value)} />
+           <Input className="h-7 w-12 text-xs" placeholder="S" value={s} onChange={e => handleHslChange('s', e.target.value)} />
+           <Input className="h-7 w-12 text-xs" placeholder="L" value={l} onChange={e => handleHslChange('l', e.target.value)} />
         </div>
       </div>
     </div>
@@ -122,17 +130,12 @@ export default function SettingsPage() {
   const [lightColors, setLightColors] = useState(savedLightColors);
   const [darkColors, setDarkColors] = useState(savedDarkColors);
 
-  const applyColors = (colors: ThemeColors, prefix = '') => {
+  const applyColors = (colors: ThemeColors) => {
     const root = document.documentElement;
-    if(prefix){
-        root.style.setProperty(`--${prefix}background`, colors.background);
-        root.style.setProperty(`--${prefix}primary`, colors.primary);
-        root.style.setProperty(`--${prefix}accent`, colors.accent);
-    } else {
-        root.style.setProperty(`--background`, colors.background);
-        root.style.setProperty(`--primary`, colors.primary);
-        root.style.setProperty(`--accent`, colors.accent);
-    }
+    const isDark = root.classList.contains('dark');
+    Object.entries(colors).forEach(([key, value]) => {
+      root.style.setProperty(`--${key}`, value);
+    });
   };
   
   const applyCustomFont = (fontDataUrl: string | null) => {
@@ -160,6 +163,7 @@ export default function SettingsPage() {
       applyCustomFont(customFontData);
       document.body.style.fontFamily = "'CustomFont', sans-serif";
     } else {
+      applyCustomFont(null); // Remove custom font if not selected
       const selectedFont = availableFonts.find(f => f.name === fontName)
       if(selectedFont) {
           document.body.style.fontFamily = selectedFont.family
@@ -167,24 +171,23 @@ export default function SettingsPage() {
     }
   }
 
+  // Apply saved settings on initial mount
   useEffect(() => {
     setMounted(true)
     applyFont(savedFont, savedCustomFont)
-    
     if (document.documentElement.classList.contains('dark')) {
-      applyColors(savedDarkColors, 'dark-');
+      applyColors(savedDarkColors);
     } else {
       applyColors(savedLightColors);
     }
   }, [])
   
+  // Apply live preview changes
   useEffect(() => {
     if(!mounted) return;
     if (theme === 'dark') {
-      document.documentElement.classList.add("dark");
-      applyColors(darkColors, 'dark-');
+      applyColors(darkColors);
     } else {
-      document.documentElement.classList.remove("dark");
       applyColors(lightColors);
     }
     applyFont(font, customFont);
@@ -235,7 +238,9 @@ export default function SettingsPage() {
 
         Object.keys(data).forEach(key => {
             try {
-                data[key] = JSON.parse(data[key]);
+                if (data[key] !== null) {
+                  data[key] = JSON.parse(data[key]);
+                }
             } catch (e) {
             }
         });
@@ -280,120 +285,128 @@ export default function SettingsPage() {
 
   if (!mounted) {
     return (
-        <div className="min-h-screen bg-background text-foreground p-8">
+        <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
             <header className="flex items-center gap-4 mb-8">
                 <Button variant="outline" size="icon" asChild>
                     <Link href="/">
                         <ArrowLeft />
                     </Link>
                 </Button>
-                <h1 className="text-3xl font-bold">Settings</h1>
+                <h1 className="text-2xl md:text-3xl font-bold">Settings</h1>
             </header>
         </div>
     );
   }
   
   return (
-    <div className="min-h-screen bg-background text-foreground p-8">
-      <header className="flex items-center gap-4 mb-8">
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="flex items-center gap-4 p-4 md:p-6 border-b">
         <Button variant="outline" size="icon" asChild>
           <Link href="/">
             <ArrowLeft />
           </Link>
         </Button>
-        <h1 className="text-3xl font-bold">Settings</h1>
+        <h1 className="text-xl md:text-2xl font-bold">Settings</h1>
       </header>
-      <main className="space-y-8 max-w-2xl mx-auto">
-        <Card>
-          <CardHeader>
-            <CardTitle>Appearance</CardTitle>
-            <CardDescription>Customize the look and feel of the app. Click "Save Changes" to apply.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex items-center justify-between rounded-lg border p-4">
-              <Label htmlFor="dark-mode" className="flex flex-col gap-1">
-                <span className="font-semibold">Dark Mode</span>
-                <span className="text-sm text-muted-foreground">
-                    Toggle between light and dark themes.
-                </span>
-              </Label>
-              <Switch
-                id="dark-mode"
-                checked={theme === 'dark'}
-                onCheckedChange={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-                aria-label="Toggle dark mode"
-              />
-            </div>
-            
-            <div className="space-y-4 rounded-lg border p-4">
-               <Label className="font-semibold">Colors</Label>
-                 <Tabs defaultValue="light">
-                    <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="light">Light Mode</TabsTrigger>
-                        <TabsTrigger value="dark">Dark Mode</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="light" className="space-y-4 pt-4">
-                        <ColorPicker label="Background" value={lightColors.background} onChange={(c) => setLightColors(p => ({...p, background: c}))} />
-                        <ColorPicker label="Primary" value={lightColors.primary} onChange={(c) => setLightColors(p => ({...p, primary: c}))} />
-                        <ColorPicker label="Accent" value={lightColors.accent} onChange={(c) => setLightColors(p => ({...p, accent: c}))} />
-                    </TabsContent>
-                     <TabsContent value="dark" className="space-y-4 pt-4">
-                        <ColorPicker label="Background" value={darkColors.background} onChange={(c) => setDarkColors(p => ({...p, background: c}))} />
-                        <ColorPicker label="Primary" value={darkColors.primary} onChange={(c) => setDarkColors(p => ({...p, primary: c}))} />
-                        <ColorPicker label="Accent" value={darkColors.accent} onChange={(c) => setDarkColors(p => ({...p, accent: c}))} />
-                    </TabsContent>
-                </Tabs>
-            </div>
-            
-            <div className="space-y-4 rounded-lg border p-4">
-                <div className="flex items-center justify-between">
-                    <Label htmlFor="font-select" className="flex flex-col gap-1">
-                        <span className="font-semibold">Font Family</span>
-                         <span className="text-sm text-muted-foreground">
-                            Change the application's font.
-                        </span>
-                    </Label>
-                    <Select value={font} onValueChange={handleFontChange}>
-                        <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Select a font" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {availableFonts.map(f => (
-                                <SelectItem key={f.name} value={f.name}>{f.name}</SelectItem>
-                            ))}
-                            {customFont && <SelectItem value="CustomFont">Custom Font</SelectItem>}
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div>
-                  <Label htmlFor="font-upload" className="text-sm font-medium">Upload Custom Font</Label>
-                   <Input id="font-upload" type="file" accept=".ttf,.otf,.woff,.woff2" className="mt-2" onChange={handleCustomFontUpload} />
-                   <p className="text-xs text-muted-foreground mt-2">Upload a .ttf, .otf, .woff, or .woff2 file.</p>
-                </div>
-            </div>
-          </CardContent>
-          <CardFooter>
-            <Button onClick={handleSaveChanges} className="w-full">
-              <Save className="mr-2 h-4 w-4" /> Save Changes
-            </Button>
-          </CardFooter>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Data Management</CardTitle>
-            <CardDescription>Backup your application data to a file, or import from one.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid sm:grid-cols-2 gap-4">
-            <Button onClick={handleExport} className="w-full">
-              <Download className="mr-2 h-4 w-4" /> Export Data
-            </Button>
-            <Button onClick={() => importInputRef.current?.click()} variant="outline" className="w-full">
-              <Upload className="mr-2 h-4 w-4" /> Import Data
-            </Button>
-            <input type="file" ref={importInputRef} className="hidden" accept=".json" onChange={handleImport} />
-          </CardContent>
-        </Card>
+      <main className="p-4 md:p-6 space-y-8">
+        <div className="grid gap-8 md:grid-cols-3">
+          <div className="md:col-span-1 space-y-8">
+              <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg"><Palette /> Appearance</CardTitle>
+                    <CardDescription>Customize the look and feel.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="dark-mode">Dark Mode</Label>
+                    <Switch
+                      id="dark-mode"
+                      checked={theme === 'dark'}
+                      onCheckedChange={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+                      aria-label="Toggle dark mode"
+                    />
+                  </div>
+                </CardContent>
+                 <CardFooter>
+                    <Button onClick={handleSaveChanges} className="w-full">
+                      <Save className="mr-2 h-4 w-4" /> Save Changes
+                    </Button>
+                </CardFooter>
+              </Card>
+               <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg"><ShieldCheck /> Data Management</CardTitle>
+                    <CardDescription>Backup or restore your settings.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="grid sm:grid-cols-2 gap-4">
+                    <Button onClick={handleExport} variant="outline" className="w-full">
+                      <Download className="mr-2 h-4 w-4" /> Export
+                    </Button>
+                    <Button onClick={() => importInputRef.current?.click()} variant="outline" className="w-full">
+                      <Upload className="mr-2 h-4 w-4" /> Import
+                    </Button>
+                    <input type="file" ref={importInputRef} className="hidden" accept=".json" onChange={handleImport} />
+                  </CardContent>
+                </Card>
+          </div>
+          <div className="md:col-span-2 space-y-8">
+             <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Palette/> Color Palette</CardTitle>
+                    <CardDescription>Adjust the colors for light and dark themes.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Tabs defaultValue="light" className="w-full">
+                        <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="light">Light Mode</TabsTrigger>
+                            <TabsTrigger value="dark">Dark Mode</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="light" className="space-y-4 pt-4">
+                            <ColorPicker label="Background" value={lightColors.background} onChange={(c) => setLightColors(p => ({...p, background: c}))} />
+                            <ColorPicker label="Foreground" value={lightColors.foreground} onChange={(c) => setLightColors(p => ({...p, foreground: c}))} />
+                            <ColorPicker label="Primary" value={lightColors.primary} onChange={(c) => setLightColors(p => ({...p, primary: c}))} />
+                            <ColorPicker label="Accent" value={lightColors.accent} onChange={(c) => setLightColors(p => ({...p, accent: c}))} />
+                             <ColorPicker label="Card" value={lightColors.card} onChange={(c) => setLightColors(p => ({...p, card: c}))} />
+                        </TabsContent>
+                         <TabsContent value="dark" className="space-y-4 pt-4">
+                            <ColorPicker label="Background" value={darkColors.background} onChange={(c) => setDarkColors(p => ({...p, background: c}))} />
+                            <ColorPicker label="Foreground" value={darkColors.foreground} onChange={(c) => setDarkColors(p => ({...p, foreground: c}))} />
+                            <ColorPicker label="Primary" value={darkColors.primary} onChange={(c) => setDarkColors(p => ({...p, primary: c}))} />
+                            <ColorPicker label="Accent" value={darkColors.accent} onChange={(c) => setDarkColors(p => ({...p, accent: c}))} />
+                            <ColorPicker label="Card" value={darkColors.card} onChange={(c) => setDarkColors(p => ({...p, card: c}))} />
+                        </TabsContent>
+                    </Tabs>
+                </CardContent>
+             </Card>
+             <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Type /> Typography</CardTitle>
+                    <CardDescription>Manage the font used in the application.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="flex items-center justify-between">
+                        <Label htmlFor="font-select">Font Family</Label>
+                        <Select value={font} onValueChange={handleFontChange}>
+                            <SelectTrigger className="w-[180px]">
+                                <SelectValue placeholder="Select a font" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {availableFonts.map(f => (
+                                    <SelectItem key={f.name} value={f.name}>{f.name}</SelectItem>
+                                ))}
+                                {customFont && <SelectItem value="CustomFont">Custom Font</SelectItem>}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="font-upload" className="text-sm font-medium">Upload Custom Font</Label>
+                       <Input id="font-upload" type="file" accept=".ttf,.otf,.woff,.woff2" className="mt-2" onChange={handleCustomFontUpload} />
+                       <p className="text-xs text-muted-foreground mt-2">Upload a .ttf, .otf, .woff, or .woff2 file.</p>
+                    </div>
+                </CardContent>
+            </Card>
+          </div>
+        </div>
       </main>
     </div>
   )
