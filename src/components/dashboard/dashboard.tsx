@@ -20,16 +20,20 @@ export function Dashboard() {
   const [logoSrc, setLogoSrc] = useLocalStorage('app-logo', defaultLogo);
   const [logoSize, setLogoSize] = useLocalStorage('app-logo-size', 80);
 
+  const [cardSize, setCardSize] = useLocalStorage('dashboard-card-size', 192);
+  const [iconSize, setIconSize] = useLocalStorage('dashboard-icon-size', 64);
+
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="p-4 flex flex-col items-center justify-center gap-2 border-b sticky top-0 bg-background/80 backdrop-blur-lg z-10 text-center">
-        <Image src={logoSrc} alt="App Logo" width={logoSize} height={logoSize} className="rounded-full object-cover" data-ai-hint="abstract logo" style={{width: `${logoSize * 0.75}px`, height: `${logoSize * 0.75}px`}}/>
-        <h1 className="text-xl font-bold">Ashley HR</h1>
+        <Image src={logoSrc} alt="App Logo" width={logoSize} height={logoSize} className="rounded-full object-cover" data-ai-hint="abstract logo" style={{width: `${logoSize * 0.5}px`, height: `${logoSize * 0.5}px`}}/>
+        <h1 className="text-lg font-bold">Ashley HR</h1>
       </header>
       <main className="p-8 md:p-12">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {menuItems.map((item) => (
-            <DashboardCard key={item.title} {...item} />
+            <DashboardCard key={item.title} {...item} cardSize={cardSize} iconSize={iconSize} />
           ))}
         </div>
       </main>

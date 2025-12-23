@@ -4,7 +4,7 @@
 import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowLeft, Download, Upload, Save, Palette, Type, ShieldCheck, Image as ImageIcon } from 'lucide-react'
+import { ArrowLeft, Download, Upload, Save, Palette, Type, ShieldCheck, Image as ImageIcon, LayoutDashboard } from 'lucide-react'
 import useLocalStorage from '@/hooks/use-local-storage'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -132,6 +132,9 @@ export default function SettingsPage() {
   const defaultLogo = placeHolderImages.placeholderImages.find(p => p.id === 'default-logo')?.imageUrl || "https://picsum.photos/seed/ashley-drp-logo/120/120";
   const [savedLogo, setSavedLogo] = useLocalStorage('app-logo', defaultLogo);
   const [savedLogoSize, setSavedLogoSize] = useLocalStorage('app-logo-size', 80);
+  
+  const [savedCardSize, setSavedCardSize] = useLocalStorage('dashboard-card-size', 192);
+  const [savedIconSize, setSavedIconSize] = useLocalStorage('dashboard-icon-size', 64);
 
 
   const [font, setFont] = useState(savedFont);
@@ -140,6 +143,8 @@ export default function SettingsPage() {
   const [darkColors, setDarkColors] = useState(savedDarkColors);
   const [logoSrc, setLogoSrc] = useState(savedLogo);
   const [logoSize, setLogoSize] = useState(savedLogoSize);
+  const [cardSize, setCardSize] = useState(savedCardSize);
+  const [iconSize, setIconSize] = useState(savedIconSize);
 
   const applyColors = (colors: ThemeColors) => {
     const root = document.documentElement;
@@ -194,6 +199,9 @@ export default function SettingsPage() {
     setDarkColors(savedDarkColors);
     setLogoSrc(savedLogo);
     setLogoSize(savedLogoSize);
+    setCardSize(savedCardSize);
+    setIconSize(savedIconSize);
+
     
     applyFont(savedFont, savedCustomFont);
 
@@ -215,6 +223,13 @@ export default function SettingsPage() {
     }
     applyFont(font, customFont);
   }, [font, customFont, lightColors, darkColors, theme, mounted])
+
+  useEffect(() => {
+    if(!mounted) return;
+    setSavedCardSize(cardSize);
+    setSavedIconSize(iconSize);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cardSize, iconSize]);
   
   const handleFontChange = (fontName: string) => {
     setFont(fontName)
@@ -263,13 +278,15 @@ export default function SettingsPage() {
     setSavedDarkColors(darkColors);
     setSavedLogo(logoSrc);
     setSavedLogoSize(logoSize);
+    setSavedCardSize(cardSize);
+    setSavedIconSize(iconSize);
     toast({ title: 'Settings saved!', description: 'Your appearance settings have been updated.' });
   }
 
   const handleExport = () => {
     try {
         const data: { [key: string]: any } = {}
-        const keysToExport = ['app-logo', 'app-logo-size', 'app-font', 'custom-font', 'light-theme-colors', 'dark-theme-colors', 'ashley-drp-theme', 'employees'];
+        const keysToExport = ['app-logo', 'app-logo-size', 'app-font', 'custom-font', 'light-theme-colors', 'dark-theme-colors', 'ashley-drp-theme', 'employees', 'dashboard-card-size', 'dashboard-icon-size'];
         
         keysToExport.forEach(key => {
              const item = localStorage.getItem(key);
@@ -404,6 +421,36 @@ export default function SettingsPage() {
                   <div>
                     <Label htmlFor="logo-upload">Upload New Logo</Label>
                     <Input id="logo-upload" type="file" accept="image/*" className="mt-2" onChange={handleLogoUpload} />
+                  </div>
+                </CardContent>
+              </Card>
+               <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg"><LayoutDashboard /> Dashboard</CardTitle>
+                  <CardDescription>Customize dashboard card appearance.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="card-size">Card Size: {cardSize}px</Label>
+                    <Slider
+                      id="card-size"
+                      min={120}
+                      max={280}
+                      step={4}
+                      value={[cardSize]}
+                      onValueChange={(value) => setCardSize(value[0])}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="icon-size">Icon Size: {iconSize}px</Label>
+                    <Slider
+                      id="icon-size"
+                      min={32}
+                      max={96}
+                      step={4}
+                      value={[iconSize]}
+                      onValueChange={(value) => setIconSize(value[0])}
+                    />
                   </div>
                 </CardContent>
               </Card>
