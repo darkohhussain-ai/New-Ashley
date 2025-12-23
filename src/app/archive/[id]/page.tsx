@@ -1,21 +1,28 @@
 
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, collection, Timestamp } from 'firebase/firestore';
-import { ArrowLeft, User, Calendar as CalendarIcon, Building, Loader2, FileText, MapPin, PackageCheck, PackageX, Package, Edit, Trash2 } from 'lucide-react';
+import { useFirestore, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { doc, collection, Timestamp, writeBatch } from 'firebase/firestore';
+import { ArrowLeft, User, Calendar as CalendarIcon, Building, Loader2, FileText, MapPin, PackageCheck, PackageX, Package, Edit, Trash2, Save, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 type ExcelFile = {
   id: string;
   storekeeperId: string;
   storageName: string;
+  categoryName: string;
   date: Timestamp;
   source: string;
   type: 'new' | 'imported';
@@ -34,12 +41,17 @@ type Item = {
 };
 
 type Employee = { id: string; name: string; };
-type StorageLocation = { id: string; name: string; };
+type StorageLocation = { id: string; name: string; warehouseType: 'Ashley' | 'Huana'; };
 
 export default function FileDetailPage() {
   const params = useParams();
+  const router = useRouter();
+  const { toast } = useToast();
   const fileId = params.id as string;
   const firestore = useFirestore();
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editableItems, setEditableItems] = useState<Item[]>([]);
 
   const fileRef = useMemoFirebase(() => (firestore && fileId ? doc(firestore, 'excel_files', fileId) : null), [firestore, fileId]);
   const { data: file, isLoading: isLoadingFile } = useDoc<ExcelFile>(fileRef);
@@ -53,11 +65,58 @@ export default function FileDetailPage() {
   const locationsRef = useMemoFirebase(() => (firestore ? collection(firestore, 'storage_locations') : null), [firestore]);
   const { data: locations, isLoading: isLoadingLocations } = useCollection<StorageLocation>(locationsRef);
 
+  useEffect(() => {
+    if (items) {
+      setEditableItems(JSON.parse(JSON.stringify(items))); // Deep copy for editing
+    }
+  }, [items]);
+
+  const handleItemChange = (itemId: string, field: keyof Item, value: any) => {
+    setEditableItems(currentItems =>
+      currentItems.map(item =>
+        item.id === itemId ? { ...item, [field]: value } : item
+      )
+    );
+  };
+  
+  const handleSave = async () => {
+    if (!firestore) return;
+    const batch = writeBatch(firestore);
+    editableItems.forEach(item => {
+      const itemRef = doc(firestore, `excel_files/${fileId}/items`, item.id);
+      batch.update(itemRef, { ...item });
+    });
+    try {
+        await batch.commit();
+        toast({ title: "Success", description: "All changes have been saved." });
+        setIsEditing(false);
+    } catch(e) {
+        toast({ variant: "destructive", title: "Error", description: "Could not save changes." });
+    }
+  };
+
+  const handleDeleteFile = () => {
+    if(!firestore || !fileId) return;
+    const docRef = doc(firestore, 'excel_files', fileId);
+    // Note: This doesn't delete subcollections in Firestore. For a full cleanup, a Cloud Function would be needed.
+    deleteDocumentNonBlocking(docRef);
+    toast({ title: "File Deleted", description: `"${file?.storageName}" has been removed.` });
+    router.push('/archive');
+  }
+
   const isLoading = isLoadingFile || isLoadingItems || isLoadingEmployees || isLoadingLocations;
 
   const getEmployeeName = (id: string) => employees?.find(e => e.id === id)?.name || '...';
   const getLocationName = (id: string) => locations?.find(l => l.id === id)?.name || '...';
   
+  const getWarehouseTypeFromSource = (source?: string) => {
+      if (source === 'Ashley Store') return 'Ashley';
+      if (source === 'Huana Store') return 'Huana';
+      return null;
+  }
+  const warehouseType = getWarehouseTypeFromSource(file?.source);
+  const filteredLocations = (type: 'Ashley' | 'Huana') => locations?.filter(l => l.warehouseType === type) ?? [];
+
   const getStatusIcon = (status?: string) => {
     switch (status) {
         case 'Correct': return <PackageCheck className="w-4 h-4 text-green-500" />;
@@ -114,15 +173,41 @@ export default function FileDetailPage() {
           </Link>
         </Button>
         <div className='flex items-center gap-2 flex-wrap justify-end'>
-            <Button variant="outline"><Edit className="mr-2"/>Edit</Button>
-            <Button variant="destructive"><Trash2 className="mr-2"/>Delete</Button>
+            {isEditing ? (
+              <>
+                <Button onClick={handleSave}><Save className="mr-2 h-4 w-4"/> Save Changes</Button>
+                <Button variant="ghost" onClick={() => setIsEditing(false)}><X className="mr-2 h-4 w-4"/> Cancel</Button>
+              </>
+            ) : (
+              <>
+                <Button onClick={() => setIsEditing(true)}><Edit className="mr-2"/>Edit</Button>
+                <AlertDialog>
+                    <AlertDialogTrigger asChild><Button variant="destructive"><Trash2 className="mr-2"/>Delete</Button></AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This will permanently delete the file "{file.storageName}". This action cannot be undone.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleDeleteFile}>Delete</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+              </>
+            )}
         </div>
       </header>
 
       <Card className="mb-8">
         <CardHeader>
             <div className="flex justify-between items-start">
-                <CardTitle className="text-2xl md:text-3xl font-bold">{file.storageName}</CardTitle>
+                <div>
+                    <CardTitle className="text-2xl md:text-3xl font-bold">{file.storageName}</CardTitle>
+                    <CardDescription className="font-semibold text-primary">{file.categoryName}</CardDescription>
+                </div>
                 <Badge variant={file.type === 'imported' ? 'default' : 'secondary'}>{file.type}</Badge>
             </div>
             <CardDescription className="grid grid-cols-2 md:flex md:items-center gap-x-6 gap-y-2 text-sm pt-2">
@@ -152,22 +237,59 @@ export default function FileDetailPage() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {items && items.length > 0 ? items.map(item => (
+                    {items && items.length > 0 ? (isEditing ? editableItems : items).map((item, index) => (
                         <TableRow key={item.id}>
                             <TableCell className="font-medium">{item.model}</TableCell>
-                            <TableCell>{item.quantity}</TableCell>
-                            <TableCell>
+                            <TableCell>{isEditing ? 
+                                <Input type="number" value={item.quantity} onChange={e => handleItemChange(item.id, 'quantity', e.target.valueAsNumber)} className="w-20" /> 
+                                : item.quantity
+                            }</TableCell>
+                             <TableCell>{isEditing ? (
+                                <Select value={item.storageStatus} onValueChange={v => handleItemChange(item.id, 'storageStatus', v)}>
+                                    <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Correct">Correct</SelectItem>
+                                        <SelectItem value="Less">Less</SelectItem>
+                                        <SelectItem value="More">More</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            ) : (
                                 <span className="flex items-center gap-2">{getStatusIcon(item.storageStatus)} {item.storageStatus || 'N/A'}</span>
-                            </TableCell>
-                            <TableCell>{item.modelCondition || 'N/A'}</TableCell>
-                            <TableCell>{item.quantityPerCondition ?? 'N/A'}</TableCell>
-                            <TableCell>
-                               <span className="flex items-center gap-2">
-                                {item.locationId && <MapPin className="w-4 h-4 text-muted-foreground"/>}
-                                {item.locationId ? getLocationName(item.locationId) : 'N/A'}
-                               </span>
-                            </TableCell>
-                            <TableCell>{item.notes || 'N/A'}</TableCell>
+                            )}</TableCell>
+                            <TableCell>{isEditing ? (
+                                <Select value={item.modelCondition} onValueChange={v => handleItemChange(item.id, 'modelCondition', v)}>
+                                    <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Wrapped">Wrapped</SelectItem>
+                                        <SelectItem value="Damaged">Damaged</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            ) : item.modelCondition || 'N/A'}</TableCell>
+                            <TableCell>{isEditing ? 
+                                <Input type="number" value={item.quantityPerCondition ?? ''} onChange={e => handleItemChange(item.id, 'quantityPerCondition', e.target.valueAsNumber)} className="w-24" />
+                                : item.quantityPerCondition ?? 'N/A'
+                            }</TableCell>
+                            <TableCell>{isEditing ? (
+                                <Select value={item.locationId} onValueChange={v => handleItemChange(item.id, 'locationId', v)} disabled={!warehouseType}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder={warehouseType ? "Select..." : "N/A"} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                    {warehouseType && filteredLocations(warehouseType).map(loc => (
+                                        <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
+                                    ))}
+                                    </SelectContent>
+                                </Select>
+                            ) : (
+                                <span className="flex items-center gap-2">
+                                    {item.locationId && <MapPin className="w-4 h-4 text-muted-foreground"/>}
+                                    {item.locationId ? getLocationName(item.locationId) : 'N/A'}
+                                </span>
+                            )}</TableCell>
+                            <TableCell>{isEditing ?
+                                <Textarea value={item.notes ?? ''} onChange={e => handleItemChange(item.id, 'notes', e.target.value)} />
+                                : item.notes || 'N/A'
+                            }</TableCell>
                         </TableRow>
                     )) : (
                         <TableRow>
