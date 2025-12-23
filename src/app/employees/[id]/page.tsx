@@ -7,7 +7,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { doc, Timestamp } from 'firebase/firestore';
-import { ArrowLeft, User, Calendar as CalendarIcon, Edit, Trash2, Save, X } from 'lucide-react';
+import { ArrowLeft, User, Calendar as CalendarIcon, Edit, Trash2, Save, X, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -53,6 +53,18 @@ export default function EmployeeDetailPage() {
       setNotes(employee.notes || '');
     }
   }, [employee]);
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
+        setPhotoUrl(result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleUpdate = () => {
     if (!firestore || !employeeId || !name || !employmentStartDate) return;
@@ -169,7 +181,7 @@ export default function EmployeeDetailPage() {
           <div className="w-full">
             {isEditing ? (
                 <div className='space-y-4'>
-                    <Input className="text-2xl font-bold h-12" value={name} onChange={e => setName(e.target.value)} />
+                    <Input className="text-2xl font-bold h-12" value={name} onChange={e => setName(e.target.value)} placeholder="Employee Name" />
                     <Popover>
                         <PopoverTrigger asChild>
                         <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !employmentStartDate && "text-muted-foreground")}>
@@ -181,7 +193,14 @@ export default function EmployeeDetailPage() {
                             <Calendar mode="single" selected={employmentStartDate} onSelect={setEmploymentStartDate} initialFocus captionLayout="dropdown-nav" fromYear={1990} toYear={2040} />
                         </PopoverContent>
                     </Popover>
-                    <Input placeholder="Photo URL" value={photoUrl} onChange={e => setPhotoUrl(e.target.value)} />
+                    <div className="space-y-2">
+                      <Label htmlFor="photo-url">Photo URL</Label>
+                      <Input id="photo-url" placeholder="Paste an image URL" value={photoUrl} onChange={e => setPhotoUrl(e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="photo-upload">Or Upload Photo</Label>
+                      <Input id="photo-upload" type="file" onChange={handlePhotoUpload} accept="image/*" />
+                    </div>
                 </div>
             ) : (
                 <>
@@ -197,7 +216,7 @@ export default function EmployeeDetailPage() {
         <CardContent className="mt-6">
             <Label className='text-sm text-muted-foreground'>Notes</Label>
             {isEditing ? (
-                <Textarea className="mt-1 min-h-[120px] text-base" value={notes} onChange={e => setNotes(e.target.value)} />
+                <Textarea className="mt-1 min-h-[120px] text-base" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Add notes about the employee..."/>
             ) : (
                 <p className="text-base mt-1 whitespace-pre-wrap">{employee.notes || 'No additional notes.'}</p>
             )}
