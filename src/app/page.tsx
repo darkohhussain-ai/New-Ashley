@@ -59,7 +59,7 @@ export default function Home() {
       <div className="flex flex-col items-center justify-center w-full max-w-sm">
         <Card className="w-full shadow-2xl bg-card/80 backdrop-blur-lg border">
           <CardHeader className="text-center">
-            <CardTitle className="text-3xl font-bold">Ashley DRP Manager</CardTitle>
+            <CardTitle className="text-3xl font-bold">Ashley HR</CardTitle>
             <CardDescription>Admin Access Required</CardDescription>
           </CardHeader>
           <CardContent>

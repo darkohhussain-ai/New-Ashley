@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import placeHolderImages from '@/lib/placeholder-images.json'
+import { Slider } from '@/components/ui/slider'
 
 const availableFonts = [
   { name: 'Inter', family: "'Inter', sans-serif" },
@@ -130,6 +131,7 @@ export default function SettingsPage() {
   
   const defaultLogo = placeHolderImages.placeholderImages.find(p => p.id === 'default-logo')?.imageUrl || "https://picsum.photos/seed/ashley-drp-logo/120/120";
   const [savedLogo, setSavedLogo] = useLocalStorage('app-logo', defaultLogo);
+  const [savedLogoSize, setSavedLogoSize] = useLocalStorage('app-logo-size', 80);
 
 
   const [font, setFont] = useState(savedFont);
@@ -137,6 +139,7 @@ export default function SettingsPage() {
   const [lightColors, setLightColors] = useState(savedLightColors);
   const [darkColors, setDarkColors] = useState(savedDarkColors);
   const [logoSrc, setLogoSrc] = useState(savedLogo);
+  const [logoSize, setLogoSize] = useState(savedLogoSize);
 
   const applyColors = (colors: ThemeColors) => {
     const root = document.documentElement;
@@ -189,7 +192,8 @@ export default function SettingsPage() {
     setCustomFont(savedCustomFont);
     setLightColors(savedLightColors);
     setDarkColors(savedDarkColors);
-    setLogoSrc(savedLogo)
+    setLogoSrc(savedLogo);
+    setLogoSize(savedLogoSize);
     
     applyFont(savedFont, savedCustomFont);
 
@@ -258,13 +262,14 @@ export default function SettingsPage() {
     setSavedLightColors(lightColors);
     setSavedDarkColors(darkColors);
     setSavedLogo(logoSrc);
+    setSavedLogoSize(logoSize);
     toast({ title: 'Settings saved!', description: 'Your appearance settings have been updated.' });
   }
 
   const handleExport = () => {
     try {
         const data: { [key: string]: any } = {}
-        const keysToExport = ['app-logo', 'app-font', 'custom-font', 'light-theme-colors', 'dark-theme-colors', 'ashley-drp-theme', 'volunteers'];
+        const keysToExport = ['app-logo', 'app-logo-size', 'app-font', 'custom-font', 'light-theme-colors', 'dark-theme-colors', 'ashley-drp-theme', 'employees'];
         
         keysToExport.forEach(key => {
              const item = localStorage.getItem(key);
@@ -285,7 +290,7 @@ export default function SettingsPage() {
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
-        a.download = `ashley-drp-backup-${new Date().toISOString().split('T')[0]}.json`
+        a.download = `ashley-hr-backup-${new Date().toISOString().split('T')[0]}.json`
         document.body.appendChild(a)
         a.click()
         document.body.removeChild(a)
@@ -382,8 +387,19 @@ export default function SettingsPage() {
                   <CardDescription>Manage your application's logo.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className='flex items-center justify-center'>
-                     <Image src={logoSrc} alt="Current App Logo" width={80} height={80} className="rounded-full object-cover aspect-square shadow-md" />
+                  <div className='flex flex-col items-center justify-center gap-4'>
+                     <Image src={logoSrc} alt="Current App Logo" width={logoSize} height={logoSize} className="rounded-full object-cover aspect-square shadow-md" style={{width: `${logoSize}px`, height: `${logoSize}px`}} />
+                     <div className="w-full space-y-2">
+                        <Label htmlFor="logo-size">Logo Size: {logoSize}px</Label>
+                        <Slider
+                            id="logo-size"
+                            min={40}
+                            max={120}
+                            step={1}
+                            value={[logoSize]}
+                            onValueChange={(value) => setLogoSize(value[0])}
+                        />
+                     </div>
                   </div>
                   <div>
                     <Label htmlFor="logo-upload">Upload New Logo</Label>

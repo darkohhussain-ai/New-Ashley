@@ -4,8 +4,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/shared/theme-provider";
 
 export const metadata: Metadata = {
-  title: 'Ashley DRP Manager',
-  description: 'Disaster Recovery Plan Manager',
+  title: 'Ashley HR',
+  description: 'Human Resources Management',
 };
 
 export default function RootLayout({

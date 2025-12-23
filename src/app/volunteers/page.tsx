@@ -11,16 +11,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
 
-type Volunteer = {
+type Employee = {
   id: string
   name: string
   role: string
   contact: string
 }
 
-export default function VolunteersPage() {
-  const [volunteers, setVolunteers] = useLocalStorage<Volunteer[]>("volunteers", [])
-  const [isEditing, setIsEditing] = useState<Volunteer | null>(null)
+export default function EmployeesPage() {
+  const [employees, setEmployees] = useLocalStorage<Employee[]>("employees", [])
+  const [isEditing, setIsEditing] = useState<Employee | null>(null)
   
   const [name, setName] = useState("")
   const [role, setRole] = useState("")
@@ -32,9 +32,9 @@ export default function VolunteersPage() {
     if (!name || !role || !contact) return;
 
     if (isEditing) {
-      setVolunteers(volunteers.map(v => v.id === isEditing.id ? { ...v, name, role, contact } : v))
+      setEmployees(employees.map(v => v.id === isEditing.id ? { ...v, name, role, contact } : v))
     } else {
-      setVolunteers([...volunteers, { id: Date.now().toString(), name, role, contact }])
+      setEmployees([...employees, { id: Date.now().toString(), name, role, contact }])
     }
     resetForm()
   }
@@ -47,16 +47,16 @@ export default function VolunteersPage() {
     setOpen(false)
   }
 
-  const handleEdit = (volunteer: Volunteer) => {
-    setIsEditing(volunteer)
-    setName(volunteer.name)
-    setRole(volunteer.role)
-    setContact(volunteer.contact)
+  const handleEdit = (employee: Employee) => {
+    setIsEditing(employee)
+    setName(employee.name)
+    setRole(employee.role)
+    setContact(employee.contact)
     setOpen(true)
   }
 
   const handleDelete = (id: string) => {
-    setVolunteers(volunteers.filter(v => v.id !== id))
+    setEmployees(employees.filter(v => v.id !== id))
   }
 
   return (
@@ -69,17 +69,17 @@ export default function VolunteersPage() {
               <span className="sr-only">Back to Dashboard</span>
             </Link>
           </Button>
-          <h1 className="text-3xl font-bold">Volunteers HR</h1>
+          <h1 className="text-3xl font-bold">Employees HR</h1>
         </div>
         <Dialog open={open} onOpenChange={(isOpen) => { setOpen(isOpen); if(!isOpen) resetForm(); }}>
           <DialogTrigger asChild>
             <Button>
-              <Plus className="mr-2 h-4 w-4" /> Add Volunteer
+              <Plus className="mr-2 h-4 w-4" /> Add Employee
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>{isEditing ? "Edit Volunteer" : "Add New Volunteer"}</DialogTitle>
+              <DialogTitle>{isEditing ? "Edit Employee" : "Add New Employee"}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4 pt-4">
               <div>
@@ -98,7 +98,7 @@ export default function VolunteersPage() {
                 <DialogClose asChild>
                   <Button type="button" variant="secondary">Cancel</Button>
                 </DialogClose>
-                <Button type="submit">{isEditing ? "Save Changes" : "Add Volunteer"}</Button>
+                <Button type="submit">{isEditing ? "Save Changes" : "Add Employee"}</Button>
               </DialogFooter>
             </form>
           </DialogContent>
@@ -116,7 +116,7 @@ export default function VolunteersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {volunteers.length > 0 ? volunteers.map(v => (
+              {employees.length > 0 ? employees.map(v => (
                 <TableRow key={v.id}>
                   <TableCell className="font-medium">{v.name}</TableCell>
                   <TableCell>{v.role}</TableCell>
@@ -135,7 +135,7 @@ export default function VolunteersPage() {
               )) : (
                 <TableRow>
                   <TableCell colSpan={4} className="h-24 text-center">
-                    No volunteers added yet.
+                    No employees added yet.
                   </TableCell>
                 </TableRow>
               )}
