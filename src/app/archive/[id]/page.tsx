@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useFirestore, useDoc, useCollection, useMemoFirebase, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { doc, collection, Timestamp, writeBatch } from 'firebase/firestore';
-import { ArrowLeft, User, Calendar as CalendarIcon, Building, FileText, MapPin, Edit, Trash2, Save, X, ArrowUpDown, ArrowDown, ArrowUp, FileSpreadsheet } from 'lucide-react';
+import { ArrowLeft, User, Calendar as CalendarIcon, Building, FileText, MapPin, Edit, Trash2, Save, X, ArrowUpDown, ArrowDown, ArrowUp, FileSpreadsheet, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -48,6 +48,64 @@ type Employee = { id: string; name: string; };
 type StorageLocation = { id: string; name: string; warehouseType: 'Ashley' | 'Huana'; };
 type SortableKeys = keyof Item;
 
+const PaginationControls = ({ currentPage, totalPages, onPageChange }: { currentPage: number, totalPages: number, onPageChange: (page: number) => void }) => {
+  const handlePrevious = () => onPageChange(currentPage - 1);
+  const handleNext = () => onPageChange(currentPage + 1);
+
+  const pageNumbers = [];
+  const maxPagesToShow = 5;
+  let startPage, endPage;
+
+  if (totalPages <= maxPagesToShow) {
+    startPage = 1;
+    endPage = totalPages;
+  } else {
+    if (currentPage <= Math.ceil(maxPagesToShow / 2)) {
+      startPage = 1;
+      endPage = maxPagesToShow;
+    } else if (currentPage + Math.floor(maxPagesToShow / 2) >= totalPages) {
+      startPage = totalPages - maxPagesToShow + 1;
+      endPage = totalPages;
+    } else {
+      startPage = currentPage - Math.floor(maxPagesToShow / 2);
+      endPage = currentPage + Math.floor(maxPagesToShow / 2);
+    }
+  }
+
+  for (let i = startPage; i <= endPage; i++) {
+    pageNumbers.push(i);
+  }
+
+  return (
+    <div className="flex items-center justify-center space-x-2 my-4">
+      <Button variant="outline" size="icon" onClick={handlePrevious} disabled={currentPage === 1}>
+        <ChevronLeft className="h-4 w-4" />
+      </Button>
+      {startPage > 1 && (
+         <>
+          <Button variant="ghost" size="icon" onClick={() => onPageChange(1)}>1</Button>
+          {startPage > 2 && <span className='text-muted-foreground'>...</span>}
+         </>
+      )}
+      {pageNumbers.map(number => (
+        <Button key={number} variant={currentPage === number ? "default" : "outline"} size="icon" onClick={() => onPageChange(number)}>
+          {number}
+        </Button>
+      ))}
+      {endPage < totalPages && (
+        <>
+          {endPage < totalPages -1 && <span className='text-muted-foreground'>...</span>}
+          <Button variant="ghost" size="icon" onClick={() => onPageChange(totalPages)}>{totalPages}</Button>
+        </>
+      )}
+      <Button variant="outline" size="icon" onClick={handleNext} disabled={currentPage === totalPages}>
+        <ChevronRight className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+};
+
+
 export default function FileDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -58,6 +116,8 @@ export default function FileDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editableItems, setEditableItems] = useState<Item[]>([]);
   const [sortConfig, setSortConfig] = useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>({ key: 'model', direction: 'ascending' });
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 40;
 
   const fileRef = useMemoFirebase(() => (firestore && fileId ? doc(firestore, 'excel_files', fileId) : null), [firestore, fileId]);
   const { data: file, isLoading: isLoadingFile } = useDoc<ExcelFile>(fileRef);
@@ -99,6 +159,12 @@ export default function FileDetailPage() {
     }
     return sortableItems;
   }, [isEditing, editableItems, items, sortConfig]);
+
+  const paginatedItems = useMemo(() => {
+      return sortedItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  }, [sortedItems, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(sortedItems.length / itemsPerPage);
 
   const requestSort = (key: SortableKeys) => {
     let direction: 'ascending' | 'descending' = 'ascending';
@@ -336,7 +402,8 @@ export default function FileDetailPage() {
       
       <Card>
         <CardHeader>
-          <CardTitle>Items</CardTitle>
+          <CardTitle>Items ({sortedItems.length})</CardTitle>
+          {totalPages > 1 && <PaginationControls currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />}
         </CardHeader>
         <CardContent>
            <div className="overflow-x-auto">
@@ -353,7 +420,7 @@ export default function FileDetailPage() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {sortedItems.map((item) => (
+                    {paginatedItems.map((item) => (
                         <TableRow key={item.id} className={cn("transition-colors", getRowClass(item.storageStatus))}>
                             <TableCell className="font-medium">{item.model}</TableCell>
                             <TableCell>{isEditing ? 
@@ -408,7 +475,7 @@ export default function FileDetailPage() {
                             }</TableCell>
                         </TableRow>
                     ))}
-                     {items && items.length === 0 && (
+                     {paginatedItems.length === 0 && (
                         <TableRow>
                             <TableCell colSpan={7} className="text-center h-24">No items found in this file.</TableCell>
                         </TableRow>
@@ -417,7 +484,10 @@ export default function FileDetailPage() {
             </Table>
            </div>
         </CardContent>
+        {totalPages > 1 && <CardContent><PaginationControls currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} /></CardContent>}
       </Card>
     </div>
   );
 }
+
+    
