@@ -70,7 +70,7 @@ service cloud.firestore {
     match /employees/{employeeId} {
       allow get, list: if isSignedIn();
       allow create: if isSignedIn();
-      allow update: if isExistingDocAndSignedIn() && request.resource.data.employeeId == employeeId;
+      allow update: if isExistingDocAndSignedIn();
       allow delete: if isExistingDocAndSignedIn();
     }
 
@@ -115,5 +115,3 @@ service cloud.firestore {
     }
   }
 }
-
-    
