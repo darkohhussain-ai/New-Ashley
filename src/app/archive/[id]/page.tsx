@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useFirestore, useDoc, useCollection, useMemoFirebase, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { doc, collection, Timestamp, writeBatch } from 'firebase/firestore';
-import { ArrowLeft, User, Calendar as CalendarIcon, Building, FileText, MapPin, Edit, Trash2, Save, X, ArrowUpDown, ArrowDown, ArrowUp } from 'lucide-react';
+import { ArrowLeft, User, Calendar as CalendarIcon, Building, FileText, MapPin, Edit, Trash2, Save, X, ArrowUpDown, ArrowDown, ArrowUp, FileSpreadsheet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +18,9 @@ import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 type ExcelFile = {
   id: string;
@@ -74,8 +77,9 @@ export default function FileDetailPage() {
     }
   }, [items]);
 
-  const sortedEditableItems = useMemo(() => {
-    let sortableItems = [...editableItems];
+  const sortedItems = useMemo(() => {
+    const itemsToProcess = isEditing ? editableItems : (items || []);
+    let sortableItems = [...itemsToProcess];
     if (sortConfig !== null) {
       sortableItems.sort((a, b) => {
         const aValue = a[sortConfig.key];
@@ -94,7 +98,7 @@ export default function FileDetailPage() {
       });
     }
     return sortableItems;
-  }, [editableItems, sortConfig]);
+  }, [editableItems, items, isEditing, sortConfig]);
 
   const requestSort = (key: SortableKeys) => {
     let direction: 'ascending' | 'descending' = 'ascending';
@@ -125,7 +129,7 @@ export default function FileDetailPage() {
   const handleSave = async () => {
     if (!firestore) return;
     const batch = writeBatch(firestore);
-    sortedEditableItems.forEach(item => {
+    sortedItems.forEach(item => {
       const itemRef = doc(firestore, `excel_files/${fileId}/items`, item.id);
       const { id, ...itemData } = item;
       batch.update(itemRef, { ...itemData });
@@ -162,7 +166,6 @@ export default function FileDetailPage() {
   const filteredLocations = (type: 'Ashley' | 'Huana') => locations?.filter(l => l.warehouseType === type) ?? [];
 
   const getRowClass = (status?: 'Correct' | 'Less' | 'More') => {
-    if (!isEditing) return '';
     switch (status) {
       case 'Correct':
         return 'bg-green-100 dark:bg-green-900/30';
@@ -174,6 +177,53 @@ export default function FileDetailPage() {
         return '';
     }
   };
+  
+  const handleDownloadPdf = () => {
+    if (!file || !sortedItems) return;
+    const doc = new jsPDF();
+
+    doc.setFontSize(18);
+    doc.text(file.storageName, 14, 22);
+    doc.setFontSize(11);
+    doc.text(file.categoryName, 14, 30);
+    const fileDate = file.date && typeof file.date.toDate === 'function' ? format(file.date.toDate(), 'PPP') : 'Invalid Date';
+    doc.text(`Date: ${fileDate}`, 14, 36);
+
+    autoTable(doc, {
+      startY: 45,
+      head: [['Model', 'Qty', 'Storage Status', 'Condition', 'Qty/Cond', 'Location', 'Notes']],
+      body: sortedItems.map(item => [
+        item.model,
+        item.quantity,
+        item.storageStatus || '',
+        item.modelCondition || '',
+        item.quantityPerCondition ?? '',
+        item.locationId ? getLocationName(item.locationId) : '',
+        item.notes || ''
+      ]),
+    });
+    
+    doc.save(`${file.storageName}.pdf`);
+  };
+
+  const handleDownloadExcel = () => {
+    if (!file || !sortedItems) return;
+    const dataToExport = sortedItems.map(item => ({
+      'Model': item.model,
+      'Quantity': item.quantity,
+      'Storage Status': item.storageStatus || '',
+      'Condition': item.modelCondition || '',
+      'Quantity Per Condition': item.quantityPerCondition ?? '',
+      'Location': item.locationId ? getLocationName(item.locationId) : '',
+      'Notes': item.notes || ''
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Items');
+    XLSX.writeFile(workbook, `${file.storageName}.xlsx`);
+  };
+
 
   if (isLoading) {
     return (
@@ -230,6 +280,8 @@ export default function FileDetailPage() {
             ) : (
               <>
                 <Button onClick={() => setIsEditing(true)}><Edit className="mr-2"/>Edit</Button>
+                <Button variant="outline" onClick={handleDownloadPdf}><FileText className="mr-2 h-4 w-4" /> PDF</Button>
+                <Button variant="outline" onClick={handleDownloadExcel}><FileSpreadsheet className="mr-2 h-4 w-4" /> Excel</Button>
                 <AlertDialog>
                     <AlertDialogTrigger asChild><Button variant="destructive"><Trash2 className="mr-2"/>Delete</Button></AlertDialogTrigger>
                     <AlertDialogContent>
@@ -289,7 +341,7 @@ export default function FileDetailPage() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {(isEditing ? sortedEditableItems : (items || [])).map((item) => (
+                    {sortedItems.map((item) => (
                         <TableRow key={item.id} className={cn("transition-colors", getRowClass(item.storageStatus))}>
                             <TableCell className="font-medium">{item.model}</TableCell>
                             <TableCell>{isEditing ? 
