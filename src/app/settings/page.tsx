@@ -2,12 +2,12 @@
 
 import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Download, Upload } from 'lucide-react'
+import { ArrowLeft, Download, Upload, Save } from 'lucide-react'
 import useLocalStorage from '@/hooks/use-local-storage'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { useTheme } from '@/components/shared/theme-provider'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
@@ -28,7 +28,7 @@ type ThemeColors = {
 }
 
 const defaultLightColors: ThemeColors = { background: '208 100% 97%', primary: '197 71% 73%', accent: '285 16% 64%' };
-const defaultDarkColors: ThemeColors = { background: '180 25% 25%', primary: '240 67% 94%', accent: '180 100% 25%' };
+const defaultDarkColors: ThemeColors = { background: '222.2 84% 4.9%', primary: '217.2 91.2% 59.8%', accent: '217.2 32.6% 17.5%' };
 
 function parseHsl(hsl: string): { h: string, s: string, l: string } {
   const [h, s, l] = hsl.replace(/%/g, '').split(' ').map(s => s.trim());
@@ -44,7 +44,6 @@ function ColorPicker({ label, value, onChange }: { label: string, value: string,
     onChange(`${current.h} ${current.s}% ${current.l}%`);
   };
   
-  // Convert HSL string to a hex color for the input type="color"
   const hslToHex = (h: number, s: number, l: number): string => {
     s /= 100;
     l /= 100;
@@ -56,7 +55,6 @@ function ColorPicker({ label, value, onChange }: { label: string, value: string,
   }
   
   const handleHexChange = (hex: string) => {
-     // Convert hex to HSL and call onChange
     let r = 0, g = 0, b = 0;
     if (hex.length === 4) {
       r = parseInt(hex[1] + hex[1], 16);
@@ -113,16 +111,28 @@ export default function SettingsPage() {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   
-  const [font, setFont] = useLocalStorage('app-font', 'Inter')
-  const [customFont, setCustomFont] = useLocalStorage<string | null>('custom-font', null)
+  const [savedFont, setSavedFont] = useLocalStorage('app-font', 'Inter')
+  const [savedCustomFont, setSavedCustomFont] = useLocalStorage<string | null>('custom-font', null)
   
-  const [lightColors, setLightColors] = useLocalStorage<ThemeColors>('light-theme-colors', defaultLightColors);
-  const [darkColors, setDarkColors] = useLocalStorage<ThemeColors>('dark-theme-colors', defaultDarkColors);
+  const [savedLightColors, setSavedLightColors] = useLocalStorage<ThemeColors>('light-theme-colors', defaultLightColors);
+  const [savedDarkColors, setSavedDarkColors] = useLocalStorage<ThemeColors>('dark-theme-colors', defaultDarkColors);
+
+  const [font, setFont] = useState(savedFont);
+  const [customFont, setCustomFont] = useState(savedCustomFont);
+  const [lightColors, setLightColors] = useState(savedLightColors);
+  const [darkColors, setDarkColors] = useState(savedDarkColors);
 
   const applyColors = (colors: ThemeColors, prefix = '') => {
-    document.documentElement.style.setProperty(`--${prefix}background`, colors.background);
-    document.documentElement.style.setProperty(`--${prefix}primary`, colors.primary);
-    document.documentElement.style.setProperty(`--${prefix}accent`, colors.accent);
+    const root = document.documentElement;
+    if(prefix){
+        root.style.setProperty(`--${prefix}background`, colors.background);
+        root.style.setProperty(`--${prefix}primary`, colors.primary);
+        root.style.setProperty(`--${prefix}accent`, colors.accent);
+    } else {
+        root.style.setProperty(`--background`, colors.background);
+        root.style.setProperty(`--primary`, colors.primary);
+        root.style.setProperty(`--accent`, colors.accent);
+    }
   };
   
   const applyCustomFont = (fontDataUrl: string | null) => {
@@ -145,48 +155,9 @@ export default function SettingsPage() {
     }
   }
 
-
-  useEffect(() => {
-    setMounted(true)
-    if(customFont){
-      applyCustomFont(customFont);
-    }
-    // Apply colors on mount
-    applyColors(lightColors)
-    const darkThemeMq = window.matchMedia("(prefers-color-scheme: dark)");
-    const handleThemeChange = (e: MediaQueryListEvent) => {
-      if(e.matches) applyColors(darkColors, 'dark-');
-      else applyColors(lightColors);
-    }
-
-    if (document.documentElement.classList.contains('dark')) {
-      applyColors(darkColors, 'dark-');
-    } else {
-      applyColors(lightColors);
-    }
-  }, [])
-  
-  useEffect(() => {
-    if (theme === 'dark') {
-      applyColors(darkColors, 'dark-');
-    } else {
-      applyColors(lightColors);
-    }
-  }, [theme, lightColors, darkColors])
-  
-  useEffect(() => {
-    if (font === 'CustomFont' && customFont) {
-        applyCustomFont(customFont);
-        document.body.style.fontFamily = "'CustomFont', sans-serif";
-    } else {
-        handleFontChange(font, false) // Apply font on mount
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [font, customFont])
-  
-  const handleFontChange = (fontName: string, save: boolean = true) => {
-    if (fontName === 'CustomFont' && customFont) {
-      applyCustomFont(customFont);
+  const applyFont = (fontName: string, customFontData: string | null) => {
+    if (fontName === 'CustomFont' && customFontData) {
+      applyCustomFont(customFontData);
       document.body.style.fontFamily = "'CustomFont', sans-serif";
     } else {
       const selectedFont = availableFonts.find(f => f.name === fontName)
@@ -194,15 +165,42 @@ export default function SettingsPage() {
           document.body.style.fontFamily = selectedFont.family
       }
     }
-     if (save) {
-        setFont(fontName)
+  }
+
+  useEffect(() => {
+    setMounted(true)
+    applyFont(savedFont, savedCustomFont)
+    
+    if (document.documentElement.classList.contains('dark')) {
+      applyColors(savedDarkColors, 'dark-');
+    } else {
+      applyColors(savedLightColors);
     }
+  }, [])
+  
+  useEffect(() => {
+    if(!mounted) return;
+    if (theme === 'dark') {
+      document.documentElement.classList.add("dark");
+      applyColors(darkColors, 'dark-');
+    } else {
+      document.documentElement.classList.remove("dark");
+      applyColors(lightColors);
+    }
+    applyFont(font, customFont);
+  }, [font, customFont, lightColors, darkColors, theme, mounted])
+  
+  const handleFontChange = (fontName: string) => {
+    setFont(fontName)
   }
   
   const handleCustomFontUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (!['font/ttf', 'font/otf', 'font/woff', 'font/woff2'].includes(file.type)) {
+      const validExtensions = ['.ttf', '.otf', '.woff', '.woff2'];
+      const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+      
+      if (!validExtensions.includes(fileExtension)) {
         toast({ variant: 'destructive', title: 'Invalid File Type', description: 'Please upload a .ttf, .otf, .woff, or .woff2 file.' });
         return;
       }
@@ -211,12 +209,19 @@ export default function SettingsPage() {
         const result = event.target?.result as string;
         setCustomFont(result);
         setFont('CustomFont');
-        toast({ title: 'Custom font uploaded!', description: 'Your new font has been applied.' });
+        toast({ title: 'Custom font selected!', description: 'Click "Save Changes" to apply.' });
       };
       reader.readAsDataURL(file);
     }
   };
 
+  const handleSaveChanges = () => {
+    setSavedFont(font);
+    setSavedCustomFont(customFont);
+    setSavedLightColors(lightColors);
+    setSavedDarkColors(darkColors);
+    toast({ title: 'Settings saved!', description: 'Your appearance settings have been updated.' });
+  }
 
   const handleExport = () => {
     try {
@@ -232,7 +237,6 @@ export default function SettingsPage() {
             try {
                 data[key] = JSON.parse(data[key]);
             } catch (e) {
-                // Not a JSON string, keep as is
             }
         });
 
@@ -303,7 +307,7 @@ export default function SettingsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Appearance</CardTitle>
-            <CardDescription>Customize the look and feel of the app.</CardDescription>
+            <CardDescription>Customize the look and feel of the app. Click "Save Changes" to apply.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex items-center justify-between rounded-lg border p-4">
@@ -368,6 +372,11 @@ export default function SettingsPage() {
                 </div>
             </div>
           </CardContent>
+          <CardFooter>
+            <Button onClick={handleSaveChanges} className="w-full">
+              <Save className="mr-2 h-4 w-4" /> Save Changes
+            </Button>
+          </CardFooter>
         </Card>
 
         <Card>
