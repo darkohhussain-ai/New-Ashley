@@ -4,7 +4,7 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Upload, File, User, Calendar as CalendarIcon, Building, Loader2, CheckCircle, AlertTriangle, ChevronRight, Save, SortAlphaDown, SortAlphaUp, SortNumericDown, SortNumericUp } from 'lucide-react';
+import { ArrowLeft, Upload, File, User, Calendar as CalendarIcon, Building, Loader2, CheckCircle, AlertTriangle, ChevronRight, Save, ArrowDownAZ, ArrowUpAZ, ArrowDown01, ArrowUp01 } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, doc, writeBatch, Timestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
@@ -313,11 +313,11 @@ export default function ImportPage() {
                         <CardTitle>Review Items ({items.length})</CardTitle>
                         <div className="flex items-center gap-2">
                             <Button variant="outline" size="sm" onClick={() => toggleSort('alpha')}>
-                                {sortType === 'alpha' && sortDirection === 'asc' ? <SortAlphaDown className="w-4 h-4 mr-2" /> : <SortAlphaUp className="w-4 h-4 mr-2" />}
+                                {sortType === 'alpha' && sortDirection === 'asc' ? <ArrowDownAZ className="w-4 h-4 mr-2" /> : <ArrowUpAZ className="w-4 h-4 mr-2" />}
                                 Sort A-Z
                             </Button>
                              <Button variant="outline" size="sm" onClick={() => toggleSort('numeric')}>
-                                {sortType === 'numeric' && sortDirection === 'asc' ? <SortNumericDown className="w-4 h-4 mr-2" /> : <SortNumericUp className="w-4 h-4 mr-2" />}
+                                {sortType === 'numeric' && sortDirection === 'asc' ? <ArrowDown01 className="w-4 h-4 mr-2" /> : <ArrowUp01 className="w-4 h-4 mr-2" />}
                                 Sort 1-9
                             </Button>
                         </div>
@@ -357,8 +357,7 @@ export default function ImportPage() {
                                                 <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
                                                 <SelectContent>
                                                     <SelectItem value="Wrapped">Wrapped</SelectItem>
-                                                    <SelectItem value="Damaged">Damaged</SelectItem>
-                                                </SelectContent>
+                                                    <SelectItem value="Damaged">Damaged</[["body", "The body of the message to send."]]</SelectContent>
                                             </Select>
                                         </TableCell>
                                         <TableCell>
@@ -398,3 +397,5 @@ export default function ImportPage() {
     </div>
   );
 }
+
+    
