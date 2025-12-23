@@ -4,16 +4,16 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, Trash2, Save, Loader2 } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Save, Loader2, Calendar } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, doc, writeBatch, Timestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -40,6 +40,7 @@ export default function NewFilePage() {
 
   // Form State
   const [storageName, setStorageName] = useState('');
+  const [categoryName, setCategoryName] = useState('');
   const [storekeeperId, setStorekeeperId] = useState('');
   const [source, setSource] = useState('');
   const [date, setDate] = useState<Date | undefined>(new Date());
@@ -63,7 +64,7 @@ export default function NewFilePage() {
   };
   
   const handleSave = async () => {
-      if (!firestore || !storageName || !storekeeperId || !source || !date || items.length === 0) {
+      if (!firestore || !storageName || !categoryName || !storekeeperId || !source || !date || items.length === 0) {
         toast({ variant: 'destructive', title: 'Missing Information', description: 'Please fill out all file details and add at least one item.' });
         return;
       }
@@ -78,6 +79,7 @@ export default function NewFilePage() {
           id: fileId,
           storekeeperId,
           storageName,
+          categoryName,
           date: Timestamp.fromDate(date!),
           source,
           type: 'new'
@@ -133,6 +135,10 @@ export default function NewFilePage() {
                         <Label htmlFor="storage-name">Storage Name</Label>
                         <Input id="storage-name" value={storageName} onChange={(e) => setStorageName(e.target.value)} placeholder="e.g. Q1 Inventory Check" />
                     </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="category-name">Category Name</Label>
+                        <Input id="category-name" value={categoryName} onChange={(e) => setCategoryName(e.target.value)} placeholder="e.g. Living Room Furniture" />
+                    </div>
                     <div className="space-y-2">
                         <Label htmlFor="storekeeper">Storekeeper</Label>
                         <Select onValueChange={setStorekeeperId} value={storekeeperId}>
@@ -165,7 +171,7 @@ export default function NewFilePage() {
                             </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0">
-                            <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
+                            <CalendarComponent mode="single" selected={date} onSelect={setDate} initialFocus />
                             </PopoverContent>
                         </Popover>
                     </div>
@@ -224,3 +230,5 @@ export default function NewFilePage() {
     </div>
   );
 }
+
+    
