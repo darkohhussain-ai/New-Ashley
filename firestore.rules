@@ -15,10 +15,6 @@
  * - `/expenses`: Stores all expense records.
  * - `/monthly_reports`: Aggregated reports.
  * - `/archived_expense_lists`: Historical expense data.
- *
- * Key Security Decisions:
- * - Global Authenticated Access: All read and write operations across all collections are permitted for any signed-in user.
- * - No Public Access: Unauthenticated users are denied all access to the database.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -70,10 +66,7 @@ service cloud.firestore {
      * @principle Grants full read and write access to any authenticated user for managing system-wide expenses.
      */
     match /expenses/{expenseId} {
-      allow get, list: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isExistingDocAndSignedIn();
-      allow delete: if isExistingDocAndSignedIn();
+      allow read, write: if isSignedIn();
     }
 
     /**
@@ -101,5 +94,34 @@ service cloud.firestore {
       allow create: if isSignedIn();
       allow update, delete: if isExistingDocAndSignedIn();
     }
+
+    /**
+     * @description Rules for the 'storage_locations' collection.
+     * @path /storage_locations/{locationId}
+     * @principle Grants full read and write access to any authenticated user for managing storage locations.
+     */
+    match /storage_locations/{locationId} {
+      allow read, write: if isSignedIn();
+    }
+
+    /**
+     * @description Rules for the 'excel_files' collection and nested 'items'.
+     * @path /excel_files/{fileId}
+     * @principle Grants full read and write access to any authenticated user.
+     */
+    match /excel_files/{fileId} {
+      allow read, write: if isSignedIn();
+
+      /**
+       * @description Rules for the 'items' subcollection.
+       * @path /excel_files/{fileId}/items/{itemId}
+       * @principle Grants full read and write access to any authenticated user.
+       */
+      match /items/{itemId} {
+        allow read, write: if isSignedIn();
+      }
+    }
   }
 }
+
+    

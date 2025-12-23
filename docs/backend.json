@@ -151,6 +151,107 @@
         "month",
         "expenseIds"
       ]
+    },
+    "StorageLocation": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "StorageLocation",
+      "type": "object",
+      "description": "Represents a storage location.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the StorageLocation entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the location."
+        },
+        "warehouseType": {
+          "type": "string",
+          "description": "The type of warehouse (Ashley or Huana).",
+          "enum": ["Ashley", "Huana"]
+        }
+      },
+      "required": ["id", "name", "warehouseType"]
+    },
+    "ExcelFile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ExcelFile",
+      "type": "object",
+      "description": "Represents a created or imported Excel file.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the ExcelFile entity."
+        },
+        "storekeeperId": {
+          "type": "string",
+          "description": "ID of the storekeeper employee."
+        },
+        "storageName": {
+          "type": "string",
+          "description": "Name of the storage."
+        },
+        "date": {
+          "type": "string",
+          "description": "Date of the file.",
+          "format": "date-time"
+        },
+        "source": {
+            "type": "string",
+            "description": "Source of the imported file.",
+            "enum": ["Showroom", "Ashley Store", "Huana Store"]
+        },
+        "type": {
+          "type": "string",
+          "description": "Type of file (new or imported).",
+          "enum": ["new", "imported"]
+        }
+      },
+      "required": ["id", "storekeeperId", "date", "type"]
+    },
+    "Item": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Item",
+      "type": "object",
+      "description": "Represents an item within an Excel file.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Item entity."
+        },
+        "fileId": {
+          "type": "string",
+          "description": "ID of the parent ExcelFile."
+        },
+        "model": {
+          "type": "string",
+          "description": "The model of the item."
+        },
+        "quantity": {
+          "type": "number",
+          "description": "The quantity of the item."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Notes about the item."
+        },
+        "storageStatus": {
+            "type": "string",
+            "enum": ["Correct", "Less", "More"]
+        },
+        "modelCondition": {
+            "type": "string",
+            "enum": ["Wrapped", "Damaged"]
+        },
+        "quantityPerCondition": {
+            "type": "number"
+        },
+        "locationId": {
+            "type": "string"
+        }
+      },
+      "required": ["id", "fileId", "model", "quantity"]
     }
   },
   "auth": {
@@ -178,7 +279,7 @@
         }
       },
       {
-        "path": "/employees/{employeeId}/expenses/{expenseId}",
+        "path": "/expenses/{expenseId}",
         "definition": {
           "entityName": "Expense",
           "schema": {
@@ -186,10 +287,6 @@
           },
           "description": "Stores expenses for each employee. Uses path-based ownership based on `employeeId`.  This enables secure 'list' operations restricted to expenses owned by a specific employee. Contains `employeeId` to help with direct queries and filtering.",
           "params": [
-            {
-              "name": "employeeId",
-              "description": "Unique identifier for the employee."
-            },
             {
               "name": "expenseId",
               "description": "Unique identifier for the expense."
@@ -228,8 +325,61 @@
             }
           ]
         }
+      },
+      {
+        "path": "/storage_locations/{locationId}",
+        "definition": {
+          "entityName": "StorageLocation",
+          "schema": {
+            "$ref": "#/backend/entities/StorageLocation"
+          },
+          "description": "Stores storage locations.",
+          "params": [
+            {
+              "name": "locationId",
+              "description": "Unique identifier for the storage location."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/excel_files/{fileId}",
+        "definition": {
+          "entityName": "ExcelFile",
+          "schema": {
+            "$ref": "#/backend/entities/ExcelFile"
+          },
+          "description": "Stores metadata for created or imported Excel files.",
+          "params": [
+            {
+              "name": "fileId",
+              "description": "Unique identifier for the file."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/excel_files/{fileId}/items/{itemId}",
+        "definition": {
+          "entityName": "Item",
+          "schema": {
+            "$ref": "#/backend/entities/Item"
+          },
+          "description": "Stores items within a specific Excel file.",
+          "params": [
+            {
+              "name": "fileId",
+              "description": "Unique identifier for the parent file."
+            },
+            {
+              "name": "itemId",
+              "description": "Unique identifier for the item."
+            }
+          ]
+        }
       }
     ],
-    "reasoning": "This Firestore structure is designed to manage employee data and expenses, incorporating key principles for security, scalability, and maintainability.  It leverages path-based ownership for employee data and employs denormalization to ensure authorization independence when managing expenses. The structure supports QAPs through structural segregation and predictable schema. Specifically:\n\n1.  **Employees Collection (`/employees/{employeeId}`):** Stores employee profiles. This top-level collection simplifies listing all employees. Path-based ownership is used, but since all employees are generally visible, no specific authorization is needed beyond authentication to access the employee list.\n\n2.  **Expenses Subcollection (`/employees/{employeeId}/expenses/{expenseId}`):** Each employee has their own expenses subcollection. The `employeeId` in the path grants implicit ownership. This structure enables secure 'list' operations restricted to a specific employee's expenses, fulfilling the QAPs requirement. The expenses collection also contains `employeeId` to help with direct queries, filtering, and denormalization for aggregation purposes.\n\n3.  **Monthly Reports Collection (`/monthly_reports/{reportId}`):** This collection stores monthly expense reports. Each document contains `employeeId` and the month for which the report is generated. This facilitates querying and aggregating monthly expenses per employee.\n\n4.  **Archived Expense Lists Collection (`/archived_expense_lists/{archiveId}`):** This collection stores archived expense lists. Each document contains `month` and an array of `expenseIds`. This allows for easy retrieval of archived expenses for a specific month."
+    "reasoning": "This Firestore structure is designed to manage employee data and expenses, incorporating key principles for security, scalability, and maintainability.  It leverages path-based ownership for employee data and employs denormalization to ensure authorization independence when managing expenses. The structure supports QAPs through structural segregation and predictable schema. Specifically:\n\n1.  **Employees Collection (`/employees/{employeeId}`):** Stores employee profiles. This top-level collection simplifies listing all employees. Path-based ownership is used, but since all employees are generally visible, no specific authorization is needed beyond authentication to access the employee list.\n\n2.  **Expenses Collection (`/expenses/{expenseId}`):** Each employee has their own expenses subcollection. The `employeeId` in the path grants implicit ownership. This structure enables secure 'list' operations restricted to a specific employee's expenses, fulfilling the QAPs requirement. The expenses collection also contains `employeeId` to help with direct queries, filtering, and denormalization for aggregation purposes.\n\n3.  **Monthly Reports Collection (`/monthly_reports/{reportId}`):** This collection stores monthly expense reports. Each document contains `employeeId` and the month for which the report is generated. This facilitates querying and aggregating monthly expenses per employee.\n\n4.  **Archived Expense Lists Collection (`/archived_expense_lists/{archiveId}`):** This collection stores archived expense lists. Each document contains `month` and an array of `expenseIds`. This allows for easy retrieval of archived expenses for a specific month."
   }
 }
+    

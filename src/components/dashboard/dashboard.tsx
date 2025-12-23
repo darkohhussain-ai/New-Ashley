@@ -12,7 +12,7 @@ export function Dashboard() {
   const menuItems = [
     { title: "Employees", icon: Users, href: "/employees" },
     { title: "Ashley Expenses", icon: CreditCard, href: "/expenses" },
-    { title: "Item Placement", icon: Box, href: "/items" },
+    { title: "Placement & Storage", icon: Box, href: "/items" },
     { title: "Transmit", icon: ArrowRightLeft, href: "/transmit" },
     { title: "Settings", icon: SettingsIcon, href: "/settings" },
   ]
@@ -59,3 +59,5 @@ export function Dashboard() {
     </div>
   )
 }
+
+    
