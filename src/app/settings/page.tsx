@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useEffect, useState, useRef } from 'react'
@@ -176,27 +177,22 @@ export default function SettingsPage() {
   // Apply saved settings on initial mount
   useEffect(() => {
     setMounted(true)
-    // We need to re-read from local storage here on mount to get the latest values
-    const currentFont = localStorage.getItem('app-font');
-    const currentCustomFont = localStorage.getItem('custom-font');
-    const currentLightColors = localStorage.getItem('light-theme-colors');
-    const currentDarkColors = localStorage.getItem('dark-theme-colors');
-
-    if(currentFont) setFont(JSON.parse(currentFont));
-    if(currentCustomFont) setCustomFont(JSON.parse(currentCustomFont));
-    if(currentLightColors) setLightColors(JSON.parse(currentLightColors));
-    if(currentDarkColors) setDarkColors(JSON.parse(currentDarkColors));
     
-    applyFont(
-        currentFont ? JSON.parse(currentFont) : savedFont, 
-        currentCustomFont ? JSON.parse(currentCustomFont) : savedCustomFont
-    );
+    // The useLocalStorage hook now correctly handles initial hydration
+    // so we can directly use the state values it provides.
+    setFont(savedFont);
+    setCustomFont(savedCustomFont);
+    setLightColors(savedLightColors);
+    setDarkColors(savedDarkColors);
+    
+    applyFont(savedFont, savedCustomFont);
 
     if (document.documentElement.classList.contains('dark')) {
-      applyColors(currentDarkColors ? JSON.parse(currentDarkColors) : savedDarkColors);
+      applyColors(savedDarkColors);
     } else {
-      applyColors(currentLightColors ? JSON.parse(currentLightColors) : savedLightColors);
+      applyColors(savedLightColors);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   
   // Apply live preview changes
@@ -438,3 +434,5 @@ export default function SettingsPage() {
     </div>
   )
 }
+
+    
