@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Employee": {
@@ -192,6 +193,10 @@
           "type": "string",
           "description": "Name of the storage."
         },
+        "categoryName": {
+          "type": "string",
+          "description": "Name of the category for the imported items."
+        },
         "date": {
           "type": "string",
           "description": "Date of the file.",
@@ -208,7 +213,7 @@
           "enum": ["new", "imported"]
         }
       },
-      "required": ["id", "storekeeperId", "date", "type"]
+      "required": ["id", "storekeeperId", "date", "type", "storageName", "categoryName", "source"]
     },
     "Item": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -382,4 +387,3 @@
     "reasoning": "This Firestore structure is designed to manage employee data and expenses, incorporating key principles for security, scalability, and maintainability.  It leverages path-based ownership for employee data and employs denormalization to ensure authorization independence when managing expenses. The structure supports QAPs through structural segregation and predictable schema. Specifically:\n\n1.  **Employees Collection (`/employees/{employeeId}`):** Stores employee profiles. This top-level collection simplifies listing all employees. Path-based ownership is used, but since all employees are generally visible, no specific authorization is needed beyond authentication to access the employee list.\n\n2.  **Expenses Collection (`/expenses/{expenseId}`):** Each employee has their own expenses subcollection. The `employeeId` in the path grants implicit ownership. This structure enables secure 'list' operations restricted to a specific employee's expenses, fulfilling the QAPs requirement. The expenses collection also contains `employeeId` to help with direct queries, filtering, and denormalization for aggregation purposes.\n\n3.  **Monthly Reports Collection (`/monthly_reports/{reportId}`):** This collection stores monthly expense reports. Each document contains `employeeId` and the month for which the report is generated. This facilitates querying and aggregating monthly expenses per employee.\n\n4.  **Archived Expense Lists Collection (`/archived_expense_lists/{archiveId}`):** This collection stores archived expense lists. Each document contains `month` and an array of `expenseIds`. This allows for easy retrieval of archived expenses for a specific month."
   }
 }
-    

@@ -16,9 +16,9 @@ const menuItems = [
   {
     title: "New Excel File",
     icon: FilePlus,
-    href: "#",
+    href: "/new-file",
     description: "Create a new inventory sheet from scratch.",
-    disabled: true,
+    disabled: false,
   },
   {
     title: "Import Excel File",
