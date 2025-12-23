@@ -1,12 +1,12 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useFirestore, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useDoc, useCollection, useMemoFirebase, deleteDocumentNonBlocking } from '@/firebase';
 import { doc, collection, Timestamp, writeBatch } from 'firebase/firestore';
-import { ArrowLeft, User, Calendar as CalendarIcon, Building, Loader2, FileText, MapPin, PackageCheck, PackageX, Package, Edit, Trash2, Save, X } from 'lucide-react';
+import { ArrowLeft, User, Calendar as CalendarIcon, Building, FileText, MapPin, Edit, Trash2, Save, X, ArrowUpDown, ArrowDown, ArrowUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -42,6 +42,7 @@ type Item = {
 
 type Employee = { id: string; name: string; };
 type StorageLocation = { id: string; name: string; warehouseType: 'Ashley' | 'Huana'; };
+type SortableKeys = keyof Item;
 
 export default function FileDetailPage() {
   const params = useParams();
@@ -52,6 +53,7 @@ export default function FileDetailPage() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [editableItems, setEditableItems] = useState<Item[]>([]);
+  const [sortConfig, setSortConfig] = useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>({ key: 'model', direction: 'ascending' });
 
   const fileRef = useMemoFirebase(() => (firestore && fileId ? doc(firestore, 'excel_files', fileId) : null), [firestore, fileId]);
   const { data: file, isLoading: isLoadingFile } = useDoc<ExcelFile>(fileRef);
@@ -71,6 +73,46 @@ export default function FileDetailPage() {
     }
   }, [items]);
 
+  const sortedEditableItems = useMemo(() => {
+    let sortableItems = [...editableItems];
+    if (sortConfig !== null) {
+      sortableItems.sort((a, b) => {
+        const aValue = a[sortConfig.key];
+        const bValue = b[sortConfig.key];
+
+        if (aValue === undefined || aValue === null) return 1;
+        if (bValue === undefined || bValue === null) return -1;
+        
+        if (aValue < bValue) {
+          return sortConfig.direction === 'ascending' ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableItems;
+  }, [editableItems, sortConfig]);
+
+  const requestSort = (key: SortableKeys) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
+  
+  const getSortIcon = (key: SortableKeys) => {
+    if (!sortConfig || sortConfig.key !== key) {
+      return <ArrowUpDown className="w-4 h-4 ml-2 opacity-20" />;
+    }
+    if (sortConfig.direction === 'ascending') {
+      return <ArrowUp className="w-4 h-4 ml-2" />;
+    }
+    return <ArrowDown className="w-4 h-4 ml-2" />;
+  };
+
   const handleItemChange = (itemId: string, field: keyof Item, value: any) => {
     setEditableItems(currentItems =>
       currentItems.map(item =>
@@ -82,7 +124,7 @@ export default function FileDetailPage() {
   const handleSave = async () => {
     if (!firestore) return;
     const batch = writeBatch(firestore);
-    editableItems.forEach(item => {
+    sortedEditableItems.forEach(item => {
       const itemRef = doc(firestore, `excel_files/${fileId}/items`, item.id);
       batch.update(itemRef, { ...item });
     });
@@ -116,15 +158,6 @@ export default function FileDetailPage() {
   }
   const warehouseType = getWarehouseTypeFromSource(file?.source);
   const filteredLocations = (type: 'Ashley' | 'Huana') => locations?.filter(l => l.warehouseType === type) ?? [];
-
-  const getStatusIcon = (status?: string) => {
-    switch (status) {
-        case 'Correct': return <PackageCheck className="w-4 h-4 text-green-500" />;
-        case 'Less': return <PackageX className="w-4 h-4 text-orange-500" />;
-        case 'More': return <Package className="w-4 h-4 text-blue-500" />;
-        default: return null;
-    }
-  };
 
   if (isLoading) {
     return (
@@ -227,21 +260,21 @@ export default function FileDetailPage() {
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead>Model</TableHead>
-                        <TableHead>Qty</TableHead>
-                        <TableHead>Storage Status</TableHead>
-                        <TableHead>Condition</TableHead>
-                        <TableHead>Qty / Condition</TableHead>
-                        <TableHead>Location</TableHead>
-                        <TableHead>Notes</TableHead>
+                        <TableHead onClick={() => requestSort('model')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Model {getSortIcon('model')}</div></TableHead>
+                        <TableHead onClick={() => requestSort('quantity')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Qty {getSortIcon('quantity')}</div></TableHead>
+                        <TableHead onClick={() => requestSort('storageStatus')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Storage Status {getSortIcon('storageStatus')}</div></TableHead>
+                        <TableHead onClick={() => requestSort('modelCondition')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Condition {getSortIcon('modelCondition')}</div></TableHead>
+                        <TableHead onClick={() => requestSort('quantityPerCondition')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Qty / Cond. {getSortIcon('quantityPerCondition')}</div></TableHead>
+                        <TableHead onClick={() => requestSort('locationId')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Location {getSortIcon('locationId')}</div></TableHead>
+                        <TableHead onClick={() => requestSort('notes')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Notes {getSortIcon('notes')}</div></TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {items && items.length > 0 ? (isEditing ? editableItems : items).map((item, index) => (
+                    {(isEditing ? sortedEditableItems : (items || [])).map((item) => (
                         <TableRow key={item.id}>
                             <TableCell className="font-medium">{item.model}</TableCell>
                             <TableCell>{isEditing ? 
-                                <Input type="number" value={item.quantity} onChange={e => handleItemChange(item.id, 'quantity', e.target.valueAsNumber)} className="w-20" /> 
+                                <Input type="number" value={item.quantity} disabled className="w-20 bg-muted/50" /> 
                                 : item.quantity
                             }</TableCell>
                              <TableCell>{isEditing ? (
@@ -254,7 +287,7 @@ export default function FileDetailPage() {
                                     </SelectContent>
                                 </Select>
                             ) : (
-                                <span className="flex items-center gap-2">{getStatusIcon(item.storageStatus)} {item.storageStatus || 'N/A'}</span>
+                                <span className="flex items-center gap-2">{item.storageStatus || 'N/A'}</span>
                             )}</TableCell>
                             <TableCell>{isEditing ? (
                                 <Select value={item.modelCondition} onValueChange={v => handleItemChange(item.id, 'modelCondition', v)}>
@@ -291,7 +324,8 @@ export default function FileDetailPage() {
                                 : item.notes || 'N/A'
                             }</TableCell>
                         </TableRow>
-                    )) : (
+                    ))}
+                     {items && items.length === 0 && (
                         <TableRow>
                             <TableCell colSpan={7} className="text-center h-24">No items found in this file.</TableCell>
                         </TableRow>
@@ -304,3 +338,5 @@ export default function FileDetailPage() {
     </div>
   );
 }
+
+    
