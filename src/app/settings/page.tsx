@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Moon, Sun, Download, Upload } from 'lucide-react'
+import { ArrowLeft, Download, Upload } from 'lucide-react'
 import useLocalStorage from '@/hooks/use-local-storage'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -11,6 +11,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useTheme } from '@/components/shared/theme-provider'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
+import { Input } from '@/components/ui/input'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 const availableFonts = [
   { name: 'Inter', family: "'Inter', sans-serif" },
@@ -19,31 +21,202 @@ const availableFonts = [
   { name: 'Lato', family: "'Lato', sans-serif" },
 ]
 
+type ThemeColors = {
+  background: string;
+  primary: string;
+  accent: string;
+}
+
+const defaultLightColors: ThemeColors = { background: '208 100% 97%', primary: '197 71% 73%', accent: '285 16% 64%' };
+const defaultDarkColors: ThemeColors = { background: '180 25% 25%', primary: '240 67% 94%', accent: '180 100% 25%' };
+
+function parseHsl(hsl: string): { h: string, s: string, l: string } {
+  const [h, s, l] = hsl.replace(/%/g, '').split(' ').map(s => s.trim());
+  return { h, s, l };
+}
+
+function ColorPicker({ label, value, onChange }: { label: string, value: string, onChange: (value: string) => void }) {
+  const { h, s, l } = parseHsl(value);
+
+  const handleHslChange = (part: 'h' | 's' | 'l', newValue: string) => {
+    const current = parseHsl(value);
+    current[part] = newValue;
+    onChange(`${current.h} ${current.s}% ${current.l}%`);
+  };
+  
+  // Convert HSL string to a hex color for the input type="color"
+  const hslToHex = (h: number, s: number, l: number): string => {
+    s /= 100;
+    l /= 100;
+    const k = (n: number) => (n + h / 30) % 12;
+    const a = s * Math.min(l, 1 - l);
+    const f = (n: number) =>
+      l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1));
+    return `#${[0, 8, 4].map(n => Math.round(f(n) * 255).toString(16).padStart(2, '0')).join('')}`;
+  }
+  
+  const handleHexChange = (hex: string) => {
+     // Convert hex to HSL and call onChange
+    let r = 0, g = 0, b = 0;
+    if (hex.length === 4) {
+      r = parseInt(hex[1] + hex[1], 16);
+      g = parseInt(hex[2] + hex[2], 16);
+      b = parseInt(hex[3] + hex[3], 16);
+    } else if (hex.length === 7) {
+      r = parseInt(hex.substring(1, 3), 16);
+      g = parseInt(hex.substring(3, 5), 16);
+      b = parseInt(hex.substring(5, 7), 16);
+    }
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    let hue = 0, sat = 0, light = (max + min) / 2;
+
+    if (max !== min) {
+      const d = max - min;
+      sat = light > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case r: hue = (g - b) / d + (g < b ? 6 : 0); break;
+        case g: hue = (b - r) / d + 2; break;
+        case b: hue = (r - g) / d + 4; break;
+      }
+      hue /= 6;
+    }
+    hue = Math.round(hue * 360);
+    sat = Math.round(sat * 100);
+    light = Math.round(light * 100);
+    onChange(`${hue} ${sat}% ${light}%`);
+  }
+
+  return (
+    <div className="flex items-center justify-between rounded-lg border p-4">
+      <Label className="capitalize">{label}</Label>
+      <div className='flex items-center gap-2'>
+        <Input 
+          type="color" 
+          value={hslToHex(Number(h), Number(s), Number(l))}
+          onChange={(e) => handleHexChange(e.target.value)}
+          className="w-10 h-10 p-1"
+        />
+        <div className="flex flex-col gap-1 text-xs">
+           <div className="flex items-center gap-1">H<Input className="h-6 text-xs" value={h} onChange={e => handleHslChange('h', e.target.value)} /></div>
+           <div className="flex items-center gap-1">S<Input className="h-6 text-xs" value={s} onChange={e => handleHslChange('s', e.target.value)} /></div>
+           <div className="flex items-center gap-1">L<Input className="h-6 text-xs" value={l} onChange={e => handleHslChange('l', e.target.value)} /></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 export default function SettingsPage() {
   const { toast } = useToast()
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   
   const [font, setFont] = useLocalStorage('app-font', 'Inter')
+  const [customFont, setCustomFont] = useLocalStorage<string | null>('custom-font', null)
+  
+  const [lightColors, setLightColors] = useLocalStorage<ThemeColors>('light-theme-colors', defaultLightColors);
+  const [darkColors, setDarkColors] = useLocalStorage<ThemeColors>('dark-theme-colors', defaultDarkColors);
+
+  const applyColors = (colors: ThemeColors, prefix = '') => {
+    document.documentElement.style.setProperty(`--${prefix}background`, colors.background);
+    document.documentElement.style.setProperty(`--${prefix}primary`, colors.primary);
+    document.documentElement.style.setProperty(`--${prefix}accent`, colors.accent);
+  };
+  
+  const applyCustomFont = (fontDataUrl: string | null) => {
+    const styleId = 'custom-font-style';
+    let styleElement = document.getElementById(styleId) as HTMLStyleElement;
+    if (!styleElement) {
+        styleElement = document.createElement('style');
+        styleElement.id = styleId;
+        document.head.appendChild(styleElement);
+    }
+    if(fontDataUrl) {
+      styleElement.innerHTML = `
+        @font-face {
+          font-family: 'CustomFont';
+          src: url(${fontDataUrl});
+        }
+      `;
+    } else {
+      styleElement.innerHTML = '';
+    }
+  }
+
 
   useEffect(() => {
     setMounted(true)
+    if(customFont){
+      applyCustomFont(customFont);
+    }
+    // Apply colors on mount
+    applyColors(lightColors)
+    const darkThemeMq = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleThemeChange = (e: MediaQueryListEvent) => {
+      if(e.matches) applyColors(darkColors, 'dark-');
+      else applyColors(lightColors);
+    }
+
+    if (document.documentElement.classList.contains('dark')) {
+      applyColors(darkColors, 'dark-');
+    } else {
+      applyColors(lightColors);
+    }
   }, [])
   
   useEffect(() => {
-    handleFontChange(font, false) // Apply font on mount
+    if (theme === 'dark') {
+      applyColors(darkColors, 'dark-');
+    } else {
+      applyColors(lightColors);
+    }
+  }, [theme, lightColors, darkColors])
+  
+  useEffect(() => {
+    if (font === 'CustomFont' && customFont) {
+        applyCustomFont(customFont);
+        document.body.style.fontFamily = "'CustomFont', sans-serif";
+    } else {
+        handleFontChange(font, false) // Apply font on mount
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [font])
+  }, [font, customFont])
   
   const handleFontChange = (fontName: string, save: boolean = true) => {
-    const selectedFont = availableFonts.find(f => f.name === fontName)
-    if(selectedFont) {
-        document.body.style.fontFamily = selectedFont.family
-        if (save) {
-            setFont(fontName)
-        }
+    if (fontName === 'CustomFont' && customFont) {
+      applyCustomFont(customFont);
+      document.body.style.fontFamily = "'CustomFont', sans-serif";
+    } else {
+      const selectedFont = availableFonts.find(f => f.name === fontName)
+      if(selectedFont) {
+          document.body.style.fontFamily = selectedFont.family
+      }
+    }
+     if (save) {
+        setFont(fontName)
     }
   }
+  
+  const handleCustomFontUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!['font/ttf', 'font/otf', 'font/woff', 'font/woff2'].includes(file.type)) {
+        toast({ variant: 'destructive', title: 'Invalid File Type', description: 'Please upload a .ttf, .otf, .woff, or .woff2 file.' });
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
+        setCustomFont(result);
+        setFont('CustomFont');
+        toast({ title: 'Custom font uploaded!', description: 'Your new font has been applied.' });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
 
   const handleExport = () => {
     try {
@@ -55,7 +228,6 @@ export default function SettingsPage() {
             }
         }
 
-        // We parse and re-stringify to get pretty JSON for items that are stringified JSON
         Object.keys(data).forEach(key => {
             try {
                 data[key] = JSON.parse(data[key]);
@@ -149,23 +321,51 @@ export default function SettingsPage() {
               />
             </div>
             
-            <div className="flex items-center justify-between rounded-lg border p-4">
-                <Label htmlFor="font-select" className="flex flex-col gap-1">
-                    <span className="font-semibold">Font Family</span>
-                     <span className="text-sm text-muted-foreground">
-                        Change the application's font.
-                    </span>
-                </Label>
-                <Select value={font} onValueChange={handleFontChange}>
-                    <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Select a font" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {availableFonts.map(f => (
-                            <SelectItem key={f.name} value={f.name}>{f.name}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+            <div className="space-y-4 rounded-lg border p-4">
+               <Label className="font-semibold">Colors</Label>
+                 <Tabs defaultValue="light">
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="light">Light Mode</TabsTrigger>
+                        <TabsTrigger value="dark">Dark Mode</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="light" className="space-y-4 pt-4">
+                        <ColorPicker label="Background" value={lightColors.background} onChange={(c) => setLightColors(p => ({...p, background: c}))} />
+                        <ColorPicker label="Primary" value={lightColors.primary} onChange={(c) => setLightColors(p => ({...p, primary: c}))} />
+                        <ColorPicker label="Accent" value={lightColors.accent} onChange={(c) => setLightColors(p => ({...p, accent: c}))} />
+                    </TabsContent>
+                     <TabsContent value="dark" className="space-y-4 pt-4">
+                        <ColorPicker label="Background" value={darkColors.background} onChange={(c) => setDarkColors(p => ({...p, background: c}))} />
+                        <ColorPicker label="Primary" value={darkColors.primary} onChange={(c) => setDarkColors(p => ({...p, primary: c}))} />
+                        <ColorPicker label="Accent" value={darkColors.accent} onChange={(c) => setDarkColors(p => ({...p, accent: c}))} />
+                    </TabsContent>
+                </Tabs>
+            </div>
+            
+            <div className="space-y-4 rounded-lg border p-4">
+                <div className="flex items-center justify-between">
+                    <Label htmlFor="font-select" className="flex flex-col gap-1">
+                        <span className="font-semibold">Font Family</span>
+                         <span className="text-sm text-muted-foreground">
+                            Change the application's font.
+                        </span>
+                    </Label>
+                    <Select value={font} onValueChange={handleFontChange}>
+                        <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Select a font" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {availableFonts.map(f => (
+                                <SelectItem key={f.name} value={f.name}>{f.name}</SelectItem>
+                            ))}
+                            {customFont && <SelectItem value="CustomFont">Custom Font</SelectItem>}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div>
+                  <Label htmlFor="font-upload" className="text-sm font-medium">Upload Custom Font</Label>
+                   <Input id="font-upload" type="file" accept=".ttf,.otf,.woff,.woff2" className="mt-2" onChange={handleCustomFontUpload} />
+                   <p className="text-xs text-muted-foreground mt-2">Upload a .ttf, .otf, .woff, or .woff2 file.</p>
+                </div>
             </div>
           </CardContent>
         </Card>
