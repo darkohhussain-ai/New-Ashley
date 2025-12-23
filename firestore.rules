@@ -121,11 +121,5 @@ service cloud.firestore {
         allow read, write: if isSignedIn();
       }
     }
-    
-    // This allows collection group queries on 'items' for any signed-in user.
-    // This is required for the location detail page to find all items in a specific location.
-    match /{path=**}/items/{itemId} {
-      allow read: if isSignedIn();
-    }
   }
 }
