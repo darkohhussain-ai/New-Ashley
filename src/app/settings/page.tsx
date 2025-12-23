@@ -3,7 +3,8 @@
 
 import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Download, Upload, Save, Palette, Type, ShieldCheck } from 'lucide-react'
+import Image from 'next/image'
+import { ArrowLeft, Download, Upload, Save, Palette, Type, ShieldCheck, Image as ImageIcon } from 'lucide-react'
 import useLocalStorage from '@/hooks/use-local-storage'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -14,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import placeHolderImages from '@/lib/placeholder-images.json'
 
 const availableFonts = [
   { name: 'Inter', family: "'Inter', sans-serif" },
@@ -125,11 +127,16 @@ export default function SettingsPage() {
   
   const [savedLightColors, setSavedLightColors] = useLocalStorage<ThemeColors>('light-theme-colors', defaultLightColors);
   const [savedDarkColors, setSavedDarkColors] = useLocalStorage<ThemeColors>('dark-theme-colors', defaultDarkColors);
+  
+  const defaultLogo = placeHolderImages.placeholderImages.find(p => p.id === 'default-logo')?.imageUrl || "https://picsum.photos/seed/ashley-drp-logo/120/120";
+  const [savedLogo, setSavedLogo] = useLocalStorage('app-logo', defaultLogo);
+
 
   const [font, setFont] = useState(savedFont);
   const [customFont, setCustomFont] = useState(savedCustomFont);
   const [lightColors, setLightColors] = useState(savedLightColors);
   const [darkColors, setDarkColors] = useState(savedDarkColors);
+  const [logoSrc, setLogoSrc] = useState(savedLogo);
 
   const applyColors = (colors: ThemeColors) => {
     const root = document.documentElement;
@@ -178,12 +185,11 @@ export default function SettingsPage() {
   useEffect(() => {
     setMounted(true)
     
-    // The useLocalStorage hook now correctly handles initial hydration
-    // so we can directly use the state values it provides.
     setFont(savedFont);
     setCustomFont(savedCustomFont);
     setLightColors(savedLightColors);
     setDarkColors(savedDarkColors);
+    setLogoSrc(savedLogo)
     
     applyFont(savedFont, savedCustomFont);
 
@@ -230,25 +236,39 @@ export default function SettingsPage() {
       reader.readAsDataURL(file);
     }
   };
+  
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (loadEvent) => {
+        const result = loadEvent.target?.result
+        if (typeof result === 'string') {
+          setLogoSrc(result)
+          toast({ title: 'Logo updated!', description: 'Click "Save Changes" to apply.' })
+        }
+      }
+      reader.readAsDataURL(file)
+    }
+  }
 
   const handleSaveChanges = () => {
     setSavedFont(font);
     setSavedCustomFont(customFont);
     setSavedLightColors(lightColors);
     setSavedDarkColors(darkColors);
+    setSavedLogo(logoSrc);
     toast({ title: 'Settings saved!', description: 'Your appearance settings have been updated.' });
   }
 
   const handleExport = () => {
     try {
         const data: { [key: string]: any } = {}
-        // Only backup relevant keys
         const keysToExport = ['app-logo', 'app-font', 'custom-font', 'light-theme-colors', 'dark-theme-colors', 'ashley-drp-theme', 'volunteers'];
         
         keysToExport.forEach(key => {
              const item = localStorage.getItem(key);
              if(item) {
-                // custom-font is a large base64 string, don't parse it.
                 if (key === 'custom-font' || key === 'app-logo') {
                     data[key] = item;
                 } else {
@@ -330,6 +350,11 @@ export default function SettingsPage() {
           </Link>
         </Button>
         <h1 className="text-xl md:text-2xl font-bold">Settings</h1>
+        <div className="ml-auto">
+          <Button onClick={handleSaveChanges}>
+            <Save className="mr-2 h-4 w-4" /> Save All Changes
+          </Button>
+        </div>
       </header>
       <main className="p-4 md:p-6 space-y-8">
         <div className="grid gap-8 md:grid-cols-3">
@@ -350,11 +375,21 @@ export default function SettingsPage() {
                     />
                   </div>
                 </CardContent>
-                 <CardFooter>
-                    <Button onClick={handleSaveChanges} className="w-full">
-                      <Save className="mr-2 h-4 w-4" /> Save Changes
-                    </Button>
-                </CardFooter>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg"><ImageIcon /> Branding</CardTitle>
+                  <CardDescription>Manage your application's logo.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className='flex items-center justify-center'>
+                     <Image src={logoSrc} alt="Current App Logo" width={80} height={80} className="rounded-full object-cover aspect-square shadow-md" />
+                  </div>
+                  <div>
+                    <Label htmlFor="logo-upload">Upload New Logo</Label>
+                    <Input id="logo-upload" type="file" accept="image/*" className="mt-2" onChange={handleLogoUpload} />
+                  </div>
+                </CardContent>
               </Card>
                <Card>
                   <CardHeader>
@@ -376,7 +411,7 @@ export default function SettingsPage() {
              <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><Palette/> Color Palette</CardTitle>
-                    <CardDescription>Adjust the colors for light and dark themes.</CardDescription>
+                    <CardDescription>Adjust colors for light and dark themes. Changes are previewed live.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Tabs defaultValue="light" className="w-full">
@@ -434,5 +469,3 @@ export default function SettingsPage() {
     </div>
   )
 }
-
-    
