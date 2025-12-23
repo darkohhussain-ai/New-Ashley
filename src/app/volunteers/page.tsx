@@ -69,7 +69,7 @@ export default function EmployeesPage() {
               <span className="sr-only">Back to Dashboard</span>
             </Link>
           </Button>
-          <h1 className="text-3xl font-bold">Employees HR</h1>
+          <h1 className="text-3xl font-bold">Employees Dashboard</h1>
         </div>
         <Dialog open={open} onOpenChange={(isOpen) => { setOpen(isOpen); if(!isOpen) resetForm(); }}>
           <DialogTrigger asChild>
