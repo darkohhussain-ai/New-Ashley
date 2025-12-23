@@ -17,6 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { cn } from '@/lib/utils';
 
 type ExcelFile = {
   id: string;
@@ -53,7 +54,7 @@ export default function FileDetailPage() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [editableItems, setEditableItems] = useState<Item[]>([]);
-  const [sortConfig, setSortConfig] = useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>({ key: 'model', direction: 'ascending' });
+  const [sortConfig, setSortConfig = useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>({ key: 'model', direction: 'ascending' });
 
   const fileRef = useMemoFirebase(() => (firestore && fileId ? doc(firestore, 'excel_files', fileId) : null), [firestore, fileId]);
   const { data: file, isLoading: isLoadingFile } = useDoc<ExcelFile>(fileRef);
@@ -159,6 +160,20 @@ export default function FileDetailPage() {
   }
   const warehouseType = getWarehouseTypeFromSource(file?.source);
   const filteredLocations = (type: 'Ashley' | 'Huana') => locations?.filter(l => l.warehouseType === type) ?? [];
+
+  const getRowClass = (status?: 'Correct' | 'Less' | 'More') => {
+    if (!isEditing) return '';
+    switch (status) {
+      case 'Correct':
+        return 'bg-green-100 dark:bg-green-900/30';
+      case 'Less':
+        return 'bg-orange-100 dark:bg-orange-900/30';
+      case 'More':
+        return 'bg-blue-100 dark:bg-blue-900/30';
+      default:
+        return '';
+    }
+  };
 
   if (isLoading) {
     return (
@@ -275,10 +290,10 @@ export default function FileDetailPage() {
                 </TableHeader>
                 <TableBody>
                     {(isEditing ? sortedEditableItems : (items || [])).map((item) => (
-                        <TableRow key={item.id}>
+                        <TableRow key={item.id} className={cn("transition-colors", getRowClass(item.storageStatus))}>
                             <TableCell className="font-medium">{item.model}</TableCell>
                             <TableCell>{isEditing ? 
-                                <Input type="number" value={item.quantity} disabled className="w-20 bg-muted/50" /> 
+                                <Input type="number" value={item.quantity} disabled className="w-20 bg-muted/50 border-none" /> 
                                 : item.quantity
                             }</TableCell>
                              <TableCell>{isEditing ? (
@@ -320,7 +335,7 @@ export default function FileDetailPage() {
                             ) : (
                                 <span className="flex items-center gap-2">
                                     {item.locationId && <MapPin className="w-4 h-4 text-muted-foreground"/>}
-                                    {item.locationId ? getLocationName(item.locationId) : 'N/A'}
+                                    {item.locationId ? getLocationName(item.id) : 'N/A'}
                                 </span>
                             )}</TableCell>
                             <TableCell>{isEditing ?
@@ -342,3 +357,5 @@ export default function FileDetailPage() {
     </div>
   );
 }
+
+    
