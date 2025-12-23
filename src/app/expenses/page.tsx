@@ -214,7 +214,6 @@ export default function ExpensesPage() {
             </DialogFooter>
           </form>
         </DialogContent>
-      </Dialog>
       
       <main className="space-y-8">
         {isLoading ? (
@@ -285,6 +284,7 @@ export default function ExpensesPage() {
                 </Card>
             </>
         ) : (
+          <Dialog open={open} onOpenChange={setOpen}>
             <div className="text-center py-16 border-2 border-dashed rounded-lg">
               <DollarSign className="mx-auto h-12 w-12 text-muted-foreground" />
               <h3 className="mt-4 text-lg font-medium">No Expenses Found</h3>
@@ -297,10 +297,10 @@ export default function ExpensesPage() {
                     </DialogTrigger>
               </div>
             </div>
+          </Dialog>
         )}
       </main>
+    </Dialog>
     </div>
   );
 }
-
-    
