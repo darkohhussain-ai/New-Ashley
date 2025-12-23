@@ -12,23 +12,13 @@
  * Data Structure:
  * The data is organized into several top-level collections:
  * - `/employees`: Stores profiles for all employees.
+ * - `/expenses`: Stores all expense records.
  * - `/monthly_reports`: Aggregated reports.
  * - `/archived_expense_lists`: Historical expense data.
- *
- * Employee-specific expenses are stored in a nested subcollection (`/employees/{employeeId}/expenses/{expenseId}`)
- * to ensure data is logically grouped and to facilitate secure, efficient queries for a single employee's expenses.
  *
  * Key Security Decisions:
  * - Global Authenticated Access: All read and write operations across all collections are permitted for any signed-in user.
  * - No Public Access: Unauthenticated users are denied all access to the database.
- * - Relational Integrity: For the `/employees/{employeeId}/expenses` subcollection, rules enforce that the `employeeId`
- *   within an expense document must match the `employeeId` in the path. This prevents data inconsistency, such as an
- *   expense being accidentally logged under the wrong employee.
- *
- * Denormalization for Authorization:
- * This model does not require complex denormalization for authorization because access is not role or ownership-based.
- * However, the structure itself—placing expenses under a specific employee's path—is a form of structural denormalization
- * that simplifies path-based security and querying.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -75,16 +65,14 @@ service cloud.firestore {
     }
 
     /**
-     * @description Rules for the 'expenses' subcollection, nested under an employee.
-     * @path /employees/{employeeId}/expenses/{expenseId}
-     * @allow (create) A signed-in user creates an expense document where the document's `employeeId` field matches the `{employeeId}` in the path.
-     * @deny (create) A signed-in user creates an expense where the document's `employeeId` does not match the path's `{employeeId}`.
-     * @principle Enforces relational integrity by ensuring an expense is always associated with the correct employee via the document path.
+     * @description Rules for the 'expenses' collection.
+     * @path /expenses/{expenseId}
+     * @principle Grants full read and write access to any authenticated user for managing system-wide expenses.
      */
-    match /employees/{employeeId}/expenses/{expenseId} {
+    match /expenses/{expenseId} {
       allow get, list: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.employeeId == employeeId;
-      allow update: if isExistingDocAndSignedIn() && request.resource.data.employeeId == resource.data.id;
+      allow create: if isSignedIn();
+      allow update: if isExistingDocAndSignedIn();
       allow delete: if isExistingDocAndSignedIn();
     }
 
