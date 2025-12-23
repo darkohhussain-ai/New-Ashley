@@ -2,21 +2,21 @@
 
 import { useState, useMemo } from "react"
 import Link from "next/link"
-import { ArrowLeft, Plus, Trash2, Edit, User, Calendar as CalendarIcon, Upload, FileText } from "lucide-react"
+import { ArrowLeft, Plus, Trash2, Edit, User, Calendar as CalendarIcon, Briefcase, FileText } from "lucide-react"
 import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { collection, doc } from "firebase/firestore"
 import Image from 'next/image'
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 type Employee = {
   id: string
@@ -106,7 +106,7 @@ export default function EmployeesPage() {
 
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-8">
+    <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
       <header className="flex items-center justify-between gap-4 mb-8">
         <div className="flex items-center gap-4">
           <Button variant="outline" size="icon" asChild>
@@ -115,7 +115,7 @@ export default function EmployeesPage() {
               <span className="sr-only">Back to Dashboard</span>
             </Link>
           </Button>
-          <h1 className="text-3xl font-bold">Employees Dashboard</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">Employees Dashboard</h1>
         </div>
         <Dialog open={open} onOpenChange={(isOpen) => { setOpen(isOpen); if(!isOpen) resetForm(); }}>
           <DialogTrigger asChild>
@@ -129,13 +129,12 @@ export default function EmployeesPage() {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4 pt-4">
               <div className="flex flex-col items-center gap-4">
-                <Image 
-                  src={photoUrl || "https://picsum.photos/seed/placeholder/100/100"} 
-                  alt="Employee photo"
-                  width={100}
-                  height={100}
-                  className="rounded-full aspect-square object-cover"
-                />
+                <Avatar className="w-24 h-24">
+                  <AvatarImage src={photoUrl} alt="Employee photo" />
+                  <AvatarFallback>
+                    <User className="w-12 h-12" />
+                  </AvatarFallback>
+                </Avatar>
                  <div className="grid w-full max-w-sm items-center gap-1.5">
                     <Label htmlFor="photo">Employee Photo</Label>
                     <Input id="photo" type="file" onChange={handlePhotoUpload} accept="image/*" />
@@ -160,15 +159,15 @@ export default function EmployeesPage() {
                       {employmentStartDate ? format(employmentStartDate, "PPP") : <span>Pick a date</span>}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
+                  <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
                       selected={employmentStartDate}
                       onSelect={setEmploymentStartDate}
-                      initialFocus
                       captionLayout="dropdown-nav"
                       fromYear={1990}
                       toYear={2040}
+                      initialFocus
                     />
                   </PopoverContent>
                 </Popover>
@@ -188,61 +187,76 @@ export default function EmployeesPage() {
         </Dialog>
       </header>
       <main>
-        <Card className="shadow-lg">
-          <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[80px]">Photo</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Start Date</TableHead>
-                <TableHead>Notes</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
-                    Loading employees...
-                  </TableCell>
-                </TableRow>
-              ) : sortedEmployees.length > 0 ? sortedEmployees.map(v => (
-                <TableRow key={v.id}>
-                  <TableCell>
-                    <Image 
-                      src={v.photoUrl || 'https://picsum.photos/seed/employee/40/40'}
-                      alt={v.name}
-                      width={40}
-                      height={40}
-                      className="rounded-full aspect-square object-cover"
-                    />
-                  </TableCell>
-                  <TableCell className="font-medium">{v.name}</TableCell>
-                  <TableCell>{format(new Date(v.employmentStartDate), "PP")}</TableCell>
-                  <TableCell className="max-w-[200px] truncate">{v.notes}</TableCell>
-                  <TableCell className="text-right space-x-1">
-                    <Button variant="ghost" size="icon" onClick={() => handleEdit(v)}>
-                      <Edit className="h-4 w-4" />
-                       <span className="sr-only">Edit</span>
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[...Array(8)].map((_, i) => (
+                <Card key={i} className="animate-pulse">
+                    <CardHeader className="flex flex-row items-center gap-4">
+                        <div className="w-16 h-16 rounded-full bg-muted"></div>
+                        <div className="w-full space-y-2">
+                            <div className="h-6 w-3/4 rounded bg-muted"></div>
+                            <div className="h-4 w-1/2 rounded bg-muted"></div>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                         <div className="h-4 w-full rounded bg-muted"></div>
+                         <div className="h-4 w-3/4 rounded bg-muted"></div>
+                    </CardContent>
+                    <CardFooter className="flex justify-end gap-2">
+                         <div className="h-8 w-16 rounded bg-muted"></div>
+                         <div className="h-8 w-16 rounded bg-muted"></div>
+                    </CardFooter>
+                </Card>
+            ))}
+          </div>
+        ) : sortedEmployees.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {sortedEmployees.map(v => (
+              <Card key={v.id} className="flex flex-col">
+                <CardHeader className="flex flex-row items-center gap-4">
+                  <Avatar className="w-16 h-16">
+                    <AvatarImage src={v.photoUrl} alt={v.name} />
+                    <AvatarFallback>{v.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <CardTitle className="text-xl">{v.name}</CardTitle>
+                    <CardDescription>
+                      Started: {format(new Date(v.employmentStartDate), "PP")}
+                    </CardDescription>
+                  </div>
+                </CardHeader>
+                <CardContent className="flex-grow">
+                  <p className="text-sm text-muted-foreground line-clamp-3">
+                    {v.notes || "No notes for this employee."}
+                  </p>
+                </CardContent>
+                <CardFooter className="flex justify-end gap-2 bg-muted/50 p-3 mt-auto">
+                  <Button variant="outline" size="sm" onClick={() => handleEdit(v)}>
+                    <Edit className="mr-2 h-4 w-4" />
+                    Edit
+                  </Button>
+                  <Button variant="destructive" size="sm" onClick={() => handleDelete(v.id)}>
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete
+                  </Button>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-16 border-2 border-dashed rounded-lg">
+            <Briefcase className="mx-auto h-12 w-12 text-muted-foreground" />
+            <h3 className="mt-4 text-lg font-medium">No Employees Found</h3>
+            <p className="mt-2 text-sm text-muted-foreground">Get started by adding your first employee.</p>
+            <div className="mt-6">
+                 <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="mr-2 h-4 w-4" /> Add Employee
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(v.id)} className="text-destructive hover:text-destructive">
-                      <Trash2 className="h-4 w-4" />
-                       <span className="sr-only">Delete</span>
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              )) : (
-                <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
-                    No employees added yet.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-          </CardContent>
-        </Card>
+                  </DialogTrigger>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   )
