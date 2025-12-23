@@ -54,7 +54,7 @@ export default function FileDetailPage() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [editableItems, setEditableItems] = useState<Item[]>([]);
-  const [sortConfig, setSortConfig = useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>({ key: 'model', direction: 'ascending' });
+  const [sortConfig, setSortConfig] = useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>({ key: 'model', direction: 'ascending' });
 
   const fileRef = useMemoFirebase(() => (firestore && fileId ? doc(firestore, 'excel_files', fileId) : null), [firestore, fileId]);
   const { data: file, isLoading: isLoadingFile } = useDoc<ExcelFile>(fileRef);
@@ -357,5 +357,3 @@ export default function FileDetailPage() {
     </div>
   );
 }
-
-    
