@@ -393,7 +393,7 @@ export default function ImportPage() {
                 <Button variant="outline" onClick={() => setStep(1)}>Back</Button>
                 <Button onClick={handleSave} disabled={isProcessing}>
                   {isProcessing ? <Loader2 className="animate-spin mr-2" /> : <Save className="mr-2" />}
-                  Save and Finish
+                  Save File
                 </Button>
             </div>
         </div>
