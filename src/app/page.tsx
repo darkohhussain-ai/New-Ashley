@@ -1,52 +1,41 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Lock, User } from "lucide-react"
-
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { useToast } from "@/hooks/use-toast"
+import { useEffect } from "react"
+import { useAuth, useUser, initiateAnonymousSignIn } from "@/firebase"
 import { Dashboard } from "@/components/dashboard/dashboard"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Loader2 } from "lucide-react"
 
 export default function Home() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [username, setUsername] = useState("")
-  const [password, setPassword] = useState("")
-  const { toast } = useToast()
+  const auth = useAuth()
+  const { user, isUserLoading } = useUser()
 
   useEffect(() => {
-    // Check if user is already "logged in" in this session
-    if (sessionStorage.getItem('isLoggedIn') === 'true') {
-        setIsLoggedIn(true);
+    // Automatically sign in the user anonymously if they are not already signed in.
+    // This is for demonstration purposes. In a real app, you'd have a proper login flow.
+    if (!isUserLoading && !user) {
+      initiateAnonymousSignIn(auth)
     }
-  }, [])
+  }, [auth, user, isUserLoading])
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (username === "Darko" && password === "123456") {
-      sessionStorage.setItem('isLoggedIn', 'true');
-      setIsLoggedIn(true)
-      toast({
-        title: "Login Successful",
-        description: "Welcome, Admin!",
-      })
-    } else {
-      toast({
-        variant: "destructive",
-        title: "Login Failed",
-        description: "Invalid username or password.",
-      })
-    }
+  if (isUserLoading) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center bg-background p-8">
+        <Loader2 className="animate-spin h-12 w-12 text-primary" />
+        <p className="mt-4 text-muted-foreground">Authenticating...</p>
+      </main>
+    )
   }
 
-  if (isLoggedIn) {
+  if (user) {
     return <Dashboard />
   }
 
+  // Fallback for when sign-in is initiated but not yet complete,
+  // or if there was an issue. A real app would have a more robust UI.
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-background p-8 bg-grid-slate-100 dark:bg-grid-slate-900">
+     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-8 bg-grid-slate-100 dark:bg-grid-slate-900">
         <style jsx global>{`
           .bg-grid-slate-100 {
             background-image: linear-gradient(hsl(var(--primary) / 0.1) 1px, transparent 1px), linear-gradient(to right, hsl(var(--primary) / 0.1) 1px, hsl(var(--background)) 1px);
@@ -60,44 +49,12 @@ export default function Home() {
         <Card className="w-full shadow-2xl bg-card/80 backdrop-blur-lg border">
           <CardHeader className="text-center">
             <CardTitle className="text-3xl font-bold">Ashley HR</CardTitle>
-            <CardDescription>Admin Access Required</CardDescription>
+            <CardDescription>Please wait while we sign you in.</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleLogin} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
-                <div className="relative flex items-center">
-                   <User className="absolute left-3 h-5 w-5 text-muted-foreground" />
-                   <Input 
-                     id="username" 
-                     placeholder="Enter username" 
-                     required 
-                     type="text" 
-                     value={username}
-                     onChange={(e) => setUsername(e.target.value)}
-                     className="pl-10"
-                   />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative flex items-center">
-                  <Lock className="absolute left-3 h-5 w-5 text-muted-foreground" />
-                  <Input 
-                    id="password" 
-                    placeholder="Enter password" 
-                    required 
-                    type="password" 
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-              <Button className="w-full font-bold" type="submit">
-                Login
-              </Button>
-            </form>
+             <div className="flex justify-center">
+                <Loader2 className="animate-spin h-8 w-8 text-primary" />
+             </div>
           </CardContent>
         </Card>
       </div>
