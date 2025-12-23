@@ -41,7 +41,11 @@ export default function ArchivePage() {
 
   const sortedFiles = useMemo(() => {
     if (!files) return [];
-    return [...files].sort((a, b) => b.date.toDate().getTime() - a.date.toDate().getTime());
+    return [...files].sort((a, b) => {
+      const dateA = a.date && typeof a.date.toDate === 'function' ? a.date.toDate().getTime() : 0;
+      const dateB = b.date && typeof b.date.toDate === 'function' ? b.date.toDate().getTime() : 0;
+      return dateB - dateA;
+    });
   }, [files]);
   
   const isLoading = isLoadingFiles || isLoadingEmployees;
@@ -88,7 +92,7 @@ export default function ArchivePage() {
                   <CardContent className="flex-grow space-y-3 text-sm text-muted-foreground">
                     <p className="flex items-center gap-2"><User className="w-4 h-4 text-primary" /> {getEmployeeName(file.storekeeperId)}</p>
                     <p className="flex items-center gap-2"><Building className="w-4 h-4 text-primary" /> {file.source}</p>
-                    <p className="flex items-center gap-2"><CalendarIcon className="w-4 h-4 text-primary" /> {format(file.date.toDate(), 'PPP')}</p>
+                    <p className="flex items-center gap-2"><CalendarIcon className="w-4 h-4 text-primary" /> {file.date && typeof file.date.toDate === 'function' ? format(file.date.toDate(), 'PPP') : 'Invalid Date'}</p>
                   </CardContent>
                 </Card>
               </Link>
