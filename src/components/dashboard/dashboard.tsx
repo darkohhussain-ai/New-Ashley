@@ -1,7 +1,7 @@
 
 "use client"
 import Image from "next/image"
-import { Users, Box, ArrowRightLeft, Settings as SettingsIcon, CreditCard } from "lucide-react"
+import { Users, Box, ArrowRightLeft, Settings as SettingsIcon, CreditCard, Archive } from "lucide-react"
 import { DashboardCard } from "./dashboard-card"
 import placeHolderImages from '@/lib/placeholder-images.json'
 import useLocalStorage from "@/hooks/use-local-storage"
@@ -59,5 +59,3 @@ export function Dashboard() {
     </div>
   )
 }
-
-    

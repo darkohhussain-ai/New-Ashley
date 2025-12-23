@@ -1,7 +1,8 @@
+
 "use client";
 
 import Link from 'next/link';
-import { ArrowLeft, MapPin, FilePlus, Upload } from 'lucide-react';
+import { ArrowLeft, MapPin, FilePlus, Upload, Archive } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
@@ -15,16 +16,21 @@ const menuItems = [
   {
     title: "New Excel File",
     icon: FilePlus,
-    href: "#", // Will be implemented next
+    href: "#",
     description: "Create a new inventory sheet from scratch.",
     disabled: true,
   },
   {
     title: "Import Excel File",
     icon: Upload,
-    href: "#", // Will be implemented next
+    href: "/import",
     description: "Import an existing Excel file to track inventory.",
-    disabled: true,
+  },
+  {
+    title: "Excel Archive",
+    icon: Archive,
+    href: "/archive",
+    description: "View all previously created or imported Excel files.",
   }
 ];
 
