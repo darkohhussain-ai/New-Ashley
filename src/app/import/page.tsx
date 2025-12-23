@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Upload, File, Loader2, CheckCircle, Save } from 'lucide-react';
+import { ArrowLeft, Loader2, File, CheckCircle, Save } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, doc, writeBatch, Timestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
@@ -65,64 +65,66 @@ export default function ImportPage() {
     
     setIsProcessing(true);
 
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      try {
-        const data = e.target?.result;
-        const workbook = XLSX.read(data, { type: 'binary' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const json = XLSX.utils.sheet_to_json(worksheet) as any[];
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: 'buffer' });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const json = XLSX.utils.sheet_to_json(worksheet, { defval: "" }) as any[];
 
-        const parsedItems: ImportedItem[] = json
-          .map(row => ({
-            model: String(row.Model || row.model || ''),
-            quantity: Number(row.Quantity || row.quantity || 0),
-            notes: String(row.Notes || row.notes || ''),
-          }))
-          .filter(item => item.model && item.quantity > 0);
+      const parsedItems: ImportedItem[] = json
+        .map(row => ({
+          model: String(row.Model || row.model || ''),
+          quantity: Number(row.Quantity || row.quantity || 0),
+          notes: String(row.Notes || row.notes || ''),
+        }))
+        .filter(item => item.model && item.quantity > 0);
 
-        if (parsedItems.length === 0) {
-          toast({ variant: 'destructive', title: 'No Data Found', description: 'The Excel file seems to be empty or not formatted correctly. Ensure it has "Model" and "Quantity" columns with data.' });
-          setIsProcessing(false);
-          return;
-        }
-
-        // Now save everything to Firestore
-        const fileId = doc(collection(firestore, 'dummy')).id;
-        const batch = writeBatch(firestore);
-        
-        const fileData = {
-          id: fileId,
-          storekeeperId,
-          storageName: file.name,
-          categoryName,
-          date: Timestamp.fromDate(date!),
-          source,
-          type: 'imported' as const
-        };
-        const fileRef = doc(firestore, 'excel_files', fileId);
-        batch.set(fileRef, fileData);
-
-        parsedItems.forEach(item => {
-            const itemId = doc(collection(firestore, 'dummy')).id;
-            const itemRef = doc(firestore, `excel_files/${fileId}/items`, itemId);
-            const itemData = { ...item, id: itemId, fileId };
-            batch.set(itemRef, itemData);
-        });
-
-        await batch.commit();
-
-        toast({ title: 'Success!', description: 'File imported. You can now edit the item details.' });
-        router.push(`/archive/${fileId}`);
-        
-      } catch (error) {
-        console.error("Error processing or saving file:", error);
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not process or save the Excel file.' });
+      if (parsedItems.length === 0) {
+        toast({ variant: 'destructive', title: 'No Data Found', description: 'The Excel file seems to be empty or not formatted correctly. Ensure it has "Model" and "Quantity" columns with data.' });
         setIsProcessing(false);
+        return;
       }
-    };
-    reader.readAsBinaryString(file);
+
+      // Now save everything to Firestore in chunks
+      const fileId = doc(collection(firestore, 'dummy')).id;
+      
+      const fileData = {
+        id: fileId,
+        storekeeperId,
+        storageName: file.name,
+        categoryName,
+        date: Timestamp.fromDate(date!),
+        source,
+        type: 'imported' as const
+      };
+      const fileRef = doc(firestore, 'excel_files', fileId);
+      
+      // We can set the main file doc first
+      await writeBatch(firestore).set(fileRef, fileData).commit();
+
+      // Then batch the items
+      const chunkSize = 400; // Firestore batch writes can have up to 500 operations
+      for (let i = 0; i < parsedItems.length; i += chunkSize) {
+          const chunk = parsedItems.slice(i, i + chunkSize);
+          const batch = writeBatch(firestore);
+          chunk.forEach(item => {
+              const itemId = doc(collection(firestore, 'dummy')).id;
+              const itemRef = doc(firestore, `excel_files/${fileId}/items`, itemId);
+              const itemData = { ...item, id: itemId, fileId };
+              batch.set(itemRef, itemData);
+          });
+          await batch.commit();
+      }
+
+      toast({ title: 'Success!', description: 'File imported. You can now edit the item details.' });
+      router.push(`/archive/${fileId}`);
+      
+    } catch (error) {
+      console.error("Error processing or saving file:", error);
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not process or save the Excel file. It might be too large or corrupted.' });
+      setIsProcessing(false);
+    }
   };
   
 
