@@ -2,7 +2,7 @@
 "use client"
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { Users, Box, ArrowRightLeft, Settings as SettingsIcon } from "lucide-react"
+import { Users, Box, ArrowRightLeft, Settings as SettingsIcon, CreditCard } from "lucide-react"
 import { DashboardCard } from "./dashboard-card"
 import placeHolderImages from '@/lib/placeholder-images.json'
 import useLocalStorage from "@/hooks/use-local-storage"
@@ -10,6 +10,7 @@ import useLocalStorage from "@/hooks/use-local-storage"
 export function Dashboard() {
   const menuItems = [
     { title: "Employees", icon: Users, href: "/employees" },
+    { title: "Ashley Expenses", icon: CreditCard, href: "/expenses" },
     { title: "Item Placement", icon: Box, href: "/items" },
     { title: "Transmit", icon: ArrowRightLeft, href: "/transmit" },
     { title: "Settings", icon: SettingsIcon, href: "/settings" },
