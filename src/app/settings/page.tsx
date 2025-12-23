@@ -18,6 +18,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import placeHolderImages from '@/lib/placeholder-images.json'
 import { Slider } from '@/components/ui/slider'
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
+import { useFirestore } from '@/firebase'
+import { getDocs, collection, writeBatch, doc } from 'firebase/firestore'
 
 const availableFonts = [
   { name: 'Inter', family: "'Inter', sans-serif" },
@@ -122,6 +124,7 @@ function ColorPicker({ label, value, onChange }: { label: string, value: string,
 export default function SettingsPage() {
   const { toast } = useToast()
   const { theme, setTheme } = useTheme()
+  const firestore = useFirestore();
   const [mounted, setMounted] = useState(false)
   
   const [savedFont, setSavedFont] = useLocalStorage('app-font', 'Inter')
@@ -297,68 +300,119 @@ export default function SettingsPage() {
     setSavedIconSize(iconSize);
     toast({ title: 'Settings saved!', description: 'Your appearance settings have been updated.' });
   }
-
-  const handleExport = () => {
+  
+  const handleExport = async () => {
+    if (!firestore) {
+        toast({ variant: 'destructive', title: 'Export failed', description: 'Database connection not available.' });
+        return;
+    }
+    
     try {
-        const data: { [key: string]: any } = {}
-        const keysToExport = ['app-logo', 'app-logo-size', 'app-font', 'custom-font', 'light-theme-colors', 'dark-theme-colors', 'ashley-drp-theme', 'employees', 'dashboard-card-size', 'dashboard-icon-size'];
+        const backupData: { [key: string]: any } = {
+            localStorage: {},
+            firestore: {}
+        };
         
+        // 1. Get localStorage data
+        const keysToExport = ['app-logo', 'app-logo-size', 'app-font', 'custom-font', 'light-theme-colors', 'dark-theme-colors', 'ashley-drp-theme', 'dashboard-card-size', 'dashboard-icon-size'];
         keysToExport.forEach(key => {
-             const item = localStorage.getItem(key);
-             if(item) {
-                if (key === 'custom-font' || key === 'app-logo') {
-                    data[key] = item;
-                } else {
-                    try {
-                        data[key] = JSON.parse(item);
-                    } catch {
-                        data[key] = item;
-                    }
+            const item = localStorage.getItem(key);
+            if (item) {
+                try {
+                    backupData.localStorage[key] = JSON.parse(item);
+                } catch {
+                    backupData.localStorage[key] = item;
                 }
-             }
+            }
         });
 
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `ashley-hr-backup-${new Date().toISOString().split('T')[0]}.json`
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
-        toast({ title: 'Data exported successfully!' })
+        // 2. Get Firestore data
+        const collectionsToExport = ['employees', 'expenses', 'excel_files', 'storage_locations'];
+        for (const collectionName of collectionsToExport) {
+            const querySnapshot = await getDocs(collection(firestore, collectionName));
+            backupData.firestore[collectionName] = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+            // Handle subcollections for excel_files
+            if (collectionName === 'excel_files') {
+                backupData.firestore.items = [];
+                for (const fileDoc of querySnapshot.docs) {
+                    const itemsSnapshot = await getDocs(collection(firestore, `excel_files/${fileDoc.id}/items`));
+                    const items = itemsSnapshot.docs.map(itemDoc => ({ id: itemDoc.id, ...itemDoc.data() }));
+                    backupData.firestore.items.push(...items);
+                }
+            }
+        }
+        
+        // 3. Create and download blob
+        const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ashley-hr-backup-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        toast({ title: 'Data exported successfully!' });
+
     } catch (error) {
         console.error("Export failed:", error);
-        toast({ variant: 'destructive', title: 'Export failed', description: 'Could not export data.' })
+        toast({ variant: 'destructive', title: 'Export failed', description: 'Could not export all application data.' });
     }
   }
 
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = (event) => {
+    const file = e.target.files?.[0];
+    if (file && firestore) {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
         try {
-          const importedData = JSON.parse(event.target?.result as string)
-          for (const key in importedData) {
-            if (Object.prototype.hasOwnProperty.call(importedData, key)) {
-                const value = typeof importedData[key] === 'object' 
-                    ? JSON.stringify(importedData[key]) 
-                    : importedData[key];
-                localStorage.setItem(key, value);
-            }
+          const backupData = JSON.parse(event.target?.result as string);
+          
+          // 1. Restore localStorage
+          for (const key in backupData.localStorage) {
+            const value = typeof backupData.localStorage[key] === 'object' 
+                ? JSON.stringify(backupData.localStorage[key]) 
+                : backupData.localStorage[key];
+            localStorage.setItem(key, value);
           }
-          toast({ title: 'Data imported successfully!', description: 'The page will now reload to apply changes.' })
-          setTimeout(() => window.location.reload(), 2000)
+
+          // 2. Restore Firestore
+          const firestoreData = backupData.firestore;
+          const batch = writeBatch(firestore);
+
+          for (const collectionName in firestoreData) {
+            if (collectionName === 'items') continue; // handle items separately
+            const collectionData = firestoreData[collectionName];
+            collectionData.forEach((docData: any) => {
+              const { id, ...data } = docData;
+              batch.set(doc(firestore, collectionName, id), data);
+            });
+          }
+          
+          if (firestoreData.items) {
+             firestoreData.items.forEach((itemData: any) => {
+                const { id, fileId, ...data } = itemData;
+                if(fileId) {
+                   batch.set(doc(firestore, `excel_files/${fileId}/items`, id), data);
+                }
+             });
+          }
+
+          await batch.commit();
+
+          toast({ title: 'Data imported successfully!', description: 'The page will now reload to apply changes.' });
+          setTimeout(() => window.location.reload(), 2000);
+
         } catch (error) {
           console.error("Import failed:", error);
-          toast({ variant: 'destructive', title: 'Import failed', description: 'Invalid or corrupted file.' })
+          toast({ variant: 'destructive', title: 'Import failed', description: 'Invalid or corrupted file.' });
         }
-      }
-      reader.readAsText(file)
+      };
+      reader.readAsText(file);
     }
-  }
+  };
+
 
   if (!mounted) {
     return (
