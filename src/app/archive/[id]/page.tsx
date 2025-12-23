@@ -155,7 +155,7 @@ export default function FileDetailPage() {
   const isLoading = isLoadingFile || isLoadingItems || isLoadingEmployees || isLoadingLocations;
 
   const getEmployeeName = (id: string) => employees?.find(e => e.id === id)?.name || '...';
-  const getLocationName = (id: string) => locations?.find(l => l.id === id)?.name || '...';
+  const getLocationName = (id?: string) => locations?.find(l => l.id === id)?.name || '...';
   
   const getWarehouseTypeFromSource = (source?: string) => {
       if (source === 'Ashley Store') return 'Ashley';
@@ -399,7 +399,7 @@ export default function FileDetailPage() {
                             ) : (
                                 <span className="flex items-center gap-2">
                                     {item.locationId && <MapPin className="w-4 h-4 text-muted-foreground"/>}
-                                    {item.locationId ? getLocationName(item.id) : 'N/A'}
+                                    {item.locationId ? getLocationName(item.locationId) : 'N/A'}
                                 </span>
                             )}</TableCell>
                             <TableCell>{isEditing ?
