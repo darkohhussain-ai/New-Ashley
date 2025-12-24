@@ -37,6 +37,18 @@ type Employee = {
   notes?: string;
 };
 
+// Helper to safely convert Firestore Timestamp or JS Date to a JS Date
+const safeDate = (dateValue: Timestamp | Date | undefined): Date | null => {
+  if (!dateValue) return null;
+  if (dateValue instanceof Date) return dateValue;
+  if (typeof (dateValue as Timestamp).toDate === 'function') {
+    return (dateValue as Timestamp).toDate();
+  }
+  // Try to parse if it's a string or number, though this is less ideal
+  const parsed = new Date(dateValue as any);
+  return isNaN(parsed.getTime()) ? null : parsed;
+};
+
 export default function EmployeeDetailPage() {
   const router = useRouter();
   const params = useParams();
@@ -66,8 +78,8 @@ export default function EmployeeDetailPage() {
     if (employee) {
       setName(employee.name);
       setJobTitle(employee.jobTitle || '');
-      setEmploymentStartDate(employee.employmentStartDate && typeof (employee.employmentStartDate as Timestamp).toDate === 'function' ? (employee.employmentStartDate as Timestamp).toDate() : employee.employmentStartDate as Date);
-      setDateOfBirth(employee.dateOfBirth && typeof (employee.dateOfBirth as Timestamp).toDate === 'function' ? (employee.dateOfBirth as Timestamp).toDate() : employee.dateOfBirth as Date);
+      setEmploymentStartDate(safeDate(employee.employmentStartDate) || undefined);
+      setDateOfBirth(safeDate(employee.dateOfBirth) || undefined);
       setEmail(employee.email || '');
       setPhone(employee.phone || '');
       setPhotoUrl(employee.photoUrl || '');
@@ -180,15 +192,6 @@ export default function EmployeeDetailPage() {
     );
   }
   
-  const safeDate = (dateValue: Timestamp | Date | undefined): Date | null => {
-    if (!dateValue) return null;
-    if (dateValue instanceof Date) return dateValue;
-    if (typeof (dateValue as Timestamp).toDate === 'function') {
-      return (dateValue as Timestamp).toDate();
-    }
-    return null;
-  }
-  
   const safeEmploymentStartDate = safeDate(employee.employmentStartDate);
   const safeDateOfBirth = safeDate(employee.dateOfBirth);
 
@@ -282,7 +285,7 @@ export default function EmployeeDetailPage() {
                                 <PopoverTrigger asChild>
                                 <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !employmentStartDate && "text-muted-foreground")}>
                                     <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {employmentStartDate ? `Started: ${format(employmentStartDate, 'PPP')}` : <span>Pick start date</span>}
+                                    {employmentStartDate instanceof Date && !isNaN(employmentStartDate.getTime()) ? `Started: ${format(employmentStartDate, 'PPP')}` : <span>Pick start date</span>}
                                 </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-auto p-0">
@@ -293,7 +296,7 @@ export default function EmployeeDetailPage() {
                                 <PopoverTrigger asChild>
                                 <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !dateOfBirth && "text-muted-foreground")}>
                                     <Cake className="mr-2 h-4 w-4" />
-                                    {dateOfBirth ? `Born: ${format(dateOfBirth, 'PPP')}` : <span>Pick birth date</span>}
+                                    {dateOfBirth instanceof Date && !isNaN(dateOfBirth.getTime()) ? `Born: ${format(dateOfBirth, 'PPP')}` : <span>Pick birth date</span>}
                                 </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-auto p-0">
