@@ -38,8 +38,8 @@ type Item = {
   model: string;
   quantity: number;
   notes?: string;
-  storageStatus?: 'Correct' | 'Less' | 'More';
-  modelCondition?: 'Wrapped' | 'Damaged';
+  storageStatus?: 'Correct' | 'Less' | 'More' | '';
+  modelCondition?: 'Wrapped' | 'Damaged' | '';
   quantityPerCondition?: number;
   locationId?: string;
 };
@@ -231,7 +231,7 @@ export default function FileDetailPage() {
   const warehouseType = getWarehouseTypeFromSource(file?.source);
   const filteredLocations = (type: 'Ashley' | 'Huana') => locations?.filter(l => l.warehouseType === type) ?? [];
 
-  const getRowClass = (status?: 'Correct' | 'Less' | 'More') => {
+  const getRowClass = (status?: 'Correct' | 'Less' | 'More' | '') => {
     switch (status) {
       case 'Correct':
         return 'bg-green-100 dark:bg-green-900/30';
@@ -244,7 +244,7 @@ export default function FileDetailPage() {
     }
   };
   
-  const getConditionCellClass = (condition?: 'Wrapped' | 'Damaged') => {
+  const getConditionCellClass = (condition?: 'Wrapped' | 'Damaged' | '') => {
     if (!isEditing) return '';
     switch (condition) {
       case 'Wrapped':
@@ -428,9 +428,10 @@ export default function FileDetailPage() {
                                 : item.quantity
                             }</TableCell>
                              <TableCell>{isEditing ? (
-                                <Select value={item.storageStatus} onValueChange={v => handleItemChange(item.id, 'storageStatus', v)}>
+                                <Select value={item.storageStatus} onValueChange={v => handleItemChange(item.id, 'storageStatus', v === 'none' ? '' : v)}>
                                     <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
                                     <SelectContent>
+                                        <SelectItem value="none">None</SelectItem>
                                         <SelectItem value="Correct">Correct</SelectItem>
                                         <SelectItem value="Less">Less</SelectItem>
                                         <SelectItem value="More">More</SelectItem>
@@ -440,9 +441,10 @@ export default function FileDetailPage() {
                                 <span className="flex items-center gap-2">{item.storageStatus || 'N/A'}</span>
                             )}</TableCell>
                             <TableCell className={cn("transition-colors", getConditionCellClass(item.modelCondition))}>{isEditing ? (
-                                <Select value={item.modelCondition} onValueChange={v => handleItemChange(item.id, 'modelCondition', v)}>
+                                <Select value={item.modelCondition} onValueChange={v => handleItemChange(item.id, 'modelCondition', v === 'none' ? '' : v)}>
                                     <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
                                     <SelectContent>
+                                        <SelectItem value="none">None</SelectItem>
                                         <SelectItem value="Wrapped">Wrapped</SelectItem>
                                         <SelectItem value="Damaged">Damaged</SelectItem>
                                     </SelectContent>
