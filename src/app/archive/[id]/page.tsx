@@ -1,12 +1,12 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useFirestore, useDoc, useCollection, useMemoFirebase, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { doc, collection, Timestamp, writeBatch } from 'firebase/firestore';
-import { ArrowLeft, User, Calendar as CalendarIcon, Building, FileText, MapPin, Edit, Trash2, Save, X, ArrowUpDown, ArrowDown, ArrowUp, FileSpreadsheet, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, User, Calendar as CalendarIcon, Building, FileText, MapPin, Edit, Trash2, Save, X, ArrowUpDown, ArrowDown, ArrowUp, FileSpreadsheet, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -22,7 +22,10 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { ChartConfig, ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
+import { ChartConfig, ChartContainer } from '@/components/ui/chart';
+import html2canvas from 'html2canvas';
+import { FilePdfCard } from '@/components/archive/file-pdf-card';
+import useLocalStorage from '@/hooks/use-local-storage';
 
 
 type ExcelFile = {
@@ -135,6 +138,9 @@ export default function FileDetailPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 40;
 
+  const defaultLogo = "https://images.unsplash.com/photo-1748326650737-33500fdfda30?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGxvZ298ZW58MHx8fHwxNzY2MzgxMzI1fDA&ixlib=rb-4.1.0&q=80&w=1080";
+  const [logoSrc] = useLocalStorage('app-logo', defaultLogo);
+
   const fileRef = useMemoFirebase(() => (firestore && fileId ? doc(firestore, 'excel_files', fileId) : null), [firestore, fileId]);
   const { data: file, isLoading: isLoadingFile } = useDoc<ExcelFile>(fileRef);
 
@@ -146,6 +152,8 @@ export default function FileDetailPage() {
   
   const locationsRef = useMemoFirebase(() => (firestore ? collection(firestore, 'storage_locations') : null), [firestore]);
   const { data: locations, isLoading: isLoadingLocations } = useCollection<StorageLocation>(locationsRef);
+
+  const pdfCardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (items) {
@@ -160,9 +168,10 @@ export default function FileDetailPage() {
     if (totalItems === 0) return { statusChartData: [], conditionChartData: [] };
     
     // Status data
-    const statusCounts = { 'Not Checked': 0, Correct: 0, Less: 0, More: 0 };
+    const statusCounts: Record<string, number> = { 'Not Checked': 0, Correct: 0, Less: 0, More: 0 };
     items.forEach(item => {
-        statusCounts[item.storageStatus || 'Not Checked'] = (statusCounts[item.storageStatus || 'Not Checked'] || 0) + 1;
+        const status = item.storageStatus || 'Not Checked';
+        statusCounts[status] = (statusCounts[status] || 0) + 1;
     });
 
     const statusChartData = Object.entries(statusCounts).map(([name, value]) => ({
@@ -172,7 +181,7 @@ export default function FileDetailPage() {
     })).filter(d => d.value > 0);
     
     // Condition data
-    const conditionCounts = { 'Not Damaged': 0, Wrapped: 0, Damaged: 0 };
+    const conditionCounts: Record<string, number> = { 'Not Damaged': 0, Wrapped: 0, Damaged: 0 };
     items.forEach(item => {
       if (item.modelCondition === 'Damaged') {
         conditionCounts.Damaged++;
@@ -311,19 +320,28 @@ export default function FileDetailPage() {
     }
   };
 
-  const handleDownloadPdf = () => {
-    if (!file || !sortedItems) return;
-    const doc = new jsPDF();
-
-    doc.setFontSize(18);
-    doc.text(file.storageName, 14, 22);
-    doc.setFontSize(11);
-    doc.text(file.categoryName, 14, 30);
-    const fileDate = file.date && typeof file.date.toDate === 'function' ? format(file.date.toDate(), 'PPP') : 'Invalid Date';
-    doc.text(`Date: ${fileDate}`, 14, 36);
-
+  const handleDownloadPdf = async () => {
+    if (!file || !sortedItems || !pdfCardRef.current) return;
+    
+    const canvas = await html2canvas(pdfCardRef.current, {
+        scale: 2, 
+        useCORS: true,
+        backgroundColor: null,
+    });
+    
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const imgWidth = canvas.width;
+    const imgHeight = canvas.height;
+    const ratio = imgWidth / imgHeight;
+    const finalImgWidth = pdfWidth - 28; // with some margin
+    const finalImgHeight = finalImgWidth / ratio;
+    
+    pdf.addImage(imgData, 'PNG', 14, 14, finalImgWidth, finalImgHeight);
+    
     autoTable(doc, {
-      startY: 45,
+      startY: finalImgHeight + 30,
       head: [['Model', 'Qty', 'Storage Status', 'Condition', 'Qty/Cond', 'Location', 'Notes']],
       body: sortedItems.map(item => [
         item.model,
@@ -334,9 +352,19 @@ export default function FileDetailPage() {
         item.locationId ? getLocationName(item.locationId) : '',
         item.notes || ''
       ]),
+      theme: 'grid',
+      styles: {
+          fontSize: 8,
+          cellPadding: 2,
+      },
+      headStyles: {
+          fillColor: [22, 163, 74], // green-600
+          textColor: 255,
+          fontStyle: 'bold',
+      },
     });
     
-    doc.save(`${file.storageName}.pdf`);
+    pdf.save(`${file.storageName}.pdf`);
   };
 
   const handleDownloadExcel = () => {
@@ -395,218 +423,237 @@ export default function FileDetailPage() {
       </div>
     );
   }
+  
+  const employeeForFile = employees?.find(e => e.id === file.storekeeperId)
 
   return (
-    <div className="p-4 md:p-8">
-      <header className="flex items-center justify-between gap-4 mb-8">
-        <Button variant="outline" size="icon" asChild>
-          <Link href="/archive">
-            <ArrowLeft />
-          </Link>
-        </Button>
-        <div className='flex items-center gap-2 flex-wrap justify-end'>
-            {isEditing ? (
-              <>
-                <Button onClick={handleSave}><Save className="mr-2 h-4 w-4"/> Save Changes</Button>
-                <Button variant="ghost" onClick={() => setIsEditing(false)}><X className="mr-2 h-4 w-4"/> Cancel</Button>
-              </>
-            ) : (
-              <>
-                <Button onClick={() => setIsEditing(true)}><Edit className="mr-2"/>Edit</Button>
-                <Button variant="outline" onClick={handleDownloadPdf}><FileText className="mr-2 h-4 w-4" /> PDF</Button>
-                <Button variant="outline" onClick={handleDownloadExcel}><FileSpreadsheet className="mr-2 h-4 w-4" /> Excel</Button>
-                <AlertDialog>
-                    <AlertDialogTrigger asChild><Button variant="destructive"><Trash2 className="mr-2"/>Delete</Button></AlertDialogTrigger>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                This will permanently delete the file "{file.storageName}". This action cannot be undone.
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleDeleteFile}>Delete</AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-              </>
-            )}
-        </div>
-      </header>
-
-      <Card className="mb-8">
-        <CardHeader>
-            <div className="flex justify-between items-start flex-wrap gap-4">
-                <div className='flex-1 min-w-[250px]'>
-                    <div className="flex justify-between items-start">
-                        <div>
-                            <CardTitle className="text-2xl md:text-3xl font-bold">{file.storageName}</CardTitle>
-                            <CardDescription className="font-semibold text-primary">{file.categoryName}</CardDescription>
-                        </div>
-                        <Badge variant={file.type === 'imported' ? 'default' : 'secondary'}>{file.type}</Badge>
-                    </div>
-                    <CardDescription className="grid grid-cols-2 md:flex md:items-center gap-x-6 gap-y-2 text-sm pt-2">
-                        <span className="flex items-center gap-2"><User className="w-4 h-4"/>{getEmployeeName(file.storekeeperId)}</span>
-                        <span className="flex items-center gap-2"><Building className="w-4 h-4"/>{file.source}</span>
-                        <span className="flex items-center gap-2">
-                          <CalendarIcon className="w-4 h-4"/>
-                          {file.date && typeof file.date.toDate === 'function' ? format(file.date.toDate(), 'PPP') : 'Invalid Date'}
-                        </span>
-                    </CardDescription>
-                </div>
-                <div className='flex gap-4 items-center justify-center flex-wrap'>
-                  {statusChartData.length > 0 && (
-                    <ChartContainer config={statusChartConfig} className="min-h-[120px] w-[180px]">
-                      <PieChart>
-                        <Tooltip
-                          content={({ active, payload }) => {
-                            if (active && payload && payload.length) {
-                              const { name, value } = payload[0];
-                              const total = statusChartData.reduce((acc, curr) => acc + curr.value, 0);
-                              return (
-                                <div className="p-2 text-sm bg-background/80 backdrop-blur-sm rounded-lg border shadow-sm">
-                                  <p className="font-bold">{`${name}: ${((value / total) * 100).toFixed(0)}%`}</p>
-                                  <p className="text-muted-foreground">{`${value} items`}</p>
-                                </div>
-                              );
-                            }
-                            return null;
-                          }}
-                        />
-                        <Pie data={statusChartData} dataKey="value" nameKey="name" innerRadius={25} outerRadius={40} strokeWidth={2}>
-                           {statusChartData.map((entry) => (
-                            <Cell key={`cell-${entry.name}`} fill={entry.fill} />
-                          ))}
-                        </Pie>
-                         <Legend content={({ payload }) => (
-                            <div className="text-center text-xs text-muted-foreground -mt-2">Inventory Status</div>
-                         )} />
-                      </PieChart>
-                    </ChartContainer>
-                  )}
-                  {conditionChartData.length > 0 && (
-                    <ChartContainer config={conditionChartConfig} className="min-h-[120px] w-[180px]">
-                      <PieChart>
-                        <Tooltip
-                          content={({ active, payload }) => {
-                            if (active && payload && payload.length) {
-                              const { name, value } = payload[0];
-                              const total = conditionChartData.reduce((acc, curr) => acc + curr.value, 0);
-                              return (
-                                <div className="p-2 text-sm bg-background/80 backdrop-blur-sm rounded-lg border shadow-sm">
-                                  <p className="font-bold">{`${name}: ${((value / total) * 100).toFixed(0)}%`}</p>
-                                  <p className="text-muted-foreground">{`${value} items`}</p>
-                                </div>
-                              );
-                            }
-                            return null;
-                          }}
-                        />
-                        <Pie data={conditionChartData} dataKey="value" nameKey="name" innerRadius={25} outerRadius={40} strokeWidth={2}>
-                          {conditionChartData.map((entry) => (
-                            <Cell key={`cell-${entry.name}`} fill={entry.fill} />
-                          ))}
-                        </Pie>
-                        <Legend content={({ payload }) => (
-                            <div className="text-center text-xs text-muted-foreground -mt-2">Condition Status</div>
-                         )} />
-                      </PieChart>
-                    </ChartContainer>
-                  )}
-                </div>
+    <>
+     <div style={{ position: 'absolute', left: '-9999px', top: '-9999px', background: 'white', color: 'black' }}>
+          {file && employeeForFile && items && (
+            <div ref={pdfCardRef} style={{ width: '700px' }}>
+                <FilePdfCard
+                    file={file}
+                    employee={employeeForFile}
+                    logoSrc={logoSrc}
+                    statusData={statusChartData}
+                    conditionData={conditionChartData}
+                />
             </div>
-        </CardHeader>
-      </Card>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Items ({sortedItems.length})</CardTitle>
-          {totalPages > 1 && <PaginationControls currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />}
-        </CardHeader>
-        <CardContent>
-           <div className="overflow-x-auto">
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead onClick={() => requestSort('model')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Model {getSortIcon('model')}</div></TableHead>
-                        <TableHead onClick={() => requestSort('quantity')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Qty {getSortIcon('quantity')}</div></TableHead>
-                        <TableHead onClick={() => requestSort('storageStatus')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Storage Status {getSortIcon('storageStatus')}</div></TableHead>
-                        <TableHead onClick={() => requestSort('modelCondition')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Condition {getSortIcon('modelCondition')}</div></TableHead>
-                        <TableHead onClick={() => requestSort('quantityPerCondition')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Qty / Cond. {getSortIcon('quantityPerCondition')}</div></TableHead>
-                        <TableHead onClick={() => requestSort('locationId')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Location {getSortIcon('locationId')}</div></TableHead>
-                        <TableHead onClick={() => requestSort('notes')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Notes {getSortIcon('notes')}</div></TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {paginatedItems.map((item) => (
-                        <TableRow key={item.id} className={cn("transition-colors", getRowClass(item.storageStatus))}>
-                            <TableCell className="font-medium">{item.model}</TableCell>
-                            <TableCell>{isEditing ? 
-                                <Input type="number" value={item.quantity} disabled className="w-20 bg-muted/50 border-none" /> 
-                                : item.quantity
-                            }</TableCell>
-                             <TableCell>{isEditing ? (
-                                <Select value={item.storageStatus} onValueChange={v => handleItemChange(item.id, 'storageStatus', v === 'none' ? '' : v)}>
-                                    <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="none">None</SelectItem>
-                                        <SelectItem value="Correct">Correct</SelectItem>
-                                        <SelectItem value="Less">Less</SelectItem>
-                                        <SelectItem value="More">More</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            ) : (
-                                <span className="flex items-center gap-2">{item.storageStatus || 'N/A'}</span>
-                            )}</TableCell>
-                            <TableCell className={cn("transition-colors", getConditionCellClass(item.modelCondition))}>{isEditing ? (
-                                <Select value={item.modelCondition} onValueChange={v => handleItemChange(item.id, 'modelCondition', v === 'none' ? '' : v)}>
-                                    <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="none">None</SelectItem>
-                                        <SelectItem value="Wrapped">Wrapped</SelectItem>
-                                        <SelectItem value="Damaged">Damaged</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            ) : item.modelCondition || 'N/A'}</TableCell>
-                            <TableCell>{isEditing ? 
-                                <Input type="number" value={item.quantityPerCondition ?? ''} onChange={e => handleItemChange(item.id, 'quantityPerCondition', e.target.valueAsNumber)} className="w-24" />
-                                : item.quantityPerCondition ?? 'N/A'
-                            }</TableCell>
-                            <TableCell>{isEditing ? (
-                                <Select value={item.locationId} onValueChange={v => handleItemChange(item.id, 'locationId', v)} disabled={!warehouseType}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder={warehouseType ? "Select..." : "N/A"} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                    {warehouseType && filteredLocations(warehouseType).map(loc => (
-                                        <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
-                                    ))}
-                                    </SelectContent>
-                                </Select>
-                            ) : (
-                                <span className="flex items-center gap-2">
-                                    {item.locationId && <MapPin className="w-4 h-4 text-muted-foreground"/>}
-                                    {item.locationId ? getLocationName(item.locationId) : 'N/A'}
-                                </span>
-                            )}</TableCell>
-                            <TableCell>{isEditing ?
-                                <Textarea value={item.notes ?? ''} onChange={e => handleItemChange(item.id, 'notes', e.target.value)} />
-                                : item.notes || 'N/A'
-                            }</TableCell>
-                        </TableRow>
-                    ))}
-                     {paginatedItems.length === 0 && (
-                        <TableRow>
-                            <TableCell colSpan={7} className="text-center h-24">No items found in this file.</TableCell>
-                        </TableRow>
+          )}
+      </div>
+      <div className="p-4 md:p-8">
+        <header className="flex items-center justify-between gap-4 mb-8">
+          <Button variant="outline" size="icon" asChild>
+            <Link href="/archive">
+              <ArrowLeft />
+            </Link>
+          </Button>
+          <div className='flex items-center gap-2 flex-wrap justify-end'>
+              {isEditing ? (
+                <>
+                  <Button onClick={handleSave}><Save className="mr-2 h-4 w-4"/> Save Changes</Button>
+                  <Button variant="ghost" onClick={() => setIsEditing(false)}><X className="mr-2 h-4 w-4"/> Cancel</Button>
+                </>
+              ) : (
+                <>
+                  <Button onClick={() => setIsEditing(true)}><Edit className="mr-2"/>Edit</Button>
+                  <Button variant="outline" onClick={handleDownloadPdf}><Download className="mr-2 h-4 w-4" /> PDF</Button>
+                  <Button variant="outline" onClick={handleDownloadExcel}><FileSpreadsheet className="mr-2 h-4 w-4" /> Excel</Button>
+                  <AlertDialog>
+                      <AlertDialogTrigger asChild><Button variant="destructive"><Trash2 className="mr-2"/>Delete</Button></AlertDialogTrigger>
+                      <AlertDialogContent>
+                          <AlertDialogHeader>
+                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                  This will permanently delete the file "{file.storageName}". This action cannot be undone.
+                              </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={handleDeleteFile}>Delete</AlertDialogAction>
+                          </AlertDialogFooter>
+                      </AlertDialogContent>
+                  </AlertDialog>
+                </>
+              )}
+          </div>
+        </header>
+
+        <Card className="mb-8">
+          <CardHeader>
+              <div className="flex justify-between items-start flex-wrap gap-4">
+                  <div className='flex-1 min-w-[250px]'>
+                      <div className="flex justify-between items-start">
+                          <div>
+                              <CardTitle className="text-2xl md:text-3xl font-bold">{file.storageName}</CardTitle>
+                              <CardDescription className="font-semibold text-primary">{file.categoryName}</CardDescription>
+                          </div>
+                          <Badge variant={file.type === 'imported' ? 'default' : 'secondary'}>{file.type}</Badge>
+                      </div>
+                      <CardDescription className="grid grid-cols-2 md:flex md:items-center gap-x-6 gap-y-2 text-sm pt-2">
+                          <span className="flex items-center gap-2"><User className="w-4 h-4"/>{getEmployeeName(file.storekeeperId)}</span>
+                          <span className="flex items-center gap-2"><Building className="w-4 h-4"/>{file.source}</span>
+                          <span className="flex items-center gap-2">
+                            <CalendarIcon className="w-4 h-4"/>
+                            {file.date && typeof file.date.toDate === 'function' ? format(file.date.toDate(), 'PPP') : 'Invalid Date'}
+                          </span>
+                      </CardDescription>
+                  </div>
+                  <div className='flex gap-4 items-center justify-center flex-wrap'>
+                    {statusChartData.length > 0 && (
+                      <ChartContainer config={statusChartConfig} className="min-h-[120px] w-[180px]">
+                        <PieChart>
+                          <Tooltip
+                            content={({ active, payload }) => {
+                              if (active && payload && payload.length) {
+                                const { name, value } = payload[0].payload;
+                                const total = statusChartData.reduce((acc, curr) => acc + curr.value, 0);
+                                return (
+                                  <div className="p-2 text-sm bg-background/80 backdrop-blur-sm rounded-lg border shadow-sm">
+                                    <p className="font-bold">{`${name}: ${((value / total) * 100).toFixed(0)}%`}</p>
+                                    <p className="text-muted-foreground">{`${value} items`}</p>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
+                          />
+                          <Pie data={statusChartData} dataKey="value" nameKey="name" innerRadius={25} outerRadius={40} strokeWidth={2}>
+                             {statusChartData.map((entry) => (
+                              <Cell key={`cell-${entry.name}`} fill={entry.fill} />
+                            ))}
+                          </Pie>
+                           <Legend content={() => (
+                              <div className="text-center text-xs text-muted-foreground -mt-2">Inventory Status</div>
+                           )} />
+                        </PieChart>
+                      </ChartContainer>
                     )}
-                </TableBody>
-            </Table>
-           </div>
-        </CardContent>
-        {totalPages > 1 && <CardContent><PaginationControls currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} /></CardContent>}
-      </Card>
-    </div>
+                    {conditionChartData.length > 0 && (
+                      <ChartContainer config={conditionChartConfig} className="min-h-[120px] w-[180px]">
+                        <PieChart>
+                          <Tooltip
+                            content={({ active, payload }) => {
+                              if (active && payload && payload.length) {
+                                const { name, value } = payload[0].payload;
+                                const total = conditionChartData.reduce((acc, curr) => acc + curr.value, 0);
+                                return (
+                                  <div className="p-2 text-sm bg-background/80 backdrop-blur-sm rounded-lg border shadow-sm">
+                                    <p className="font-bold">{`${name}: ${((value / total) * 100).toFixed(0)}%`}</p>
+                                    <p className="text-muted-foreground">{`${value} items`}</p>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
+                          />
+                          <Pie data={conditionChartData} dataKey="value" nameKey="name" innerRadius={25} outerRadius={40} strokeWidth={2}>
+                            {conditionChartData.map((entry) => (
+                              <Cell key={`cell-${entry.name}`} fill={entry.fill} />
+                            ))}
+                          </Pie>
+                          <Legend content={() => (
+                              <div className="text-center text-xs text-muted-foreground -mt-2">Condition Status</div>
+                           )} />
+                        </PieChart>
+                      </ChartContainer>
+                    )}
+                  </div>
+              </div>
+          </CardHeader>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Items ({sortedItems.length})</CardTitle>
+            {totalPages > 1 && <PaginationControls currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />}
+          </CardHeader>
+          <CardContent>
+             <div className="overflow-x-auto">
+              <Table>
+                  <TableHeader>
+                      <TableRow>
+                          <TableHead onClick={() => requestSort('model')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Model {getSortIcon('model')}</div></TableHead>
+                          <TableHead onClick={() => requestSort('quantity')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Qty {getSortIcon('quantity')}</div></TableHead>
+                          <TableHead onClick={() => requestSort('storageStatus')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Storage Status {getSortIcon('storageStatus')}</div></TableHead>
+                          <TableHead onClick={() => requestSort('modelCondition')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Condition {getSortIcon('modelCondition')}</div></TableHead>
+                          <TableHead onClick={() => requestSort('quantityPerCondition')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Qty / Cond. {getSortIcon('quantityPerCondition')}</div></TableHead>
+                          <TableHead onClick={() => requestSort('locationId')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Location {getSortIcon('locationId')}</div></TableHead>
+                          <TableHead onClick={() => requestSort('notes')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Notes {getSortIcon('notes')}</div></TableHead>
+                      </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                      {paginatedItems.map((item) => (
+                          <TableRow key={item.id} className={cn("transition-colors", getRowClass(item.storageStatus))}>
+                              <TableCell className="font-medium">{item.model}</TableCell>
+                              <TableCell>{isEditing ? 
+                                  <Input type="number" value={item.quantity} disabled className="w-20 bg-muted/50 border-none" /> 
+                                  : item.quantity
+                              }</TableCell>
+                               <TableCell>{isEditing ? (
+                                  <Select value={item.storageStatus} onValueChange={v => handleItemChange(item.id, 'storageStatus', v === 'none' ? '' : v)}>
+                                      <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
+                                      <SelectContent>
+                                          <SelectItem value="none">None</SelectItem>
+                                          <SelectItem value="Correct">Correct</SelectItem>
+                                          <SelectItem value="Less">Less</SelectItem>
+                                          <SelectItem value="More">More</SelectItem>
+                                      </SelectContent>
+                                  </Select>
+                              ) : (
+                                  <span className="flex items-center gap-2">{item.storageStatus || 'N/A'}</span>
+                              )}</TableCell>
+                              <TableCell className={cn("transition-colors", getConditionCellClass(item.modelCondition))}>{isEditing ? (
+                                  <Select value={item.modelCondition} onValueChange={v => handleItemChange(item.id, 'modelCondition', v === 'none' ? '' : v)}>
+                                      <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
+                                      <SelectContent>
+                                          <SelectItem value="none">None</SelectItem>
+                                          <SelectItem value="Wrapped">Wrapped</SelectItem>
+                                          <SelectItem value="Damaged">Damaged</SelectItem>
+                                      </SelectContent>
+                                  </Select>
+                              ) : item.modelCondition || 'N/A'}</TableCell>
+                              <TableCell>{isEditing ? 
+                                  <Input type="number" value={item.quantityPerCondition ?? ''} onChange={e => handleItemChange(item.id, 'quantityPerCondition', e.target.valueAsNumber)} className="w-24" />
+                                  : item.quantityPerCondition ?? 'N/A'
+                              }</TableCell>
+                              <TableCell>{isEditing ? (
+                                  <Select value={item.locationId} onValueChange={v => handleItemChange(item.id, 'locationId', v)} disabled={!warehouseType}>
+                                      <SelectTrigger>
+                                          <SelectValue placeholder={warehouseType ? "Select..." : "N/A"} />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                      {warehouseType && filteredLocations(warehouseType).map(loc => (
+                                          <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
+                                      ))}
+                                      </SelectContent>
+                                  </Select>
+                              ) : (
+                                  <span className="flex items-center gap-2">
+                                      {item.locationId && <MapPin className="w-4 h-4 text-muted-foreground"/>}
+                                      {item.locationId ? getLocationName(item.locationId) : 'N/A'}
+                                  </span>
+                              )}</TableCell>
+                              <TableCell>{isEditing ?
+                                  <Textarea value={item.notes ?? ''} onChange={e => handleItemChange(item.id, 'notes', e.target.value)} />
+                                  : item.notes || 'N/A'
+                              }</TableCell>
+                          </TableRow>
+                      ))}
+                       {paginatedItems.length === 0 && (
+                          <TableRow>
+                              <TableCell colSpan={7} className="text-center h-24">No items found in this file.</TableCell>
+                          </TableRow>
+                      )}
+                  </TableBody>
+              </Table>
+             </div>
+          </CardContent>
+          {totalPages > 1 && <CardContent><PaginationControls currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} /></CardContent>}
+        </Card>
+      </div>
+    </>
   );
 }
+
+    
