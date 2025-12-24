@@ -21,11 +21,11 @@ import { cn } from '@/lib/utils';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
 import { ChartConfig, ChartContainer } from '@/components/ui/chart';
 import html2canvas from 'html2canvas';
 import { FilePdfCard } from '@/components/archive/file-pdf-card';
 import useLocalStorage from '@/hooks/use-local-storage';
+import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
 
 
 type ExcelFile = {
@@ -132,13 +132,13 @@ export default function FileDetailPage() {
   const fileId = params.id as string;
   const firestore = useFirestore();
 
-  const [isEditing, setIsEditing] = useState(false);
-  const [editableItems, setEditableItems] = useState<Item[]>([]);
-  const [sortConfig, setSortConfig] = useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>({ key: 'model', direction: 'ascending' });
-  const [currentPage, setCurrentPage] = useState(1);
+  const [isEditing, setIsEditing = useState(false);
+  const [editableItems, setEditableItems = useState<Item[]>([]);
+  const [sortConfig, setSortConfig = useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>({ key: 'model', direction: 'ascending' });
+  const [currentPage, setCurrentPage = useState(1);
   const itemsPerPage = 40;
 
-  const defaultLogo = "https://images.unsplash.com/photo-1748326650737-33500fdfda30?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGxvZ298ZW58MHx8fHwxNzY2MzgxMzI1fDA&ixlib=rb-4.1.0&q=80&w=1080";
+  const defaultLogo = "https://i.ibb.co/68RvM01/ashley-logo.png";
   const [logoSrc] = useLocalStorage('app-logo', defaultLogo);
 
   const fileRef = useMemoFirebase(() => (firestore && fileId ? doc(firestore, 'excel_files', fileId) : null), [firestore, fileId]);
@@ -502,58 +502,62 @@ export default function FileDetailPage() {
                   <div className='flex gap-4 items-center justify-center flex-wrap'>
                     {statusChartData.length > 0 && (
                       <ChartContainer config={statusChartConfig} className="min-h-[120px] w-[180px]">
-                        <PieChart>
-                          <Tooltip
-                            content={({ active, payload }) => {
-                              if (active && payload && payload.length) {
-                                const { name, value } = payload[0].payload;
-                                const total = statusChartData.reduce((acc, curr) => acc + curr.value, 0);
-                                return (
-                                  <div className="p-2 text-sm bg-background/80 backdrop-blur-sm rounded-lg border shadow-sm">
-                                    <p className="font-bold">{`${name}: ${((value / total) * 100).toFixed(0)}% (${value})`}</p>
-                                  </div>
-                                );
-                              }
-                              return null;
-                            }}
-                          />
-                          <Pie data={statusChartData} dataKey="value" nameKey="name" innerRadius={25} outerRadius={40} strokeWidth={2}>
-                             {statusChartData.map((entry) => (
-                              <Cell key={`cell-${entry.name}`} fill={entry.fill} />
-                            ))}
-                          </Pie>
-                           <Legend content={() => (
-                              <div className="text-center text-xs text-muted-foreground -mt-2">Inventory Status</div>
-                           )} />
-                        </PieChart>
+                        <ResponsiveContainer>
+                          <PieChart>
+                            <Tooltip
+                              content={({ active, payload }) => {
+                                if (active && payload && payload.length) {
+                                  const { name, value } = payload[0].payload;
+                                  const total = statusChartData.reduce((acc, curr) => acc + curr.value, 0);
+                                  return (
+                                    <div className="p-2 text-sm bg-background/80 backdrop-blur-sm rounded-lg border shadow-sm">
+                                      <p className="font-bold">{`${name}: ${((value / total) * 100).toFixed(0)}% (${value})`}</p>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              }}
+                            />
+                            <Pie data={statusChartData} dataKey="value" nameKey="name" innerRadius={25} outerRadius={40} strokeWidth={2}>
+                              {statusChartData.map((entry) => (
+                                <Cell key={`cell-${entry.name}`} fill={entry.fill} />
+                              ))}
+                            </Pie>
+                            <Legend content={() => (
+                                <div className="text-center text-xs text-muted-foreground -mt-2">Inventory Status</div>
+                            )} />
+                          </PieChart>
+                        </ResponsiveContainer>
                       </ChartContainer>
                     )}
                     {conditionChartData.length > 0 && (
                       <ChartContainer config={conditionChartConfig} className="min-h-[120px] w-[180px]">
-                        <PieChart>
-                          <Tooltip
-                            content={({ active, payload }) => {
-                              if (active && payload && payload.length) {
-                                const { name, value } = payload[0].payload;
-                                const total = conditionChartData.reduce((acc, curr) => acc + curr.value, 0);
-                                return (
-                                  <div className="p-2 text-sm bg-background/80 backdrop-blur-sm rounded-lg border shadow-sm">
-                                    <p className="font-bold">{`${name}: ${((value / total) * 100).toFixed(0)}% (${value})`}</p>
-                                  </div>
-                                );
-                              }
-                              return null;
-                            }}
-                          />
-                          <Pie data={conditionChartData} dataKey="value" nameKey="name" innerRadius={25} outerRadius={40} strokeWidth={2}>
-                            {conditionChartData.map((entry) => (
-                              <Cell key={`cell-${entry.name}`} fill={entry.fill} />
-                            ))}
-                          </Pie>
-                          <Legend content={() => (
-                              <div className="text-center text-xs text-muted-foreground -mt-2">Condition Status</div>
-                           )} />
-                        </PieChart>
+                        <ResponsiveContainer>
+                          <PieChart>
+                            <Tooltip
+                              content={({ active, payload }) => {
+                                if (active && payload && payload.length) {
+                                  const { name, value } = payload[0].payload;
+                                  const total = conditionChartData.reduce((acc, curr) => acc + curr.value, 0);
+                                  return (
+                                    <div className="p-2 text-sm bg-background/80 backdrop-blur-sm rounded-lg border shadow-sm">
+                                      <p className="font-bold">{`${name}: ${((value / total) * 100).toFixed(0)}% (${value})`}</p>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              }}
+                            />
+                            <Pie data={conditionChartData} dataKey="value" nameKey="name" innerRadius={25} outerRadius={40} strokeWidth={2}>
+                              {conditionChartData.map((entry) => (
+                                <Cell key={`cell-${entry.name}`} fill={entry.fill} />
+                              ))}
+                            </Pie>
+                            <Legend content={() => (
+                                <div className="text-center text-xs text-muted-foreground -mt-2">Condition Status</div>
+                            )} />
+                          </PieChart>
+                        </ResponsiveContainer>
                       </ChartContainer>
                     )}
                   </div>
@@ -589,7 +593,7 @@ export default function FileDetailPage() {
                                   : item.quantity
                               }</TableCell>
                                <TableCell>{isEditing ? (
-                                  <Select value={item.storageStatus} onValueChange={v => handleItemChange(item.id, 'storageStatus', v === 'none' ? '' : v)}>
+                                  <Select value={item.storageStatus || 'none'} onValueChange={v => handleItemChange(item.id, 'storageStatus', v === 'none' ? '' : v)}>
                                       <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
                                       <SelectContent>
                                           <SelectItem value="none">None</SelectItem>
@@ -602,7 +606,7 @@ export default function FileDetailPage() {
                                   <span className="flex items-center gap-2">{item.storageStatus || 'N/A'}</span>
                               )}</TableCell>
                               <TableCell className={cn("transition-colors", getConditionCellClass(item.modelCondition))}>{isEditing ? (
-                                  <Select value={item.modelCondition} onValueChange={v => handleItemChange(item.id, 'modelCondition', v === 'none' ? '' : v)}>
+                                  <Select value={item.modelCondition || 'none'} onValueChange={v => handleItemChange(item.id, 'modelCondition', v === 'none' ? '' : v)}>
                                       <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
                                       <SelectContent>
                                           <SelectItem value="none">None</SelectItem>
@@ -616,12 +620,12 @@ export default function FileDetailPage() {
                                   : item.quantityPerCondition ?? 'N/A'
                               }</TableCell>
                               <TableCell>{isEditing ? (
-                                  <Select value={item.locationId} onValueChange={v => handleItemChange(item.id, 'locationId', v)} disabled={!warehouseType}>
+                                  <Select value={item.locationId || ''} onValueChange={v => handleItemChange(item.id, 'locationId', v === 'none' ? '' : v)} disabled={!warehouseType}>
                                       <SelectTrigger>
                                           <SelectValue placeholder={warehouseType ? "Select..." : "N/A"} />
                                       </SelectTrigger>
                                       <SelectContent>
-                                        <SelectItem value="">None</SelectItem>
+                                        <SelectItem value="none">None</SelectItem>
                                         {warehouseType && filteredLocations(warehouseType).map(loc => (
                                             <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
                                         ))}
@@ -654,3 +658,5 @@ export default function FileDetailPage() {
     </>
   );
 }
+
+    
