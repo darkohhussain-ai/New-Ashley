@@ -14,19 +14,22 @@ export function initializeFirebase() {
   // In a deployed Firebase App Hosting environment, the SDK is automatically
   // initialized with the correct configuration. In other environments, we
   // fall back to the firebaseConfig object.
-  try {
-    const app = initializeApp();
-    return getSdks(app);
-  } catch (e) {
-    if (process.env.NODE_ENV === 'production') {
-      console.warn(
-        'Automatic Firebase initialization failed. This is expected when not running in a Firebase App Hosting environment. Falling back to firebaseConfig.',
+  // The FIREBASE_APP_HOSTING_CONFIG environment variable is set automatically
+  // by the App Hosting backend.
+  if (process.env.NEXT_PUBLIC_FIREBASE_APP_HOSTING_CONFIG) {
+    try {
+      const app = initializeApp();
+      return getSdks(app);
+    } catch (e) {
+       console.error(
+        'Automatic Firebase initialization failed, falling back to firebaseConfig. This may happen if you are developing locally.',
         e
       );
     }
-    const app = initializeApp(firebaseConfig);
-    return getSdks(app);
   }
+
+  const app = initializeApp(firebaseConfig);
+  return getSdks(app);
 }
 
 export function getSdks(firebaseApp: FirebaseApp) {
