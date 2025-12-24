@@ -132,10 +132,10 @@ export default function FileDetailPage() {
   const fileId = params.id as string;
   const firestore = useFirestore();
 
-  const [isEditing, setIsEditing = useState(false);
-  const [editableItems, setEditableItems = useState<Item[]>([]);
-  const [sortConfig, setSortConfig = useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>({ key: 'model', direction: 'ascending' });
-  const [currentPage, setCurrentPage = useState(1);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editableItems, setEditableItems] = useState<Item[]>([]);
+  const [sortConfig, setSortConfig] = useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>({ key: 'model', direction: 'ascending' });
+  const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 40;
 
   const defaultLogo = "https://i.ibb.co/68RvM01/ashley-logo.png";
@@ -593,7 +593,7 @@ export default function FileDetailPage() {
                                   : item.quantity
                               }</TableCell>
                                <TableCell>{isEditing ? (
-                                  <Select value={item.storageStatus || 'none'} onValueChange={v => handleItemChange(item.id, 'storageStatus', v === 'none' ? '' : v)}>
+                                  <Select value={item.storageStatus || ''} onValueChange={v => handleItemChange(item.id, 'storageStatus', v === 'none' ? '' : v)}>
                                       <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
                                       <SelectContent>
                                           <SelectItem value="none">None</SelectItem>
@@ -606,7 +606,7 @@ export default function FileDetailPage() {
                                   <span className="flex items-center gap-2">{item.storageStatus || 'N/A'}</span>
                               )}</TableCell>
                               <TableCell className={cn("transition-colors", getConditionCellClass(item.modelCondition))}>{isEditing ? (
-                                  <Select value={item.modelCondition || 'none'} onValueChange={v => handleItemChange(item.id, 'modelCondition', v === 'none' ? '' : v)}>
+                                  <Select value={item.modelCondition || ''} onValueChange={v => handleItemChange(item.id, 'modelCondition', v === 'none' ? '' : v)}>
                                       <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
                                       <SelectContent>
                                           <SelectItem value="none">None</SelectItem>
