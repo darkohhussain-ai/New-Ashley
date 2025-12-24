@@ -22,8 +22,8 @@ type Employee = {
   id: string;
   name: string;
   jobTitle?: string;
-  employmentStartDate: Timestamp;
-  dateOfBirth?: Timestamp;
+  employmentStartDate: Timestamp | Date;
+  dateOfBirth?: Timestamp | Date;
   email?: string;
   phone?: string;
   photoUrl?: string;
@@ -239,7 +239,7 @@ export default function EmployeesPage() {
                   <CardContent className="flex-grow">
                      <p className="text-sm text-muted-foreground flex items-center gap-2">
                         <CalendarIcon className="w-4 h-4" />
-                        Started: {v.employmentStartDate && typeof v.employmentStartDate.toDate === 'function' ? format(v.employmentStartDate.toDate(), "PP") : 'N/A'}
+                        Started: {v.employmentStartDate && typeof (v.employmentStartDate as Timestamp).toDate === 'function' ? format((v.employmentStartDate as Timestamp).toDate(), "PP") : 'N/A'}
                      </p>
                   </CardContent>
                 </Card>

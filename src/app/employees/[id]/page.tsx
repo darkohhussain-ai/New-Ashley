@@ -29,8 +29,8 @@ type Employee = {
   id: string;
   name: string;
   jobTitle?: string;
-  employmentStartDate: Timestamp;
-  dateOfBirth?: Timestamp;
+  employmentStartDate: Timestamp | Date;
+  dateOfBirth?: Timestamp | Date;
   email?: string;
   phone?: string;
   photoUrl?: string;
@@ -66,8 +66,8 @@ export default function EmployeeDetailPage() {
     if (employee) {
       setName(employee.name);
       setJobTitle(employee.jobTitle || '');
-      setEmploymentStartDate(employee.employmentStartDate?.toDate());
-      setDateOfBirth(employee.dateOfBirth?.toDate());
+      setEmploymentStartDate(employee.employmentStartDate && typeof (employee.employmentStartDate as Timestamp).toDate === 'function' ? (employee.employmentStartDate as Timestamp).toDate() : employee.employmentStartDate as Date);
+      setDateOfBirth(employee.dateOfBirth && typeof (employee.dateOfBirth as Timestamp).toDate === 'function' ? (employee.dateOfBirth as Timestamp).toDate() : employee.dateOfBirth as Date);
       setEmail(employee.email || '');
       setPhone(employee.phone || '');
       setPhotoUrl(employee.photoUrl || '');
@@ -179,6 +179,19 @@ export default function EmployeeDetailPage() {
       </div>
     );
   }
+  
+  const safeDate = (dateValue: Timestamp | Date | undefined): Date | null => {
+    if (!dateValue) return null;
+    if (dateValue instanceof Date) return dateValue;
+    if (typeof (dateValue as Timestamp).toDate === 'function') {
+      return (dateValue as Timestamp).toDate();
+    }
+    return null;
+  }
+  
+  const safeEmploymentStartDate = safeDate(employee.employmentStartDate);
+  const safeDateOfBirth = safeDate(employee.dateOfBirth);
+
 
   return (
     <>
@@ -299,8 +312,8 @@ export default function EmployeeDetailPage() {
                       <div className="mt-4 space-y-2 text-muted-foreground">
                         <p className="flex items-center gap-2"><Mail className="w-4 h-4"/> {employee.email || 'No email'}</p>
                         <p className="flex items-center gap-2"><Phone className="w-4 h-4"/> {employee.phone || 'No phone'}</p>
-                        <p className="flex items-center gap-2"><CalendarIcon className="w-4 h-4"/> Started on {format(employee.employmentStartDate.toDate(), 'MMMM d, yyyy')}</p>
-                        {employee.dateOfBirth && <p className="flex items-center gap-2"><Cake className="w-4 h-4"/> Born on {format(employee.dateOfBirth.toDate(), 'MMMM d, yyyy')}</p>}
+                        {safeEmploymentStartDate && <p className="flex items-center gap-2"><CalendarIcon className="w-4 h-4"/> Started on {format(safeEmploymentStartDate, 'MMMM d, yyyy')}</p>}
+                        {safeDateOfBirth && <p className="flex items-center gap-2"><Cake className="w-4 h-4"/> Born on {format(safeDateOfBirth, 'MMMM d, yyyy')}</p>}
                       </div>
                   </>
               )}

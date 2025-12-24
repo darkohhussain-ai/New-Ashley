@@ -11,8 +11,8 @@ type Employee = {
   id: string;
   name: string;
   jobTitle?: string;
-  employmentStartDate: Timestamp;
-  dateOfBirth?: Timestamp;
+  employmentStartDate: Timestamp | Date;
+  dateOfBirth?: Timestamp | Date;
   email?: string;
   phone?: string;
   photoUrl?: string;
@@ -25,7 +25,17 @@ type EmployeePdfCardProps = {
 
 export function EmployeePdfCard({ employee, logoSrc }: EmployeePdfCardProps) {
   
-  const formattedDob = employee.dateOfBirth ? format(employee.dateOfBirth.toDate(), 'dd/MM/yyyy') : 'N/A';
+  const safeDate = (dateValue: Timestamp | Date | undefined): Date | null => {
+    if (!dateValue) return null;
+    if (dateValue instanceof Date) return dateValue;
+    if (typeof (dateValue as Timestamp).toDate === 'function') {
+      return (dateValue as Timestamp).toDate();
+    }
+    return null;
+  }
+  
+  const safeDateOfBirth = safeDate(employee.dateOfBirth);
+  const formattedDob = safeDateOfBirth ? format(safeDateOfBirth, 'dd/MM/yyyy') : 'N/A';
 
   return (
     <div className="bg-white text-black w-[350px] p-0 font-sans" style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" }}>
