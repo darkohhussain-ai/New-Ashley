@@ -59,6 +59,12 @@ export default function ExpensesPage() {
   const [amount, setAmount] = useState<string>('');
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [notes, setNotes] = useState<string>('');
+  
+  const sortedEmployees = useMemo(() => {
+    if (!employees) return [];
+    return [...employees].sort((a, b) => a.name.localeCompare(b.name));
+  }, [employees]);
+
 
   const resetForm = () => {
     setSelectedEmployee('');
@@ -172,7 +178,7 @@ export default function ExpensesPage() {
                   {isLoadingEmployees ? (
                     <SelectItem value="loading" disabled>Loading...</SelectItem>
                   ) : (
-                    employees?.map(emp => (
+                    sortedEmployees?.map(emp => (
                       <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>
                     ))
                   )}
