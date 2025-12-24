@@ -21,6 +21,9 @@ import { cn } from '@/lib/utils';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { ChartConfig, ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
+
 
 type ExcelFile = {
   id: string;
@@ -105,6 +108,19 @@ const PaginationControls = ({ currentPage, totalPages, onPageChange }: { current
   );
 };
 
+const statusChartConfig = {
+  'Not Checked': { label: 'Not Checked', color: 'hsl(var(--muted-foreground))' },
+  Correct: { label: 'Correct', color: 'hsl(var(--chart-2))' },
+  Less: { label: 'Less', color: 'hsl(var(--chart-4))' },
+  More: { label: 'More', color: 'hsl(var(--chart-5))' },
+} satisfies ChartConfig;
+
+const conditionChartConfig = {
+  'Not Damaged': { label: 'Not Damaged', color: 'hsl(var(--chart-2))' },
+  Wrapped: { label: 'Wrapped', color: 'hsl(var(--chart-4))' },
+  Damaged: { label: 'Damaged', color: 'hsl(var(--chart-1))' },
+} satisfies ChartConfig;
+
 
 export default function FileDetailPage() {
   const params = useParams();
@@ -135,6 +151,45 @@ export default function FileDetailPage() {
     if (items) {
       setEditableItems(JSON.parse(JSON.stringify(items))); // Deep copy for editing
     }
+  }, [items]);
+
+  const { statusChartData, conditionChartData } = useMemo(() => {
+    if (!items) return { statusChartData: [], conditionChartData: [] };
+
+    const totalItems = items.length;
+    if (totalItems === 0) return { statusChartData: [], conditionChartData: [] };
+    
+    // Status data
+    const statusCounts = { 'Not Checked': 0, Correct: 0, Less: 0, More: 0 };
+    items.forEach(item => {
+        statusCounts[item.storageStatus || 'Not Checked'] = (statusCounts[item.storageStatus || 'Not Checked'] || 0) + 1;
+    });
+
+    const statusChartData = Object.entries(statusCounts).map(([name, value]) => ({
+      name,
+      value,
+      fill: statusChartConfig[name as keyof typeof statusChartConfig]?.color || '#ccc'
+    })).filter(d => d.value > 0);
+    
+    // Condition data
+    const conditionCounts = { 'Not Damaged': 0, Wrapped: 0, Damaged: 0 };
+    items.forEach(item => {
+      if (item.modelCondition === 'Damaged') {
+        conditionCounts.Damaged++;
+      } else if (item.modelCondition === 'Wrapped') {
+        conditionCounts.Wrapped++;
+      } else {
+        conditionCounts['Not Damaged']++;
+      }
+    });
+
+    const conditionChartData = Object.entries(conditionCounts).map(([name, value]) => ({
+      name,
+      value,
+      fill: conditionChartConfig[name as keyof typeof conditionChartConfig]?.color || '#ccc'
+    })).filter(d => d.value > 0);
+
+    return { statusChartData, conditionChartData };
   }, [items]);
 
   const sortedItems = useMemo(() => {
@@ -382,21 +437,85 @@ export default function FileDetailPage() {
 
       <Card className="mb-8">
         <CardHeader>
-            <div className="flex justify-between items-start">
-                <div>
-                    <CardTitle className="text-2xl md:text-3xl font-bold">{file.storageName}</CardTitle>
-                    <CardDescription className="font-semibold text-primary">{file.categoryName}</CardDescription>
+            <div className="flex justify-between items-start flex-wrap gap-4">
+                <div className='flex-1 min-w-[250px]'>
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <CardTitle className="text-2xl md:text-3xl font-bold">{file.storageName}</CardTitle>
+                            <CardDescription className="font-semibold text-primary">{file.categoryName}</CardDescription>
+                        </div>
+                        <Badge variant={file.type === 'imported' ? 'default' : 'secondary'}>{file.type}</Badge>
+                    </div>
+                    <CardDescription className="grid grid-cols-2 md:flex md:items-center gap-x-6 gap-y-2 text-sm pt-2">
+                        <span className="flex items-center gap-2"><User className="w-4 h-4"/>{getEmployeeName(file.storekeeperId)}</span>
+                        <span className="flex items-center gap-2"><Building className="w-4 h-4"/>{file.source}</span>
+                        <span className="flex items-center gap-2">
+                          <CalendarIcon className="w-4 h-4"/>
+                          {file.date && typeof file.date.toDate === 'function' ? format(file.date.toDate(), 'PPP') : 'Invalid Date'}
+                        </span>
+                    </CardDescription>
                 </div>
-                <Badge variant={file.type === 'imported' ? 'default' : 'secondary'}>{file.type}</Badge>
+                <div className='flex gap-4 items-center justify-center flex-wrap'>
+                  {statusChartData.length > 0 && (
+                    <ChartContainer config={statusChartConfig} className="min-h-[120px] w-[180px]">
+                      <PieChart>
+                        <Tooltip
+                          content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                              const { name, value } = payload[0];
+                              const total = statusChartData.reduce((acc, curr) => acc + curr.value, 0);
+                              return (
+                                <div className="p-2 text-sm bg-background/80 backdrop-blur-sm rounded-lg border shadow-sm">
+                                  <p className="font-bold">{`${name}: ${((value / total) * 100).toFixed(0)}%`}</p>
+                                  <p className="text-muted-foreground">{`${value} items`}</p>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        <Pie data={statusChartData} dataKey="value" nameKey="name" innerRadius={25} outerRadius={40} strokeWidth={2}>
+                           {statusChartData.map((entry) => (
+                            <Cell key={`cell-${entry.name}`} fill={entry.fill} />
+                          ))}
+                        </Pie>
+                         <Legend content={({ payload }) => (
+                            <div className="text-center text-xs text-muted-foreground -mt-2">Inventory Status</div>
+                         )} />
+                      </PieChart>
+                    </ChartContainer>
+                  )}
+                  {conditionChartData.length > 0 && (
+                    <ChartContainer config={conditionChartConfig} className="min-h-[120px] w-[180px]">
+                      <PieChart>
+                        <Tooltip
+                          content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                              const { name, value } = payload[0];
+                              const total = conditionChartData.reduce((acc, curr) => acc + curr.value, 0);
+                              return (
+                                <div className="p-2 text-sm bg-background/80 backdrop-blur-sm rounded-lg border shadow-sm">
+                                  <p className="font-bold">{`${name}: ${((value / total) * 100).toFixed(0)}%`}</p>
+                                  <p className="text-muted-foreground">{`${value} items`}</p>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        <Pie data={conditionChartData} dataKey="value" nameKey="name" innerRadius={25} outerRadius={40} strokeWidth={2}>
+                          {conditionChartData.map((entry) => (
+                            <Cell key={`cell-${entry.name}`} fill={entry.fill} />
+                          ))}
+                        </Pie>
+                        <Legend content={({ payload }) => (
+                            <div className="text-center text-xs text-muted-foreground -mt-2">Condition Status</div>
+                         )} />
+                      </PieChart>
+                    </ChartContainer>
+                  )}
+                </div>
             </div>
-            <CardDescription className="grid grid-cols-2 md:flex md:items-center gap-x-6 gap-y-2 text-sm pt-2">
-                <span className="flex items-center gap-2"><User className="w-4 h-4"/>{getEmployeeName(file.storekeeperId)}</span>
-                <span className="flex items-center gap-2"><Building className="w-4 h-4"/>{file.source}</span>
-                <span className="flex items-center gap-2">
-                  <CalendarIcon className="w-4 h-4"/>
-                  {file.date && typeof file.date.toDate === 'function' ? format(file.date.toDate(), 'PPP') : 'Invalid Date'}
-                </span>
-            </CardDescription>
         </CardHeader>
       </Card>
       
@@ -491,5 +610,3 @@ export default function FileDetailPage() {
     </div>
   );
 }
-
-    
