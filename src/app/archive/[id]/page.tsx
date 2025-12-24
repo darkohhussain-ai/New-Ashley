@@ -340,7 +340,7 @@ export default function FileDetailPage() {
     
     pdf.addImage(imgData, 'PNG', 14, 14, finalImgWidth, finalImgHeight);
     
-    autoTable(doc, {
+    autoTable(pdf, {
       startY: finalImgHeight + 30,
       head: [['Model', 'Qty', 'Storage Status', 'Condition', 'Qty/Cond', 'Location', 'Notes']],
       body: sortedItems.map(item => [
@@ -510,8 +510,7 @@ export default function FileDetailPage() {
                                 const total = statusChartData.reduce((acc, curr) => acc + curr.value, 0);
                                 return (
                                   <div className="p-2 text-sm bg-background/80 backdrop-blur-sm rounded-lg border shadow-sm">
-                                    <p className="font-bold">{`${name}: ${((value / total) * 100).toFixed(0)}%`}</p>
-                                    <p className="text-muted-foreground">{`${value} items`}</p>
+                                    <p className="font-bold">{`${name}: ${((value / total) * 100).toFixed(0)}% (${value})`}</p>
                                   </div>
                                 );
                               }
@@ -539,8 +538,7 @@ export default function FileDetailPage() {
                                 const total = conditionChartData.reduce((acc, curr) => acc + curr.value, 0);
                                 return (
                                   <div className="p-2 text-sm bg-background/80 backdrop-blur-sm rounded-lg border shadow-sm">
-                                    <p className="font-bold">{`${name}: ${((value / total) * 100).toFixed(0)}%`}</p>
-                                    <p className="text-muted-foreground">{`${value} items`}</p>
+                                    <p className="font-bold">{`${name}: ${((value / total) * 100).toFixed(0)}% (${value})`}</p>
                                   </div>
                                 );
                               }
@@ -655,5 +653,3 @@ export default function FileDetailPage() {
     </>
   );
 }
-
-    
