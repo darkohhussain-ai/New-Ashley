@@ -7,7 +7,7 @@ import { User, Calendar, Building } from "lucide-react";
 import { format } from 'date-fns';
 import { Timestamp } from "firebase/firestore";
 import Image from 'next/image';
-import { PieChart, Pie, Cell, Tooltip } from "recharts";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
 type ExcelFile = {
   id: string;
@@ -147,5 +147,3 @@ export function FilePdfCard({ file, employee, logoSrc, statusData, conditionData
     </div>
   );
 };
-
-    
