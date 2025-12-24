@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
 import { ChartConfig, ChartContainer } from '@/components/ui/chart';
 import html2canvas from 'html2canvas';
 import { FilePdfCard } from '@/components/archive/file-pdf-card';
@@ -621,9 +621,10 @@ export default function FileDetailPage() {
                                           <SelectValue placeholder={warehouseType ? "Select..." : "N/A"} />
                                       </SelectTrigger>
                                       <SelectContent>
-                                      {warehouseType && filteredLocations(warehouseType).map(loc => (
-                                          <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
-                                      ))}
+                                        <SelectItem value="">None</SelectItem>
+                                        {warehouseType && filteredLocations(warehouseType).map(loc => (
+                                            <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
+                                        ))}
                                       </SelectContent>
                                   </Select>
                               ) : (
