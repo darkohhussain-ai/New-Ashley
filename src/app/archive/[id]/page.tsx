@@ -139,6 +139,12 @@ export default function FileDetailPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 40;
 
+  // Filter states for location dropdown
+  const [filterHuanaWarehouse, setFilterHuanaWarehouse] = useState('All');
+  const [filterHuanaFloor, setFilterHuanaFloor] = useState('All');
+  const [filterAshleyFloor, setFilterAshleyFloor] = useState('All');
+  const [filterAshleyArea, setFilterAshleyArea] = useState('All');
+
   const defaultLogo = "https://i.ibb.co/68RvM01/ashley-logo.png";
   const [logoSrc] = useLocalStorage('app-logo', defaultLogo);
 
@@ -267,9 +273,10 @@ export default function FileDetailPage() {
   const handleSave = async () => {
     if (!firestore) return;
     const batch = writeBatch(firestore);
-    sortedItems.forEach(item => {
+    // Use editableItems instead of sortedItems to ensure all changes are saved, not just visible ones
+    editableItems.forEach(item => {
       const itemRef = doc(firestore, `excel_files/${fileId}/items`, item.id);
-      const { id, ...itemData } = item;
+      const { id, fileId: fId, ...itemData } = item;
       batch.update(itemRef, { ...itemData });
     });
     try {
@@ -301,7 +308,34 @@ export default function FileDetailPage() {
       return null;
   }
   const warehouseType = getWarehouseTypeFromSource(file?.source);
-  const filteredLocations = (type: 'Ashley' | 'Huana') => locations?.filter(l => l.warehouseType === type) ?? [];
+  
+  const filteredLocations = useMemo(() => {
+    if (!locations || !warehouseType) return [];
+    
+    let filtered = locations.filter(l => l.warehouseType === warehouseType);
+
+    if (warehouseType === 'Huana') {
+        if(filterHuanaWarehouse !== 'All') {
+            filtered = filtered.filter(l => l.name.startsWith(`H-${filterHuanaWarehouse}-`));
+        }
+        if(filterHuanaFloor !== 'All') {
+            filtered = filtered.filter(l => l.name.startsWith(`H-${filterHuanaWarehouse}-${filterHuanaFloor}-`));
+        }
+    }
+    
+    if(warehouseType === 'Ashley') {
+        if(filterAshleyFloor !== 'All') {
+            filtered = filtered.filter(l => l.name.startsWith(`A-${filterAshleyFloor}-`));
+        }
+        if(filterAshleyArea !== 'All' && filterAshleyFloor === '3') { // Area filter is only for floor 3
+            filtered = filtered.filter(l => l.name.startsWith(`A-3-${filterAshleyArea}-`));
+        }
+    }
+    
+    return filtered.sort((a,b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+
+  }, [locations, warehouseType, filterHuanaWarehouse, filterHuanaFloor, filterAshleyFloor, filterAshleyArea]);
+
 
   const getRowClass = (status?: 'Correct' | 'Less' | 'More' | '') => {
     switch (status) {
@@ -491,29 +525,87 @@ export default function FileDetailPage() {
           </div>
         </header>
 
-        <Card className="mb-8">
-          <CardHeader>
-              <div className="flex justify-between items-start flex-wrap gap-4">
-                  <div className='flex-1 min-w-[250px]'>
-                      <div className="flex justify-between items-start">
-                          <div>
-                              <CardTitle className="text-2xl md:text-3xl font-bold">{file.storageName}</CardTitle>
-                              <CardDescription className="font-semibold text-primary">{file.categoryName}</CardDescription>
-                          </div>
-                          <Badge variant={file.type === 'imported' ? 'default' : 'secondary'}>{file.type}</Badge>
-                      </div>
-                      <CardDescription className="grid grid-cols-2 md:flex md:items-center gap-x-6 gap-y-2 text-sm pt-2">
-                          <span className="flex items-center gap-2"><User className="w-4 h-4"/>{getEmployeeName(file.storekeeperId)}</span>
-                          <span className="flex items-center gap-2"><Building className="w-4 h-4"/>{file.source}</span>
-                          <span className="flex items-center gap-2">
-                            <CalendarIcon className="w-4 h-4"/>
-                            {file.date && typeof file.date.toDate === 'function' ? format(file.date.toDate(), 'PPP') : 'Invalid Date'}
-                          </span>
-                      </CardDescription>
-                  </div>
-                  <div className='flex gap-4 items-center justify-center flex-wrap'>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-1 space-y-8">
+              <Card>
+                <CardHeader>
+                    <div className="flex justify-between items-start flex-wrap gap-4">
+                        <div className='flex-1 min-w-[250px]'>
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <CardTitle className="text-2xl md:text-3xl font-bold">{file.storageName}</CardTitle>
+                                    <CardDescription className="font-semibold text-primary">{file.categoryName}</CardDescription>
+                                </div>
+                                <Badge variant={file.type === 'imported' ? 'default' : 'secondary'}>{file.type}</Badge>
+                            </div>
+                            <CardDescription className="grid grid-cols-2 md:flex md:items-center gap-x-6 gap-y-2 text-sm pt-2">
+                                <span className="flex items-center gap-2"><User className="w-4 h-4"/>{getEmployeeName(file.storekeeperId)}</span>
+                                <span className="flex items-center gap-2"><Building className="w-4 h-4"/>{file.source}</span>
+                                <span className="flex items-center gap-2">
+                                  <CalendarIcon className="w-4 h-4"/>
+                                  {file.date && typeof file.date.toDate === 'function' ? format(file.date.toDate(), 'PPP') : 'Invalid Date'}
+                                </span>
+                            </CardDescription>
+                        </div>
+                    </div>
+                </CardHeader>
+              </Card>
+
+              {isEditing && warehouseType && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Location Filters</CardTitle>
+                        <CardDescription>Filter the locations available for items.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-wrap items-center gap-4">
+                        {warehouseType === 'Huana' && (
+                            <>
+                                <Select value={filterHuanaWarehouse} onValueChange={setFilterHuanaWarehouse}>
+                                    <SelectTrigger className="w-[180px]"><SelectValue placeholder="Select Huana Warehouse..." /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="All">All Huana Warehouses</SelectItem>
+                                        {[1, 2, 3].map(n => <SelectItem key={n} value={String(n)}>Warehouse {n}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                                {filterHuanaWarehouse !== 'All' && (
+                                    <Select value={filterHuanaFloor} onValueChange={setFilterHuanaFloor}>
+                                        <SelectTrigger className="w-[180px]"><SelectValue placeholder="Select Floor..." /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="All">All Floors</SelectItem>
+                                            {[1, 2].map(n => <SelectItem key={n} value={String(n)}>Floor {n}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                )}
+                            </>
+                        )}
+                        {warehouseType === 'Ashley' && (
+                            <>
+                                <Select value={filterAshleyFloor} onValueChange={setFilterAshleyFloor}>
+                                    <SelectTrigger className="w-[180px]"><SelectValue placeholder="Select Floor..." /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="All">All Floors</SelectItem>
+                                        <SelectItem value="4">Floor 4</SelectItem>
+                                        <SelectItem value="3">Floor 3</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                {filterAshleyFloor === '3' && (
+                                    <Select value={filterAshleyArea} onValueChange={setFilterAshleyArea}>
+                                        <SelectTrigger className="w-[180px]"><SelectValue placeholder="Select Area..." /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="All">All Areas on Floor 3</SelectItem>
+                                            <SelectItem value="1">Area 1</SelectItem>
+                                            <SelectItem value="O">Area 2 (Office)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                )}
+                            </>
+                        )}
+                    </CardContent>
+                </Card>
+              )}
+               <div className='flex gap-4 items-center justify-center flex-wrap'>
                     {statusChartData.length > 0 && (
-                      <ChartContainer config={statusChartConfig} className="min-h-[120px] w-[180px]">
+                      <ChartContainer config={statusChartConfig} className="min-h-[120px] w-full max-w-[300px]">
                         <ResponsiveContainer>
                           <PieChart>
                             <Tooltip
@@ -543,7 +635,7 @@ export default function FileDetailPage() {
                       </ChartContainer>
                     )}
                     {conditionChartData.length > 0 && (
-                      <ChartContainer config={conditionChartConfig} className="min-h-[120px] w-[180px]">
+                      <ChartContainer config={conditionChartConfig} className="min-h-[120px] w-full max-w-[300px]">
                         <ResponsiveContainer>
                           <PieChart>
                             <Tooltip
@@ -573,115 +665,112 @@ export default function FileDetailPage() {
                       </ChartContainer>
                     )}
                   </div>
-              </div>
-          </CardHeader>
-        </Card>
+          </div>
         
-        <Card>
-          <CardHeader>
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <CardTitle>Items ({sortedItems.length})</CardTitle>
-               <div className="relative w-full max-w-sm">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  placeholder="Search by model..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <CardTitle>Items ({sortedItems.length})</CardTitle>
+                <div className="relative w-full max-w-sm">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input 
+                    placeholder="Search by model..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
               </div>
-            </div>
-            {totalPages > 1 && <PaginationControls currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />}
-          </CardHeader>
-          <CardContent>
-             <div className="overflow-x-auto">
-              <Table>
-                  <TableHeader>
-                      <TableRow>
-                          <TableHead onClick={() => requestSort('model')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Model {getSortIcon('model')}</div></TableHead>
-                          <TableHead onClick={() => requestSort('quantity')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Qty {getSortIcon('quantity')}</div></TableHead>
-                          <TableHead onClick={() => requestSort('storageStatus')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Storage Status {getSortIcon('storageStatus')}</div></TableHead>
-                          <TableHead onClick={() => requestSort('modelCondition')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Condition {getSortIcon('modelCondition')}</div></TableHead>
-                          <TableHead onClick={() => requestSort('quantityPerCondition')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Qty / Cond. {getSortIcon('quantityPerCondition')}</div></TableHead>
-                          <TableHead onClick={() => requestSort('locationId')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Location {getSortIcon('locationId')}</div></TableHead>
-                          <TableHead onClick={() => requestSort('notes')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Notes {getSortIcon('notes')}</div></TableHead>
-                      </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                      {paginatedItems.map((item) => (
-                          <TableRow key={item.id} className={cn("transition-colors", getRowClass(item.storageStatus))}>
-                              <TableCell className="font-medium">{item.model}</TableCell>
-                              <TableCell>{isEditing ? 
-                                  <Input type="number" value={item.quantity} disabled className="w-20 bg-muted/50 border-none" /> 
-                                  : item.quantity
-                              }</TableCell>
-                               <TableCell>{isEditing ? (
-                                  <Select value={item.storageStatus || ''} onValueChange={v => handleItemChange(item.id, 'storageStatus', v === 'none' ? '' : v)}>
-                                      <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
-                                      <SelectContent>
+              {totalPages > 1 && <PaginationControls currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />}
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead onClick={() => requestSort('model')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Model {getSortIcon('model')}</div></TableHead>
+                            <TableHead onClick={() => requestSort('quantity')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Qty {getSortIcon('quantity')}</div></TableHead>
+                            <TableHead onClick={() => requestSort('storageStatus')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Storage Status {getSortIcon('storageStatus')}</div></TableHead>
+                            <TableHead onClick={() => requestSort('modelCondition')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Condition {getSortIcon('modelCondition')}</div></TableHead>
+                            <TableHead onClick={() => requestSort('quantityPerCondition')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Qty / Cond. {getSortIcon('quantityPerCondition')}</div></TableHead>
+                            <TableHead onClick={() => requestSort('locationId')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Location {getSortIcon('locationId')}</div></TableHead>
+                            <TableHead onClick={() => requestSort('notes')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Notes {getSortIcon('notes')}</div></TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {paginatedItems.map((item) => (
+                            <TableRow key={item.id} className={cn("transition-colors", getRowClass(item.storageStatus))}>
+                                <TableCell className="font-medium">{item.model}</TableCell>
+                                <TableCell>{isEditing ? 
+                                    <Input type="number" value={item.quantity} onChange={e => handleItemChange(item.id, 'quantity', e.target.valueAsNumber)} className="w-20" /> 
+                                    : item.quantity
+                                }</TableCell>
+                                <TableCell>{isEditing ? (
+                                    <Select value={item.storageStatus || ''} onValueChange={v => handleItemChange(item.id, 'storageStatus', v === 'none' ? '' : v)}>
+                                        <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="none">None</SelectItem>
+                                            <SelectItem value="Correct">Correct</SelectItem>
+                                            <SelectItem value="Less">Less</SelectItem>
+                                            <SelectItem value="More">More</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                ) : (
+                                    <span className="flex items-center gap-2">{item.storageStatus || 'N/A'}</span>
+                                )}</TableCell>
+                                <TableCell className={cn("transition-colors", getConditionCellClass(item.modelCondition))}>{isEditing ? (
+                                    <Select value={item.modelCondition || ''} onValueChange={v => handleItemChange(item.id, 'modelCondition', v === 'none' ? '' : v)}>
+                                        <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="none">None</SelectItem>
+                                            <SelectItem value="Wrapped">Wrapped</SelectItem>
+                                            <SelectItem value="Damaged">Damaged</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                ) : item.modelCondition || 'N/A'}</TableCell>
+                                <TableCell>{isEditing ? 
+                                    <Input type="number" value={item.quantityPerCondition ?? ''} onChange={e => handleItemChange(item.id, 'quantityPerCondition', e.target.valueAsNumber)} className="w-24" />
+                                    : item.quantityPerCondition ?? 'N/A'
+                                }</TableCell>
+                                <TableCell>{isEditing ? (
+                                    <Select value={item.locationId || ''} onValueChange={v => handleItemChange(item.id, 'locationId', v === 'none' ? '' : v)} disabled={!warehouseType}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder={warehouseType ? "Select..." : "N/A"} />
+                                        </SelectTrigger>
+                                        <SelectContent>
                                           <SelectItem value="none">None</SelectItem>
-                                          <SelectItem value="Correct">Correct</SelectItem>
-                                          <SelectItem value="Less">Less</SelectItem>
-                                          <SelectItem value="More">More</SelectItem>
-                                      </SelectContent>
-                                  </Select>
-                              ) : (
-                                  <span className="flex items-center gap-2">{item.storageStatus || 'N/A'}</span>
-                              )}</TableCell>
-                              <TableCell className={cn("transition-colors", getConditionCellClass(item.modelCondition))}>{isEditing ? (
-                                  <Select value={item.modelCondition || ''} onValueChange={v => handleItemChange(item.id, 'modelCondition', v === 'none' ? '' : v)}>
-                                      <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
-                                      <SelectContent>
-                                          <SelectItem value="none">None</SelectItem>
-                                          <SelectItem value="Wrapped">Wrapped</SelectItem>
-                                          <SelectItem value="Damaged">Damaged</SelectItem>
-                                      </SelectContent>
-                                  </Select>
-                              ) : item.modelCondition || 'N/A'}</TableCell>
-                              <TableCell>{isEditing ? 
-                                  <Input type="number" value={item.quantityPerCondition ?? ''} onChange={e => handleItemChange(item.id, 'quantityPerCondition', e.target.valueAsNumber)} className="w-24" />
-                                  : item.quantityPerCondition ?? 'N/A'
-                              }</TableCell>
-                              <TableCell>{isEditing ? (
-                                  <Select value={item.locationId || ''} onValueChange={v => handleItemChange(item.id, 'locationId', v === 'none' ? '' : v)} disabled={!warehouseType}>
-                                      <SelectTrigger>
-                                          <SelectValue placeholder={warehouseType ? "Select..." : "N/A"} />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="none">None</SelectItem>
-                                        {warehouseType && filteredLocations(warehouseType).map(loc => (
-                                            <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                  </Select>
-                              ) : (
-                                  <span className="flex items-center gap-2">
-                                      {item.locationId && <MapPin className="w-4 h-4 text-muted-foreground"/>}
-                                      {item.locationId ? getLocationName(item.locationId) : 'N/A'}
-                                  </span>
-                              )}</TableCell>
-                              <TableCell>{isEditing ?
-                                  <Textarea value={item.notes ?? ''} onChange={e => handleItemChange(item.id, 'notes', e.target.value)} />
-                                  : item.notes || 'N/A'
-                              }</TableCell>
-                          </TableRow>
-                      ))}
-                       {paginatedItems.length === 0 && (
-                          <TableRow>
-                              <TableCell colSpan={7} className="text-center h-24">No items found in this file.</TableCell>
-                          </TableRow>
-                      )}
-                  </TableBody>
-              </Table>
-             </div>
-          </CardContent>
-          {totalPages > 1 && <CardContent><PaginationControls currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} /></CardContent>}
-        </Card>
+                                          {filteredLocations.map(loc => (
+                                              <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                    </Select>
+                                ) : (
+                                    <span className="flex items-center gap-2">
+                                        {item.locationId && <MapPin className="w-4 h-4 text-muted-foreground"/>}
+                                        {item.locationId ? getLocationName(item.locationId) : 'N/A'}
+                                    </span>
+                                )}</TableCell>
+                                <TableCell>{isEditing ?
+                                    <Textarea value={item.notes ?? ''} onChange={e => handleItemChange(item.id, 'notes', e.target.value)} />
+                                    : item.notes || 'N/A'
+                                }</TableCell>
+                            </TableRow>
+                        ))}
+                        {paginatedItems.length === 0 && (
+                            <TableRow>
+                                <TableCell colSpan={7} className="text-center h-24">No items found.</TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+            {totalPages > 1 && <CardContent><PaginationControls currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} /></CardContent>}
+          </Card>
+        </div>
       </div>
     </>
   );
 }
-
-    
 
     
