@@ -4,8 +4,8 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
-import { ArrowLeft, Plus, Trash2, Warehouse, MapPin } from 'lucide-react';
+import { collection, doc, writeBatch } from 'firebase/firestore';
+import { ArrowLeft, Plus, Trash2, Warehouse, MapPin, Loader2, Wand2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -27,7 +27,8 @@ export default function LocationsPage() {
 
   const locationsRef = useMemoFirebase(() => (firestore ? collection(firestore, 'storage_locations') : null), [firestore]);
   const { data: locations, isLoading } = useCollection<StorageLocation>(locationsRef);
-
+  
+  const [isGenerating, setIsGenerating] = useState(false);
   const [open, setOpen] = useState(false);
   const [warehouseType, setWarehouseType] = useState<'Ashley' | 'Huana' | ''>('');
 
@@ -103,6 +104,67 @@ export default function LocationsPage() {
     });
     resetForm();
   };
+  
+  const handleGenerateAll = async () => {
+    if (!firestore || !locations) return;
+
+    setIsGenerating(true);
+    const existingNames = new Set(locations.map(l => l.name));
+    let newLocations: { name: string; warehouseType: 'Ashley' | 'Huana' }[] = [];
+
+    // Huana: 2 warehouses, 2 floors, 8 sections
+    for (let w = 1; w <= 2; w++) {
+      for (let f = 1; f <= 2; f++) {
+        for (let s = 1; s <= 8; s++) {
+          const code = `H-${w}-${f}-${s}`;
+          if (!existingNames.has(code)) newLocations.push({ name: code, warehouseType: 'Huana' });
+        }
+      }
+    }
+
+    // Ashley Floor 4: 16 sections
+    for (let s = 1; s <= 16; s++) {
+      const code = `A-4-${s}`;
+      if (!existingNames.has(code)) newLocations.push({ name: code, warehouseType: 'Ashley' });
+    }
+
+    // Ashley Floor 3, Area 1: 6 units, 4 sections
+    for (let u = 1; u <= 6; u++) {
+      for (let s = 1; s <= 4; s++) {
+        const code = `A-3-1-${u}-${s}`;
+        if (!existingNames.has(code)) newLocations.push({ name: code, warehouseType: 'Ashley' });
+      }
+    }
+
+    // Ashley Floor 3, Area 2 (Office): 6 locations
+    const officeCodes = ['RF', 'RB', 'MF', 'MB', 'LF', 'LB'];
+    for (const oc of officeCodes) {
+      const code = `A-3-O-${oc}`;
+      if (!existingNames.has(code)) newLocations.push({ name: code, warehouseType: 'Ashley' });
+    }
+
+    if (newLocations.length === 0) {
+      toast({ title: "No new locations", description: "All possible locations already exist in the database." });
+      setIsGenerating(false);
+      return;
+    }
+
+    try {
+      const batch = writeBatch(firestore);
+      newLocations.forEach(loc => {
+        const newDocRef = doc(collection(firestore, 'storage_locations'));
+        batch.set(newDocRef, loc);
+      });
+      await batch.commit();
+      toast({ title: "Success", description: `${newLocations.length} new location(s) have been added.` });
+    } catch (e) {
+      console.error("Failed to generate all locations:", e);
+      toast({ variant: "destructive", title: "Error", description: "Could not add new locations." });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
 
   const handleDelete = (locationId: string) => {
     if (!firestore) return;
@@ -116,8 +178,8 @@ export default function LocationsPage() {
 
   const sortedLocations = useMemo(() => {
     if (!locations) return { ashley: [], huana: [] };
-    const ashley = locations.filter(l => l.warehouseType === 'Ashley').sort((a, b) => a.name.localeCompare(b.name));
-    const huana = locations.filter(l => l.warehouseType === 'Huana').sort((a, b) => a.name.localeCompare(b.name));
+    const ashley = locations.filter(l => l.warehouseType === 'Ashley').sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+    const huana = locations.filter(l => l.warehouseType === 'Huana').sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
     return { ashley, huana };
   }, [locations]);
 
@@ -134,11 +196,17 @@ export default function LocationsPage() {
             </Button>
             <h1 className="text-2xl md:text-3xl font-bold">Manage Locations</h1>
           </div>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" /> Add Location
+          <div className="flex items-center gap-2">
+            <Button onClick={handleGenerateAll} variant="outline" disabled={isGenerating}>
+                {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wand2 className="mr-2 h-4 w-4"/>}
+                Generate All
             </Button>
-          </DialogTrigger>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" /> Add Location
+              </Button>
+            </DialogTrigger>
+          </div>
         </header>
 
         <DialogContent className="max-w-md">
@@ -290,7 +358,7 @@ export default function LocationsPage() {
                 </CardHeader>
                 <CardContent>
                   {sortedLocations.ashley.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-2">
                       {sortedLocations.ashley.map(loc => (
                         <div key={loc.id} className="py-2 flex justify-between items-center group">
                            <div className="font-mono flex items-center gap-2 text-sm">
@@ -325,7 +393,7 @@ export default function LocationsPage() {
                 </CardHeader>
                 <CardContent>
                    {sortedLocations.huana.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-2">
                       {sortedLocations.huana.map(loc => (
                         <div key={loc.id} className="py-2 flex justify-between items-center group">
                            <div className="font-mono flex items-center gap-2 text-sm">
@@ -360,11 +428,15 @@ export default function LocationsPage() {
               <div className="text-center py-16 border-2 border-dashed rounded-lg">
                 <Warehouse className="mx-auto h-12 w-12 text-muted-foreground" />
                 <h3 className="mt-4 text-lg font-medium">No Locations Found</h3>
-                <p className="mt-2 text-sm text-muted-foreground">Get started by adding your first storage location.</p>
-                <div className="mt-6">
+                <p className="mt-2 text-sm text-muted-foreground">Get started by adding your first storage location or generate all of them.</p>
+                <div className="mt-6 flex justify-center gap-4">
+                  <Button onClick={handleGenerateAll} variant="outline" disabled={isGenerating}>
+                    {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wand2 className="mr-2 h-4 w-4"/>}
+                    Generate All
+                  </Button>
                   <DialogTrigger asChild>
                     <Button>
-                      <Plus className="mr-2 h-4 w-4" /> Add Location
+                      <Plus className="mr-2 h-4 w-4" /> Add Manually
                     </Button>
                   </DialogTrigger>
                 </div>
@@ -376,5 +448,3 @@ export default function LocationsPage() {
     </div>
   );
 }
-
-    
