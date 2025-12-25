@@ -35,11 +35,11 @@ body {
     --radius: 0.5rem;
 
     /* Custom Status Colors */
-    --status-correct: 142 76% 95%; /* Lighter green */
-    --status-less: 38 92% 95%; /* Lighter orange */
-    --status-more: 210 100% 95%; /* Lighter blue */
-    --status-wrapped: 54 92% 95%; /* Lighter yellow */
-    --status-damaged: 0 84% 95%; /* Lighter red */
+    --status-correct-bg: 142 76% 95%; /* Lighter green */
+    --status-less-bg: 38 92% 95%; /* Lighter orange */
+    --status-more-bg: 210 100% 95%; /* Lighter blue */
+    --status-wrapped-bg: 54 92% 95%; /* Lighter yellow */
+    --status-damaged-bg: 0 84% 95%; /* Lighter red */
     --location-occupied-border: 220 82% 75%;
     --location-occupied-bg: 220 82% 96%;
   }
@@ -70,11 +70,11 @@ body {
     --chart-5: 340 75% 55%;
 
     /* Custom Status Colors */
-    --status-correct: 142 76% 15%; 
-    --status-less: 38 92% 15%;
-    --status-more: 210 100% 15%;
-    --status-wrapped: 54 92% 15%;
-    --status-damaged: 0 84% 15%;
+    --status-correct-bg: 142 76% 15%; 
+    --status-less-bg: 38 92% 15%;
+    --status-more-bg: 210 100% 15%;
+    --status-wrapped-bg: 54 92% 15%;
+    --status-damaged-bg: 0 84% 15%;
     --location-occupied-border: 217.2 91.2% 50%;
     --location-occupied-bg: 217.2 91.2% 15%;
   }
@@ -87,4 +87,12 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+}
+
+@layer utilities {
+  .bg-status-correct { @apply bg-[hsl(var(--status-correct-bg))]; }
+  .bg-status-less { @apply bg-[hsl(var(--status-less-bg))]; }
+  .bg-status-more { @apply bg-[hsl(var(--status-more-bg))]; }
+  .bg-status-wrapped { @apply bg-[hsl(var(--status-wrapped-bg))]; }
+  .bg-status-damaged { @apply bg-[hsl(var(--status-damaged-bg))]; }
 }
