@@ -8,7 +8,7 @@ import { ArrowLeft, Plus, Trash2, Save, Loader2, Calendar, MapPin } from 'lucide
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, doc, writeBatch, Timestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -47,6 +47,12 @@ export default function NewFilePage() {
   const [source, setSource] = useState('');
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [items, setItems] = useState<NewItem[]>([]);
+  
+  // Filter states
+  const [filterHuanaWarehouse, setFilterHuanaWarehouse] = useState('All');
+  const [filterHuanaFloor, setFilterHuanaFloor] = useState('All');
+  const [filterAshleyFloor, setFilterAshleyFloor] = useState('All');
+  const [filterAshleyArea, setFilterAshleyArea] = useState('All');
 
   const employeesRef = useMemoFirebase(() => (firestore ? collection(firestore, 'employees') : null), [firestore]);
   const { data: employees, isLoading: isLoadingEmployees } = useCollection<Employee>(employeesRef);
@@ -118,10 +124,33 @@ export default function NewFilePage() {
       return null;
   }
   const warehouseType = getWarehouseTypeFromSource(source);
+  
   const filteredLocations = useMemo(() => {
     if (!locations || !warehouseType) return [];
-    return locations.filter(l => l.warehouseType === warehouseType);
-  }, [locations, warehouseType]);
+    
+    let filtered = locations.filter(l => l.warehouseType === warehouseType);
+
+    if (warehouseType === 'Huana') {
+        if(filterHuanaWarehouse !== 'All') {
+            filtered = filtered.filter(l => l.name.startsWith(`H-${filterHuanaWarehouse}-`));
+        }
+        if(filterHuanaFloor !== 'All') {
+            filtered = filtered.filter(l => l.name.startsWith(`H-${filterHuanaWarehouse}-${filterHuanaFloor}-`));
+        }
+    }
+    
+    if(warehouseType === 'Ashley') {
+        if(filterAshleyFloor !== 'All') {
+            filtered = filtered.filter(l => l.name.startsWith(`A-${filterAshleyFloor}-`));
+        }
+        if(filterAshleyArea !== 'All') {
+            filtered = filtered.filter(l => l.name.startsWith(`A-3-${filterAshleyArea}-`));
+        }
+    }
+    
+    return filtered.sort((a,b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+
+  }, [locations, warehouseType, filterHuanaWarehouse, filterHuanaFloor, filterAshleyFloor, filterAshleyArea]);
 
 
   return (
@@ -195,11 +224,65 @@ export default function NewFilePage() {
                     </div>
                 </CardContent>
             </Card>
+
+             {warehouseType && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Location Filters</CardTitle>
+                        <CardDescription>Filter the locations available for items.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-wrap items-center gap-4">
+                        {warehouseType === 'Huana' && (
+                            <>
+                                <Select value={filterHuanaWarehouse} onValueChange={setFilterHuanaWarehouse}>
+                                    <SelectTrigger className="w-[180px]"><SelectValue placeholder="Select Huana Warehouse..." /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="All">All Huana Warehouses</SelectItem>
+                                        {[1, 2, 3].map(n => <SelectItem key={n} value={String(n)}>Warehouse {n}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                                {filterHuanaWarehouse !== 'All' && (
+                                    <Select value={filterHuanaFloor} onValueChange={setFilterHuanaFloor}>
+                                        <SelectTrigger className="w-[180px]"><SelectValue placeholder="Select Floor..." /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="All">All Floors</SelectItem>
+                                            {[1, 2].map(n => <SelectItem key={n} value={String(n)}>Floor {n}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                )}
+                            </>
+                        )}
+                        {warehouseType === 'Ashley' && (
+                            <>
+                                <Select value={filterAshleyFloor} onValueChange={setFilterAshleyFloor}>
+                                    <SelectTrigger className="w-[180px]"><SelectValue placeholder="Select Floor..." /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="All">All Floors</SelectItem>
+                                        <SelectItem value="4">Floor 4</SelectItem>
+                                        <SelectItem value="3">Floor 3</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                {filterAshleyFloor === '3' && (
+                                    <Select value={filterAshleyArea} onValueChange={setFilterAshleyArea}>
+                                        <SelectTrigger className="w-[180px]"><SelectValue placeholder="Select Area..." /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="All">All Areas on Floor 3</SelectItem>
+                                            <SelectItem value="1">Area 1</SelectItem>
+                                            <SelectItem value="O">Area 2 (Office)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                )}
+                            </>
+                        )}
+                    </CardContent>
+                </Card>
+            )}
+
         </div>
         <div className="lg:col-span-2">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle>Items</CardTitle>
+                    <CardTitle>Items ({items.length})</CardTitle>
                     <Button variant="outline" onClick={addNewItem}><Plus className="mr-2 h-4 w-4"/> Add Item</Button>
                 </CardHeader>
                 <CardContent>
