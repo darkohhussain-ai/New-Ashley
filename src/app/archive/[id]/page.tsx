@@ -699,7 +699,7 @@ export default function FileDetailPage() {
                     </TableHeader>
                     <TableBody>
                         {paginatedItems.map((item) => (
-                            <TableRow key={item.id} className={cn("transition-colors", getRowClass(item.storageStatus))}>
+                            <TableRow id={item.id} key={item.id} className={cn("transition-colors target:bg-primary/20 target:duration-500", getRowClass(item.storageStatus))}>
                                 <TableCell className="font-medium">{item.model}</TableCell>
                                 <TableCell>{isEditing ? 
                                     <Input type="number" value={item.quantity} onChange={e => handleItemChange(item.id, 'quantity', e.target.valueAsNumber)} className="w-20" /> 

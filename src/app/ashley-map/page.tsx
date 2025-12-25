@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
+import { useSearchParams } from 'next/navigation';
 
 type StorageLocation = {
   id: string;
@@ -30,13 +31,15 @@ type ExcelFile = {
   id: string;
 };
 
-const SectionButton = ({ code, items, onClick, className }: { code: string; items: Item[]; onClick: () => void, className?: string }) => {
+const SectionButton = ({ id, code, items, onClick, className, isHighlighted }: { id: string, code: string; items: Item[]; onClick: () => void, className?: string, isHighlighted?: boolean }) => {
   const itemCount = items.length;
   return (
     <Button
+      id={id}
       variant="outline"
       className={cn(`h-14 w-14 flex flex-col items-center justify-center p-1 border-2 transition-all duration-200 text-xs`,
         itemCount > 0 ? 'border-location-occupied-border bg-location-occupied-bg hover:bg-location-occupied-bg/80' : 'hover:border-muted-foreground/50',
+        isHighlighted && 'ring-2 ring-offset-2 ring-primary',
         className
       )}
       onClick={onClick}
@@ -54,6 +57,9 @@ const SectionButton = ({ code, items, onClick, className }: { code: string; item
 
 export default function AshleyMapPage() {
   const firestore = useFirestore();
+  const searchParams = useSearchParams();
+  const highlightId = window.location.hash.substring(1);
+
   const [selectedLocation, setSelectedLocation] = useState<StorageLocation | null>(null);
   const [itemsInLocation, setItemsInLocation] = useState<Item[]>([]);
   const [isLoadingItems, setIsLoadingItems] = useState(false);
@@ -66,6 +72,15 @@ export default function AshleyMapPage() {
   
   const excelFilesRef = useMemoFirebase(() => (firestore ? collection(firestore, 'excel_files') : null), [firestore]);
   const { data: excelFiles, isLoading: isLoadingExcelFiles } = useCollection<ExcelFile>(excelFilesRef);
+
+  useEffect(() => {
+    if (highlightId) {
+      const element = document.getElementById(highlightId);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, [highlightId, ashleyLocations]);
 
   useEffect(() => {
     const fetchAllItems = async () => {
@@ -178,8 +193,10 @@ export default function AshleyMapPage() {
                     {floor4.map(loc => (
                       <SectionButton 
                         key={loc.id} 
+                        id={loc.id}
                         code={loc.name.replace('A-4-', '')} 
                         items={itemsByLocationId.get(loc.id) || []}
+                        isHighlighted={loc.id === highlightId}
                         onClick={() => handleSectionClick(loc)} />
                     ))}
                   </div>
@@ -201,8 +218,10 @@ export default function AshleyMapPage() {
                               {unit.sections.map(loc => (
                                 <SectionButton 
                                   key={loc.id}
+                                  id={loc.id}
                                   code={loc.name.split('-').slice(4).join('-')}
                                   items={itemsByLocationId.get(loc.id) || []}
+                                  isHighlighted={loc.id === highlightId}
                                   onClick={() => handleSectionClick(loc)}
                                 />
                               ))}
@@ -216,9 +235,11 @@ export default function AshleyMapPage() {
                     <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
                        {floor3.office.map(loc => (
                         <SectionButton 
-                          key={loc.id} 
+                          key={loc.id}
+                          id={loc.id} 
                           code={loc.name.replace('A-3-O-', '')} 
                           items={itemsByLocationId.get(loc.id) || []}
+                          isHighlighted={loc.id === highlightId}
                           onClick={() => handleSectionClick(loc)} 
                         />
                       ))}

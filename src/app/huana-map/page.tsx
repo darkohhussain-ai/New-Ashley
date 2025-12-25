@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
+import { useSearchParams } from 'next/navigation';
 
 type StorageLocation = {
   id: string;
@@ -30,13 +31,15 @@ type ExcelFile = {
   id: string;
 };
 
-const Section = ({ code, items, onClick }: { code: string; items: Item[]; onClick: () => void }) => {
+const Section = ({ id, code, items, onClick, isHighlighted }: { id: string, code: string; items: Item[]; onClick: () => void, isHighlighted?: boolean }) => {
   const itemCount = items.length;
   return (
     <Button
+      id={id}
       variant="outline"
       className={cn(`h-16 w-16 flex flex-col items-center justify-center p-1 border-2 transition-all duration-200`,
-        itemCount > 0 ? 'border-location-occupied-border bg-location-occupied-bg hover:bg-location-occupied-bg/80' : 'hover:border-muted-foreground/50')}
+        itemCount > 0 ? 'border-location-occupied-border bg-location-occupied-bg hover:bg-location-occupied-bg/80' : 'hover:border-muted-foreground/50',
+        isHighlighted && 'ring-2 ring-offset-2 ring-primary')}
       onClick={onClick}
     >
       <span className="text-xs font-mono">{code.split('-').slice(1).join('-')}</span>
@@ -52,6 +55,9 @@ const Section = ({ code, items, onClick }: { code: string; items: Item[]; onClic
 
 export default function HuanaMapPage() {
   const firestore = useFirestore();
+  const searchParams = useSearchParams();
+  const highlightId = window.location.hash.substring(1);
+
   const [selectedLocation, setSelectedLocation] = useState<StorageLocation | null>(null);
   const [itemsInLocation, setItemsInLocation] = useState<Item[]>([]);
   const [isLoadingItems, setIsLoadingItems] = useState(false);
@@ -64,6 +70,15 @@ export default function HuanaMapPage() {
   
   const excelFilesRef = useMemoFirebase(() => (firestore ? collection(firestore, 'excel_files') : null), [firestore]);
   const { data: excelFiles, isLoading: isLoadingExcelFiles } = useCollection<ExcelFile>(excelFilesRef);
+
+  useEffect(() => {
+    if (highlightId) {
+      const element = document.getElementById(highlightId);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, [highlightId, huanaLocations]);
 
   useEffect(() => {
     const fetchAllItems = async () => {
@@ -178,8 +193,10 @@ export default function HuanaMapPage() {
                         {floor.sections.map(section => (
                           <Section
                             key={section.id}
+                            id={section.id}
                             code={section.name}
                             items={itemsByLocationId.get(section.id) || []}
+                            isHighlighted={section.id === highlightId}
                             onClick={() => handleSectionClick(section)}
                           />
                         ))}

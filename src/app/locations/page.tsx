@@ -42,6 +42,7 @@ type SearchResult = Item & {
     locationName: string;
     fileName: string;
     excelFileDate: Timestamp;
+    warehouseType: 'Ashley' | 'Huana' | null;
 };
 
 export default function LocationsPage() {
@@ -105,8 +106,13 @@ export default function LocationsPage() {
     fetchAllItems();
   }, [firestore, excelFiles, isLoadingExcelFiles]);
 
-  const getLocationName = (locationId?: string) => {
-    return locations?.find(loc => loc.id === locationId)?.name || 'N/A';
+  const getLocationInfo = (locationId?: string) => {
+    if (!locationId) return { name: 'N/A', warehouseType: null };
+    const location = locations?.find(loc => loc.id === locationId);
+    return {
+        name: location?.name || 'N/A',
+        warehouseType: location?.warehouseType || null
+    };
   }
   
   const getFileInfo = (fileId: string) => {
@@ -125,11 +131,13 @@ export default function LocationsPage() {
       .filter(item => item.model.toLowerCase().includes(queryLower))
       .map(item => {
         const fileInfo = getFileInfo(item.fileId);
+        const locationInfo = getLocationInfo(item.locationId);
         return {
           ...item,
-          locationName: getLocationName(item.locationId),
+          locationName: locationInfo.name,
           fileName: fileInfo?.storageName || 'Unknown File',
           excelFileDate: fileInfo?.date || Timestamp.now(),
+          warehouseType: locationInfo.warehouseType,
         };
       });
 
@@ -326,7 +334,7 @@ export default function LocationsPage() {
         if(filterAshleyFloor !== 'All') {
             filtered = filtered.filter(l => l.name.startsWith(`A-${filterAshleyFloor}-`));
         }
-        if(filterAshleyArea !== 'All') {
+        if(filterAshleyArea !== 'All' && filterAshleyFloor === '3') { // Area filter is only for floor 3
             filtered = filtered.filter(l => l.name.startsWith(`A-3-${filterAshleyArea}-`));
         }
     }
@@ -542,20 +550,32 @@ export default function LocationsPage() {
                                     <TableHead>Quantity</TableHead>
                                     <TableHead>Location</TableHead>
                                     <TableHead>File Date</TableHead>
+                                    <TableHead>Map</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {searchResults.map((item) => (
                                     <TableRow key={item.id}>
-                                        <TableCell className="font-medium">{item.model}</TableCell>
+                                        <TableCell className="font-medium">
+                                          <Link href={`/archive/${item.fileId}#${item.id}`} className="hover:underline text-primary">
+                                            {item.model}
+                                          </Link>
+                                        </TableCell>
                                         <TableCell>
-                                          <Link href={`/archive/${item.fileId}`} className="hover:underline text-primary">
+                                          <Link href={`/archive/${item.fileId}`} className="hover:underline text-muted-foreground">
                                             {item.fileName}
                                           </Link>
                                         </TableCell>
                                         <TableCell>{item.quantity}</TableCell>
                                         <TableCell>{item.locationName}</TableCell>
                                         <TableCell>{format(item.excelFileDate.toDate(), 'PPP')}</TableCell>
+                                        <TableCell>
+                                            {item.locationId && item.warehouseType && (
+                                                <Button variant="outline" size="sm" asChild>
+                                                    <Link href={`/${item.warehouseType.toLowerCase()}-map#${item.locationId}`}>View on Map</Link>
+                                                </Button>
+                                            )}
+                                        </TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>

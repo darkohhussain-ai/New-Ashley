@@ -87,6 +87,13 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+  @keyframes highlight {
+    from { @apply bg-primary/30; }
+    to { @apply bg-transparent; }
+  }
+  :target {
+    animation: highlight 1.5s ease-out;
+  }
 }
 
 @layer utilities {
