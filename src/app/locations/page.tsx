@@ -5,7 +5,7 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, doc, writeBatch } from 'firebase/firestore';
-import { ArrowLeft, Plus, Trash2, Warehouse, MapPin, Loader2, Wand2 } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Warehouse, MapPin, Loader2, Wand2, Map } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -215,7 +215,7 @@ export default function LocationsPage() {
   return (
     <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
       <Dialog open={open} onOpenChange={(isOpen) => { setOpen(isOpen); if (!isOpen) resetForm(); }}>
-        <header className="flex items-center justify-between gap-4 mb-8">
+        <header className="flex items-center justify-between gap-4 mb-8 flex-wrap">
           <div className="flex items-center gap-4">
             <Button variant="outline" size="icon" asChild>
               <Link href="/items">
@@ -225,7 +225,9 @@ export default function LocationsPage() {
             </Button>
             <h1 className="text-2xl md:text-3xl font-bold">Manage Locations</h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            <Button variant="outline" asChild><Link href="/ashley-map"><Map className="mr-2"/>Ashley Map</Link></Button>
+            <Button variant="outline" asChild><Link href="/huana-map"><Map className="mr-2"/>Huana Map</Link></Button>
             <Button onClick={handleGenerateAll} variant="outline" disabled={isGenerating}>
                 {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wand2 className="mr-2 h-4 w-4"/>}
                 Generate All
@@ -496,3 +498,5 @@ export default function LocationsPage() {
     </div>
   );
 }
+
+    
