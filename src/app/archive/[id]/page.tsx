@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useFirestore, useDoc, useCollection, useMemoFirebase, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { doc, collection, Timestamp, writeBatch } from 'firebase/firestore';
-import { ArrowLeft, User, Calendar as CalendarIcon, Building, FileText, MapPin, Edit, Trash2, Save, X, ArrowUpDown, ArrowDown, ArrowUp, FileSpreadsheet, ChevronLeft, ChevronRight, Download } from 'lucide-react';
+import { ArrowLeft, User, Calendar as CalendarIcon, Building, FileText, MapPin, Edit, Trash2, Save, X, ArrowUpDown, ArrowDown, ArrowUp, FileSpreadsheet, ChevronLeft, ChevronRight, Download, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -135,6 +135,7 @@ export default function FileDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editableItems, setEditableItems] = useState<Item[]>([]);
   const [sortConfig, setSortConfig] = useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>({ key: 'model', direction: 'ascending' });
+  const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 40;
 
@@ -202,7 +203,14 @@ export default function FileDetailPage() {
   }, [items]);
 
   const sortedItems = useMemo(() => {
-    const itemsToProcess = isEditing ? editableItems : (items || []);
+    let itemsToProcess = isEditing ? editableItems : (items || []);
+    
+    if (searchQuery) {
+      itemsToProcess = itemsToProcess.filter(item => 
+        item.model.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
     let sortableItems = [...itemsToProcess];
     if (sortConfig !== null) {
       sortableItems.sort((a, b) => {
@@ -222,7 +230,7 @@ export default function FileDetailPage() {
       });
     }
     return sortableItems;
-  }, [isEditing, editableItems, items, sortConfig]);
+  }, [isEditing, editableItems, items, sortConfig, searchQuery]);
 
   const paginatedItems = useMemo(() => {
       return sortedItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -384,6 +392,10 @@ export default function FileDetailPage() {
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Items');
     XLSX.writeFile(workbook, `${file.storageName}.xlsx`);
   };
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
 
   if (isLoading) {
@@ -567,7 +579,18 @@ export default function FileDetailPage() {
         
         <Card>
           <CardHeader>
-            <CardTitle>Items ({sortedItems.length})</CardTitle>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <CardTitle>Items ({sortedItems.length})</CardTitle>
+               <div className="relative w-full max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  placeholder="Search by model..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
             {totalPages > 1 && <PaginationControls currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />}
           </CardHeader>
           <CardContent>
@@ -658,5 +681,7 @@ export default function FileDetailPage() {
     </>
   );
 }
+
+    
 
     
