@@ -30,17 +30,18 @@ type Item = {
   model: string;
   quantity: number;
   locationId?: string;
-  excelFileDate: Timestamp;
 };
 
 type ExcelFile = {
   id: string;
+  storageName: string;
   date: Timestamp;
 };
 
 type SearchResult = Item & {
     locationName: string;
     fileName: string;
+    excelFileDate: Timestamp;
 };
 
 export default function LocationsPage() {
@@ -56,6 +57,8 @@ export default function LocationsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [allItems, setAllItems] = useState<Item[]>([]);
+  const [isLoadingAllItems, setIsLoadingAllItems] = useState(true);
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [open, setOpen] = useState(false);
@@ -81,42 +84,61 @@ export default function LocationsPage() {
   const [filterAshleyFloor, setFilterAshleyFloor] = useState('All');
   const [filterAshleyArea, setFilterAshleyArea] = useState('All');
 
+  useEffect(() => {
+    const fetchAllItems = async () => {
+      if (!firestore || !excelFiles || excelFiles.length === 0) {
+        if (!isLoadingExcelFiles) setIsLoadingAllItems(false);
+        return;
+      }
+      setIsLoadingAllItems(true);
+      let allItemsData: Item[] = [];
+      for (const file of excelFiles) {
+        const itemsCollectionRef = collection(firestore, `excel_files/${file.id}/items`);
+        const itemsSnapshot = await getDocs(itemsCollectionRef);
+        const fileItems = itemsSnapshot.docs.map(doc => ({ ...doc.data() } as Item));
+        allItemsData = [...allItemsData, ...fileItems];
+      }
+      setAllItems(allItemsData);
+      setIsLoadingAllItems(false);
+    };
+
+    fetchAllItems();
+  }, [firestore, excelFiles, isLoadingExcelFiles]);
+
   const getLocationName = (locationId?: string) => {
     return locations?.find(loc => loc.id === locationId)?.name || 'N/A';
   }
+  
+  const getFileInfo = (fileId: string) => {
+    return excelFiles?.find(file => file.id === fileId);
+  }
 
-  const handleSearch = async () => {
-    if (!firestore || !searchQuery.trim()) {
+  const handleSearch = () => {
+    if (!searchQuery.trim()) {
         setSearchResults([]);
         return;
     }
     setIsSearching(true);
-    let results: SearchResult[] = [];
+    
+    const queryLower = searchQuery.toLowerCase();
+    const results = allItems
+      .filter(item => item.model.toLowerCase().includes(queryLower))
+      .map(item => {
+        const fileInfo = getFileInfo(item.fileId);
+        return {
+          ...item,
+          locationName: getLocationName(item.locationId),
+          fileName: fileInfo?.storageName || 'Unknown File',
+          excelFileDate: fileInfo?.date || Timestamp.now(),
+        };
+      });
 
-    if (excelFiles) {
-        for (const file of excelFiles) {
-            const itemsRef = collection(firestore, `excel_files/${file.id}/items`);
-            const q = query(itemsRef, where('model', '==', searchQuery.trim()));
-            const querySnapshot = await getDocs(q);
-
-            querySnapshot.forEach(doc => {
-                const item = doc.data() as Item;
-                results.push({
-                    ...item,
-                    fileId: file.id,
-                    excelFileDate: file.date,
-                    locationName: getLocationName(item.locationId),
-                    fileName: file.id, // We don't have file name here, will use ID
-                });
-            });
-        }
-    }
     setSearchResults(results);
     setIsSearching(false);
     if(results.length === 0) {
         toast({
             title: "No results",
-            description: `No items found with model "${searchQuery}".`
+            description: `No items found with model containing "${searchQuery}".`
         })
     }
   };
@@ -505,7 +527,7 @@ export default function LocationsPage() {
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                     />
-                    <Button onClick={handleSearch} disabled={isSearching || isLoadingExcelFiles}>
+                    <Button onClick={handleSearch} disabled={isSearching || isLoadingAllItems}>
                         {isSearching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
                         Search
                     </Button>
@@ -516,6 +538,7 @@ export default function LocationsPage() {
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Model</TableHead>
+                                    <TableHead>File Name</TableHead>
                                     <TableHead>Quantity</TableHead>
                                     <TableHead>Location</TableHead>
                                     <TableHead>File Date</TableHead>
@@ -524,9 +547,10 @@ export default function LocationsPage() {
                             <TableBody>
                                 {searchResults.map((item) => (
                                     <TableRow key={item.id}>
-                                        <TableCell className="font-medium">
+                                        <TableCell className="font-medium">{item.model}</TableCell>
+                                        <TableCell>
                                           <Link href={`/archive/${item.fileId}`} className="hover:underline text-primary">
-                                            {item.model}
+                                            {item.fileName}
                                           </Link>
                                         </TableCell>
                                         <TableCell>{item.quantity}</TableCell>
@@ -722,5 +746,3 @@ export default function LocationsPage() {
     </div>
   );
 }
-
-    
