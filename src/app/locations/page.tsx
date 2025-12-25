@@ -181,6 +181,30 @@ export default function LocationsPage() {
     });
   };
 
+  const handleDeleteAll = async () => {
+    if (!firestore || !locations || locations.length === 0) return;
+
+    try {
+      const batch = writeBatch(firestore);
+      locations.forEach(loc => {
+        const docRef = doc(firestore, 'storage_locations', loc.id);
+        batch.delete(docRef);
+      });
+      await batch.commit();
+      toast({
+        title: "All Locations Deleted",
+        description: "All storage locations have been removed.",
+      });
+    } catch (error) {
+      console.error("Failed to delete all locations:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Could not delete all locations.",
+      });
+    }
+  };
+
   const sortedLocations = useMemo(() => {
     if (!locations) return { ashley: [], huana: [] };
     const ashley = locations.filter(l => l.warehouseType === 'Ashley').sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
@@ -211,6 +235,25 @@ export default function LocationsPage() {
                 <Plus className="mr-2 h-4 w-4" /> Add Location
               </Button>
             </DialogTrigger>
+             <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" disabled={isGenerating || !locations || locations.length === 0}>
+                  <Trash2 className="mr-2 h-4 w-4" /> Remove All
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete all {locations?.length} storage locations. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteAll}>Delete All</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </header>
 
@@ -453,5 +496,3 @@ export default function LocationsPage() {
     </div>
   );
 }
-
-    
