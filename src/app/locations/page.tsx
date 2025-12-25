@@ -10,10 +10,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Separator } from '@/components/ui/separator';
 
 type StorageLocation = {
   id: string;
@@ -44,6 +45,14 @@ export default function LocationsPage() {
   const [ashleyUnit, setAshleyUnit] = useState('');
   const [ashleyUnitSection, setAshleyUnitSection] = useState('');
   const [ashleyOfficeCode, setAshleyOfficeCode] = useState('');
+  
+  // Filter states
+  const [filterWarehouse, setFilterWarehouse] = useState<'All' | 'Ashley' | 'Huana'>('All');
+  const [filterHuanaWarehouse, setFilterHuanaWarehouse] = useState('All');
+  const [filterHuanaFloor, setFilterHuanaFloor] = useState('All');
+  const [filterAshleyFloor, setFilterAshleyFloor] = useState('All');
+  const [filterAshleyArea, setFilterAshleyArea] = useState('All');
+
 
   const resetForm = () => {
     setWarehouseType('');
@@ -207,10 +216,36 @@ export default function LocationsPage() {
 
   const sortedLocations = useMemo(() => {
     if (!locations) return { ashley: [], huana: [] };
-    const ashley = locations.filter(l => l.warehouseType === 'Ashley').sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
-    const huana = locations.filter(l => l.warehouseType === 'Huana').sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+    
+    let filtered = locations;
+
+    if (filterWarehouse !== 'All') {
+      filtered = filtered.filter(l => l.warehouseType === filterWarehouse);
+    }
+
+    if (filterWarehouse === 'Huana') {
+        if(filterHuanaWarehouse !== 'All') {
+            filtered = filtered.filter(l => l.name.startsWith(`H-${filterHuanaWarehouse}-`));
+        }
+        if(filterHuanaFloor !== 'All') {
+            filtered = filtered.filter(l => l.name.startsWith(`H-${filterHuanaWarehouse}-${filterHuanaFloor}-`));
+        }
+    }
+    
+    if(filterWarehouse === 'Ashley') {
+        if(filterAshleyFloor !== 'All') {
+            filtered = filtered.filter(l => l.name.startsWith(`A-${filterAshleyFloor}-`));
+        }
+        if(filterAshleyArea !== 'All') {
+            filtered = filtered.filter(l => l.name.startsWith(`A-3-${filterAshleyArea}-`));
+        }
+    }
+
+
+    const ashley = filtered.filter(l => l.warehouseType === 'Ashley').sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+    const huana = filtered.filter(l => l.warehouseType === 'Huana').sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
     return { ashley, huana };
-  }, [locations]);
+  }, [locations, filterWarehouse, filterHuanaWarehouse, filterHuanaFloor, filterAshleyFloor, filterAshleyArea]);
 
   return (
     <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
@@ -386,9 +421,70 @@ export default function LocationsPage() {
             </DialogFooter>
           </form>
         </DialogContent>
-      
-        <main>
-          {isLoading ? (
+
+      <main>
+          <Card className="mb-8">
+            <CardHeader>
+                <CardTitle>Filters</CardTitle>
+                <CardDescription>Select a warehouse and area to narrow down the list of locations.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-wrap items-center gap-4">
+                 <Select value={filterWarehouse} onValueChange={(v: 'All' | 'Ashley' | 'Huana') => setFilterWarehouse(v)}>
+                    <SelectTrigger className="w-[180px]"><SelectValue placeholder="Select Warehouse..." /></SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="All">All Warehouses</SelectItem>
+                        <SelectItem value="Ashley">Ashley</SelectItem>
+                        <SelectItem value="Huana">Huana</SelectItem>
+                    </SelectContent>
+                </Select>
+                
+                {filterWarehouse === 'Huana' && (
+                    <>
+                        <Select value={filterHuanaWarehouse} onValueChange={setFilterHuanaWarehouse}>
+                             <SelectTrigger className="w-[180px]"><SelectValue placeholder="Select Huana Warehouse..." /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="All">All Huana Warehouses</SelectItem>
+                                {[1, 2, 3].map(n => <SelectItem key={n} value={String(n)}>Warehouse {n}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                        {filterHuanaWarehouse !== 'All' && (
+                             <Select value={filterHuanaFloor} onValueChange={setFilterHuanaFloor}>
+                                 <SelectTrigger className="w-[180px]"><SelectValue placeholder="Select Floor..." /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="All">All Floors</SelectItem>
+                                    {[1, 2].map(n => <SelectItem key={n} value={String(n)}>Floor {n}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        )}
+                    </>
+                )}
+
+                {filterWarehouse === 'Ashley' && (
+                    <>
+                        <Select value={filterAshleyFloor} onValueChange={setFilterAshleyFloor}>
+                             <SelectTrigger className="w-[180px]"><SelectValue placeholder="Select Floor..." /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="All">All Floors</SelectItem>
+                                <SelectItem value="4">Floor 4</SelectItem>
+                                <SelectItem value="3">Floor 3</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        {filterAshleyFloor === '3' && (
+                            <Select value={filterAshleyArea} onValueChange={setFilterAshleyArea}>
+                                <SelectTrigger className="w-[180px]"><SelectValue placeholder="Select Area..." /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="All">All Areas on Floor 3</SelectItem>
+                                    <SelectItem value="1">Area 1</SelectItem>
+                                    <SelectItem value="O">Area 2 (Office)</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        )}
+                    </>
+                )}
+            </CardContent>
+          </Card>
+
+        {isLoading ? (
             <div className="grid md:grid-cols-2 gap-8">
               {[...Array(2)].map((_, i) => (
                 <Card key={i} className="animate-pulse">
@@ -400,103 +496,112 @@ export default function LocationsPage() {
                 </Card>
               ))}
             </div>
-          ) : locations && locations.length > 0 ? (
-            <div className="grid md:grid-cols-2 gap-8">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2"><Warehouse className="text-primary"/> Ashley Warehouse</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {sortedLocations.ashley.length > 0 ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-2">
-                      {sortedLocations.ashley.map(loc => (
-                        <div key={loc.id} className="py-2 flex justify-between items-center group">
-                           <div className="font-mono flex items-center gap-2 text-sm">
-                              <MapPin className="w-4 h-4 text-muted-foreground"/>{loc.name}
+        ) : (
+          <div className="space-y-8">
+            {(filterWarehouse === 'All' || filterWarehouse === 'Ashley') && sortedLocations.ashley.length > 0 && (
+                 <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2"><Warehouse className="text-primary"/> Ashley Warehouse</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-4 gap-y-2">
+                          {sortedLocations.ashley.map(loc => (
+                            <div key={loc.id} className="py-2 flex justify-between items-center group">
+                               <div className="font-mono flex items-center gap-2 text-sm">
+                                  <MapPin className="w-4 h-4 text-muted-foreground"/>{loc.name}
+                                </div>
+                               <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <Trash2 className="h-4 w-4"/>
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Delete {loc.name}?</AlertDialogTitle>
+                                      <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => handleDelete(loc.id)}>Delete</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
                             </div>
-                           <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <Trash2 className="h-4 w-4"/>
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete {loc.name}?</AlertDialogTitle>
-                                  <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleDelete(loc.id)}>Delete</AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  ) : <p className="text-sm text-muted-foreground">No locations added for Ashley warehouse.</p>}
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2"><Warehouse className="text-primary"/> Huana Warehouse</CardTitle>
-                </CardHeader>
-                <CardContent>
-                   {sortedLocations.huana.length > 0 ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-2">
-                      {sortedLocations.huana.map(loc => (
-                        <div key={loc.id} className="py-2 flex justify-between items-center group">
-                           <div className="font-mono flex items-center gap-2 text-sm">
-                              <MapPin className="w-4 h-4 text-muted-foreground"/>{loc.name}
-                           </div>
-                           <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <Trash2 className="h-4 w-4"/>
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete {loc.name}?</AlertDialogTitle>
-                                  <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleDelete(loc.id)}>Delete</AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
+                    </CardContent>
+                  </Card>
+            )}
+
+            {(filterWarehouse === 'All' || filterWarehouse === 'Huana') && sortedLocations.huana.length > 0 && (
+                <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2"><Warehouse className="text-primary"/> Huana Warehouse</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-4 gap-y-2">
+                          {sortedLocations.huana.map(loc => (
+                            <div key={loc.id} className="py-2 flex justify-between items-center group">
+                               <div className="font-mono flex items-center gap-2 text-sm">
+                                  <MapPin className="w-4 h-4 text-muted-foreground"/>{loc.name}
+                               </div>
+                               <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <Trash2 className="h-4 w-4"/>
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Delete {loc.name}?</AlertDialogTitle>
+                                      <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => handleDelete(loc.id)}>Delete</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  ) : <p className="text-sm text-muted-foreground">No locations added for Huana warehouse.</p>}
-                </CardContent>
-              </Card>
-            </div>
-          ) : (
-            <Dialog open={open} onOpenChange={setOpen}>
-              <div className="text-center py-16 border-2 border-dashed rounded-lg">
-                <Warehouse className="mx-auto h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-4 text-lg font-medium">No Locations Found</h3>
-                <p className="mt-2 text-sm text-muted-foreground">Get started by adding your first storage location or generate all of them.</p>
-                <div className="mt-6 flex justify-center gap-4">
-                  <Button onClick={handleGenerateAll} variant="outline" disabled={isGenerating}>
-                    {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wand2 className="mr-2 h-4 w-4"/>}
-                    Generate All
-                  </Button>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <Plus className="mr-2 h-4 w-4" /> Add Manually
-                    </Button>
-                  </DialogTrigger>
+                    </CardContent>
+                </Card>
+            )}
+            
+            {sortedLocations.ashley.length === 0 && sortedLocations.huana.length === 0 && (
+                 <div className="text-center py-16 border-2 border-dashed rounded-lg">
+                    <MapPin className="mx-auto h-12 w-12 text-muted-foreground" />
+                    <h3 className="mt-4 text-lg font-medium">No Locations Match Filters</h3>
+                    <p className="mt-2 text-sm text-muted-foreground">Try adjusting or clearing the filters to see more locations.</p>
                 </div>
-              </div>
-            </Dialog>
-          )}
+            )}
+            
+            {locations && locations.length === 0 && (
+              <Dialog open={open} onOpenChange={setOpen}>
+                  <div className="text-center py-16 border-2 border-dashed rounded-lg">
+                    <Warehouse className="mx-auto h-12 w-12 text-muted-foreground" />
+                    <h3 className="mt-4 text-lg font-medium">No Locations Found</h3>
+                    <p className="mt-2 text-sm text-muted-foreground">Get started by adding your first storage location or generate all of them.</p>
+                    <div className="mt-6 flex justify-center gap-4">
+                      <Button onClick={handleGenerateAll} variant="outline" disabled={isGenerating}>
+                        {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wand2 className="mr-2 h-4 w-4"/>}
+                        Generate All
+                      </Button>
+                      <DialogTrigger asChild>
+                        <Button>
+                          <Plus className="mr-2 h-4 w-4" /> Add Manually
+                        </Button>
+                      </DialogTrigger>
+                    </div>
+                  </div>
+                </Dialog>
+            )}
+          </div>
+        )}
         </main>
       </Dialog>
     </div>
   );
 }
-
-    
