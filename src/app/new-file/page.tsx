@@ -4,7 +4,7 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, Trash2, Save, Loader2, Calendar } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Save, Loader2, Calendar, MapPin } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, doc, writeBatch, Timestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
@@ -21,12 +21,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Textarea } from '@/components/ui/textarea';
 
 type Employee = { id: string; name: string; };
+type StorageLocation = { id: string; name: string; warehouseType: 'Ashley' | 'Huana'; };
 
 type NewItem = {
   tempId: number;
   model: string;
   quantity: number;
   notes: string;
+  locationId: string;
 };
 
 const sources = ["Showroom", "Ashley Store", "Huana Store"];
@@ -48,9 +50,13 @@ export default function NewFilePage() {
 
   const employeesRef = useMemoFirebase(() => (firestore ? collection(firestore, 'employees') : null), [firestore]);
   const { data: employees, isLoading: isLoadingEmployees } = useCollection<Employee>(employeesRef);
+  
+  const locationsRef = useMemoFirebase(() => (firestore ? collection(firestore, 'storage_locations') : null), [firestore]);
+  const { data: locations, isLoading: isLoadingLocations } = useCollection<StorageLocation>(locationsRef);
+
 
   const addNewItem = () => {
-    setItems(prev => [...prev, { tempId: Date.now(), model: '', quantity: 1, notes: '' }]);
+    setItems(prev => [...prev, { tempId: Date.now(), model: '', quantity: 1, notes: '', locationId: '' }]);
   };
   
   const handleItemChange = (index: number, field: keyof NewItem, value: any) => {
@@ -105,6 +111,18 @@ export default function NewFilePage() {
           setIsSaving(false);
       }
   };
+  
+  const getWarehouseTypeFromSource = (source?: string) => {
+      if (source === 'Ashley Store') return 'Ashley';
+      if (source === 'Huana Store') return 'Huana';
+      return null;
+  }
+  const warehouseType = getWarehouseTypeFromSource(source);
+  const filteredLocations = useMemo(() => {
+    if (!locations || !warehouseType) return [];
+    return locations.filter(l => l.warehouseType === warehouseType);
+  }, [locations, warehouseType]);
+
 
   return (
     <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
@@ -191,6 +209,7 @@ export default function NewFilePage() {
                                 <TableRow>
                                     <TableHead>Model</TableHead>
                                     <TableHead className="w-[100px]">Quantity</TableHead>
+                                    <TableHead className="w-[200px]">Location</TableHead>
                                     <TableHead>Notes</TableHead>
                                     <TableHead className="w-[50px]"></TableHead>
                                 </TableRow>
@@ -205,6 +224,23 @@ export default function NewFilePage() {
                                             <Input type="number" value={item.quantity} onChange={e => handleItemChange(index, 'quantity', e.target.valueAsNumber)} min="1" />
                                         </TableCell>
                                         <TableCell>
+                                            <Select 
+                                                value={item.locationId} 
+                                                onValueChange={v => handleItemChange(index, 'locationId', v === 'none' ? '' : v)}
+                                                disabled={!warehouseType || isLoadingLocations}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder={warehouseType ? "Select..." : "Set source"} />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="none">None</SelectItem>
+                                                    {filteredLocations.map(loc => (
+                                                        <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </TableCell>
+                                        <TableCell>
                                             <Textarea value={item.notes} onChange={e => handleItemChange(index, 'notes', e.target.value)} placeholder="Optional notes..."/>
                                         </TableCell>
                                         <TableCell>
@@ -215,7 +251,7 @@ export default function NewFilePage() {
                                     </TableRow>
                                 )) : (
                                     <TableRow>
-                                        <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">
+                                        <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
                                             No items added yet.
                                         </TableCell>
                                     </TableRow>
@@ -230,5 +266,3 @@ export default function NewFilePage() {
     </div>
   );
 }
-
-    
