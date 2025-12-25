@@ -33,6 +33,15 @@ body {
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
+
+    /* Custom Status Colors */
+    --status-correct: 142 76% 95%; /* Lighter green */
+    --status-less: 38 92% 95%; /* Lighter orange */
+    --status-more: 210 100% 95%; /* Lighter blue */
+    --status-wrapped: 54 92% 95%; /* Lighter yellow */
+    --status-damaged: 0 84% 95%; /* Lighter red */
+    --location-occupied-border: 220 82% 75%;
+    --location-occupied-bg: 220 82% 96%;
   }
   .dark {
     --background: 222.2 84% 4.9%;
@@ -59,6 +68,15 @@ body {
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+
+    /* Custom Status Colors */
+    --status-correct: 142 76% 15%; 
+    --status-less: 38 92% 15%;
+    --status-more: 210 100% 15%;
+    --status-wrapped: 54 92% 15%;
+    --status-damaged: 0 84% 15%;
+    --location-occupied-border: 217.2 91.2% 50%;
+    --location-occupied-bg: 217.2 91.2% 15%;
   }
 }
 

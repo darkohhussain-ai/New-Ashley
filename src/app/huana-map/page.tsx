@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { cn } from '@/lib/utils';
 
 type StorageLocation = {
   id: string;
@@ -34,8 +35,8 @@ const Section = ({ code, items, onClick }: { code: string; items: Item[]; onClic
   return (
     <Button
       variant="outline"
-      className={`h-16 w-16 flex flex-col items-center justify-center p-1 border-2 transition-all duration-200
-        ${itemCount > 0 ? 'border-primary/80 bg-primary/10 hover:bg-primary/20' : 'hover:border-muted-foreground/50'}`}
+      className={cn(`h-16 w-16 flex flex-col items-center justify-center p-1 border-2 transition-all duration-200`,
+        itemCount > 0 ? 'border-location-occupied-border bg-location-occupied-bg hover:bg-location-occupied-bg/80' : 'hover:border-muted-foreground/50')}
       onClick={onClick}
     >
       <span className="text-xs font-mono">{code.split('-').slice(1).join('-')}</span>

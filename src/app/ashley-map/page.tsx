@@ -36,7 +36,7 @@ const SectionButton = ({ code, items, onClick, className }: { code: string; item
     <Button
       variant="outline"
       className={cn(`h-14 w-14 flex flex-col items-center justify-center p-1 border-2 transition-all duration-200 text-xs`,
-        itemCount > 0 ? 'border-primary/80 bg-primary/10 hover:bg-primary/20' : 'hover:border-muted-foreground/50',
+        itemCount > 0 ? 'border-location-occupied-border bg-location-occupied-bg hover:bg-location-occupied-bg/80' : 'hover:border-muted-foreground/50',
         className
       )}
       onClick={onClick}

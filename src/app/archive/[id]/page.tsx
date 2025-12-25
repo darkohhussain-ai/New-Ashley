@@ -298,11 +298,11 @@ export default function FileDetailPage() {
   const getRowClass = (status?: 'Correct' | 'Less' | 'More' | '') => {
     switch (status) {
       case 'Correct':
-        return 'bg-green-100 dark:bg-green-900/30';
+        return 'bg-status-correct';
       case 'Less':
-        return 'bg-orange-100 dark:bg-orange-900/30';
+        return 'bg-status-less';
       case 'More':
-        return 'bg-blue-100 dark:bg-blue-900/30';
+        return 'bg-status-more';
       default:
         return '';
     }
@@ -312,9 +312,9 @@ export default function FileDetailPage() {
     if (!isEditing) return '';
     switch (condition) {
       case 'Wrapped':
-        return 'bg-yellow-200 dark:bg-yellow-800/50';
+        return 'bg-status-wrapped';
       case 'Damaged':
-        return 'bg-red-200 dark:bg-red-800/50';
+        return 'bg-status-damaged';
       default:
         return '';
     }
