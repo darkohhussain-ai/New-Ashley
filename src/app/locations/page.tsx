@@ -81,7 +81,7 @@ export default function LocationsPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firestore || !generatedCode) {
+    if (!firestore || !generatedCode || !warehouseType) {
       toast({
         variant: "destructive",
         title: "Incomplete Code",
@@ -112,8 +112,8 @@ export default function LocationsPage() {
     const existingNames = new Set(locations.map(l => l.name));
     let newLocations: { name: string; warehouseType: 'Ashley' | 'Huana' }[] = [];
 
-    // Huana: 2 warehouses, 2 floors, 8 sections
-    for (let w = 1; w <= 2; w++) {
+    // Huana: 3 warehouses, 2 floors, 8 sections
+    for (let w = 1; w <= 3; w++) {
       for (let f = 1; f <= 2; f++) {
         for (let s = 1; s <= 8; s++) {
           const code = `H-${w}-${f}-${s}`;
@@ -150,12 +150,17 @@ export default function LocationsPage() {
     }
 
     try {
-      const batch = writeBatch(firestore);
-      newLocations.forEach(loc => {
-        const newDocRef = doc(collection(firestore, 'storage_locations'));
-        batch.set(newDocRef, loc);
-      });
-      await batch.commit();
+      // Use chunks to avoid exceeding batch write limits if there are many locations
+      const chunkSize = 400;
+      for (let i = 0; i < newLocations.length; i += chunkSize) {
+          const chunk = newLocations.slice(i, i + chunkSize);
+          const batch = writeBatch(firestore);
+          chunk.forEach(loc => {
+            const newDocRef = doc(collection(firestore, 'storage_locations'));
+            batch.set(newDocRef, loc);
+          });
+          await batch.commit();
+      }
       toast({ title: "Success", description: `${newLocations.length} new location(s) have been added.` });
     } catch (e) {
       console.error("Failed to generate all locations:", e);
@@ -230,8 +235,8 @@ export default function LocationsPage() {
                  <div className="space-y-2">
                     <Label>Warehouse #</Label>
                     <Select onValueChange={setHuanaWarehouse} value={huanaWarehouse}>
-                       <SelectTrigger><SelectValue placeholder="1-2" /></SelectTrigger>
-                       <SelectContent>{[1,2].map(n => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}</SelectContent>
+                       <SelectTrigger><SelectValue placeholder="1-3" /></SelectTrigger>
+                       <SelectContent>{[1,2,3].map(n => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}</SelectContent>
                     </Select>
                  </div>
                  <div className="space-y-2">
@@ -366,7 +371,7 @@ export default function LocationsPage() {
                             </div>
                            <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8">
+                                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
                                   <Trash2 className="h-4 w-4"/>
                                 </Button>
                               </AlertDialogTrigger>
@@ -401,7 +406,7 @@ export default function LocationsPage() {
                            </div>
                            <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8">
+                                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
                                   <Trash2 className="h-4 w-4"/>
                                 </Button>
                               </AlertDialogTrigger>
@@ -448,3 +453,5 @@ export default function LocationsPage() {
     </div>
   );
 }
+
+    
