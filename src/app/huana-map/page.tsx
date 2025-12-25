@@ -1,10 +1,10 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, collectionGroup, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { ArrowLeft, Box, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -22,6 +22,11 @@ type Item = {
   id: string;
   model: string;
   quantity: number;
+  locationId?: string;
+};
+
+type ExcelFile = {
+  id: string;
 };
 
 const Section = ({ code, items, onClick }: { code: string; items: Item[]; onClick: () => void }) => {
@@ -50,24 +55,46 @@ export default function HuanaMapPage() {
   const [itemsInLocation, setItemsInLocation] = useState<Item[]>([]);
   const [isLoadingItems, setIsLoadingItems] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [allItems, setAllItems] = useState<Item[]>([]);
+  const [isLoadingAllItems, setIsLoadingAllItems] = useState(true);
 
   const locationsRef = useMemoFirebase(() => (firestore ? query(collection(firestore, 'storage_locations'), where('warehouseType', '==', 'Huana')) : null), [firestore]);
   const { data: huanaLocations, isLoading: isLoadingLocations } = useCollection<StorageLocation>(locationsRef);
   
-  const allItemsRef = useMemoFirebase(() => (firestore ? collectionGroup(firestore, 'items') : null), [firestore]);
-  const { data: allItems, isLoading: isLoadingAllItems } = useCollection<Item>(allItemsRef);
+  const excelFilesRef = useMemoFirebase(() => (firestore ? collection(firestore, 'excel_files') : null), [firestore]);
+  const { data: excelFiles, isLoading: isLoadingExcelFiles } = useCollection<ExcelFile>(excelFilesRef);
+
+  useEffect(() => {
+    const fetchAllItems = async () => {
+      if (!firestore || !excelFiles || excelFiles.length === 0) {
+        if(!isLoadingExcelFiles) setIsLoadingAllItems(false);
+        return;
+      }
+      
+      setIsLoadingAllItems(true);
+      let allItemsData: Item[] = [];
+      
+      for (const file of excelFiles) {
+        const itemsCollectionRef = collection(firestore, `excel_files/${file.id}/items`);
+        const itemsSnapshot = await getDocs(itemsCollectionRef);
+        const fileItems = itemsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Item));
+        allItemsData = [...allItemsData, ...fileItems];
+      }
+      
+      setAllItems(allItemsData);
+      setIsLoadingAllItems(false);
+    };
+
+    fetchAllItems();
+  }, [firestore, excelFiles, isLoadingExcelFiles]);
 
 
-  const handleSectionClick = async (location: StorageLocation) => {
+  const handleSectionClick = (location: StorageLocation) => {
     setSelectedLocation(location);
     setIsDialogOpen(true);
     setIsLoadingItems(true);
 
-    if (!firestore) return;
-    
-    const itemsQuery = query(collectionGroup(firestore, 'items'), where('locationId', '==', location.id));
-    const querySnapshot = await getDocs(itemsQuery);
-    const foundItems = querySnapshot.docs.map(doc => doc.data() as Item);
+    const foundItems = allItems.filter(item => item.locationId === location.id);
     
     setItemsInLocation(foundItems);
     setIsLoadingItems(false);
@@ -86,7 +113,6 @@ export default function HuanaMapPage() {
       grouped[warehouse][floor].push(loc);
     });
     
-    // Sort floors and sections
     for (const wh in grouped) {
         for (const fl in grouped[wh]) {
             grouped[wh][fl].sort((a,b) => a.name.localeCompare(b.name, undefined, {numeric: true}));
