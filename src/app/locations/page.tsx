@@ -570,7 +570,7 @@ export default function LocationsPage() {
                 </Card>
             )}
             
-            {sortedLocations.ashley.length === 0 && sortedLocations.huana.length === 0 && (
+            {sortedLocations.ashley.length === 0 && sortedLocations.huana.length === 0 && !isLoading && (
                  <div className="text-center py-16 border-2 border-dashed rounded-lg">
                     <MapPin className="mx-auto h-12 w-12 text-muted-foreground" />
                     <h3 className="mt-4 text-lg font-medium">No Locations Match Filters</h3>
@@ -578,7 +578,7 @@ export default function LocationsPage() {
                 </div>
             )}
             
-            {locations && locations.length === 0 && (
+            {locations && locations.length === 0 && !isLoading && (
               <Dialog open={open} onOpenChange={setOpen}>
                   <div className="text-center py-16 border-2 border-dashed rounded-lg">
                     <Warehouse className="mx-auto h-12 w-12 text-muted-foreground" />
