@@ -162,8 +162,8 @@ export default function LocationsPage() {
                  <div className="space-y-2">
                     <Label>Warehouse #</Label>
                     <Select onValueChange={setHuanaWarehouse} value={huanaWarehouse}>
-                       <SelectTrigger><SelectValue placeholder="1-3" /></SelectTrigger>
-                       <SelectContent>{[1,2,3].map(n => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}</SelectContent>
+                       <SelectTrigger><SelectValue placeholder="1-2" /></SelectTrigger>
+                       <SelectContent>{[1,2].map(n => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}</SelectContent>
                     </Select>
                  </div>
                  <div className="space-y-2">
@@ -376,3 +376,5 @@ export default function LocationsPage() {
     </div>
   );
 }
+
+  
