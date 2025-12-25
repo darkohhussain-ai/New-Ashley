@@ -13,6 +13,7 @@ export function Dashboard() {
     { title: "Employees", icon: Users, href: "/employees" },
     { title: "Ashley Expenses", icon: CreditCard, href: "/expenses" },
     { title: "Placement & Storage", icon: Box, href: "/items" },
+    { title: "Ashley Map", icon: Map, href: "/ashley-map" },
     { title: "Huana Map", icon: Map, href: "/huana-map" },
     { title: "Transmit", icon: ArrowRightLeft, href: "/transmit" },
     { title: "Settings", icon: SettingsIcon, href: "/settings" },
