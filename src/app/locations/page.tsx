@@ -1,11 +1,11 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { collection, doc, writeBatch } from 'firebase/firestore';
-import { ArrowLeft, Plus, Trash2, Warehouse, MapPin, Loader2, Wand2, Map } from 'lucide-react';
+import { collection, doc, writeBatch, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { ArrowLeft, Plus, Trash2, Warehouse, MapPin, Loader2, Wand2, Map, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -15,11 +15,32 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Separator } from '@/components/ui/separator';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { format } from 'date-fns';
 
 type StorageLocation = {
   id: string;
   name: string;
   warehouseType: 'Ashley' | 'Huana';
+};
+
+type Item = {
+  id: string;
+  fileId: string;
+  model: string;
+  quantity: number;
+  locationId?: string;
+  excelFileDate: Timestamp;
+};
+
+type ExcelFile = {
+  id: string;
+  date: Timestamp;
+};
+
+type SearchResult = Item & {
+    locationName: string;
+    fileName: string;
 };
 
 export default function LocationsPage() {
@@ -29,6 +50,13 @@ export default function LocationsPage() {
   const locationsRef = useMemoFirebase(() => (firestore ? collection(firestore, 'storage_locations') : null), [firestore]);
   const { data: locations, isLoading } = useCollection<StorageLocation>(locationsRef);
   
+  const excelFilesRef = useMemoFirebase(() => (firestore ? collection(firestore, 'excel_files') : null), [firestore]);
+  const { data: excelFiles, isLoading: isLoadingExcelFiles } = useCollection<ExcelFile>(excelFilesRef);
+  
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
   const [isGenerating, setIsGenerating] = useState(false);
   const [open, setOpen] = useState(false);
   const [warehouseType, setWarehouseType] = useState<'Ashley' | 'Huana' | ''>('');
@@ -52,6 +80,46 @@ export default function LocationsPage() {
   const [filterHuanaFloor, setFilterHuanaFloor] = useState('All');
   const [filterAshleyFloor, setFilterAshleyFloor] = useState('All');
   const [filterAshleyArea, setFilterAshleyArea] = useState('All');
+
+  const getLocationName = (locationId?: string) => {
+    return locations?.find(loc => loc.id === locationId)?.name || 'N/A';
+  }
+
+  const handleSearch = async () => {
+    if (!firestore || !searchQuery.trim()) {
+        setSearchResults([]);
+        return;
+    }
+    setIsSearching(true);
+    let results: SearchResult[] = [];
+
+    if (excelFiles) {
+        for (const file of excelFiles) {
+            const itemsRef = collection(firestore, `excel_files/${file.id}/items`);
+            const q = query(itemsRef, where('model', '==', searchQuery.trim()));
+            const querySnapshot = await getDocs(q);
+
+            querySnapshot.forEach(doc => {
+                const item = doc.data() as Item;
+                results.push({
+                    ...item,
+                    fileId: file.id,
+                    excelFileDate: file.date,
+                    locationName: getLocationName(item.locationId),
+                    fileName: file.id, // We don't have file name here, will use ID
+                });
+            });
+        }
+    }
+    setSearchResults(results);
+    setIsSearching(false);
+    if(results.length === 0) {
+        toast({
+            title: "No results",
+            description: `No items found with model "${searchQuery}".`
+        })
+    }
+  };
 
 
   const resetForm = () => {
@@ -425,6 +493,55 @@ export default function LocationsPage() {
       <main>
           <Card className="mb-8">
             <CardHeader>
+                <CardTitle>Search Item by Model</CardTitle>
+                <CardDescription>Find item locations across all Excel files.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="flex w-full max-w-sm items-center space-x-2">
+                    <Input 
+                        type="text" 
+                        placeholder="Enter model name..." 
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                    />
+                    <Button onClick={handleSearch} disabled={isSearching || isLoadingExcelFiles}>
+                        {isSearching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
+                        Search
+                    </Button>
+                </div>
+                {searchResults.length > 0 && (
+                    <div className="mt-6 overflow-x-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Model</TableHead>
+                                    <TableHead>Quantity</TableHead>
+                                    <TableHead>Location</TableHead>
+                                    <TableHead>File Date</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {searchResults.map((item) => (
+                                    <TableRow key={item.id}>
+                                        <TableCell className="font-medium">
+                                          <Link href={`/archive/${item.fileId}`} className="hover:underline text-primary">
+                                            {item.model}
+                                          </Link>
+                                        </TableCell>
+                                        <TableCell>{item.quantity}</TableCell>
+                                        <TableCell>{item.locationName}</TableCell>
+                                        <TableCell>{format(item.excelFileDate.toDate(), 'PPP')}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                )}
+            </CardContent>
+          </Card>
+          <Card className="mb-8">
+            <CardHeader>
                 <CardTitle>Filters</CardTitle>
                 <CardDescription>Select a warehouse and area to narrow down the list of locations.</CardDescription>
             </CardHeader>
@@ -605,3 +722,5 @@ export default function LocationsPage() {
     </div>
   );
 }
+
+    
