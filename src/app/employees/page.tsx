@@ -29,7 +29,7 @@ type Employee = {
   id: string;
   name: string;
   jobTitle?: string;
-  employmentStartDate: Timestamp | Date;
+  employmentStartDate?: Timestamp | Date;
   dateOfBirth?: Timestamp | Date;
   email?: string;
   phone?: string;
@@ -96,12 +96,12 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
     };
 
     const handleUpdate = () => {
-        if (!firestore || !employeeId || !name || !employmentStartDate) return;
+        if (!firestore || !employeeId || !name) return;
         
         const updatedData: Partial<Employee> = {
             name,
             jobTitle,
-            employmentStartDate: Timestamp.fromDate(employmentStartDate),
+            employmentStartDate: employmentStartDate ? Timestamp.fromDate(employmentStartDate) : undefined,
             email,
             phone,
             photoUrl,
@@ -273,7 +273,7 @@ function AddEmployeeDialog({ open, onOpenChange }: { open: boolean, onOpenChange
     
     const [name, setName] = useState("");
     const [jobTitle, setJobTitle] = useState("");
-    const [employmentStartDate, setEmploymentStartDate] = useState<Date | undefined>(new Date());
+    const [employmentStartDate, setEmploymentStartDate] = useState<Date | undefined>();
     const [dateOfBirth, setDateOfBirth] = useState<Date | undefined>();
     const [email, setEmail] = useState("");
     const [phone, setPhone] = useState("");
@@ -281,19 +281,30 @@ function AddEmployeeDialog({ open, onOpenChange }: { open: boolean, onOpenChange
     const [notes, setNotes] = useState("");
 
     const resetForm = () => {
-        setName(""); setJobTitle(""); setEmploymentStartDate(new Date()); setDateOfBirth(undefined);
+        setName(""); setJobTitle(""); setEmploymentStartDate(undefined); setDateOfBirth(undefined);
         setEmail(""); setPhone(""); setPhotoUrl(undefined); setNotes("");
         onOpenChange(false);
     };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!name || !employmentStartDate || !firestore || !employeesRef) return;
+        if (!name || !firestore || !employeesRef) {
+            toast({
+                variant: 'destructive',
+                title: 'Name is required',
+                description: 'Please enter a name for the employee.',
+            });
+            return;
+        }
 
         const employeeData: Omit<Employee, 'id'> = {
-            name, jobTitle, email, phone, notes,
-            employmentStartDate: Timestamp.fromDate(employmentStartDate),
+            name, 
+            jobTitle: jobTitle || undefined,
+            email: email || undefined,
+            phone: phone || undefined,
+            notes: notes || undefined,
             photoUrl: photoUrl || `https://picsum.photos/seed/${name.replace(/\s/g, '-')}/400`,
+            employmentStartDate: employmentStartDate ? Timestamp.fromDate(employmentStartDate) : undefined,
             dateOfBirth: dateOfBirth ? Timestamp.fromDate(dateOfBirth) : undefined,
         };
         
@@ -321,16 +332,16 @@ function AddEmployeeDialog({ open, onOpenChange }: { open: boolean, onOpenChange
                         <Input id="photo" type="file" onChange={handlePhotoUpload} accept="image/*" />
                     </div>
                     <div className="space-y-2"><Label htmlFor="name">Name</Label><Input id="name" value={name} onChange={e => setName(e.target.value)} required placeholder="e.g. John Doe" /></div>
-                    <div className="space-y-2"><Label htmlFor="jobTitle">Job Title</Label><Input id="jobTitle" value={jobTitle} onChange={e => setJobTitle(e.target.value)} placeholder="e.g. Graphic Designer" /></div>
+                    <div className="space-y-2"><Label htmlFor="jobTitle">Job Title (Optional)</Label><Input id="jobTitle" value={jobTitle} onChange={e => setJobTitle(e.target.value)} placeholder="e.g. Graphic Designer" /></div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-2"><Label>Email</Label><div className="relative"><Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/><Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="employee@example.com" className="pl-10" /></div></div>
-                        <div className="space-y-2"><Label>Phone</Label><div className="relative"><Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/><Input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="0000-000-000" className="pl-10"/></div></div>
+                        <div className="space-y-2"><Label>Email (Optional)</Label><div className="relative"><Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/><Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="employee@example.com" className="pl-10" /></div></div>
+                        <div className="space-y-2"><Label>Phone (Optional)</Label><div className="relative"><Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/><Input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="0000-000-000" className="pl-10"/></div></div>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-2"><Label>Start Date</Label><Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!employmentStartDate && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{employmentStartDate ? format(employmentStartDate, "PPP") : <span>Pick a date</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={employmentStartDate} onSelect={setEmploymentStartDate} captionLayout="dropdown-nav" fromYear={1990} toYear={2040} initialFocus/></PopoverContent></Popover></div>
-                        <div className="space-y-2"><Label>Date of Birth</Label><Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!dateOfBirth && "text-muted-foreground")}><Cake className="mr-2 h-4 w-4" />{dateOfBirth ? format(dateOfBirth, "PPP") : <span>Pick a date</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={dateOfBirth} onSelect={setDateOfBirth} captionLayout="dropdown-nav" fromYear={1950} toYear={new Date().getFullYear()} initialFocus/></PopoverContent></Popover></div>
+                        <div className="space-y-2"><Label>Start Date (Optional)</Label><Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!employmentStartDate && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{employmentStartDate ? format(employmentStartDate, "PPP") : <span>Pick a date</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={employmentStartDate} onSelect={setEmploymentStartDate} captionLayout="dropdown-nav" fromYear={1990} toYear={2040} initialFocus/></PopoverContent></Popover></div>
+                        <div className="space-y-2"><Label>Date of Birth (Optional)</Label><Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!dateOfBirth && "text-muted-foreground")}><Cake className="mr-2 h-4 w-4" />{dateOfBirth ? format(dateOfBirth, "PPP") : <span>Pick a date</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={dateOfBirth} onSelect={setDateOfBirth} captionLayout="dropdown-nav" fromYear={1950} toYear={new Date().getFullYear()} initialFocus/></PopoverContent></Popover></div>
                     </div>
-                    <div className="space-y-2"><Label htmlFor="notes">Notes</Label><Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. Specializes in frontend development." /></div>
+                    <div className="space-y-2"><Label htmlFor="notes">Notes (Optional)</Label><Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. Specializes in frontend development." /></div>
                     <DialogFooter><DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose><Button type="submit">Add Employee</Button></DialogFooter>
                 </form>
             </DialogContent>
@@ -429,3 +440,5 @@ export default function EmployeesPage() {
     </div>
   )
 }
+
+    

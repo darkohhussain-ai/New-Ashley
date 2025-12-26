@@ -50,12 +50,7 @@
       },
       "required": [
         "id",
-        "name",
-        "jobTitle",
-        "employmentStartDate",
-        "dateOfBirth",
-        "email",
-        "phone"
+        "name"
       ]
     },
     "Expense": {
@@ -300,44 +295,6 @@
         "warehouseManagerName",
         "itemIds"
       ]
-    },
-    "Overtime": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Overtime",
-      "type": "object",
-      "description": "Represents an overtime record for an employee.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Overtime entity."
-        },
-        "employeeId": {
-          "type": "string",
-          "description": "Reference to the Employee."
-        },
-        "date": {
-          "type": "string",
-          "description": "The date the overtime was worked.",
-          "format": "date-time"
-        },
-        "hours": {
-          "type": "number",
-          "description": "Number of overtime hours worked."
-        },
-        "rate": {
-          "type": "number",
-          "description": "The hourly rate for this overtime."
-        },
-        "totalAmount": {
-          "type": "number",
-          "description": "The total amount calculated for this overtime (hours * rate)."
-        },
-        "notes": {
-          "type": "string",
-          "description": "Optional notes about the overtime."
-        }
-      },
-      "required": ["id", "employeeId", "date", "hours", "rate", "totalAmount"]
     }
   },
   "auth": {
@@ -413,19 +370,10 @@
           "description": "Stores archived transfer slips for cargo shipments.",
           "params": [{ "name": "transferId", "description": "Unique identifier for the transfer." }]
         }
-      },
-      {
-        "path": "/overtime/{overtimeId}",
-        "definition": {
-          "entityName": "Overtime",
-          "schema": {
-            "$ref": "#/backend/entities/Overtime"
-          },
-          "description": "Stores employee overtime records.",
-          "params": [{ "name": "overtimeId", "description": "Unique identifier for the overtime record." }]
-        }
       }
     ],
-    "reasoning": "The data model is updated to support the new cargo transfer workflow. A top-level `/items` collection is introduced to stage items before they are assigned to a transfer. This decouples the transfer process from the main inventory stored in `/excel_files`. The `/transfers` collection will archive the created transfer slips, linking to the items that were part of that shipment. This structure provides a clear and scalable way to manage the entire lifecycle of a cargo transfer. An `/overtime` collection has been added to manage employee overtime records."
+    "reasoning": "The data model is updated to support the new cargo transfer workflow. A top-level `/items` collection is introduced to stage items before they are assigned to a transfer. This decouples the transfer process from the main inventory stored in `/excel_files`. The `/transfers` collection will archive the created transfer slips, linking to the items that were part of that shipment. This structure provides a clear and scalable way to manage the entire lifecycle of a cargo transfer. The Overtime entity and collection have been removed."
   }
 }
+
+    
