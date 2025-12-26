@@ -1,60 +1,57 @@
 
 "use client"
 import Image from "next/image"
-import { Users, Box, ArrowRightLeft, Settings as SettingsIcon, CreditCard, Map } from "lucide-react"
+import { Users, Box, ArrowRightLeft, Settings as SettingsIcon, CreditCard, Bell, ChevronDown } from "lucide-react"
 import { DashboardCard } from "./dashboard-card"
-import placeHolderImages from '@/lib/placeholder-images.json'
 import useLocalStorage from "@/hooks/use-local-storage"
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
-import { useRef } from "react"
+import { useUser } from "@/firebase"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 export function Dashboard() {
+  const { user } = useUser();
+
   const menuItems = [
-    { title: "Employees", icon: Users, href: "/employees" },
-    { title: "Ashley Expenses", icon: CreditCard, href: "/expenses" },
-    { title: "Placement & Storage", icon: Box, href: "/items" },
-    { title: "Transmit", icon: ArrowRightLeft, href: "/transmit" },
-    { title: "Settings", icon: SettingsIcon, href: "/settings" },
+    { title: "Employees", icon: Users, href: "/employees", color: "border-pink-500 bg-pink-500" },
+    { title: "Ashley Expenses", icon: CreditCard, href: "/expenses", color: "border-blue-500 bg-blue-500" },
+    { title: "Placement & Storage", icon: Box, href: "/items", color: "border-green-500 bg-green-500" },
+    { title: "Transmit", icon: ArrowRightLeft, href: "/transmit", color: "border-yellow-500 bg-yellow-500" },
+    { title: "Settings", icon: SettingsIcon, href: "/settings", color: "border-purple-500 bg-purple-500" },
   ]
   
-  const defaultLogo = placeHolderImages.placeholderImages.find(p => p.id === 'default-logo')?.imageUrl || "https://picsum.photos/seed/ashley-hr-logo/120/120";
-  const [logoSrc, setLogoSrc] = useLocalStorage('app-logo', defaultLogo);
-  const [logoSize, setLogoSize] = useLocalStorage('app-logo-size', 80);
-
-  const [cardSize, setCardSize] = useLocalStorage('dashboard-card-size', 192);
-  const [iconSize, setIconSize] = useLocalStorage('dashboard-icon-size', 64);
-  
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  const onWheel = (e: React.WheelEvent<HTMLDivElement>) => {
-    if (scrollRef.current) {
-      if (e.deltaY === 0) return;
-      e.preventDefault();
-      scrollRef.current.scrollTo({
-        left: scrollRef.current.scrollLeft + e.deltaY * 2,
-        behavior: 'smooth'
-      });
-    }
-  };
-
+  const [logoSrc] = useLocalStorage('app-logo', "https://i.ibb.co/68RvM01/ashley-logo.png");
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="p-4 flex flex-col items-center justify-center gap-2 border-b sticky top-0 bg-background/80 backdrop-blur-lg z-10 text-center">
-        <Image src={logoSrc} alt="App Logo" width={logoSize} height={logoSize} className="rounded-full object-cover" data-ai-hint="abstract logo" style={{width: `${logoSize * 0.5}px`, height: `${logoSize * 0.5}px`}}/>
-        <h1 className="text-lg font-bold">Ashley HR</h1>
-      </header>
-      <main className="p-8 md:p-12">
-         <ScrollArea className="w-full whitespace-nowrap" onWheel={onWheel}>
-            <div className="flex w-max space-x-8 pb-4" ref={scrollRef}>
-              {menuItems.map((item) => (
-                <div key={item.title} style={{ width: `${cardSize}px` }}>
-                   <DashboardCard {...item} cardSize={cardSize} iconSize={iconSize} />
-                </div>
-              ))}
+      <header className="bg-white shadow-sm sticky top-0 z-10">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between h-20">
+            <div className="flex items-center gap-4">
+              <Image src={logoSrc} alt="App Logo" width={32} height={32} className="object-contain" data-ai-hint="logo" />
+              <h1 className="text-xl font-bold text-gray-800">Ashley HR</h1>
             </div>
-            <ScrollBar orientation="horizontal" />
-         </ScrollArea>
+            <div className="flex items-center gap-6">
+              <Bell className="w-6 h-6 text-gray-500 hover:text-primary cursor-pointer" />
+              <div className="flex items-center gap-2 cursor-pointer">
+                <Avatar className="w-10 h-10">
+                  <AvatarImage src={user?.photoURL || undefined} />
+                  <AvatarFallback>{user?.email?.[0].toUpperCase() || 'A'}</AvatarFallback>
+                </Avatar>
+                <ChevronDown className="w-4 h-4 text-gray-500" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+      <main className="container mx-auto p-4 md:p-8">
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-gray-800">HR Dashboard</h2>
+          <p className="text-gray-500">Select a service to continue.</p>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+          {menuItems.map((item) => (
+            <DashboardCard key={item.title} {...item} />
+          ))}
+        </div>
       </main>
     </div>
   )

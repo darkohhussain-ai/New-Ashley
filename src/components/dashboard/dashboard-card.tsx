@@ -4,28 +4,32 @@
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import type { LucideIcon } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 type DashboardCardProps = {
   title: string
   icon: LucideIcon
   href: string
-  cardSize?: number;
-  iconSize?: number;
+  color: string
 }
 
-export function DashboardCard({ title, icon: Icon, href, cardSize = 192, iconSize = 64 }: DashboardCardProps) {
+export function DashboardCard({ title, icon: Icon, href, color }: DashboardCardProps) {
   return (
     <Link href={href} className="group block">
       <Card 
-        className="bg-card/60 backdrop-blur-sm hover:bg-card/90 transition-all duration-300 transform hover:-translate-y-1 shadow-lg hover:shadow-primary/20 border-2 border-transparent hover:border-primary/50"
-        style={{ height: `${cardSize}px` }}
+        className={cn(
+          "bg-card/60 backdrop-blur-sm transition-all duration-300 transform hover:-translate-y-1 shadow-lg hover:shadow-xl border-t-4",
+          color
+        )}
       >
-        <CardContent className="flex flex-col items-center justify-center p-6 text-center h-full">
-          <Icon 
-            className="mb-4 text-primary group-hover:scale-110 transition-transform duration-300"
-            style={{ width: `${iconSize}px`, height: `${iconSize}px` }}
-          />
-          <h3 className="text-lg font-semibold">{title}</h3>
+        <CardContent className="flex flex-col items-center justify-center p-6 text-center h-full aspect-square">
+          <div className="flex items-center justify-center bg-white/20 rounded-full p-4 mb-4">
+            <Icon 
+              className="text-white transition-transform duration-300 group-hover:scale-110"
+              style={{ width: `48px`, height: `48px` }}
+            />
+          </div>
+          <h3 className="text-lg font-semibold text-white">{title}</h3>
         </CardContent>
       </Card>
     </Link>
