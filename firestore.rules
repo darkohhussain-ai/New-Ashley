@@ -11,10 +11,12 @@
  *
  * Data Structure:
  * The data is organized into several top-level collections:
- * - `/employees`: Stores profiles for all employees.
- * - `/expenses`: Stores all expense records.
- * - `/monthly_reports`: Aggregated reports.
- * - `/archived_expense_lists`: Historical expense data.
+ * - /employees: Stores profiles for all employees.
+ * - /expenses: Stores all expense records.
+ * - /storage_locations: Stores warehouse location codes.
+ * - /excel_files: Stores metadata for inventory files.
+ * - /items: Stores items staged for cargo transfer.
+ * - /transfers: Stores archived cargo transfer slips.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -48,89 +50,44 @@ service cloud.firestore {
 
     /**
      * @description Rules for the 'employees' collection.
-     * @path /employees/{employeeId}
-     * @allow (create) A signed-in user creates a new employee profile.
-     * @deny (create) An anonymous user attempts to create an employee profile.
-     * @principle Grants full read and write access to any authenticated user, suitable for an internal company directory.
      */
     match /employees/{employeeId} {
-      allow get, list: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isExistingDocAndSignedIn();
-      allow delete: if isExistingDocAndSignedIn();
+      allow read, write: if isSignedIn();
     }
 
     /**
      * @description Rules for the 'expenses' collection.
-     * @path /expenses/{expenseId}
-     * @principle Grants full read and write access to any authenticated user for managing system-wide expenses.
      */
     match /expenses/{expenseId} {
       allow read, write: if isSignedIn();
     }
 
     /**
-     * @description Rules for the 'monthly_reports' collection.
-     * @path /monthly_reports/{reportId}
-     * @allow (get) Any signed-in user can read a monthly report.
-     * @deny (get) An anonymous user attempts to read a report.
-     * @principle Grants full read and write access to any authenticated user for managing system-wide reports.
-     */
-    match /monthly_reports/{reportId} {
-      allow get, list: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update, delete: if isExistingDocAndSignedIn();
-    }
-
-    /**
-     * @description Rules for the 'archived_expense_lists' collection.
-     * @path /archived_expense_lists/{archiveId}
-     * @allow (list) Any signed-in user can list all archived expense lists.
-     * @deny (list) An anonymous user attempts to list archives.
-     * @principle Grants full read and write access to any authenticated user for managing historical data archives.
-     */
-    match /archived_expense_lists/{archiveId} {
-      allow get, list: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update, delete: if isExistingDocAndSignedIn();
-    }
-
-    /**
      * @description Rules for the 'storage_locations' collection.
-     * @path /storage_locations/{locationId}
-     * @principle Grants full read and write access to any authenticated user for managing storage locations.
      */
     match /storage_locations/{locationId} {
       allow read, write: if isSignedIn();
     }
 
     /**
-     * @description Rules for the 'excel_files' collection and nested 'items'.
-     * @path /excel_files/{fileId}
-     * @principle Grants full read and write access to any authenticated user.
+     * @description Rules for the 'excel_files' collection.
      */
     match /excel_files/{fileId} {
       allow read, write: if isSignedIn();
-
-      /**
-       * @description Rules for the 'items' subcollection.
-       * @path /excel_files/{fileId}/items/{itemId}
-       * @principle Grants full read and write access to any authenticated user.
-       */
-      match /items/{itemId} {
-        allow read, write: if isSignedIn();
-      }
     }
     
     /**
+     * @description Rules for the 'items' collection. This holds staged items for transfer.
+     */
+    match /items/{itemId} {
+        allow read, write: if isSignedIn();
+    }
+
+    /**
      * @description Rules for the 'transfers' collection.
-     * @path /transfers/{transferId}
-     * @principle Grants full read and write access to any authenticated user for managing cargo transfers.
      */
     match /transfers/{transferId} {
       allow read, write: if isSignedIn();
     }
   }
 }
-
-    

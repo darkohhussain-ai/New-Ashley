@@ -219,15 +219,11 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Item",
       "type": "object",
-      "description": "Represents an item within an Excel file.",
+      "description": "Represents an item to be transferred. It is staged before being assigned to a transfer.",
       "properties": {
         "id": {
           "type": "string",
           "description": "Unique identifier for the Item entity."
-        },
-        "fileId": {
-          "type": "string",
-          "description": "ID of the parent ExcelFile."
         },
         "model": {
           "type": "string",
@@ -241,37 +237,28 @@
           "type": "string",
           "description": "Notes about the item."
         },
-        "storageStatus": {
-            "type": "string",
-            "enum": ["Correct", "Less", "More"]
-        },
-        "modelCondition": {
-            "type": "string",
-            "enum": ["Wrapped", "Damaged"]
-        },
-        "quantityPerCondition": {
-            "type": "number"
-        },
-        "locationId": {
-            "type": "string"
-        },
-        "destinationCity": {
+        "destination": {
           "type": "string",
-          "description": "The destination city for a transferred item.",
+          "description": "The destination city for the item.",
           "enum": ["Erbil", "Baghdad", "Diwan", "Dohuk"]
         },
         "transferId": {
           "type": "string",
-          "description": "The ID of the transfer slip this item belongs to."
+          "description": "The ID of the transfer slip this item belongs to. Null if not yet transferred."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the item was added to the transfer list."
         }
       },
-      "required": ["id", "fileId", "model", "quantity"]
+      "required": ["id", "model", "quantity", "destination", "createdAt"]
     },
     "Transfer": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Transfer",
       "type": "object",
-      "description": "Represents a cargo transfer slip.",
+      "description": "Represents a cargo transfer slip, archiving a collection of transferred items.",
       "properties": {
         "id": {
           "type": "string",
@@ -288,8 +275,7 @@
         },
         "destinationCity": {
           "type": "string",
-          "description": "The destination city for the transfer.",
-          "enum": ["Erbil", "Baghdad", "Diwan", "Dohuk"]
+          "description": "The destination city for the transfer."
         },
         "driverName": {
           "type": "string",
@@ -331,13 +317,8 @@
           "schema": {
             "$ref": "#/backend/entities/Employee"
           },
-          "description": "Stores employee profiles.  All employees are generally visible, so no specific authorization beyond authentication is needed.",
-          "params": [
-            {
-              "name": "employeeId",
-              "description": "Unique identifier for the employee."
-            }
-          ]
+          "description": "Stores employee profiles.",
+          "params": [{ "name": "employeeId", "description": "Unique identifier for the employee." }]
         }
       },
       {
@@ -347,45 +328,8 @@
           "schema": {
             "$ref": "#/backend/entities/Expense"
           },
-          "description": "Stores expenses for each employee. Uses path-based ownership based on `employeeId`.  This enables secure 'list' operations restricted to expenses owned by a specific employee. Contains `employeeId` to help with direct queries and filtering.",
-          "params": [
-            {
-              "name": "expenseId",
-              "description": "Unique identifier for the expense."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/monthly_reports/{reportId}",
-        "definition": {
-          "entityName": "MonthlyReport",
-          "schema": {
-            "$ref": "#/backend/entities/MonthlyReport"
-          },
-          "description": "Stores monthly expense reports. Each document contains `employeeId` and the month for which the report is generated. This facilitates querying and aggregating monthly expenses per employee.",
-          "params": [
-            {
-              "name": "reportId",
-              "description": "Unique identifier for the monthly report."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/archived_expense_lists/{archiveId}",
-        "definition": {
-          "entityName": "ArchivedExpenseList",
-          "schema": {
-            "$ref": "#/backend/entities/ArchivedExpenseList"
-          },
-          "description": "Stores archived expense lists. Each document contains `month` and an array of `expenseIds`. This allows for easy retrieval of archived expenses for a specific month.",
-          "params": [
-            {
-              "name": "archiveId",
-              "description": "Unique identifier for the archived expense list."
-            }
-          ]
+          "description": "Stores expenses for each employee.",
+          "params": [{ "name": "expenseId", "description": "Unique identifier for the expense." }]
         }
       },
       {
@@ -396,12 +340,7 @@
             "$ref": "#/backend/entities/StorageLocation"
           },
           "description": "Stores storage locations.",
-          "params": [
-            {
-              "name": "locationId",
-              "description": "Unique identifier for the storage location."
-            }
-          ]
+          "params": [{ "name": "locationId", "description": "Unique identifier for the storage location." }]
         }
       },
       {
@@ -411,33 +350,19 @@
           "schema": {
             "$ref": "#/backend/entities/ExcelFile"
           },
-          "description": "Stores metadata for created or imported Excel files.",
-          "params": [
-            {
-              "name": "fileId",
-              "description": "Unique identifier for the file."
-            }
-          ]
+          "description": "Stores metadata for created or imported Excel files. This collection is now primarily for inventory management and is separate from the transfer process.",
+          "params": [{ "name": "fileId", "description": "Unique identifier for the file." }]
         }
       },
       {
-        "path": "/excel_files/{fileId}/items/{itemId}",
+        "path": "/items/{itemId}",
         "definition": {
           "entityName": "Item",
           "schema": {
             "$ref": "#/backend/entities/Item"
           },
-          "description": "Stores items within a specific Excel file.",
-          "params": [
-            {
-              "name": "fileId",
-              "description": "Unique identifier for the parent file."
-            },
-            {
-              "name": "itemId",
-              "description": "Unique identifier for the item."
-            }
-          ]
+          "description": "Stores items staged for transfer. Once transferred, they are linked to a Transfer record via transferId.",
+          "params": [{ "name": "itemId", "description": "Unique identifier for the item." }]
         }
       },
       {
@@ -447,18 +372,11 @@
           "schema": {
             "$ref": "#/backend/entities/Transfer"
           },
-          "description": "Stores transfer slips for cargo shipments.",
-          "params": [
-            {
-              "name": "transferId",
-              "description": "Unique identifier for the transfer."
-            }
-          ]
+          "description": "Stores archived transfer slips for cargo shipments.",
+          "params": [{ "name": "transferId", "description": "Unique identifier for the transfer." }]
         }
       }
     ],
-    "reasoning": "This Firestore structure is designed to manage employee data and expenses, incorporating key principles for security, scalability, and maintainability.  It leverages path-based ownership for employee data and employs denormalization to ensure authorization independence when managing expenses. The structure supports QAPs through structural segregation and predictable schema. Specifically:\n\n1.  **Employees Collection (`/employees/{employeeId}`):** Stores employee profiles. This top-level collection simplifies listing all employees. Path-based ownership is used, but since all employees are generally visible, no specific authorization is needed beyond authentication to access the employee list.\n\n2.  **Expenses Collection (`/expenses/{expenseId}`):** Each employee has their own expenses subcollection. The `employeeId` in the path grants implicit ownership. This structure enables secure 'list' operations restricted to a specific employee's expenses, fulfilling the QAPs requirement. The expenses collection also contains `employeeId` to help with direct queries, filtering, and denormalization for aggregation purposes.\n\n3.  **Monthly Reports Collection (`/monthly_reports/{reportId}`):** This collection stores monthly expense reports. Each document contains `employeeId` and the month for which the report is generated. This facilitates querying and aggregating monthly expenses per employee.\n\n4.  **Archived Expense Lists Collection (`/archived_expense_lists/{archiveId}`):** This collection stores archived expense lists. Each document contains `month` and an array of `expenseIds`. This allows for easy retrieval of archived expenses for a specific month."
+    "reasoning": "The data model is updated to support the new cargo transfer workflow. A top-level `/items` collection is introduced to stage items before they are assigned to a transfer. This decouples the transfer process from the main inventory stored in `/excel_files`. The `/transfers` collection will archive the created transfer slips, linking to the items that were part of that shipment. This structure provides a clear and scalable way to manage the entire lifecycle of a cargo transfer."
   }
 }
-
-    

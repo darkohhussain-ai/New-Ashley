@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Calendar, Truck, User, Warehouse } from "lucide-react";
+import { Calendar, Truck } from "lucide-react";
 import { format } from 'date-fns';
 import { Timestamp } from "firebase/firestore";
 import Image from 'next/image';
@@ -75,6 +75,3 @@ export function TransferPdfCard({ transfer, logoSrc, totalItems }: TransferPdfCa
     </div>
   );
 };
-
-
-    

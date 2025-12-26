@@ -1,12 +1,14 @@
+
 "use client"
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { Users, Box, ArrowRightLeft, Settings as SettingsIcon, CreditCard, Bell, ChevronDown, Calendar, Clock } from "lucide-react"
+import { Users, Box, ArrowRightLeft, Settings as SettingsIcon, CreditCard, Bell, ChevronDown, Calendar, Clock, PackagePlus } from "lucide-react"
 import { DashboardCard } from "./dashboard-card"
 import useLocalStorage from "@/hooks/use-local-storage"
 import { useUser } from "@/firebase"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { format } from 'date-fns';
+import Link from "next/link";
 
 export function Dashboard() {
   const { user } = useUser();
@@ -21,7 +23,7 @@ export function Dashboard() {
     { title: "Employees", icon: Users, href: "/employees", color: "bg-pink-500" },
     { title: "Ashley Expenses", icon: CreditCard, href: "/ashley-expenses", color: "bg-blue-500" },
     { title: "Placement & Storage", icon: Box, href: "/items", color: "bg-green-500" },
-    { title: "Transmit", icon: ArrowRightLeft, href: "/transmit", color: "bg-yellow-500" },
+    { title: "Transmit", icon: PackagePlus, href: "/transmit", color: "bg-yellow-500" },
     { title: "Settings", icon: SettingsIcon, href: "/settings", color: "bg-purple-500" },
   ]
   
