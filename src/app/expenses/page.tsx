@@ -41,6 +41,18 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
+// Helper to safely convert Firestore Timestamp or JS Date to a JS Date
+const safeDate = (dateValue: Timestamp | Date | undefined): Date | null => {
+  if (!dateValue) return null;
+  if (dateValue instanceof Date) return dateValue;
+  if (typeof (dateValue as Timestamp).toDate === 'function') {
+    return (dateValue as Timestamp).toDate();
+  }
+  // Try to parse if it's a string or number, though this is less ideal
+  const parsed = new Date(dateValue as any);
+  return isNaN(parsed.getTime()) ? null : parsed;
+};
+
 
 export default function ExpensesPage() {
   const firestore = useFirestore();
@@ -132,7 +144,11 @@ export default function ExpensesPage() {
     
     // Sort expenses by date for each employee
     grouped.forEach(entry => {
-        entry.expenses.sort((a, b) => b.date.toDate().getTime() - a.date.toDate().getTime());
+        entry.expenses.sort((a, b) => {
+            const dateA = safeDate(a.date)?.getTime() || 0;
+            const dateB = safeDate(b.date)?.getTime() || 0;
+            return dateB - dateA;
+        });
     });
     
     // Sort employees by name
@@ -249,34 +265,37 @@ export default function ExpensesPage() {
                             </CardHeader>
                             <CardContent>
                                 <div className="divide-y">
-                                {data.expenses.map(expense => (
-                                    <div key={expense.id} className="py-3 flex justify-between items-start">
-                                        <div>
-                                            <p className="font-semibold">{formatCurrency(expense.amount)}</p>
-                                            <p className="text-sm text-muted-foreground">{format(expense.date.toDate(), 'MMMM d, yyyy')}</p>
-                                            <p className="text-sm mt-1">{expense.notes}</p>
+                                {data.expenses.map(expense => {
+                                    const formattedDate = safeDate(expense.date);
+                                    return (
+                                        <div key={expense.id} className="py-3 flex justify-between items-start">
+                                            <div>
+                                                <p className="font-semibold">{formatCurrency(expense.amount)}</p>
+                                                <p className="text-sm text-muted-foreground">{formattedDate ? format(formattedDate, 'MMMM d, yyyy') : 'Invalid Date'}</p>
+                                                <p className="text-sm mt-1">{expense.notes}</p>
+                                            </div>
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8">
+                                                        <Trash2 className="h-4 w-4"/>
+                                                    </Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>Delete Expense?</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                        This will permanently delete this expense record. This action cannot be undone.
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={() => handleDelete(expense.id)}>Delete</AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
                                         </div>
-                                         <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8">
-                                                    <Trash2 className="h-4 w-4"/>
-                                                </Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle>Delete Expense?</AlertDialogTitle>
-                                                    <AlertDialogDescription>
-                                                    This will permanently delete this expense record. This action cannot be undone.
-                                                    </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => handleDelete(expense.id)}>Delete</AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                                 </div>
                             </CardContent>
                         </Card>
