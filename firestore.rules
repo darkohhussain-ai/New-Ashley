@@ -33,22 +33,6 @@ service cloud.firestore {
     }
 
     /**
-     * Verifies that a document exists before allowing an update or delete.
-     * This prevents erroneous writes to non-existent paths.
-     */
-    function documentExists() {
-      return resource != null;
-    }
-
-    /**
-     * Combines authentication and existence checks for state-changing operations.
-     * Ensures that only signed-in users can modify or delete existing documents.
-     */
-    function isExistingDocAndSignedIn() {
-      return isSignedIn() && documentExists();
-    }
-
-    /**
      * @description Rules for the 'employees' collection.
      */
     match /employees/{employeeId} {
@@ -70,9 +54,10 @@ service cloud.firestore {
     }
 
     /**
-     * @description Rules for the 'excel_files' collection.
+     * @description Rules for the 'excel_files' collection and its 'items' subcollection.
+     * This rule applies to the excel_files documents and all documents in any subcollections.
      */
-    match /excel_files/{fileId} {
+    match /excel_files/{fileId}/{document=**} {
       allow read, write: if isSignedIn();
     }
     
