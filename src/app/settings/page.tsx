@@ -4,7 +4,7 @@
 import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowLeft, Download, Upload, Save, Palette, Type, ShieldCheck, Image as ImageIcon, LayoutDashboard } from 'lucide-react'
+import { ArrowLeft, Download, Upload, Save, Palette, Type, ShieldCheck, Image as ImageIcon, LayoutDashboard, RefreshCcw } from 'lucide-react'
 import useLocalStorage from '@/hooks/use-local-storage'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -20,6 +20,7 @@ import { Slider } from '@/components/ui/slider'
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import { useFirestore } from '@/firebase'
 import { getDocs, collection, writeBatch, doc } from 'firebase/firestore'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 
 const availableFonts = [
   { name: 'Inter', family: "'Inter', sans-serif" },
@@ -300,6 +301,29 @@ export default function SettingsPage() {
     setSavedIconSize(iconSize);
     toast({ title: 'Settings saved!', description: 'Your appearance settings have been updated.' });
   }
+
+  const handleResetToDefault = () => {
+    setFont('Inter');
+    setCustomFont(null);
+    setLightColors(defaultLightColors);
+    setDarkColors(defaultDarkColors);
+    setLogoSrc(defaultLogo);
+    setLogoSize(80);
+    setCardSize(192);
+    setIconSize(64);
+    
+    // Save defaults immediately
+    setSavedFont('Inter');
+    setSavedCustomFont(null);
+    setSavedLightColors(defaultLightColors);
+    setSavedDarkColors(defaultDarkColors);
+    setSavedLogo(defaultLogo);
+    setSavedLogoSize(80);
+    setSavedCardSize(192);
+    setSavedIconSize(64);
+    
+    toast({ title: 'Settings Reset', description: 'All appearance settings have been reset to their default values.' });
+  }
   
   const handleExport = async () => {
     if (!firestore) {
@@ -463,6 +487,25 @@ export default function SettingsPage() {
                       aria-label="Toggle dark mode"
                     />
                   </div>
+                   <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                           <Button variant="outline" className="w-full">
+                                <RefreshCcw className="mr-2 h-4 w-4" /> Reset to Default
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Reset all settings?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                This will reset all appearance settings (colors, fonts, logo) to their original defaults. Your data will not be affected. This action cannot be undone.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleResetToDefault}>Reset Settings</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                 </CardContent>
               </Card>
               <Card className='w-[350px]'>

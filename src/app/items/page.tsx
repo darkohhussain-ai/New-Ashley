@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { ArrowLeft, MapPin, FilePlus, Upload, Archive } from 'lucide-react';
+import { ArrowLeft, MapPin, FilePlus, Upload, Archive, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
@@ -31,6 +31,12 @@ const menuItems = [
     icon: Archive,
     href: "/archive",
     description: "View all previously created or imported Excel files.",
+  },
+  {
+    title: "PDF Archive",
+    icon: FileText,
+    href: "/pdf-archive",
+    description: "View a report-style archive of your inventory files.",
   }
 ];
 

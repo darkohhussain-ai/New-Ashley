@@ -135,6 +135,7 @@ export default function FileDetailPage() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [editableItems, setEditableItems] = useState<Item[]>([]);
+  const [originalQuantities, setOriginalQuantities] = useState<Record<string, number>>({});
   const [sortConfig, setSortConfig] = useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>({ key: 'model', direction: 'ascending' });
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -172,11 +173,15 @@ export default function FileDetailPage() {
   }, [items]);
   
   useEffect(() => {
-    // When entering edit mode, clear previous update statuses
     if (isEditing) {
         setEditableItems(current => current.map(item => ({ ...item, updateStatus: '' })));
+        const qtyMap: Record<string, number> = {};
+        items?.forEach(item => { qtyMap[item.id] = item.quantity; });
+        setOriginalQuantities(qtyMap);
+    } else {
+        setOriginalQuantities({});
     }
-  }, [isEditing]);
+  }, [isEditing, items]);
 
   const { statusChartData, conditionChartData } = useMemo(() => {
     if (!items) return { statusChartData: [], conditionChartData: [] };
@@ -803,9 +808,14 @@ export default function FileDetailPage() {
                         {paginatedItems.map((item) => (
                             <TableRow id={item.id} key={item.id} className={cn("transition-colors target:bg-primary/20 target:duration-500", getRowClass(item))}>
                                 <TableCell className="font-medium">{item.model}</TableCell>
-                                <TableCell>{isEditing ? 
-                                    <Input type="number" value={item.quantity} onChange={e => handleItemChange(item.id, 'quantity', e.target.valueAsNumber)} className="w-20" /> 
-                                    : item.quantity
+                                <TableCell>{isEditing ? (
+                                    <div className="flex items-center gap-2">
+                                        <Input type="number" value={item.quantity} onChange={e => handleItemChange(item.id, 'quantity', e.target.valueAsNumber)} className="w-20" />
+                                        {originalQuantities[item.id] !== undefined && originalQuantities[item.id] !== item.quantity && (
+                                            <span className="text-xs text-muted-foreground whitespace-nowrap">(was {originalQuantities[item.id]})</span>
+                                        )}
+                                    </div>
+                                    ) : item.quantity
                                 }</TableCell>
                                 {isEditing && <TableCell>
                                   {item.updateStatus && <Badge variant={item.updateStatus === 'NEW' || item.updateStatus === 'ZEROED' ? 'destructive' : 'default'}>{item.updateStatus}</Badge>}
