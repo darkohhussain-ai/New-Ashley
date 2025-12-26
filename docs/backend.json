@@ -93,51 +93,6 @@
         "date"
       ]
     },
-    "Overtime": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Overtime",
-      "type": "object",
-      "description": "Represents an overtime record for an employee.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Overtime entity."
-        },
-        "employeeId": {
-          "type": "string",
-          "description": "Reference to the Employee."
-        },
-        "date": {
-          "type": "string",
-          "description": "The date the overtime was worked.",
-          "format": "date-time"
-        },
-        "hours": {
-          "type": "number",
-          "description": "Number of overtime hours."
-        },
-        "rate": {
-          "type": "number",
-          "description": "The rate per hour for overtime."
-        },
-        "amount": {
-          "type": "number",
-          "description": "The calculated total amount for the overtime (hours * rate)."
-        },
-        "notes": {
-          "type": "string",
-          "description": "Additional notes about the overtime record."
-        }
-      },
-      "required": [
-        "id",
-        "employeeId",
-        "date",
-        "hours",
-        "rate",
-        "amount"
-      ]
-    },
     "MonthlyReport": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "MonthlyReport",
@@ -340,22 +295,6 @@
             {
               "name": "expenseId",
               "description": "Unique identifier for the expense."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/overtime/{overtimeId}",
-        "definition": {
-          "entityName": "Overtime",
-          "schema": {
-            "$ref": "#/backend/entities/Overtime"
-          },
-          "description": "Stores overtime records for employees. Records are associated with an employee and a specific date.",
-          "params": [
-            {
-              "name": "overtimeId",
-              "description": "Unique identifier for the overtime record."
             }
           ]
         }
