@@ -3,9 +3,9 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { collection, query, where, Timestamp, doc } from 'firebase/firestore';
-import { ArrowLeft, Plus, Trash2, Calendar as CalendarIcon, User, Clock, DollarSign, Notebook } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Calendar as CalendarIcon, User, Clock, DollarSign, Notebook, Edit, Save, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -58,6 +58,11 @@ export default function OvertimePage() {
   const [hours, setHours] = useState('');
   const [notes, setNotes] = useState('');
   const [isAdding, setIsAdding] = useState(false);
+
+  // Editing state
+  const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
+  const [editableHours, setEditableHours] = useState<string>('');
+  const [editableNotes, setEditableNotes] = useState<string>('');
 
   // Data fetching
   const employeesRef = useMemoFirebase(() => (firestore ? collection(firestore, 'employees') : null), [firestore]);
@@ -118,6 +123,39 @@ export default function OvertimePage() {
     toast({ title: "Overtime Deleted", description: "The record has been removed." });
   };
   
+  const handleEdit = (record: Overtime) => {
+    setEditingRecordId(record.id);
+    setEditableHours(String(record.hours));
+    setEditableNotes(record.notes || '');
+  };
+
+  const handleCancelEdit = () => {
+    setEditingRecordId(null);
+    setEditableHours('');
+    setEditableNotes('');
+  };
+
+  const handleUpdate = (recordId: string) => {
+    if (!firestore) return;
+    const updatedHours = parseFloat(editableHours);
+    if(isNaN(updatedHours) || updatedHours < 0) {
+        toast({ variant: "destructive", title: "Invalid Hours", description: "Please enter a valid number for hours." });
+        return;
+    }
+
+    const updatedAmount = updatedHours * OVERTIME_RATE;
+    const docRef = doc(firestore, 'overtime', recordId);
+    
+    updateDocumentNonBlocking(docRef, {
+        hours: updatedHours,
+        amount: updatedAmount,
+        notes: editableNotes,
+    });
+    
+    toast({ title: "Record Updated", description: "The overtime record has been updated." });
+    handleCancelEdit();
+  };
+
   const { totalHours, totalAmount } = useMemo(() => {
     if (!overtimeRecords) return { totalHours: 0, totalAmount: 0 };
     return overtimeRecords.reduce(
@@ -166,8 +204,8 @@ export default function OvertimePage() {
       <main className="container mx-auto p-4 md:p-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-1">
-            <Card>
-              <form onSubmit={handleAddOvertime}>
+            <form onSubmit={handleAddOvertime}>
+              <Card>
                 <CardHeader>
                   <CardTitle>Add Overtime Record</CardTitle>
                 </CardHeader>
@@ -209,8 +247,8 @@ export default function OvertimePage() {
                     <Plus className="mr-2 h-4 w-4"/> {isAdding ? 'Adding...' : 'Add Record'}
                   </Button>
                 </CardFooter>
-              </form>
-            </Card>
+              </Card>
+            </form>
           </div>
 
           <div className="lg:col-span-2">
@@ -244,29 +282,57 @@ export default function OvertimePage() {
                             ))
                         ) : overtimeRecords && overtimeRecords.length > 0 ? (
                             overtimeRecords.map(record => (
-                            <TableRow key={record.id}>
+                            <TableRow key={record.id} className={cn(editingRecordId === record.id && "bg-muted")}>
                                 <TableCell className="font-medium">{getEmployeeName(record.employeeId)}</TableCell>
-                                <TableCell>{record.hours}</TableCell>
-                                <TableCell>{formatCurrency(record.amount)}</TableCell>
-                                <TableCell className="text-muted-foreground">{record.notes || '-'}</TableCell>
+                                <TableCell>
+                                    {editingRecordId === record.id ? (
+                                        <Input type="number" value={editableHours} onChange={(e) => setEditableHours(e.target.value)} className="w-20 h-8" step="0.5" min="0" />
+                                    ) : (
+                                        record.hours
+                                    )}
+                                </TableCell>
+                                <TableCell>{formatCurrency(editingRecordId === record.id ? parseFloat(editableHours || '0') * OVERTIME_RATE : record.amount)}</TableCell>
+                                <TableCell>
+                                    {editingRecordId === record.id ? (
+                                        <Textarea value={editableNotes} onChange={(e) => setEditableNotes(e.target.value)} className="min-h-[40px]" />
+                                    ) : (
+                                        <span className="text-muted-foreground">{record.notes || '-'}</span>
+                                    )}
+                                </TableCell>
                                 <TableCell className="text-right">
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8">
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>Delete Record?</AlertDialogTitle>
-                                        <AlertDialogDescription>This action cannot be undone. This will permanently delete the overtime record.</AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => handleDelete(record.id)}>Delete</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
+                                  {editingRecordId === record.id ? (
+                                    <div className="flex gap-2 justify-end">
+                                      <Button variant="ghost" size="icon" className="h-8 w-8 text-green-600 hover:text-green-700" onClick={() => handleUpdate(record.id)}>
+                                        <Save className="h-4 w-4" />
+                                      </Button>
+                                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCancelEdit}>
+                                        <X className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    <div className="flex gap-2 justify-end">
+                                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(record)}>
+                                        <Edit className="h-4 w-4" />
+                                      </Button>
+                                      <AlertDialog>
+                                          <AlertDialogTrigger asChild>
+                                          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8">
+                                              <Trash2 className="h-4 w-4" />
+                                          </Button>
+                                          </AlertDialogTrigger>
+                                          <AlertDialogContent>
+                                          <AlertDialogHeader>
+                                              <AlertDialogTitle>Delete Record?</AlertDialogTitle>
+                                              <AlertDialogDescription>This action cannot be undone. This will permanently delete the overtime record.</AlertDialogDescription>
+                                          </AlertDialogHeader>
+                                          <AlertDialogFooter>
+                                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                              <AlertDialogAction onClick={() => handleDelete(record.id)}>Delete</AlertDialogAction>
+                                          </AlertDialogFooter>
+                                          </AlertDialogContent>
+                                      </AlertDialog>
+                                    </div>
+                                  )}
                                 </TableCell>
                             </TableRow>
                             ))
