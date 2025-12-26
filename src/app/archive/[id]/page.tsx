@@ -135,6 +135,7 @@ export default function FileDetailPage() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [editableItems, setEditableItems] = useState<Item[]>([]);
+  const [editableFile, setEditableFile] = useState<Partial<ExcelFile>>({});
   const [originalQuantities, setOriginalQuantities] = useState<Record<string, number>>({});
   const [sortConfig, setSortConfig] = useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>({ key: 'model', direction: 'ascending' });
   const [searchQuery, setSearchQuery] = useState('');
@@ -173,6 +174,12 @@ export default function FileDetailPage() {
   }, [items]);
   
   useEffect(() => {
+    if (file) {
+      setEditableFile(JSON.parse(JSON.stringify(file))); // Deep copy
+    }
+  }, [file]);
+
+  useEffect(() => {
     if (isEditing) {
         setEditableItems(current => current.map(item => ({ ...item, updateStatus: '' })));
         const qtyMap: Record<string, number> = {};
@@ -180,8 +187,9 @@ export default function FileDetailPage() {
         setOriginalQuantities(qtyMap);
     } else {
         setOriginalQuantities({});
+        if(file) setEditableFile(JSON.parse(JSON.stringify(file))); // Reset on cancel
     }
-  }, [isEditing, items]);
+  }, [isEditing, items, file]);
 
   const { statusChartData, conditionChartData } = useMemo(() => {
     if (!items) return { statusChartData: [], conditionChartData: [] };
@@ -288,6 +296,12 @@ export default function FileDetailPage() {
   const handleSave = async () => {
     if (!firestore || !fileId) return;
     const batch = writeBatch(firestore);
+
+    // Update the main file document if it has changed
+    const fileDocRef = doc(firestore, 'excel_files', fileId);
+    if (editableFile.storageName && editableFile.storageName !== file?.storageName) {
+        batch.update(fileDocRef, { storageName: editableFile.storageName });
+    }
     
     // Track original items to find which ones were deleted
     const originalItemIds = new Set(items?.map(i => i.id));
@@ -300,7 +314,7 @@ export default function FileDetailPage() {
         if (updateStatus === 'NEW') {
             const newItemRef = doc(collection(firestore, `excel_files/${fileId}/items`));
             batch.set(newItemRef, {...itemData, id: newItemRef.id, fileId });
-        } else {
+        } else if (originalItemIds.has(id)) { // only update existing items
             batch.update(itemRef, { ...itemData });
         }
     });
@@ -329,7 +343,7 @@ export default function FileDetailPage() {
     const docRef = doc(firestore, 'excel_files', fileId);
     // Note: This doesn't delete subcollections in Firestore. For a full cleanup, a Cloud Function would be needed.
     deleteDocumentNonBlocking(docRef);
-    toast({ title: "File Deleted", description: `"${file?.storageName}" has been removed.` });
+    toast({ title: "File Deleted", description: `The Excel file has been removed.` });
     router.push('/archive');
   }
   
@@ -355,22 +369,24 @@ export default function FileDetailPage() {
           }
       });
       
-      const currentItems = items || [];
+      const currentItems = editableItems || [];
       const updatedItems: Item[] = [];
       const existingModelsInNewFile = new Set<string>();
 
-      // Rule A: Update existing models
+      // Rule A & B: Update existing models or mark for deletion
       currentItems.forEach(item => {
           const newItemData = importedItems.get(item.model);
           if (newItemData) {
+              // Rule A
               if (item.quantity !== newItemData.quantity) {
                   updatedItems.push({ ...item, quantity: newItemData.quantity, updateStatus: 'UPDATED' });
               } else {
                   updatedItems.push(item); // No change
               }
               existingModelsInNewFile.add(item.model);
+          } else {
+            // Rule B is implicitly handled by not adding it to updatedItems, so it will be deleted on save.
           }
-          // Rule B is now implicit: if not in `newItemData`, it's not pushed to `updatedItems`, so it's deleted.
       });
       
       // Rule C: Add new models
@@ -448,7 +464,6 @@ export default function FileDetailPage() {
         switch (item.updateStatus) {
             case 'NEW': return 'bg-status-new';
             case 'UPDATED': return 'bg-status-updated';
-            case 'DELETED': return 'bg-status-zeroed';
             default: // fall through
         }
     }
@@ -534,7 +549,7 @@ export default function FileDetailPage() {
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Items');
-    XLSX.writeFile(workbook, `${file.storageName}.xlsx`);
+    XLSX.writeFile(workbook, `${editableFile.storageName || file.storageName}.xlsx`);
   };
 
   useEffect(() => {
@@ -595,7 +610,7 @@ export default function FileDetailPage() {
           {file && employeeForFile && items && (
             <div ref={pdfCardRef} style={{ width: '700px' }}>
                 <FilePdfCard
-                    file={file}
+                    file={{...(file || {}), ...editableFile} as ExcelFile}
                     employee={employeeForFile}
                     logoSrc={logoSrc}
                     statusData={statusChartData}
@@ -653,7 +668,16 @@ export default function FileDetailPage() {
                         <div className='flex-1 min-w-[250px]'>
                             <div className="flex justify-between items-start">
                                 <div>
-                                    <CardTitle className="text-2xl md:text-3xl font-bold">{file.storageName}</CardTitle>
+                                    {isEditing ? (
+                                        <Input 
+                                            value={editableFile.storageName || ''} 
+                                            onChange={(e) => setEditableFile(prev => ({...prev, storageName: e.target.value}))}
+                                            className="text-2xl md:text-3xl font-bold h-auto p-0 border-0 shadow-none focus-visible:ring-0"
+                                            placeholder="Enter File Name"
+                                        />
+                                    ) : (
+                                        <CardTitle className="text-2xl md:text-3xl font-bold">{file.storageName}</CardTitle>
+                                    )}
                                     <CardDescription className="font-semibold text-primary">{file.categoryName}</CardDescription>
                                 </div>
                                 <Badge variant={file.type === 'imported' ? 'default' : 'secondary'}>{file.type}</Badge>
@@ -821,17 +845,19 @@ export default function FileDetailPage() {
                     <TableBody>
                         {paginatedItems.map((item) => (
                             <TableRow id={item.id} key={item.id} className={cn("transition-colors target:bg-primary/20 target:duration-500", getRowClass(item))}>
-                                <TableCell className="font-medium">{item.model}</TableCell>
+                                <TableCell className="font-medium">
+                                    {isEditing ? <span className='text-muted-foreground'>{item.model}</span> : item.model}
+                                </TableCell>
                                 <TableCell>
                                     <div className="flex items-center gap-2">
-                                        <span className="font-semibold">{item.quantity}</span>
+                                        {isEditing ? <span className='text-muted-foreground font-semibold'>{item.quantity}</span> : <span className="font-semibold">{item.quantity}</span>}
                                         {isEditing && originalQuantities[item.id] !== undefined && originalQuantities[item.id] !== item.quantity && (
                                             <span className="text-xs text-muted-foreground whitespace-nowrap">(was {originalQuantities[item.id]})</span>
                                         )}
                                     </div>
                                 </TableCell>
                                 {isEditing && <TableCell>
-                                  {item.updateStatus && <Badge variant={item.updateStatus === 'NEW' ? 'default' : item.updateStatus === 'DELETED' ? 'destructive' : 'secondary'}>{item.updateStatus}</Badge>}
+                                  {item.updateStatus && <Badge variant={item.updateStatus === 'NEW' ? 'default' : 'secondary'}>{item.updateStatus}</Badge>}
                                 </TableCell>}
                                 <TableCell>{isEditing ? (
                                     <Select value={item.storageStatus || ''} onValueChange={v => handleItemChange(item.id, 'storageStatus', v === 'none' ? '' : v)}>
@@ -900,7 +926,5 @@ export default function FileDetailPage() {
     </>
   );
 }
-
-    
 
     
