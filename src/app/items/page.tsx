@@ -12,31 +12,31 @@ const menuItems = [
     title: "Manage Locations",
     icon: MapPin,
     href: "/locations",
-    bgColor: "bg-pink-500",
+    color: "bg-pink-500",
   },
   {
     title: "New Excel File",
     icon: FilePlus,
     href: "/new-file",
-    bgColor: "bg-blue-500",
+    color: "bg-blue-500",
   },
   {
     title: "Import Excel File",
     icon: Upload,
     href: "/import",
-    bgColor: "bg-teal-500",
+    color: "bg-teal-500",
   },
   {
     title: "Excel Archive",
     icon: Archive,
     href: "/archive",
-    bgColor: "bg-yellow-500",
+    color: "bg-yellow-500",
   },
   {
     title: "PDF Archive",
     icon: FileText,
     href: "/pdf-archive",
-    bgColor: "bg-purple-500",
+    color: "bg-purple-500",
   }
 ];
 
@@ -58,17 +58,14 @@ export default function ItemsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {menuItems.map((item) => (
             <Link key={item.title} href={item.href} className="group block" passHref>
-              <Card className={cn(
-                  "flex flex-col h-full transition-all duration-300 transform hover:-translate-y-1 shadow-lg hover:shadow-2xl text-white",
-                  item.bgColor
-                )}>
-                <CardContent className="flex flex-col items-center justify-center p-8 text-center flex-grow">
-                   <div className="p-4 bg-white/20 rounded-full mb-4">
-                     <item.icon className="w-8 h-8" />
-                   </div>
-                   <CardTitle className="text-lg font-semibold">{item.title}</CardTitle>
-                </CardContent>
-              </Card>
+                <Card className={cn("h-48 flex flex-col items-center justify-center text-white transition-transform transform hover:-translate-y-1 hover:shadow-xl", item.color)}>
+                  <CardContent className="flex flex-col items-center justify-center p-6 text-center">
+                    <div className="p-4 bg-white/20 rounded-full mb-4">
+                        <item.icon className="w-8 h-8" />
+                    </div>
+                    <CardTitle className="text-lg font-semibold">{item.title}</CardTitle>
+                  </CardContent>
+                </Card>
             </Link>
           ))}
         </div>

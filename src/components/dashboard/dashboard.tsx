@@ -19,14 +19,17 @@ export function Dashboard() {
   }, []);
 
   const menuItems = [
-    { title: "Employees", icon: Users, href: "/employees", color: "border-pink-500 bg-pink-500" },
-    { title: "Ashley Expenses", icon: CreditCard, href: "/expenses", color: "border-blue-500 bg-blue-500" },
-    { title: "Placement & Storage", icon: Box, href: "/items", color: "border-green-500 bg-green-500" },
-    { title: "Transmit", icon: ArrowRightLeft, href: "/transmit", color: "border-yellow-500 bg-yellow-500" },
-    { title: "Settings", icon: SettingsIcon, href: "/settings", color: "border-purple-500 bg-purple-500" },
+    { title: "Employees", icon: Users, href: "/employees", color: "bg-pink-500" },
+    { title: "Ashley Expenses", icon: CreditCard, href: "/expenses", color: "bg-blue-500" },
+    { title: "Placement & Storage", icon: Box, href: "/items", color: "bg-green-500" },
+    { title: "Transmit", icon: ArrowRightLeft, href: "/transmit", color: "bg-yellow-500" },
+    { title: "Settings", icon: SettingsIcon, href: "/settings", color: "bg-purple-500" },
   ]
   
   const [logoSrc] = useLocalStorage('app-logo', "https://i.ibb.co/68RvM01/ashley-logo.png");
+  const [logoSize] = useLocalStorage('app-logo-size', 32);
+  const [cardSize] = useLocalStorage('dashboard-card-size', 192);
+  const [iconSize] = useLocalStorage('dashboard-icon-size', 64);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -44,7 +47,7 @@ export function Dashboard() {
                 </div>
             </div>
             <div className="flex items-center justify-center gap-4 w-1/3">
-              <Image src={logoSrc} alt="App Logo" width={32} height={32} className="object-contain" data-ai-hint="logo" />
+              <Image src={logoSrc} alt="App Logo" width={logoSize} height={logoSize} className="object-contain" data-ai-hint="logo" />
               <h1 className="text-xl font-bold">Ashley HR</h1>
             </div>
             <div className="flex items-center justify-end gap-6 w-1/3">
@@ -67,7 +70,12 @@ export function Dashboard() {
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
           {menuItems.map((item) => (
-            <DashboardCard key={item.title} {...item} />
+            <DashboardCard 
+                key={item.title} 
+                {...item} 
+                cardSize={cardSize}
+                iconSize={iconSize}
+            />
           ))}
         </div>
       </main>

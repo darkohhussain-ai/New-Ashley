@@ -9,7 +9,7 @@ body {
 
 @layer base {
   :root {
-    --background: 220 20% 98%;
+    --background: 240 10% 97%;
     --foreground: 224 71.4% 4.1%;
     --card: 0 0% 100%;
     --card-foreground: 224 71.4% 4.1%;
@@ -25,7 +25,7 @@ body {
     --accent-foreground: 220 9% 38%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 13% 85%;
+    --border: 220 13% 88%;
     --input: 220 13% 85%;
     --ring: 262 84% 57%;
     --chart-1: 12 76% 61%;
@@ -37,16 +37,15 @@ body {
 
     /* Custom Status Colors */
     --status-correct-bg: 142 90% 92%;
-    --status-less-bg: 25 100% 94%;
-    --status-more-bg: 210 100% 94%;
+    --status-less-bg: 38 92% 90%; /* Darker Orange */
+    --status-more-bg: 221 83% 92%; /* Darker Blue */
     --status-wrapped-bg: 54 100% 92%;
     --status-damaged-bg: 0 100% 94%;
     --location-occupied-border: 210 100% 70%;
     --location-occupied-bg: 210 100% 96%;
     
-    --status-new-bg: 54 100% 90%;      
+    --status-new-bg: 48 96% 89%; /* Strong Yellow */
     --status-updated-bg: 142 80% 92%; 
-    --status-zeroed-bg: 220 13% 92%;  
   }
   .dark {
     --background: 222.2 84% 4.9%;
@@ -83,9 +82,8 @@ body {
     --location-occupied-border: 217.2 91.2% 50%;
     --location-occupied-bg: 217.2 91.2% 15%;
     
-    --status-new-bg: 54 92% 20%;      
+    --status-new-bg: 48 96% 25%; /* Strong Yellow */
     --status-updated-bg: 142 76% 20%; 
-    --status-zeroed-bg: 217.2 32.6% 22.5%; 
   }
 }
 
@@ -114,5 +112,4 @@ body {
   /* Update Statuses */
   .bg-status-new { @apply bg-[hsl(var(--status-new-bg))]; }
   .bg-status-updated { @apply bg-[hsl(var(--status-updated-bg))]; }
-  .bg-status-zeroed { @apply bg-[hsl(var(--status-zeroed-bg))]; }
 }
