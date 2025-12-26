@@ -1,4 +1,3 @@
-
 "use client"
 import { useState, useEffect } from "react"
 import Image from "next/image"
@@ -20,7 +19,7 @@ export function Dashboard() {
 
   const menuItems = [
     { title: "Employees", icon: Users, href: "/employees", color: "bg-pink-500" },
-    { title: "Ashley Expenses", icon: CreditCard, href: "/expenses", color: "bg-blue-500" },
+    { title: "Ashley Expenses", icon: CreditCard, href: "/ashley-expenses", color: "bg-blue-500" },
     { title: "Placement & Storage", icon: Box, href: "/items", color: "bg-green-500" },
     { title: "Transmit", icon: ArrowRightLeft, href: "/transmit", color: "bg-yellow-500" },
     { title: "Settings", icon: SettingsIcon, href: "/settings", color: "bg-purple-500" },
