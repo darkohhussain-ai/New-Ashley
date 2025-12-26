@@ -3,13 +3,10 @@
 import { useState, useEffect } from 'react';
 import {
   DocumentReference,
-  onSnapshot,
   DocumentData,
   FirestoreError,
-  DocumentSnapshot,
+  Timestamp,
 } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 
 /** Utility type to add an 'id' field to a given type T. */
 type WithId<T> = T & { id: string };
@@ -24,70 +21,55 @@ export interface UseDocResult<T> {
   error: FirestoreError | Error | null; // Error object, or null.
 }
 
+// --- MOCK DATA FOR OFFLINE DEVELOPMENT ---
+
+const mockEmployees = [
+    { id: 'emp1', name: 'John Doe', jobTitle: 'Manager', employmentStartDate: Timestamp.now(), dateOfBirth: Timestamp.fromDate(new Date('1990-01-15')), email: 'john.doe@example.com', phone: '123-456-7890', photoUrl: 'https://picsum.photos/seed/emp1/100/100' },
+    { id: 'emp2', name: 'Jane Smith', jobTitle: 'Developer', employmentStartDate: Timestamp.now(), dateOfBirth: Timestamp.fromDate(new Date('1992-05-20')), email: 'jane.smith@example.com', phone: '987-654-3210', photoUrl: 'https://picsum.photos/seed/emp2/100/100' }
+];
+
+const MOCK_SINGLE_DOCS: Record<string, any> = {
+    'employees': mockEmployees[0],
+     'excel_files': { id: 'file1', storekeeperId: 'emp2', storageName: 'Q1 Inventory.xlsx', categoryName: 'Living Room', date: Timestamp.now(), source: 'Ashley Store', type: 'imported' }
+};
+
+function getMockDocForPath(path: string) {
+    const [collectionName, docId] = path.split('/');
+    const collection = MOCK_SINGLE_DOCS[collectionName];
+    if (collection && Array.isArray(collection)) {
+        return collection.find(doc => doc.id === docId) || collection[0];
+    }
+    return MOCK_SINGLE_DOCS[collectionName] || null;
+}
+
+
 /**
- * React hook to subscribe to a single Firestore document in real-time.
- * Handles nullable references.
- * 
- * IMPORTANT! YOU MUST MEMOIZE the inputted memoizedTargetRefOrQuery or BAD THINGS WILL HAPPEN
- * use useMemo to memoize it per React guidence.  Also make sure that it's dependencies are stable
- * references
- *
- *
- * @template T Optional type for document data. Defaults to any.
- * @param {DocumentReference<DocumentData> | null | undefined} docRef -
- * The Firestore DocumentReference. Waits if null/undefined.
- * @returns {UseDocResult<T>} Object with data, isLoading, error.
+ * OFFLINE VERSION of useDoc hook. Returns mock data.
+ * Does not connect to Firestore.
  */
 export function useDoc<T = any>(
   memoizedDocRef: DocumentReference<DocumentData> | null | undefined,
 ): UseDocResult<T> {
-  type StateDataType = WithId<T> | null;
-
-  const [data, setData] = useState<StateDataType>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [data, setData] = useState<WithId<T> | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
   useEffect(() => {
-    if (!memoizedDocRef) {
-      setData(null);
-      setIsLoading(false);
-      setError(null);
-      return;
-    }
-
     setIsLoading(true);
     setError(null);
-    // Optional: setData(null); // Clear previous data instantly
-
-    const unsubscribe = onSnapshot(
-      memoizedDocRef,
-      (snapshot: DocumentSnapshot<DocumentData>) => {
-        if (snapshot.exists()) {
-          setData({ ...(snapshot.data() as T), id: snapshot.id });
+    
+    const timer = setTimeout(() => {
+        if (!memoizedDocRef) {
+            setData(null);
         } else {
-          // Document does not exist
-          setData(null);
+            const mockDoc = getMockDocForPath(memoizedDocRef.path);
+            setData(mockDoc ? (mockDoc as WithId<T>) : null);
         }
-        setError(null); // Clear any previous error on successful snapshot (even if doc doesn't exist)
         setIsLoading(false);
-      },
-      (error: FirestoreError) => {
-        const contextualError = new FirestorePermissionError({
-          operation: 'get',
-          path: memoizedDocRef.path,
-        })
+    }, 500); // Simulate network delay
 
-        setError(contextualError)
-        setData(null)
-        setIsLoading(false)
-
-        // trigger global error propagation
-        errorEmitter.emit('permission-error', contextualError);
-      }
-    );
-
-    return () => unsubscribe();
-  }, [memoizedDocRef]); // Re-run if the memoizedDocRef changes.
+    return () => clearTimeout(timer);
+  }, [memoizedDocRef]);
 
   return { data, isLoading, error };
 }

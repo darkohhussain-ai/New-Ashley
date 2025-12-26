@@ -3,14 +3,12 @@
 import { useState, useEffect } from 'react';
 import {
   Query,
-  onSnapshot,
   DocumentData,
   FirestoreError,
   QuerySnapshot,
   CollectionReference,
+  Timestamp,
 } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 
 /** Utility type to add an 'id' field to a given type T. */
 export type WithId<T> = T & { id: string };
@@ -23,6 +21,7 @@ export interface UseCollectionResult<T> {
   data: WithId<T>[] | null; // Document data with ID, or null.
   isLoading: boolean;       // True if loading.
   error: FirestoreError | Error | null; // Error object, or null.
+  setData: React.Dispatch<React.SetStateAction<WithId<T>[] | null>>;
 }
 
 /* Internal implementation of Query:
@@ -37,91 +36,79 @@ export interface InternalQuery extends Query<DocumentData> {
   }
 }
 
+// --- MOCK DATA FOR OFFLINE DEVELOPMENT ---
+
+const mockEmployees = [
+    { id: 'emp1', name: 'John Doe', jobTitle: 'Manager', employmentStartDate: Timestamp.now(), dateOfBirth: Timestamp.fromDate(new Date('1990-01-15')), email: 'john.doe@example.com', phone: '123-456-7890', photoUrl: 'https://picsum.photos/seed/emp1/100/100' },
+    { id: 'emp2', name: 'Jane Smith', jobTitle: 'Developer', employmentStartDate: Timestamp.now(), dateOfBirth: Timestamp.fromDate(new Date('1992-05-20')), email: 'jane.smith@example.com', phone: '987-654-3210', photoUrl: 'https://picsum.photos/seed/emp2/100/100' }
+];
+
+const mockItems = [
+    { id: 'item1', model: 'Sofa-001', quantity: 2, destination: 'Erbil', notes: 'Handle with care', transferId: null, createdAt: Timestamp.now() },
+    { id: 'item2', model: 'Chair-007', quantity: 10, destination: 'Baghdad', notes: '', transferId: null, createdAt: Timestamp.now() },
+];
+
+const mockTransfers = [
+    { id: 'transfer1', cargoName: 'Shipment to Erbil', destinationCity: 'Erbil', driverName: 'Driver A', warehouseManagerName: 'Manager X', itemIds: ['item1'], transferDate: Timestamp.now() }
+];
+
+const MOCK_DATA_STORE: Record<string, any[]> = {
+    'employees': mockEmployees,
+    'items': mockItems,
+    'transfers': mockTransfers,
+    'expenses': [
+        { id: 'exp1', employeeId: 'emp1', amount: 50, date: Timestamp.now(), notes: 'Team Lunch' }
+    ],
+    'excel_files': [
+        { id: 'file1', storekeeperId: 'emp2', storageName: 'Q1 Inventory.xlsx', categoryName: 'Living Room', date: Timestamp.now(), source: 'Ashley Store', type: 'imported' }
+    ],
+    'storage_locations': [
+        { id: 'loc1', name: 'A-4-1', warehouseType: 'Ashley' },
+        { id: 'loc2', name: 'H-1-1-1', warehouseType: 'Huana' },
+    ],
+};
+
+function getMockDataForPath(path: string) {
+    if (path.startsWith('excel_files/')) {
+        return [{ id: 'item-sub1', fileId: path.split('/')[1], model: 'Sub Item 1', quantity: 5 }];
+    }
+    const collectionName = path.split('/')[0];
+    return MOCK_DATA_STORE[collectionName] || [];
+}
+
 /**
- * React hook to subscribe to a Firestore collection or query in real-time.
- * Handles nullable references/queries.
- * 
- *
- * IMPORTANT! YOU MUST MEMOIZE the inputted memoizedTargetRefOrQuery or BAD THINGS WILL HAPPEN
- * use useMemo to memoize it per React guidence.  Also make sure that it's dependencies are stable
- * references
- *  
- * @template T Optional type for document data. Defaults to any.
- * @param {CollectionReference<DocumentData> | Query<DocumentData> | null | undefined} targetRefOrQuery -
- * The Firestore CollectionReference or Query. Waits if null/undefined.
- * @returns {UseCollectionResult<T>} Object with data, isLoading, error.
+ * OFFLINE VERSION of useCollection hook. Returns mock data.
+ * Does not connect to Firestore.
  */
 export function useCollection<T = any>(
     memoizedTargetRefOrQuery: ((CollectionReference<DocumentData> | Query<DocumentData>) & {__memo?: boolean})  | null | undefined,
 ): UseCollectionResult<T> {
-  type ResultItemType = WithId<T>;
-  type StateDataType = ResultItemType[] | null;
-
-  const [data, setData] = useState<StateDataType>(null);
+  const [data, setData] = useState<WithId<T>[] | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
   useEffect(() => {
-    if (!memoizedTargetRefOrQuery) {
-      setData(null);
-      setIsLoading(false);
-      setError(null);
-      return;
-    }
-
     setIsLoading(true);
     setError(null);
-
-    // Directly use memoizedTargetRefOrQuery as it's assumed to be the final query
-    const unsubscribe = onSnapshot(
-      memoizedTargetRefOrQuery,
-      (snapshot: QuerySnapshot<DocumentData>) => {
-        const results: ResultItemType[] = [];
-        for (const doc of snapshot.docs) {
-          const docData = doc.data();
-          // Add the id to the document data, which might not have it (e.g. from collectionGroup)
-          results.push({ ...(docData as T), id: doc.id, ...(!docData.id && { id: doc.id }) });
+    
+    // Simulate async data fetching
+    const timer = setTimeout(() => {
+      if (!memoizedTargetRefOrQuery) {
+        setData(null);
+      } else {
+        let path = 'unknown';
+        if (memoizedTargetRefOrQuery.type === 'collection') {
+          path = (memoizedTargetRefOrQuery as CollectionReference).path;
+        } else if (memoizedTargetRefOrQuery.type === 'query') {
+          path = (memoizedTargetRefOrQuery as any)._query.path.segments.join('/');
         }
-        setData(results);
-        setError(null);
-        setIsLoading(false);
-      },
-      (error: FirestoreError) => {
-        // This logic extracts the path from either a ref or a query
-        let path = 'unknown path';
-        try {
-            if (memoizedTargetRefOrQuery.type === 'collection') {
-              path = (memoizedTargetRefOrQuery as CollectionReference).path;
-            } else if (memoizedTargetRefOrQuery.type === 'query') {
-              // This is a bit of a hack to get the path from a query
-              // It might be brittle if Firebase changes internal properties.
-              path = (memoizedTargetRefOrQuery as any)._query.path.segments.join('/');
-            }
-        } catch(e) {
-            console.warn("Could not determine path for useCollection error reporting.");
-        }
-
-
-        const contextualError = new FirestorePermissionError({
-          operation: 'list',
-          path: path,
-        })
-
-        setError(contextualError)
-        setData(null)
-        setIsLoading(false)
-
-        // trigger global error propagation
-        errorEmitter.emit('permission-error', contextualError);
+        setData(getMockDataForPath(path) as WithId<T>[]);
       }
-    );
+      setIsLoading(false);
+    }, 500); // 500ms delay to simulate network
 
-    return () => unsubscribe();
-  }, [memoizedTargetRefOrQuery]); // Re-run if the target query/reference changes.
+    return () => clearTimeout(timer);
+  }, [memoizedTargetRefOrQuery]);
   
-  if (memoizedTargetRefOrQuery && (memoizedTargetRefOrQuery as any).__memo !== true) {
-     console.warn('useCollection received a query or reference that was not created with useMemoFirebase. This can lead to infinite loops and performance issues.', memoizedTargetRefOrQuery);
-  }
-  
-  return { data, isLoading, error };
+  return { data, isLoading, error, setData };
 }

@@ -1,5 +1,8 @@
 'use client';
 
+// This file is not used in offline mode, but we'll keep it for easy re-connection later.
+// The main layout file has been changed to use the base FirebaseProvider directly.
+
 import React, { useMemo, type ReactNode } from 'react';
 import { FirebaseProvider } from '@/firebase/provider';
 import { initializeFirebase } from '@/firebase';
@@ -10,9 +13,10 @@ interface FirebaseClientProviderProps {
 
 export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
   const firebaseServices = useMemo(() => {
-    // Initialize Firebase on the client side, once per component mount.
+    // This part is now bypassed in offline mode.
+    // When re-connecting, you would re-introduce this provider.
     return initializeFirebase();
-  }, []); // Empty dependency array ensures this runs only once on mount
+  }, []); 
 
   return (
     <FirebaseProvider
