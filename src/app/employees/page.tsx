@@ -288,7 +288,7 @@ function AddEmployeeDialog({ open, onOpenChange }: { open: boolean, onOpenChange
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!name || !firestore || !employeesRef) {
+        if (!name.trim() || !firestore || !employeesRef) {
             toast({
                 variant: 'destructive',
                 title: 'Name is required',
@@ -440,5 +440,3 @@ export default function EmployeesPage() {
     </div>
   )
 }
-
-    
