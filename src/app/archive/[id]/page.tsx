@@ -333,7 +333,7 @@ export default function FileDetailPage() {
           if (model) {
             importedItems.set(model, {
                 model,
-                quantity: Number(row.Quantity || row.quantity || 0),
+                quantity: Number(row.Quantity || row.quantity || row.Qty || row.qty || 0),
             });
           }
       });
@@ -877,5 +877,3 @@ export default function FileDetailPage() {
     </>
   );
 }
-
-    

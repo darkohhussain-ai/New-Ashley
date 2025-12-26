@@ -75,7 +75,7 @@ export default function ImportPage() {
       const parsedItems: ImportedItem[] = json
         .map(row => ({
           model: String(row.Model || row.model || ''),
-          quantity: Number(row.Quantity || row.quantity || 0),
+          quantity: Number(row.Quantity || row.quantity || row.Qty || row.qty || 0),
           notes: String(row.Notes || row.notes || ''),
         }))
         .filter(item => item.model && item.quantity > 0);
