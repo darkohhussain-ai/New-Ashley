@@ -12,36 +12,31 @@ const menuItems = [
     title: "Manage Locations",
     icon: MapPin,
     href: "/locations",
-    description: "Add, edit, or remove warehouse and storage locations.",
-    color: "text-blue-500",
+    bgColor: "bg-pink-500",
   },
   {
     title: "New Excel File",
     icon: FilePlus,
     href: "/new-file",
-    description: "Create a new inventory sheet from scratch.",
-    color: "text-green-500",
+    bgColor: "bg-blue-500",
   },
   {
     title: "Import Excel File",
     icon: Upload,
     href: "/import",
-    description: "Import an existing Excel file to track inventory.",
-    color: "text-purple-500",
+    bgColor: "bg-teal-500",
   },
   {
     title: "Excel Archive",
     icon: Archive,
     href: "/archive",
-    description: "View and edit all previously created or imported Excel files.",
-    color: "text-orange-500",
+    bgColor: "bg-yellow-500",
   },
   {
     title: "PDF Archive",
     icon: FileText,
     href: "/pdf-archive",
-    description: "View and download read-only PDF reports of your files.",
-    color: "text-pink-500",
+    bgColor: "bg-purple-500",
   }
 ];
 
@@ -63,18 +58,16 @@ export default function ItemsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {menuItems.map((item) => (
             <Link key={item.title} href={item.href} className="group block" passHref>
-              <Card className="flex flex-col h-full transition-all duration-200 hover:border-primary hover:shadow-xl">
-                <CardHeader>
-                  <div className="flex items-start gap-4">
-                    <div className={cn("p-2 bg-primary/10 rounded-lg", item.color)}>
-                        <item.icon className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <CardTitle>{item.title}</CardTitle>
-                      <CardDescription className="mt-2">{item.description}</CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
+              <Card className={cn(
+                  "flex flex-col h-full transition-all duration-300 transform hover:-translate-y-1 shadow-lg hover:shadow-2xl text-white",
+                  item.bgColor
+                )}>
+                <CardContent className="flex flex-col items-center justify-center p-8 text-center flex-grow">
+                   <div className="p-4 bg-white/20 rounded-full mb-4">
+                     <item.icon className="w-8 h-8" />
+                   </div>
+                   <CardTitle className="text-lg font-semibold">{item.title}</CardTitle>
+                </CardContent>
               </Card>
             </Link>
           ))}
