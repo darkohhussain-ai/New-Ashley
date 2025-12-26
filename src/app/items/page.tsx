@@ -30,13 +30,13 @@ const menuItems = [
     title: "Excel Archive",
     icon: Archive,
     href: "/archive",
-    description: "View all previously created or imported Excel files.",
+    description: "View and edit all previously created or imported Excel files.",
   },
   {
     title: "PDF Archive",
     icon: FileText,
     href: "/pdf-archive",
-    description: "View a report-style archive of your inventory files.",
+    description: "View and download read-only PDF reports of your files.",
   }
 ];
 

@@ -80,7 +80,7 @@ export default function PdfArchivePage() {
         ) : sortedFiles.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {sortedFiles.map(file => (
-              <Link key={file.id} href={`/archive/${file.id}`} className="group">
+              <Link key={file.id} href={`/pdf/${file.id}`} className="group">
                 <Card className="hover:border-primary/50 hover:shadow-lg transition-all h-full flex flex-col p-4 items-center text-center">
                   <FileText className="w-12 h-12 text-primary/70 group-hover:text-primary transition-colors" />
                   <CardHeader className="p-2">
