@@ -810,7 +810,7 @@ export default function FileDetailPage() {
                                 <TableCell className="font-medium">{item.model}</TableCell>
                                 <TableCell>{isEditing ? (
                                     <div className="flex items-center gap-2">
-                                        <Input type="number" value={item.quantity} onChange={e => handleItemChange(item.id, 'quantity', e.target.valueAsNumber)} className="w-20" />
+                                        <span className="font-semibold">{item.quantity}</span>
                                         {originalQuantities[item.id] !== undefined && originalQuantities[item.id] !== item.quantity && (
                                             <span className="text-xs text-muted-foreground whitespace-nowrap">(was {originalQuantities[item.id]})</span>
                                         )}
@@ -818,7 +818,7 @@ export default function FileDetailPage() {
                                     ) : item.quantity
                                 }</TableCell>
                                 {isEditing && <TableCell>
-                                  {item.updateStatus && <Badge variant={item.updateStatus === 'NEW' || item.updateStatus === 'ZEROED' ? 'destructive' : 'default'}>{item.updateStatus}</Badge>}
+                                  {item.updateStatus && <Badge variant={item.updateStatus === 'NEW' ? 'default' : item.updateStatus === 'ZEROED' ? 'destructive' : 'secondary'}>{item.updateStatus}</Badge>}
                                 </TableCell>}
                                 <TableCell>{isEditing ? (
                                     <Select value={item.storageStatus || ''} onValueChange={v => handleItemChange(item.id, 'storageStatus', v === 'none' ? '' : v)}>
@@ -887,3 +887,5 @@ export default function FileDetailPage() {
     </>
   );
 }
+
+    
