@@ -70,6 +70,15 @@ service cloud.firestore {
     }
 
     /**
+     * @description Rules for the 'overtime' collection.
+     * @path /overtime/{overtimeId}
+     * @principle Grants full read and write access to any authenticated user for managing overtime records.
+     */
+    match /overtime/{overtimeId} {
+      allow read, write: if isSignedIn();
+    }
+
+    /**
      * @description Rules for the 'monthly_reports' collection.
      * @path /monthly_reports/{reportId}
      * @allow (get) Any signed-in user can read a monthly report.
