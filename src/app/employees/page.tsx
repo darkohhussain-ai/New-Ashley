@@ -99,23 +99,25 @@ export default function EmployeesPage() {
 
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
+    <div className="min-h-screen bg-background text-foreground">
        <Dialog open={open} onOpenChange={(isOpen) => { setOpen(isOpen); if(!isOpen) resetForm(); }}>
-        <header className="flex items-center justify-between gap-4 mb-8">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="icon" asChild>
-              <Link href="/">
-                <ArrowLeft />
-                <span className="sr-only">Back to Dashboard</span>
-              </Link>
-            </Button>
-            <h1 className="text-2xl md:text-3xl font-bold">Employees Dashboard</h1>
+        <header className="bg-card border-b p-4">
+          <div className="container mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button variant="outline" size="icon" asChild>
+                <Link href="/">
+                  <ArrowLeft />
+                  <span className="sr-only">Back to Dashboard</span>
+                </Link>
+              </Button>
+              <h1 className="text-xl font-bold">Employees</h1>
+            </div>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" /> Add Employee
+              </Button>
+            </DialogTrigger>
           </div>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" /> Add Employee
-            </Button>
-          </DialogTrigger>
         </header>
         <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
@@ -200,7 +202,7 @@ export default function EmployeesPage() {
             </DialogFooter>
           </form>
         </DialogContent>
-      <main>
+      <main className="p-4 md:p-8">
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {[...Array(8)].map((_, i) => (
@@ -223,7 +225,7 @@ export default function EmployeesPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {sortedEmployees.map(v => (
               <Link key={v.id} href={`/employees/${v.id}`} className="group">
-                <Card className="flex flex-col h-full transition-all duration-200 group-hover:border-primary group-hover:shadow-lg">
+                <Card className="flex flex-col h-full transition-all duration-200 group-hover:border-primary group-hover:shadow-xl">
                   <CardHeader className="flex flex-row items-center gap-4">
                     <Avatar className="w-16 h-16">
                       <AvatarImage src={v.photoUrl} alt={v.name} />

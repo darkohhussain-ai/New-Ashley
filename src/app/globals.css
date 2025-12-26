@@ -4,18 +4,18 @@
 @tailwind utilities;
 
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body), sans-serif;
 }
 
 @layer base {
   :root {
-    --background: 220 13% 97%;
+    --background: 220 20% 98%;
     --foreground: 224 71.4% 4.1%;
     --card: 0 0% 100%;
     --card-foreground: 224 71.4% 4.1%;
     --popover: 0 0% 100%;
     --popover-foreground: 224 71.4% 4.1%;
-    --primary: 255 75% 58%;
+    --primary: 262 84% 57%;
     --primary-foreground: 0 0% 100%;
     --secondary: 220 13% 91%;
     --secondary-foreground: 220 9% 38%;
@@ -25,29 +25,28 @@ body {
     --accent-foreground: 220 9% 38%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 255 75% 58%;
+    --border: 220 13% 85%;
+    --input: 220 13% 85%;
+    --ring: 262 84% 57%;
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
+    --radius: 0.8rem;
 
     /* Custom Status Colors */
-    --status-correct-bg: 142 76% 80%; /* Stronger green */
-    --status-less-bg: 25 95% 80%;     /* Stronger orange */
-    --status-more-bg: 210 100% 80%;   /* Stronger blue */
-    --status-wrapped-bg: 54 92% 95%; /* Lighter yellow */
-    --status-damaged-bg: 0 84% 95%; /* Lighter red */
-    --location-occupied-border: 220 82% 75%;
-    --location-occupied-bg: 220 82% 96%;
-
-    /* Stronger Update Statuses for Light Theme */
-    --status-new-bg: 54 92% 80%;      /* Strong Yellow */
-    --status-updated-bg: 142 76% 80%; /* Strong Green */
-    --status-zeroed-bg: 220 13% 85%;  /* Strong Muted / Gray */
+    --status-correct-bg: 142 90% 92%;
+    --status-less-bg: 25 100% 94%;
+    --status-more-bg: 210 100% 94%;
+    --status-wrapped-bg: 54 100% 92%;
+    --status-damaged-bg: 0 100% 94%;
+    --location-occupied-border: 210 100% 70%;
+    --location-occupied-bg: 210 100% 96%;
+    
+    --status-new-bg: 54 100% 90%;      
+    --status-updated-bg: 142 80% 92%; 
+    --status-zeroed-bg: 220 13% 92%;  
   }
   .dark {
     --background: 222.2 84% 4.9%;
@@ -56,7 +55,7 @@ body {
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 255 75% 58%;
+    --primary: 262 84% 57%;
     --primary-foreground: 222.2 84% 4.9%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -68,7 +67,7 @@ body {
     --destructive-foreground: 210 40% 98%;
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 217.2 91.2% 59.8%;
+    --ring: 262 84% 57%;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
@@ -76,18 +75,17 @@ body {
     --chart-5: 340 75% 55%;
 
     /* Custom Status Colors */
-    --status-correct-bg: 142 76% 25%; 
-    --status-less-bg: 25 95% 25%;
-    --status-more-bg: 210 100% 25%;
+    --status-correct-bg: 142 76% 15%; 
+    --status-less-bg: 25 95% 20%;
+    --status-more-bg: 210 100% 20%;
     --status-wrapped-bg: 54 92% 15%;
     --status-damaged-bg: 0 84% 15%;
     --location-occupied-border: 217.2 91.2% 50%;
     --location-occupied-bg: 217.2 91.2% 15%;
-
-    /* Stronger Update Statuses for Dark Theme */
-    --status-new-bg: 54 92% 20%;      /* Strong Dark Yellow */
-    --status-updated-bg: 142 76% 20%; /* Strong Dark Green */
-    --status-zeroed-bg: 217.2 32.6% 22.5%; /* Strong Dark Muted / Gray */
+    
+    --status-new-bg: 54 92% 20%;      
+    --status-updated-bg: 142 76% 20%; 
+    --status-zeroed-bg: 217.2 32.6% 22.5%; 
   }
 }
 

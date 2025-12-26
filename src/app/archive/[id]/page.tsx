@@ -525,7 +525,7 @@ export default function FileDetailPage() {
           cellPadding: 2,
       },
       headStyles: {
-          fillColor: [22, 163, 74], // green-600
+          fillColor: [34, 197, 94], // Tailwind green-500
           textColor: 255,
           fontStyle: 'bold',
       },
@@ -598,7 +598,7 @@ export default function FileDetailPage() {
   const employeeForFile = employees?.find(e => e.id === file.storekeeperId)
 
   return (
-    <>
+    <div className='bg-background min-h-screen'>
      <input
         type="file"
         ref={updateFileInputRef}
@@ -619,47 +619,51 @@ export default function FileDetailPage() {
             </div>
           )}
       </div>
-      <div className="p-4 md:p-8">
-        <header className="flex items-center justify-between gap-4 mb-8">
-          <Button variant="outline" size="icon" asChild>
-            <Link href="/archive">
-              <ArrowLeft />
-            </Link>
-          </Button>
-          <div className='flex items-center gap-2 flex-wrap justify-end'>
-              {isEditing ? (
-                <>
-                  <Button variant="outline" onClick={() => updateFileInputRef.current?.click()}>
-                    <Upload className="mr-2 h-4 w-4" /> Update with New File
-                  </Button>
-                  <Button onClick={handleSave}><Save className="mr-2 h-4 w-4"/> Save Changes</Button>
-                  <Button variant="ghost" onClick={() => setIsEditing(false)}><X className="mr-2 h-4 w-4"/> Cancel</Button>
-                </>
-              ) : (
-                <>
-                  <Button onClick={() => setIsEditing(true)}><Edit className="mr-2"/>Edit</Button>
-                  <Button onClick={handleDownloadPdf}><Download className="mr-2 h-4 w-4" /> PDF</Button>
-                  <Button variant="outline" onClick={handleDownloadExcel}><FileSpreadsheet className="mr-2 h-4 w-4" /> Excel</Button>
-                  <AlertDialog>
-                      <AlertDialogTrigger asChild><Button variant="destructive"><Trash2 className="mr-2"/>Delete</Button></AlertDialogTrigger>
-                      <AlertDialogContent>
-                          <AlertDialogHeader>
-                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                  This will permanently delete the file "{file.storageName}". This action cannot be undone.
-                              </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={handleDeleteFile}>Delete</AlertDialogAction>
-                          </AlertDialogFooter>
-                      </AlertDialogContent>
-                  </AlertDialog>
-                </>
-              )}
-          </div>
-        </header>
-
+      <header className="bg-card border-b p-4">
+        <div className="container mx-auto flex items-center justify-between gap-4">
+            <div className='flex items-center gap-4'>
+                <Button variant="outline" size="icon" asChild>
+                    <Link href="/archive">
+                    <ArrowLeft />
+                    </Link>
+                </Button>
+                <h1 className="text-xl font-bold">File Details</h1>
+            </div>
+            <div className='flex items-center gap-2 flex-wrap justify-end'>
+                {isEditing ? (
+                    <>
+                    <Button variant="outline" onClick={() => updateFileInputRef.current?.click()}>
+                        <Upload className="mr-2 h-4 w-4" /> Update with New File
+                    </Button>
+                    <Button onClick={handleSave}><Save className="mr-2 h-4 w-4"/> Save Changes</Button>
+                    <Button variant="ghost" onClick={() => setIsEditing(false)}><X className="mr-2 h-4 w-4"/> Cancel</Button>
+                    </>
+                ) : (
+                    <>
+                    <Button onClick={() => setIsEditing(true)}><Edit className="mr-2"/>Edit</Button>
+                    <Button onClick={handleDownloadPdf}><Download className="mr-2 h-4 w-4" /> PDF</Button>
+                    <Button variant="outline" onClick={handleDownloadExcel}><FileSpreadsheet className="mr-2 h-4 w-4" /> Excel</Button>
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild><Button variant="destructive"><Trash2 className="mr-2"/>Delete</Button></AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This will permanently delete the file "{file.storageName}". This action cannot be undone.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleDeleteFile}>Delete</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                    </>
+                )}
+            </div>
+        </div>
+      </header>
+      <main className="p-4 md:p-8 container mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-1 space-y-8">
               <Card>
@@ -922,9 +926,7 @@ export default function FileDetailPage() {
             {totalPages > 1 && <CardContent><PaginationControls currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} /></CardContent>}
           </Card>
         </div>
-      </div>
-    </>
+      </main>
+    </div>
   );
 }
-
-    

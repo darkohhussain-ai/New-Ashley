@@ -144,23 +144,25 @@ export default function ExpensesPage() {
   const isLoading = isLoadingEmployees || isLoadingExpenses;
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
+    <div className="min-h-screen bg-background text-foreground">
       <Dialog open={open} onOpenChange={(isOpen) => { setOpen(isOpen); if(!isOpen) resetForm(); }}>
-        <header className="flex items-center justify-between gap-4 mb-8">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="icon" asChild>
-              <Link href="/">
-                <ArrowLeft />
-                <span className="sr-only">Back to Dashboard</span>
-              </Link>
-            </Button>
-            <h1 className="text-2xl md:text-3xl font-bold">Expenses</h1>
+        <header className="bg-card border-b p-4">
+          <div className="container mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button variant="outline" size="icon" asChild>
+                <Link href="/">
+                  <ArrowLeft />
+                  <span className="sr-only">Back to Dashboard</span>
+                </Link>
+              </Button>
+              <h1 className="text-xl font-bold">Expenses</h1>
+            </div>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" /> Add Expense
+              </Button>
+            </DialogTrigger>
           </div>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" /> Add Expense
-            </Button>
-          </DialogTrigger>
         </header>
 
         <DialogContent>
@@ -221,7 +223,7 @@ export default function ExpensesPage() {
           </form>
         </DialogContent>
       
-      <main className="space-y-8">
+      <main className="container mx-auto p-4 md:p-8">
         {isLoading ? (
             <div className="space-y-6">
                 {[...Array(2)].map((_, i) => (
@@ -280,7 +282,7 @@ export default function ExpensesPage() {
                         </Card>
                     ))}
                 </div>
-                 <Card className="mt-8 bg-secondary">
+                 <Card className="mt-8 bg-card">
                     <CardHeader>
                         <div className="flex justify-between items-center">
                             <CardTitle>Overall Total</CardTitle>

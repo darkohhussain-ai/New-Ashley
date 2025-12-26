@@ -51,17 +51,19 @@ export default function ArchivePage() {
   const isLoading = isLoadingFiles || isLoadingEmployees;
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
-      <header className="flex items-center gap-4 mb-8">
-        <Button variant="outline" size="icon" asChild>
-          <Link href="/items">
-            <ArrowLeft />
-            <span className="sr-only">Back to Placement & Storage</span>
-          </Link>
-        </Button>
-        <h1 className="text-2xl md:text-3xl font-bold">Excel Archive</h1>
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="bg-card border-b p-4">
+        <div className="container mx-auto flex items-center gap-4">
+          <Button variant="outline" size="icon" asChild>
+            <Link href="/items">
+              <ArrowLeft />
+              <span className="sr-only">Back to Placement & Storage</span>
+            </Link>
+          </Button>
+          <h1 className="text-xl font-bold">Excel Archive</h1>
+        </div>
       </header>
-      <main>
+      <main className="container mx-auto p-4 md:p-8">
         {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[...Array(6)].map((_, i) => (
@@ -81,7 +83,7 @@ export default function ArchivePage() {
         ) : sortedFiles.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {sortedFiles.map(file => (
-              <Card key={file.id} className="hover:border-primary/50 hover:shadow-lg transition-all h-full flex flex-col">
+              <Card key={file.id} className="hover:border-primary hover:shadow-xl transition-all h-full flex flex-col">
                 <CardHeader>
                   <div className="flex justify-between items-start gap-2">
                       <CardTitle className="text-lg leading-tight">

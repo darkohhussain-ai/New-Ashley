@@ -21,12 +21,19 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import { useFirestore } from '@/firebase'
 import { getDocs, collection, writeBatch, doc } from 'firebase/firestore'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
+import { Inter, Roboto, Open_Sans, Lato } from 'next/font/google';
+
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const roboto = Roboto({ weight: ['400', '700'], subsets: ['latin'], variable: '--font-roboto' });
+const openSans = Open_Sans({ subsets: ['latin'], variable: '--font-open-sans' });
+const lato = Lato({ weight: ['400', '700'], subsets: ['latin'], variable: '--font-lato' });
+
 
 const availableFonts = [
-  { name: 'Inter', family: "'Inter', sans-serif" },
-  { name: 'Roboto', family: "'Roboto', sans-serif" },
-  { name: 'Open Sans', family: "'Open Sans', sans-serif" },
-  { name: 'Lato', family: "'Lato', sans-serif" },
+  { name: 'Inter', family: "var(--font-inter)" },
+  { name: 'Roboto', family: "var(--font-roboto)" },
+  { name: 'Open Sans', family: "var(--font-open-sans)" },
+  { name: 'Lato', family: "var(--font-lato)" },
 ]
 
 type ThemeColors = {
@@ -203,7 +210,7 @@ export default function SettingsPage() {
       applyCustomFont(null); // Remove custom font if not selected
       const selectedFont = availableFonts.find(f => f.name === fontName)
       if(selectedFont) {
-          document.body.style.fontFamily = selectedFont.family
+          document.body.style.setProperty('--font-body', selectedFont.family)
       }
     }
   }
@@ -456,20 +463,24 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="flex items-center gap-4 p-4 md:p-6 border-b">
-        <Button variant="outline" size="icon" asChild>
-          <Link href="/">
-            <ArrowLeft />
-          </Link>
-        </Button>
-        <h1 className="text-xl md:text-2xl font-bold">Settings</h1>
-        <div className="ml-auto">
-          <Button onClick={handleSaveChanges}>
-            <Save className="mr-2 h-4 w-4" /> Save All Changes
-          </Button>
+      <header className="bg-card border-b p-4">
+        <div className="container mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="outline" size="icon" asChild>
+              <Link href="/">
+                <ArrowLeft />
+              </Link>
+            </Button>
+            <h1 className="text-xl font-bold">Settings</h1>
+          </div>
+          <div className="ml-auto">
+            <Button onClick={handleSaveChanges}>
+              <Save className="mr-2 h-4 w-4" /> Save All Changes
+            </Button>
+          </div>
         </div>
       </header>
-      <main className="p-4 md:p-6">
+      <main className="p-4 md:p-6 container mx-auto">
         <ScrollArea className="w-full whitespace-nowrap" onWheel={onWheel}>
           <div className="flex w-max space-x-8 pb-4" ref={scrollRef}>
               <Card className='w-[350px]'>

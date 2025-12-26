@@ -1,3 +1,4 @@
+
 "use client"
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
@@ -6,17 +7,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function TransmitPage() {
   return (
-    <div className="min-h-screen bg-background text-foreground p-8">
-      <header className="flex items-center gap-4 mb-8">
-        <Button variant="outline" size="icon" asChild>
-          <Link href="/">
-            <ArrowLeft />
-            <span className="sr-only">Back to Dashboard</span>
-          </Link>
-        </Button>
-        <h1 className="text-3xl font-bold">Transmit</h1>
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="bg-card border-b p-4">
+        <div className="container mx-auto flex items-center gap-4">
+          <Button variant="outline" size="icon" asChild>
+            <Link href="/">
+              <ArrowLeft />
+              <span className="sr-only">Back to Dashboard</span>
+            </Link>
+          </Button>
+          <h1 className="text-xl font-bold">Transmit</h1>
+        </div>
       </header>
-      <main>
+      <main className="container mx-auto p-4 md:p-8">
          <Card>
             <CardHeader>
                 <CardTitle>Under Construction</CardTitle>
