@@ -48,7 +48,7 @@ type Item = {
   modelCondition?: 'Wrapped' | 'Damaged' | '';
   quantityPerCondition?: number;
   locationId?: string;
-  updateStatus?: 'NEW' | 'UPDATED' | 'ZEROED' | '';
+  updateStatus?: 'NEW' | 'UPDATED' | 'DELETED' | '';
 };
 
 type Employee = { id: string; name: string; };
@@ -289,16 +289,28 @@ export default function FileDetailPage() {
     if (!firestore || !fileId) return;
     const batch = writeBatch(firestore);
     
+    // Track original items to find which ones were deleted
+    const originalItemIds = new Set(items?.map(i => i.id));
+    const editableItemIds = new Set(editableItems.map(i => i.id));
+
     editableItems.forEach(item => {
-      const { id, fileId: fId, updateStatus, ...itemData } = item;
-      const itemRef = doc(firestore, `excel_files/${fileId}/items`, id);
-      // For new items, their ID is a temporary one, so we need to create a new doc
-      if (item.updateStatus === 'NEW') {
-         const newItemRef = doc(collection(firestore, `excel_files/${fileId}/items`));
-         batch.set(newItemRef, {...itemData, id: newItemRef.id, fileId });
-      } else {
-         batch.update(itemRef, { ...itemData });
-      }
+        const { id, fileId: fId, updateStatus, ...itemData } = item;
+        const itemRef = doc(firestore, `excel_files/${fileId}/items`, id);
+        
+        if (updateStatus === 'NEW') {
+            const newItemRef = doc(collection(firestore, `excel_files/${fileId}/items`));
+            batch.set(newItemRef, {...itemData, id: newItemRef.id, fileId });
+        } else {
+            batch.update(itemRef, { ...itemData });
+        }
+    });
+
+    // Handle deletions
+    originalItemIds.forEach(originalId => {
+        if (!editableItemIds.has(originalId)) {
+            const itemToDeleteRef = doc(firestore, `excel_files/${fileId}/items`, originalId);
+            batch.delete(itemToDeleteRef);
+        }
     });
 
     try {
@@ -343,25 +355,27 @@ export default function FileDetailPage() {
           }
       });
       
-      let updatedItems = [...editableItems];
-      const existingModels = new Set(updatedItems.map(item => item.model));
+      const currentItems = items || [];
+      const updatedItems: Item[] = [];
+      const existingModelsInNewFile = new Set<string>();
 
-      // Rule A & B: Update existing or zero-out missing
-      updatedItems = updatedItems.map(item => {
-        const newItemData = importedItems.get(item.model);
-        if (newItemData) { // Rule A: Model exists in new file
-            if (item.quantity !== newItemData.quantity) {
-                return { ...item, quantity: newItemData.quantity, updateStatus: 'UPDATED' as const };
-            }
-            return item; // No change
-        } else { // Rule B: Model missing from new file
-            return { ...item, quantity: 0, updateStatus: 'ZEROED' as const };
-        }
+      // Rule A: Update existing models
+      currentItems.forEach(item => {
+          const newItemData = importedItems.get(item.model);
+          if (newItemData) {
+              if (item.quantity !== newItemData.quantity) {
+                  updatedItems.push({ ...item, quantity: newItemData.quantity, updateStatus: 'UPDATED' });
+              } else {
+                  updatedItems.push(item); // No change
+              }
+              existingModelsInNewFile.add(item.model);
+          }
+          // Rule B is now implicit: if not in `newItemData`, it's not pushed to `updatedItems`, so it's deleted.
       });
       
       // Rule C: Add new models
       importedItems.forEach((newItemData, model) => {
-        if (!existingModels.has(model)) {
+        if (!existingModelsInNewFile.has(model)) {
             updatedItems.push({
                 id: `new_${Date.now()}_${model}`, // Temp ID
                 fileId: fileId,
@@ -371,7 +385,7 @@ export default function FileDetailPage() {
                 storageStatus: '',
                 modelCondition: '',
                 locationId: '',
-                updateStatus: 'NEW' as const
+                updateStatus: 'NEW'
             });
         }
       });
@@ -434,7 +448,7 @@ export default function FileDetailPage() {
         switch (item.updateStatus) {
             case 'NEW': return 'bg-status-new';
             case 'UPDATED': return 'bg-status-updated';
-            case 'ZEROED': return 'bg-status-zeroed';
+            case 'DELETED': return 'bg-status-zeroed';
             default: // fall through
         }
     }
@@ -808,17 +822,16 @@ export default function FileDetailPage() {
                         {paginatedItems.map((item) => (
                             <TableRow id={item.id} key={item.id} className={cn("transition-colors target:bg-primary/20 target:duration-500", getRowClass(item))}>
                                 <TableCell className="font-medium">{item.model}</TableCell>
-                                <TableCell>{isEditing ? (
+                                <TableCell>
                                     <div className="flex items-center gap-2">
                                         <span className="font-semibold">{item.quantity}</span>
-                                        {originalQuantities[item.id] !== undefined && originalQuantities[item.id] !== item.quantity && (
+                                        {isEditing && originalQuantities[item.id] !== undefined && originalQuantities[item.id] !== item.quantity && (
                                             <span className="text-xs text-muted-foreground whitespace-nowrap">(was {originalQuantities[item.id]})</span>
                                         )}
                                     </div>
-                                    ) : item.quantity
-                                }</TableCell>
+                                </TableCell>
                                 {isEditing && <TableCell>
-                                  {item.updateStatus && <Badge variant={item.updateStatus === 'NEW' ? 'default' : item.updateStatus === 'ZEROED' ? 'destructive' : 'secondary'}>{item.updateStatus}</Badge>}
+                                  {item.updateStatus && <Badge variant={item.updateStatus === 'NEW' ? 'default' : item.updateStatus === 'DELETED' ? 'destructive' : 'secondary'}>{item.updateStatus}</Badge>}
                                 </TableCell>}
                                 <TableCell>{isEditing ? (
                                     <Select value={item.storageStatus || ''} onValueChange={v => handleItemChange(item.id, 'storageStatus', v === 'none' ? '' : v)}>
@@ -887,5 +900,7 @@ export default function FileDetailPage() {
     </>
   );
 }
+
+    
 
     
