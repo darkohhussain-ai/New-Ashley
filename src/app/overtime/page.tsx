@@ -166,8 +166,8 @@ export default function OvertimePage() {
       <main className="container mx-auto p-4 md:p-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-1">
-            <form onSubmit={handleAddOvertime}>
-              <Card>
+            <Card>
+              <form onSubmit={handleAddOvertime}>
                 <CardHeader>
                   <CardTitle>Add Overtime Record</CardTitle>
                 </CardHeader>
@@ -209,14 +209,14 @@ export default function OvertimePage() {
                     <Plus className="mr-2 h-4 w-4"/> {isAdding ? 'Adding...' : 'Add Record'}
                   </Button>
                 </CardFooter>
-              </Card>
-            </form>
+              </form>
+            </Card>
           </div>
 
           <div className="lg:col-span-2">
             <Card>
               <CardHeader>
-                <CardTitle>Employee Overtime Hours for {selectedDate ? format(selectedDate, 'MMMM d, yyyy') : '...'}</CardTitle>
+                <CardTitle>Overtime for {selectedDate ? format(selectedDate, 'MMMM d, yyyy') : '...'}</CardTitle>
                 <CardDescription>A list of all overtime records for the selected date.</CardDescription>
               </CardHeader>
               <CardContent>
