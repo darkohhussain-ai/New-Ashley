@@ -75,8 +75,7 @@ service cloud.firestore {
      * @principle Grants full read and write access to any authenticated user for managing overtime records.
      */
     match /overtime/{overtimeId} {
-      allow get, list: if isSignedIn();
-      allow write: if isSignedIn();
+      allow read, write: if isSignedIn();
     }
 
     /**
