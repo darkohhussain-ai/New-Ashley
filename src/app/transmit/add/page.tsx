@@ -3,7 +3,7 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking, doc } from '@/firebase';
 import { collection, query, where, Timestamp } from 'firebase/firestore';
 import { ArrowLeft, Plus, Trash2, Edit, Save, X, Loader2, ListPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -59,14 +59,14 @@ export default function AddItemsPage() {
   }
 
   const handleAddItem = () => {
-    if (!firestore || !model || !destination) {
+    if (!firestore || !model.trim() || !destination) {
       toast({ variant: 'destructive', title: 'Missing Information', description: 'Please provide a model and destination.' });
       return;
     }
     
     setIsSaving(true);
     const newItemData = {
-        model,
+        model: model.trim(),
         quantity,
         destination,
         notes,
@@ -87,11 +87,11 @@ export default function AddItemsPage() {
   };
   
   const handleUpdateItem = () => {
-    if (!firestore || !editingItem) return;
+    if (!firestore || !editingItem || !editingItem.model.trim()) return;
 
     setIsSaving(true);
     const itemRef = doc(firestore, 'items', editingItem.id);
-    const { id, createdAt, ...updateData } = editingItem;
+    const { id, createdAt, ...updateData } = { ...editingItem, model: editingItem.model.trim() };
 
     updateDocumentNonBlocking(itemRef, updateData)
     .then(() => {
