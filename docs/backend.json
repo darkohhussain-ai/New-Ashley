@@ -254,9 +254,66 @@
         },
         "locationId": {
             "type": "string"
+        },
+        "destinationCity": {
+          "type": "string",
+          "description": "The destination city for a transferred item.",
+          "enum": ["Erbil", "Baghdad", "Diwan", "Dohuk"]
+        },
+        "transferId": {
+          "type": "string",
+          "description": "The ID of the transfer slip this item belongs to."
         }
       },
       "required": ["id", "fileId", "model", "quantity"]
+    },
+    "Transfer": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Transfer",
+      "type": "object",
+      "description": "Represents a cargo transfer slip.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Transfer entity."
+        },
+        "transferDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date the transfer was created."
+        },
+        "cargoName": {
+          "type": "string",
+          "description": "A descriptive name for the cargo transfer."
+        },
+        "destinationCity": {
+          "type": "string",
+          "description": "The destination city for the transfer.",
+          "enum": ["Erbil", "Baghdad", "Diwan", "Dohuk"]
+        },
+        "driverName": {
+          "type": "string",
+          "description": "The name of the driver."
+        },
+        "warehouseManagerName": {
+          "type": "string",
+          "description": "The name of the warehouse manager."
+        },
+        "itemIds": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "An array of item IDs included in this transfer."
+        }
+      },
+      "required": [
+        "id",
+        "transferDate",
+        "cargoName",
+        "destinationCity",
+        "driverName",
+        "warehouseManagerName",
+        "itemIds"
+      ]
     }
   },
   "auth": {
@@ -382,8 +439,26 @@
             }
           ]
         }
+      },
+      {
+        "path": "/transfers/{transferId}",
+        "definition": {
+          "entityName": "Transfer",
+          "schema": {
+            "$ref": "#/backend/entities/Transfer"
+          },
+          "description": "Stores transfer slips for cargo shipments.",
+          "params": [
+            {
+              "name": "transferId",
+              "description": "Unique identifier for the transfer."
+            }
+          ]
+        }
       }
     ],
     "reasoning": "This Firestore structure is designed to manage employee data and expenses, incorporating key principles for security, scalability, and maintainability.  It leverages path-based ownership for employee data and employs denormalization to ensure authorization independence when managing expenses. The structure supports QAPs through structural segregation and predictable schema. Specifically:\n\n1.  **Employees Collection (`/employees/{employeeId}`):** Stores employee profiles. This top-level collection simplifies listing all employees. Path-based ownership is used, but since all employees are generally visible, no specific authorization is needed beyond authentication to access the employee list.\n\n2.  **Expenses Collection (`/expenses/{expenseId}`):** Each employee has their own expenses subcollection. The `employeeId` in the path grants implicit ownership. This structure enables secure 'list' operations restricted to a specific employee's expenses, fulfilling the QAPs requirement. The expenses collection also contains `employeeId` to help with direct queries, filtering, and denormalization for aggregation purposes.\n\n3.  **Monthly Reports Collection (`/monthly_reports/{reportId}`):** This collection stores monthly expense reports. Each document contains `employeeId` and the month for which the report is generated. This facilitates querying and aggregating monthly expenses per employee.\n\n4.  **Archived Expense Lists Collection (`/archived_expense_lists/{archiveId}`):** This collection stores archived expense lists. Each document contains `month` and an array of `expenseIds`. This allows for easy retrieval of archived expenses for a specific month."
   }
 }
+
+    

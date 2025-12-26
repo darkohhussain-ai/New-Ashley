@@ -121,5 +121,16 @@ service cloud.firestore {
         allow read, write: if isSignedIn();
       }
     }
+    
+    /**
+     * @description Rules for the 'transfers' collection.
+     * @path /transfers/{transferId}
+     * @principle Grants full read and write access to any authenticated user for managing cargo transfers.
+     */
+    match /transfers/{transferId} {
+      allow read, write: if isSignedIn();
+    }
   }
 }
+
+    
