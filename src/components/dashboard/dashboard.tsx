@@ -30,10 +30,10 @@ export function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="bg-white shadow-sm sticky top-0 z-10">
+      <header className="bg-card border-b sticky top-0 z-10">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-20">
-            <div className="hidden md:flex items-center gap-4 text-sm text-gray-500 w-1/3">
+            <div className="hidden md:flex items-center gap-4 text-sm text-muted-foreground w-1/3">
                 <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4"/>
                     <span>{format(date, 'MMMM d, yyyy')}</span>
@@ -45,16 +45,16 @@ export function Dashboard() {
             </div>
             <div className="flex items-center justify-center gap-4 w-1/3">
               <Image src={logoSrc} alt="App Logo" width={32} height={32} className="object-contain" data-ai-hint="logo" />
-              <h1 className="text-xl font-bold text-gray-800">Ashley HR</h1>
+              <h1 className="text-xl font-bold">Ashley HR</h1>
             </div>
             <div className="flex items-center justify-end gap-6 w-1/3">
-              <Bell className="w-6 h-6 text-gray-500 hover:text-primary cursor-pointer" />
+              <Bell className="w-6 h-6 text-muted-foreground hover:text-primary cursor-pointer" />
               <div className="flex items-center gap-2 cursor-pointer">
                 <Avatar className="w-10 h-10">
                   <AvatarImage src={user?.photoURL || undefined} />
                   <AvatarFallback>{user?.email?.[0].toUpperCase() || 'A'}</AvatarFallback>
                 </Avatar>
-                <ChevronDown className="w-4 h-4 text-gray-500" />
+                <ChevronDown className="w-4 h-4 text-muted-foreground" />
               </div>
             </div>
           </div>
@@ -62,8 +62,8 @@ export function Dashboard() {
       </header>
       <main className="container mx-auto p-4 md:p-8">
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-800">HR Dashboard</h2>
-          <p className="text-gray-500">Select a service to continue.</p>
+          <h2 className="text-2xl font-bold">Welcome Back</h2>
+          <p className="text-muted-foreground">Select a service to continue.</p>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
           {menuItems.map((item) => (

@@ -42,7 +42,7 @@ export default function Home() {
             background-size: 2rem 2rem;
           }
           .dark .bg-grid-slate-900 {
-            background-image: linear-gradient(hsl(var(--primary) / 0.2) 1px, transparent 1px), linear-gradient(to right, hsl(var(--primary) / 0.2) 1px, hsl(var(--background)) 1px);
+            background-image: linear-gradient(hsl(var(--primary) / 0.2) 1px, transparent-1px), linear-gradient(to right, hsl(var(--primary) / 0.2) 1px, hsl(var(--background)) 1px);
           }
         `}</style>
       <div className="flex flex-col items-center justify-center w-full max-w-sm">
