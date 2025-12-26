@@ -36,9 +36,9 @@ body {
     --radius: 0.5rem;
 
     /* Custom Status Colors */
-    --status-correct-bg: 142 76% 95%; /* Lighter green */
-    --status-less-bg: 38 92% 95%; /* Lighter orange */
-    --status-more-bg: 210 100% 95%; /* Lighter blue */
+    --status-correct-bg: 142 76% 80%; /* Stronger green */
+    --status-less-bg: 25 95% 80%;     /* Stronger orange */
+    --status-more-bg: 210 100% 80%;   /* Stronger blue */
     --status-wrapped-bg: 54 92% 95%; /* Lighter yellow */
     --status-damaged-bg: 0 84% 95%; /* Lighter red */
     --location-occupied-border: 220 82% 75%;
@@ -76,9 +76,9 @@ body {
     --chart-5: 340 75% 55%;
 
     /* Custom Status Colors */
-    --status-correct-bg: 142 76% 15%; 
-    --status-less-bg: 38 92% 15%;
-    --status-more-bg: 210 100% 15%;
+    --status-correct-bg: 142 76% 25%; 
+    --status-less-bg: 25 95% 25%;
+    --status-more-bg: 210 100% 25%;
     --status-wrapped-bg: 54 92% 15%;
     --status-damaged-bg: 0 84% 15%;
     --location-occupied-border: 217.2 91.2% 50%;
