@@ -166,11 +166,11 @@ export default function OvertimePage() {
       <main className="container mx-auto p-4 md:p-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-1">
-            <Card>
-              <CardHeader>
-                <CardTitle>Add Overtime Record</CardTitle>
-              </CardHeader>
-              <form onSubmit={handleAddOvertime}>
+            <form onSubmit={handleAddOvertime}>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Add Overtime Record</CardTitle>
+                </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <label htmlFor="employee">Employee</label>
@@ -209,8 +209,8 @@ export default function OvertimePage() {
                     <Plus className="mr-2 h-4 w-4"/> {isAdding ? 'Adding...' : 'Add Record'}
                   </Button>
                 </CardFooter>
-              </form>
-            </Card>
+              </Card>
+            </form>
           </div>
 
           <div className="lg:col-span-2">
@@ -279,18 +279,20 @@ export default function OvertimePage() {
                     </Table>
                 </div>
               </CardContent>
-              <CardFooter className="flex justify-end pt-6 border-t">
-                  <div className="w-full max-w-sm space-y-2 text-right">
-                    <div className="flex justify-between">
-                        <span className="text-muted-foreground">Total Overtime Hours:</span>
-                        <span className="font-bold">{totalHours.toFixed(1)} hrs</span>
+              {overtimeRecords && overtimeRecords.length > 0 && (
+                <CardFooter className="flex justify-end pt-6 border-t">
+                    <div className="w-full max-w-sm space-y-2 text-right">
+                      <div className="flex justify-between">
+                          <span className="text-muted-foreground">Total Overtime Hours:</span>
+                          <span className="font-bold">{totalHours.toFixed(1)} hrs</span>
+                      </div>
+                      <div className="flex justify-between text-lg">
+                          <span className="text-muted-foreground">Total Amount:</span>
+                          <span className="font-bold text-primary">{formatCurrency(totalAmount)}</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between text-lg">
-                        <span className="text-muted-foreground">Total Amount:</span>
-                        <span className="font-bold text-primary">{formatCurrency(totalAmount)}</span>
-                    </div>
-                  </div>
-              </CardFooter>
+                </CardFooter>
+              )}
             </Card>
           </div>
         </div>
