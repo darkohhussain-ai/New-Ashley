@@ -1,14 +1,22 @@
 
 "use client"
+import { useState, useEffect } from "react"
 import Image from "next/image"
-import { Users, Box, ArrowRightLeft, Settings as SettingsIcon, CreditCard, Bell, ChevronDown } from "lucide-react"
+import { Users, Box, ArrowRightLeft, Settings as SettingsIcon, CreditCard, Bell, ChevronDown, Calendar, Clock } from "lucide-react"
 import { DashboardCard } from "./dashboard-card"
 import useLocalStorage from "@/hooks/use-local-storage"
 import { useUser } from "@/firebase"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { format } from 'date-fns';
 
 export function Dashboard() {
   const { user } = useUser();
+  const [date, setDate] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setDate(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const menuItems = [
     { title: "Employees", icon: Users, href: "/employees", color: "border-pink-500 bg-pink-500" },
@@ -28,6 +36,16 @@ export function Dashboard() {
             <div className="flex items-center gap-4">
               <Image src={logoSrc} alt="App Logo" width={32} height={32} className="object-contain" data-ai-hint="logo" />
               <h1 className="text-xl font-bold text-gray-800">Ashley HR</h1>
+            </div>
+            <div className="hidden md:flex items-center gap-4 text-sm text-gray-500">
+                <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4"/>
+                    <span>{format(date, 'MMMM d, yyyy')}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4"/>
+                    <span>{format(date, 'h:mm:ss a')}</span>
+                </div>
             </div>
             <div className="flex items-center gap-6">
               <Bell className="w-6 h-6 text-gray-500 hover:text-primary cursor-pointer" />
