@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useFirestore, useDoc, useCollection, useMemoFirebase, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { doc, collection, Timestamp, writeBatch } from 'firebase/firestore';
-import { ArrowLeft, User, Calendar as CalendarIcon, Building, FileText, MapPin, Edit, Trash2, Save, X, ArrowUpDown, ArrowDown, ArrowUp, FileSpreadsheet, ChevronLeft, ChevronRight, Download, Search } from 'lucide-react';
+import { ArrowLeft, User, Calendar as CalendarIcon, Building, FileText, MapPin, Edit, Trash2, Save, X, ArrowUpDown, ArrowDown, ArrowUp, FileSpreadsheet, ChevronLeft, ChevronRight, Download, Search, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -48,6 +48,7 @@ type Item = {
   modelCondition?: 'Wrapped' | 'Damaged' | '';
   quantityPerCondition?: number;
   locationId?: string;
+  updateStatus?: 'NEW' | 'UPDATED' | 'ZEROED' | '';
 };
 
 type Employee = { id: string; name: string; };
@@ -147,6 +148,8 @@ export default function FileDetailPage() {
 
   const defaultLogo = "https://i.ibb.co/68RvM01/ashley-logo.png";
   const [logoSrc] = useLocalStorage('app-logo', defaultLogo);
+  
+  const updateFileInputRef = useRef<HTMLInputElement>(null);
 
   const fileRef = useMemoFirebase(() => (firestore && fileId ? doc(firestore, 'excel_files', fileId) : null), [firestore, fileId]);
   const { data: file, isLoading: isLoadingFile } = useDoc<ExcelFile>(fileRef);
@@ -164,9 +167,16 @@ export default function FileDetailPage() {
 
   useEffect(() => {
     if (items) {
-      setEditableItems(JSON.parse(JSON.stringify(items))); // Deep copy for editing
+      setEditableItems(JSON.parse(JSON.stringify(items.map(item => ({...item, updateStatus: ''}))))); // Deep copy
     }
   }, [items]);
+  
+  useEffect(() => {
+    // When entering edit mode, clear previous update statuses
+    if (isEditing) {
+        setEditableItems(current => current.map(item => ({ ...item, updateStatus: '' })));
+    }
+  }, [isEditing]);
 
   const { statusChartData, conditionChartData } = useMemo(() => {
     if (!items) return { statusChartData: [], conditionChartData: [] };
@@ -271,22 +281,31 @@ export default function FileDetailPage() {
   };
   
   const handleSave = async () => {
-    if (!firestore) return;
+    if (!firestore || !fileId) return;
     const batch = writeBatch(firestore);
-    // Use editableItems instead of sortedItems to ensure all changes are saved, not just visible ones
+    
     editableItems.forEach(item => {
-      const itemRef = doc(firestore, `excel_files/${fileId}/items`, item.id);
-      const { id, fileId: fId, ...itemData } = item;
-      batch.update(itemRef, { ...itemData });
+      const { id, fileId: fId, updateStatus, ...itemData } = item;
+      const itemRef = doc(firestore, `excel_files/${fileId}/items`, id);
+      // For new items, their ID is a temporary one, so we need to create a new doc
+      if (item.updateStatus === 'NEW') {
+         const newItemRef = doc(collection(firestore, `excel_files/${fileId}/items`));
+         batch.set(newItemRef, {...itemData, id: newItemRef.id, fileId });
+      } else {
+         batch.update(itemRef, { ...itemData });
+      }
     });
+
     try {
         await batch.commit();
         toast({ title: "Success", description: "All changes have been saved." });
         setIsEditing(false);
     } catch(e) {
+        console.error("Save error: ", e);
         toast({ variant: "destructive", title: "Error", description: "Could not save changes." });
     }
   };
+
 
   const handleDeleteFile = () => {
     if(!firestore || !fileId) return;
@@ -296,6 +315,74 @@ export default function FileDetailPage() {
     toast({ title: "File Deleted", description: `"${file?.storageName}" has been removed.` });
     router.push('/archive');
   }
+  
+  const handleFileUpdate = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newFile = event.target.files?.[0];
+    if (!newFile) return;
+
+    try {
+      const data = await newFile.arrayBuffer();
+      const workbook = XLSX.read(data, { type: 'buffer' });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const importedItemsRaw = XLSX.utils.sheet_to_json(worksheet, { defval: "" }) as any[];
+
+      const importedItems = new Map<string, { model: string, quantity: number }>();
+      importedItemsRaw.forEach(row => {
+          const model = String(row.Model || row.model || '').trim();
+          if (model) {
+            importedItems.set(model, {
+                model,
+                quantity: Number(row.Quantity || row.quantity || 0),
+            });
+          }
+      });
+      
+      let updatedItems = [...editableItems];
+      const existingModels = new Set(updatedItems.map(item => item.model));
+
+      // Rule A & B: Update existing or zero-out missing
+      updatedItems = updatedItems.map(item => {
+        const newItemData = importedItems.get(item.model);
+        if (newItemData) { // Rule A: Model exists in new file
+            if (item.quantity !== newItemData.quantity) {
+                return { ...item, quantity: newItemData.quantity, updateStatus: 'UPDATED' as const };
+            }
+            return item; // No change
+        } else { // Rule B: Model missing from new file
+            return { ...item, quantity: 0, updateStatus: 'ZEROED' as const };
+        }
+      });
+      
+      // Rule C: Add new models
+      importedItems.forEach((newItemData, model) => {
+        if (!existingModels.has(model)) {
+            updatedItems.push({
+                id: `new_${Date.now()}_${model}`, // Temp ID
+                fileId: fileId,
+                model: newItemData.model,
+                quantity: newItemData.quantity,
+                notes: '',
+                storageStatus: '',
+                modelCondition: '',
+                locationId: '',
+                updateStatus: 'NEW' as const
+            });
+        }
+      });
+      
+      setEditableItems(updatedItems);
+      toast({ title: "File Ready for Review", description: "Review the changes and click 'Save Changes' to confirm." });
+
+    } catch (error) {
+      console.error("Error processing update file:", error);
+      toast({ variant: "destructive", title: "File Error", description: "Could not process the uploaded file." });
+    } finally {
+        // Reset the input value to allow uploading the same file again
+        if(updateFileInputRef.current) updateFileInputRef.current.value = "";
+    }
+  };
+
 
   const isLoading = isLoadingFile || isLoadingItems || isLoadingEmployees || isLoadingLocations;
 
@@ -337,16 +424,20 @@ export default function FileDetailPage() {
   }, [locations, warehouseType, filterHuanaWarehouse, filterHuanaFloor, filterAshleyFloor, filterAshleyArea]);
 
 
-  const getRowClass = (status?: 'Correct' | 'Less' | 'More' | '') => {
-    switch (status) {
-      case 'Correct':
-        return 'bg-status-correct';
-      case 'Less':
-        return 'bg-status-less';
-      case 'More':
-        return 'bg-status-more';
-      default:
-        return '';
+  const getRowClass = (item: Item) => {
+    if (isEditing) {
+        switch (item.updateStatus) {
+            case 'NEW': return 'bg-status-new';
+            case 'UPDATED': return 'bg-status-updated';
+            case 'ZEROED': return 'bg-status-zeroed';
+            default: // fall through
+        }
+    }
+    switch (item.storageStatus) {
+      case 'Correct': return 'bg-status-correct';
+      case 'Less': return 'bg-status-less';
+      case 'More': return 'bg-status-more';
+      default: return '';
     }
   };
   
@@ -474,6 +565,13 @@ export default function FileDetailPage() {
 
   return (
     <>
+     <input
+        type="file"
+        ref={updateFileInputRef}
+        onChange={handleFileUpdate}
+        className="hidden"
+        accept=".xlsx,.xls"
+      />
      <div style={{ position: 'absolute', left: '-9999px', top: '-9999px', background: 'white', color: 'black' }}>
           {file && employeeForFile && items && (
             <div ref={pdfCardRef} style={{ width: '700px' }}>
@@ -497,6 +595,9 @@ export default function FileDetailPage() {
           <div className='flex items-center gap-2 flex-wrap justify-end'>
               {isEditing ? (
                 <>
+                  <Button variant="outline" onClick={() => updateFileInputRef.current?.click()}>
+                    <Upload className="mr-2 h-4 w-4" /> Update with New File
+                  </Button>
                   <Button onClick={handleSave}><Save className="mr-2 h-4 w-4"/> Save Changes</Button>
                   <Button variant="ghost" onClick={() => setIsEditing(false)}><X className="mr-2 h-4 w-4"/> Cancel</Button>
                 </>
@@ -690,6 +791,7 @@ export default function FileDetailPage() {
                         <TableRow>
                             <TableHead onClick={() => requestSort('model')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Model {getSortIcon('model')}</div></TableHead>
                             <TableHead onClick={() => requestSort('quantity')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Qty {getSortIcon('quantity')}</div></TableHead>
+                            {isEditing && <TableHead>Update Status</TableHead>}
                             <TableHead onClick={() => requestSort('storageStatus')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Storage Status {getSortIcon('storageStatus')}</div></TableHead>
                             <TableHead onClick={() => requestSort('modelCondition')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Condition {getSortIcon('modelCondition')}</div></TableHead>
                             <TableHead onClick={() => requestSort('quantityPerCondition')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Qty / Cond. {getSortIcon('quantityPerCondition')}</div></TableHead>
@@ -699,12 +801,15 @@ export default function FileDetailPage() {
                     </TableHeader>
                     <TableBody>
                         {paginatedItems.map((item) => (
-                            <TableRow id={item.id} key={item.id} className={cn("transition-colors target:bg-primary/20 target:duration-500", getRowClass(item.storageStatus))}>
+                            <TableRow id={item.id} key={item.id} className={cn("transition-colors target:bg-primary/20 target:duration-500", getRowClass(item))}>
                                 <TableCell className="font-medium">{item.model}</TableCell>
                                 <TableCell>{isEditing ? 
                                     <Input type="number" value={item.quantity} onChange={e => handleItemChange(item.id, 'quantity', e.target.valueAsNumber)} className="w-20" /> 
                                     : item.quantity
                                 }</TableCell>
+                                {isEditing && <TableCell>
+                                  {item.updateStatus && <Badge variant={item.updateStatus === 'NEW' || item.updateStatus === 'ZEROED' ? 'destructive' : 'default'}>{item.updateStatus}</Badge>}
+                                </TableCell>}
                                 <TableCell>{isEditing ? (
                                     <Select value={item.storageStatus || ''} onValueChange={v => handleItemChange(item.id, 'storageStatus', v === 'none' ? '' : v)}>
                                         <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
@@ -758,7 +863,7 @@ export default function FileDetailPage() {
                         ))}
                         {paginatedItems.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={7} className="text-center h-24">No items found.</TableCell>
+                                <TableCell colSpan={isEditing ? 8 : 7} className="text-center h-24">No items found.</TableCell>
                             </TableRow>
                         )}
                     </TableBody>
