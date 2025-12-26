@@ -1,78 +1,28 @@
 
-/**
- * @file firestore.rules
- * @description Firestore Security Rules for an internal HR expense management application.
- *
- * Core Philosophy:
- * This ruleset enforces an "authenticated-only" security model. It assumes that any user who has successfully signed in
- * is a trusted internal employee or administrator with full permissions to read and write all data in the database.
- * This is suitable for internal-facing applications where granular user roles are not required. Access is not restricted
- * based on who created the data, but rather on whether the user is part of the authenticated system.
- *
- * Data Structure:
- * The data is organized into several top-level collections:
- * - /employees: Stores profiles for all employees.
- * - /expenses: Stores all expense records.
- * - /storage_locations: Stores warehouse location codes.
- * - /excel_files: Stores metadata for inventory files.
- * - /items: Stores items staged for cargo transfer.
- * - /transfers: Stores archived cargo transfer slips.
- */
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions for common authorization and validation logic.
-
-    /**
-     * Checks if the user is authenticated. This is the primary security check
-     * for this internal application model.
-     */
-    function isSignedIn() {
-      return request.auth != null;
+    // This rule allows any authenticated user to read and write to any document
+    // in the database. It is a simple and effective rule for internal applications
+    // where all signed-in users are trusted.
+    match /{document=**} {
+      allow read, write: if request.auth != null;
     }
 
-    /**
-     * @description Rules for the 'employees' collection.
-     */
-    match /employees/{employeeId} {
-      allow read, write: if isSignedIn();
+    /*
+    // Example for user-specific data (not currently used in this app)
+    // This would restrict access to a user's own documents in a 'users' collection.
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    /**
-     * @description Rules for the 'expenses' collection.
-     */
-    match /expenses/{expenseId} {
-      allow read, write: if isSignedIn();
+    // Example for admin-only access (not currently used in this app)
+    // This would require a custom claim 'admin' to be set on the user's token.
+    match /admin/{document=**} {
+      allow read, write: if request.auth != null && request.auth.token.admin == true;
     }
-
-    /**
-     * @description Rules for the 'storage_locations' collection.
-     */
-    match /storage_locations/{locationId} {
-      allow read, write: if isSignedIn();
-    }
-
-    /**
-     * @description Rules for the 'excel_files' collection and its 'items' subcollection.
-     * This rule applies to the excel_files documents and all documents in any subcollections.
-     */
-    match /excel_files/{fileId}/{document=**} {
-      allow read, write: if isSignedIn();
-    }
-    
-    /**
-     * @description Rules for the 'items' collection. This holds staged items for transfer.
-     */
-    match /items/{itemId} {
-        allow read, write: if isSignedIn();
-    }
-
-    /**
-     * @description Rules for the 'transfers' collection.
-     */
-    match /transfers/{transferId} {
-      allow read, write: if isSignedIn();
-    }
+    */
   }
 }
