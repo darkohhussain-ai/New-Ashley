@@ -295,6 +295,38 @@
         "warehouseManagerName",
         "itemIds"
       ]
+    },
+    "SoldItemReceipt": {
+      "title": "Sold Item Receipt",
+      "type": "object",
+      "description": "Represents a receipt for sold items, tracking categories of items sold.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Sold Item Receipt entity."
+        },
+        "receiptNumber": {
+          "type": "string",
+          "description": "The receipt number, formatted as 115-0XXXX."
+        },
+        "receiptDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date the receipt was issued."
+        },
+        "customerName": {
+          "type": "string",
+          "description": "The name of the customer who made the purchase."
+        },
+        "itemCategories": {
+          "type": "array",
+          "description": "A list of categories for the items sold.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": ["id", "receiptNumber", "itemCategories"]
     }
   },
   "auth": {
@@ -370,10 +402,19 @@
           "description": "Stores archived transfer slips for cargo shipments.",
           "params": [{ "name": "transferId", "description": "Unique identifier for the transfer." }]
         }
+      },
+      {
+        "path": "/sold_item_receipts/{receiptId}",
+        "definition": {
+          "entityName": "SoldItemReceipt",
+          "schema": {
+            "$ref": "#/backend/entities/SoldItemReceipt"
+          },
+          "description": "Stores records of sold item receipts.",
+          "params": [{ "name": "receiptId", "description": "Unique identifier for the receipt." }]
+        }
       }
     ],
-    "reasoning": "The data model is updated to support the new cargo transfer workflow. A top-level `/items` collection is introduced to stage items before they are assigned to a transfer. This decouples the transfer process from the main inventory stored in `/excel_files`. The `/transfers` collection will archive the created transfer slips, linking to the items that were part of that shipment. This structure provides a clear and scalable way to manage the entire lifecycle of a cargo transfer. The Overtime entity and collection have been removed."
+    "reasoning": "The data model is updated to support the new cargo transfer workflow. A top-level `/items` collection is introduced to stage items before they are assigned to a transfer. This decouples the transfer process from the main inventory stored in `/excel_files`. The `/transfers` collection will archive the created transfer slips, linking to the items that were part of that shipment. A new `SoldItemReceipt` entity and `/sold_item_receipts` collection have been added to track sold items. This structure provides a clear and scalable way to manage the entire lifecycle of a cargo transfer. The Overtime entity and collection have been removed."
   }
 }
-
-    

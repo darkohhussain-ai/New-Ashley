@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { ArrowLeft, MapPin, FilePlus, Upload, Archive, FileText } from 'lucide-react';
+import { ArrowLeft, MapPin, FilePlus, Upload, Archive, FileText, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -37,6 +37,12 @@ const menuItems = [
     icon: FileText,
     href: "/pdf-archive",
     color: "bg-purple-500",
+  },
+  {
+    title: "Sold Items Check",
+    icon: ShoppingCart,
+    href: "/sold-items",
+    color: "bg-orange-500",
   }
 ];
 
