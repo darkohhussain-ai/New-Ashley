@@ -11,6 +11,7 @@ import {
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { useFirebase } from '@/firebase/provider';
 
 /** Utility type to add an 'id' field to a given type T. */
 export type WithId<T> = T & { id: string };
@@ -48,13 +49,19 @@ export function useCollection<T = any>(
     memoizedTargetRefOrQuery: ((CollectionReference<DocumentData> | Query<DocumentData>) & {__memo?: boolean})  | null | undefined,
 ): UseCollectionResult<T> {
   const [data, setData] = useState<WithId<T>[] | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<FirestoreError | Error | null>(null);
+  const { isUserLoading } = useFirebase();
+
+  // Combine local loading state with user loading state
+  const [isCollectionLoading, setIsCollectionLoading] = useState<boolean>(true);
+  const isLoading = isUserLoading || isCollectionLoading;
 
   useEffect(() => {
-    if (!memoizedTargetRefOrQuery) {
-      setIsLoading(false);
-      setData(null);
+    // Wait until Firebase auth is initialized and we have a query
+    if (isUserLoading || !memoizedTargetRefOrQuery) {
+      if (!memoizedTargetRefOrQuery) {
+        setIsCollectionLoading(false);
+      }
       return;
     }
     
@@ -62,7 +69,7 @@ export function useCollection<T = any>(
       console.warn("useCollection was passed a query that was not wrapped in useMemoFirebase. This can lead to infinite render loops.");
     }
 
-    setIsLoading(true);
+    setIsCollectionLoading(true);
 
     const unsubscribe = onSnapshot(
       memoizedTargetRefOrQuery,
@@ -72,7 +79,7 @@ export function useCollection<T = any>(
           id: doc.id,
         })) as WithId<T>[];
         setData(docs);
-        setIsLoading(false);
+        setIsCollectionLoading(false);
         setError(null);
       },
       (err: FirestoreError) => {
@@ -90,13 +97,13 @@ export function useCollection<T = any>(
         
         errorEmitter.emit('permission-error', contextualError);
         setError(contextualError);
-        setIsLoading(false);
+        setIsCollectionLoading(false);
         setData(null);
       }
     );
 
     return () => unsubscribe();
-  }, [memoizedTargetRefOrQuery]);
+  }, [memoizedTargetRefOrQuery, isUserLoading]);
   
   return { data, isLoading, error, setData };
 }

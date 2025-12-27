@@ -9,6 +9,7 @@ import {
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { useFirebase } from '@/firebase/provider';
 
 
 /** Utility type to add an 'id' field to a given type T. */
@@ -34,13 +35,19 @@ export function useDoc<T = any>(
   memoizedDocRef: DocumentReference<DocumentData> | null | undefined,
 ): UseDocResult<T> {
   const [data, setData] = useState<WithId<T> | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<FirestoreError | Error | null>(null);
+  const { isUserLoading } = useFirebase();
+
+  const [isDocLoading, setIsDocLoading] = useState<boolean>(true);
+  const isLoading = isUserLoading || isDocLoading;
+
 
   useEffect(() => {
-    if (!memoizedDocRef) {
-      setIsLoading(false);
-      setData(null);
+    // Wait until Firebase auth is initialized and we have a document reference
+    if (isUserLoading || !memoizedDocRef) {
+      if (!memoizedDocRef) {
+        setIsDocLoading(false);
+      }
       return;
     }
     
@@ -48,7 +55,7 @@ export function useDoc<T = any>(
       console.warn("useDoc was passed a ref that was not wrapped in useMemoFirebase. This can lead to infinite render loops.");
     }
 
-    setIsLoading(true);
+    setIsDocLoading(true);
 
     const unsubscribe = onSnapshot(
       memoizedDocRef,
@@ -58,7 +65,7 @@ export function useDoc<T = any>(
         } else {
           setData(null);
         }
-        setIsLoading(false);
+        setIsDocLoading(false);
         setError(null);
       },
       (err: FirestoreError) => {
@@ -68,13 +75,13 @@ export function useDoc<T = any>(
         })
         errorEmitter.emit('permission-error', contextualError);
         setError(contextualError);
-        setIsLoading(false);
+        setIsDocLoading(false);
         setData(null);
       }
     );
 
     return () => unsubscribe();
-  }, [memoizedDocRef]);
+  }, [memoizedDocRef, isUserLoading]);
 
   return { data, isLoading, error };
 }
