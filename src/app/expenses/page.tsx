@@ -21,7 +21,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { ChartContainer } from '@/components/ui/chart';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import 'jspdf-autotable';
 
 
 type Employee = {
@@ -173,37 +173,44 @@ export default function ExpensesPage() {
   }, [expenses, employees]);
 
   const handleDownloadReport = async () => {
-    if (!chartRef.current) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not generate report.' });
-        return;
-    }
     const doc = new jsPDF();
-    
-    doc.setFontSize(18);
-    doc.text(`Employee Expenses Report`, 14, 22);
-    doc.setFontSize(11);
-    doc.setTextColor(100);
-    doc.text(`Generated on: ${format(new Date(), 'PPP')}`, 14, 30);
+    const today = new Date();
 
-    // Add chart image
-    const canvas = await (await import('html2canvas')).default(chartRef.current, { scale: 2, backgroundColor: null });
-    const imgData = canvas.toDataURL('image/png');
-    const pdfWidth = doc.internal.pageSize.getWidth();
-    doc.addImage(imgData, 'PNG', 14, 40, pdfWidth - 28, 100);
+    // Add header
+    doc.setFontSize(10);
+    doc.text(format(today, 'dd/MM/yyyy'), 14, 15);
+    doc.addImage("https://i.ibb.co/wJm3Sg7/ashley-logo-new.png", 'PNG', doc.internal.pageSize.width - 34, 10, 20, 20);
+    doc.setFontSize(14);
+    doc.text('Employee Expenses Report', doc.internal.pageSize.width / 2, 20, { align: 'center'});
+    doc.line(14, 30, doc.internal.pageSize.width - 14, 30);
     
+    if (chartRef.current) {
+        try {
+            const canvas = await (await import('html2canvas')).default(chartRef.current, { scale: 2, backgroundColor: '#ffffff' });
+            const imgData = canvas.toDataURL('image/png');
+            doc.addImage(imgData, 'PNG', 14, 40, doc.internal.pageSize.width - 28, 80);
+        } catch(e) {
+            console.error("Error generating chart image for PDF:", e);
+        }
+    }
+
     const tableData = Array.from(expensesByEmployee.values()).flatMap(empData => 
         empData.expenses.map(exp => [
             empData.employee.name,
-            formatCurrency(exp.amount),
             format(safeDate(exp.date) || new Date(), 'PP'),
-            exp.notes || ''
+            exp.notes || '',
+            formatCurrency(exp.amount)
         ])
     );
     
-    autoTable(doc, {
-        startY: 150,
-        head: [['Employee', 'Amount', 'Date', 'Notes']],
+    (doc as any).autoTable({
+        startY: chartRef.current ? 130 : 40,
+        head: [['Employee', 'Date', 'Notes', 'Amount']],
         body: tableData,
+        foot: [['Grand Total', '', '', formatCurrency(grandTotal)]],
+        theme: 'grid',
+        headStyles: { fillColor: [22, 163, 74] },
+        footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' }
     });
 
     doc.save(`employee-expenses-report-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
@@ -310,11 +317,11 @@ export default function ExpensesPage() {
             </div>
         ) : expensesByEmployee.size > 0 ? (
             <>
-                <Card className="mb-8" ref={chartRef}>
+                <Card className="mb-8">
                     <CardHeader>
                         <CardTitle>Expenses per Employee</CardTitle>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent ref={chartRef}>
                         <ChartContainer config={{}} className="h-[250px] w-full">
                             <ResponsiveContainer>
                                 <BarChart data={chartData} margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
@@ -19,7 +18,8 @@ import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import 'jspdf-autotable';
+
 
 type Employee = {
   id: string;
@@ -205,42 +205,49 @@ export default function OvertimePage() {
     if (!selectedDate) return;
 
     const doc = new jsPDF();
+    const today = new Date();
+    
+    // Add header
+    doc.setFontSize(10);
+    doc.text(format(today, 'dd/MM/yyyy'), 14, 15);
+    doc.addImage("https://i.ibb.co/wJm3Sg7/ashley-logo-new.png", 'PNG', doc.internal.pageSize.width - 34, 10, 20, 20);
+    doc.setFontSize(14);
+    doc.text('Overtime Report', doc.internal.pageSize.width / 2, 20, { align: 'center'});
+    doc.line(14, 30, doc.internal.pageSize.width - 14, 30);
     
     if (view === 'daily') {
-        doc.setFontSize(18);
-        doc.text(`Daily Overtime Report`, 14, 22);
-        doc.setFontSize(12);
-        doc.text(format(selectedDate, 'PPP'), 14, 30);
+        doc.setFontSize(16);
+        doc.text(`Daily Report - ${format(selectedDate, 'PPP')}`, doc.internal.pageSize.width / 2, 45, { align: 'center'});
         
-        autoTable(doc, {
-            startY: 40,
-            head: [['Employee', 'Hours', 'Amount', 'Notes']],
+        (doc as any).autoTable({
+            startY: 55,
+            head: [['Employee', 'Hours', 'Notes', 'Amount']],
             body: (overtimeRecords || []).map(item => [
                 getEmployeeName(item.employeeId), 
                 item.hours.toFixed(2), 
-                formatCurrency(item.totalAmount),
-                item.notes || ''
+                item.notes || '',
+                formatCurrency(item.totalAmount)
             ]),
-            foot: [['Total', totalHours.toFixed(2), formatCurrency(totalAmount), '']],
-            showFoot: 'lastPage',
-            footStyles: { fontStyle: 'bold', fillColor: [244, 244, 245] }
+            foot: [['Grand Total', totalHours.toFixed(2), '', formatCurrency(totalAmount)]],
+            theme: 'grid',
+            headStyles: { fillColor: [22, 163, 74] },
+            footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' }
         });
 
         doc.save(`overtime-report-${format(selectedDate, 'yyyy-MM-dd')}.pdf`);
     } else { // monthly
         const monthName = format(selectedDate, 'MMMM yyyy');
-        doc.setFontSize(18);
-        doc.text(`Monthly Overtime Report`, 14, 22);
-        doc.setFontSize(12);
-        doc.text(monthName, 14, 30);
+        doc.setFontSize(16);
+        doc.text(`Monthly Report - ${monthName}`, doc.internal.pageSize.width / 2, 45, { align: 'center'});
         
-        autoTable(doc, {
-            startY: 40,
+        (doc as any).autoTable({
+            startY: 55,
             head: [['Employee', 'Total Hours', 'Total Amount']],
             body: monthlyReportData.map(item => [item.employeeName, item.totalHours.toFixed(2), formatCurrency(item.totalAmount)]),
-            foot: [['Total', totalHours.toFixed(2), formatCurrency(totalAmount)]],
-            showFoot: 'lastPage',
-            footStyles: { fontStyle: 'bold', fillColor: [244, 244, 245] }
+            foot: [['Grand Total', totalHours.toFixed(2), formatCurrency(totalAmount)]],
+            theme: 'grid',
+            headStyles: { fillColor: [22, 163, 74] },
+            footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' }
         });
 
         doc.save(`overtime-report-${format(selectedDate, 'yyyy-MM')}.pdf`);
@@ -421,11 +428,11 @@ export default function OvertimePage() {
                 </CardContent>
                 {overtimeRecords && overtimeRecords.length > 0 && (
                     <CardFooter className="flex justify-between font-bold bg-muted/50 py-4 rounded-b-lg">
-                    <span>Total</span>
-                    <div className='text-right'>
-                        <p>{totalHours.toFixed(2)} hours</p>
-                        <p className="text-primary">{formatCurrency(totalAmount)}</p>
-                    </div>
+                        <span>Total</span>
+                        <div className='text-right'>
+                            <p>{totalHours.toFixed(2)} hours</p>
+                            <p className="text-primary">{formatCurrency(totalAmount)}</p>
+                        </div>
                     </CardFooter>
                 )}
                 </Card>
