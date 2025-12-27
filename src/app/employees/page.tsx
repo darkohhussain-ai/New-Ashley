@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
-import { collection, doc, Timestamp } from "firebase/firestore"
+import { collection, doc, Timestamp, writeBatch } from "firebase/firestore"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ArrowLeft, Plus, User, Calendar as CalendarIcon, Edit, Trash2, Save, X, Upload, Download, Mail, Phone, Cake, Briefcase, Search, Building } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -270,7 +270,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
 function AddEmployeeDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void }) {
     const firestore = useFirestore();
     const { user } = useUser();
-    const employeesRef = useMemoFirebase(() => firestore ? collection(firestore, "employees") : null, [firestore]);
+    const employeesRef = useMemoFirebase(() => (firestore && user ? collection(firestore, "employees") : null), [firestore, user]);
     const { toast } = useToast();
     
     const [name, setName] = useState("");
@@ -308,13 +308,15 @@ function AddEmployeeDialog({ open, onOpenChange }: { open: boolean, onOpenChange
             return;
         }
 
-        const employeeData: Partial<Omit<Employee, 'id'>> = { name };
+        const employeeData: Partial<Omit<Employee, 'id'>> = { 
+          name,
+          photoUrl: photoUrl || `https://picsum.photos/seed/${name.replace(/\s/g, '-')}/400`
+        };
 
         if (jobTitle) employeeData.jobTitle = jobTitle;
         if (email) employeeData.email = email;
         if (phone) employeeData.phone = phone;
         if (notes) employeeData.notes = notes;
-        employeeData.photoUrl = photoUrl || `https://picsum.photos/seed/${name.replace(/\s/g, '-')}/400`;
         if (employmentStartDate) employeeData.employmentStartDate = Timestamp.fromDate(employmentStartDate);
         if (dateOfBirth) employeeData.dateOfBirth = Timestamp.fromDate(dateOfBirth);
         
@@ -362,6 +364,7 @@ function AddEmployeeDialog({ open, onOpenChange }: { open: boolean, onOpenChange
 export default function EmployeesPage() {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
+  const { toast } = useToast();
 
   const employeesRef = useMemoFirebase(() => (firestore && user ? collection(firestore, "employees") : null), [firestore, user]);
   const { data: employees, isLoading } = useCollection<Employee>(employeesRef);
@@ -369,6 +372,76 @@ export default function EmployeesPage() {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
   const [isAddDialogOpen, setAddDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const dataSeeded = useLocalStorage('employee-data-seeded-v1', false);
+  const [isSeeding, setIsSeeding] = useState(false);
+
+  useEffect(() => {
+    const seedData = async () => {
+      if (!firestore || !employeesRef || isSeeding || dataSeeded[0]) return;
+      
+      const existingEmployees = employees || [];
+      if(existingEmployees.length > 0) {
+        dataSeeded[1](true); // Mark as seeded if there's already data.
+        return;
+      }
+
+      setIsSeeding(true);
+      toast({ title: 'Adding Employees', description: 'Populating the employee list from the image...' });
+
+      const newEmployees = [
+        { name: 'كامه ران عمر روؤف', date: '15/9/2025' },
+        { name: 'دانه ر محمد باسام', date: '20/5/2024' },
+        { name: 'داركو حيدر حسين', date: '1/5/2025' },
+        { name: 'را بهر محمد محمود', date: '20/4/2024' },
+        { name: 'راژان سالح فه تاح', date: '13/7/2024' },
+        { name: 'سه روه ت قادر محمد', date: '16/10/2024' },
+        { name: 'گوفار سه ردار احمد', date: '1/2/2025' },
+        { name: 'محمد حاميد محمد', date: '3/10/2024' },
+        { name: 'عيماد سه باح نوری', date: '15/11/2023' },
+        { name: 'ريبين سه باح نوری', date: '22/6/2024' },
+        { name: 'ره وه ند نجات محمد حسن', date: '10/5/2025' },
+        { name: 'سه هه ند مه ریوان حمه سعيد', date: '1/1/2024' },
+        { name: 'شادومان یادگار رحیم', date: '30/9/2024' },
+        { name: 'هه ردی ئازاد ئه حمه د', date: '13/5/2025' },
+        { name: 'هه قال حبيب حمه ره زا', date: '13/5/2025' },
+        { name: 'تاری مه ولود حه مه', date: '10/5/2025' },
+        { name: 'کارزان دارا به کر', date: '13/5/2025' },
+      ];
+
+      const parseDate = (dateString: string) => {
+        const parts = dateString.split('/');
+        // Month is 0-indexed in JS Date, so parts[1] - 1
+        return new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+      };
+
+      try {
+        const batch = writeBatch(firestore);
+        newEmployees.forEach(emp => {
+          const newDocRef = doc(collection(firestore, 'employees'));
+          const employeeData: Partial<Omit<Employee, 'id'>> = {
+            name: emp.name,
+            employmentStartDate: Timestamp.fromDate(parseDate(emp.date)),
+            photoUrl: `https://picsum.photos/seed/${emp.name.replace(/\s/g, '-')}/400`
+          };
+          batch.set(newDocRef, employeeData);
+        });
+
+        await batch.commit();
+        toast({ title: 'Success!', description: 'All employees have been added.' });
+        dataSeeded[1](true);
+      } catch (error) {
+        console.error('Error seeding data:', error);
+        toast({ variant: 'destructive', title: 'Seeding Failed', description: 'Could not add the employees.' });
+      } finally {
+        setIsSeeding(false);
+      }
+    };
+    if (user) { // Only run when user is available
+      seedData();
+    }
+  }, [firestore, employeesRef, user, employees, dataSeeded, isSeeding, toast]);
+
 
   const sortedAndFilteredEmployees = useMemo(() => {
     if (!employees) return [];
@@ -406,7 +479,7 @@ export default function EmployeesPage() {
                      <Button onClick={() => setAddDialogOpen(true)} className="w-full"><Plus className="mr-2 h-4 w-4" /> Add Employee</Button>
                 </div>
                 <div className="flex-1 overflow-y-auto">
-                    {isLoading || isUserLoading ? (
+                    {isLoading || isUserLoading || isSeeding ? (
                          <div className="p-4 space-y-2">{[...Array(8)].map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
                     ) : sortedAndFilteredEmployees.length > 0 ? (
                         <div className="p-2 space-y-1">
@@ -439,7 +512,7 @@ export default function EmployeesPage() {
                 {selectedEmployeeId ? (
                     <EmployeeDetailView employeeId={selectedEmployeeId} onDeselect={() => setSelectedEmployeeId(null)}/>
                 ) : (
-                    !(isLoading || isUserLoading) && (
+                    !(isLoading || isUserLoading || isSeeding) && (
                         <div className="text-center">
                             <Building className="mx-auto h-16 w-16 text-muted-foreground" />
                             <h2 className="mt-4 text-2xl font-bold">Select an Employee</h2>
