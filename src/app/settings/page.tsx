@@ -4,7 +4,7 @@
 import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowLeft, Download, Upload, Save, Palette, Type, ShieldCheck, Image as ImageIcon, LayoutDashboard, RefreshCcw } from 'lucide-react'
+import { ArrowLeft, Download, Upload, Save, Palette, Type, ShieldCheck, Image as ImageIcon, LayoutDashboard, RefreshCcw, Play } from 'lucide-react'
 import useLocalStorage from '@/hooks/use-local-storage'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -153,6 +153,8 @@ export default function SettingsPage() {
   const [logoSize, setLogoSize] = useState(savedLogoSize);
   const [cardSize, setCardSize] = useState(savedCardSize);
   const [iconSize, setIconSize] = useState(savedIconSize);
+  
+  const [importFile, setImportFile] = useState<File | null>(null);
 
   const importInputRef = useRef<HTMLInputElement>(null)
 
@@ -352,9 +354,15 @@ export default function SettingsPage() {
     }
   }
 
-  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImportFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setImportFile(file);
+    }
+  };
+
+  const handleRunImport = () => {
+    if (importFile) {
       const reader = new FileReader();
       reader.onload = async (event) => {
         try {
@@ -375,9 +383,12 @@ export default function SettingsPage() {
         } catch (error) {
           console.error("Import failed:", error);
           toast({ variant: 'destructive', title: 'Import failed', description: 'Invalid or corrupted file.' });
+        } finally {
+            setImportFile(null);
+            if(importInputRef.current) importInputRef.current.value = "";
         }
       };
-      reader.readAsText(file);
+      reader.readAsText(importFile);
     }
   };
 
@@ -419,172 +430,180 @@ export default function SettingsPage() {
       </header>
       <main className="p-4 md:p-6 container mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg"><Palette /> Appearance</CardTitle>
-                    <CardDescription>Customize the look and feel.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="dark-mode">Dark Mode</Label>
-                    <Switch
-                      id="dark-mode"
-                      checked={theme === 'dark'}
-                      onCheckedChange={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-                      aria-label="Toggle dark mode"
-                    />
-                  </div>
-                   <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                           <Button variant="outline" className="w-full">
-                                <RefreshCcw className="mr-2 h-4 w-4" /> Reset to Default
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Reset all settings?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                This will reset all appearance settings (colors, fonts, logo) to their original defaults. Your data will not be affected. This action cannot be undone.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleResetToDefault}>Reset Settings</AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg"><ImageIcon /> Branding</CardTitle>
-                  <CardDescription>Manage your application's logo.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className='flex flex-col items-center justify-center gap-4'>
-                     <Image src={logoSrc} alt="Current App Logo" width={logoSize} height={logoSize} className="rounded-full object-cover aspect-square shadow-md" style={{width: `${logoSize}px`, height: `${logoSize}px`}} />
-                     <div className="w-full space-y-2">
-                        <Label htmlFor="logo-size">Logo Size: {logoSize}px</Label>
-                        <Slider
-                            id="logo-size"
-                            min={40}
-                            max={240}
-                            step={1}
-                            value={[logoSize]}
-                            onValueChange={(value) => setLogoSize(value[0])}
-                        />
-                     </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="logo-upload">Upload New Logo</Label>
-                    <Input id="logo-upload" type="file" accept="image/*" className="mt-2" onChange={handleLogoUpload} />
-                  </div>
-                </CardContent>
-              </Card>
-               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg"><LayoutDashboard /> Dashboard</CardTitle>
-                  <CardDescription>Customize dashboard card appearance.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="card-size">Card Size: {cardSize}px</Label>
+            <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg"><Palette /> Appearance</CardTitle>
+                <CardDescription>Customize the look and feel.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                <Label htmlFor="dark-mode">Dark Mode</Label>
+                <Switch
+                    id="dark-mode"
+                    checked={theme === 'dark'}
+                    onCheckedChange={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+                    aria-label="Toggle dark mode"
+                />
+                </div>
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="outline" className="w-full">
+                            <RefreshCcw className="mr-2 h-4 w-4" /> Reset to Default
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Reset all settings?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                            This will reset all appearance settings (colors, fonts, logo) to their original defaults. Your data will not be affected. This action cannot be undone.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleResetToDefault}>Reset Settings</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            </CardContent>
+            </Card>
+            <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg"><ImageIcon /> Branding</CardTitle>
+                <CardDescription>Manage your application's logo.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className='flex flex-col items-center justify-center gap-4'>
+                    <Image src={logoSrc} alt="Current App Logo" width={logoSize} height={logoSize} className="rounded-full object-cover aspect-square shadow-md" style={{width: `${logoSize}px`, height: `${logoSize}px`}} />
+                    <div className="w-full space-y-2">
+                    <Label htmlFor="logo-size">Logo Size: {logoSize}px</Label>
                     <Slider
-                      id="card-size"
-                      min={120}
-                      max={280}
-                      step={4}
-                      value={[cardSize]}
-                      onValueChange={(value) => setCardSize(value[0])}
+                        id="logo-size"
+                        min={40}
+                        max={240}
+                        step={1}
+                        value={[logoSize]}
+                        onValueChange={(value) => setLogoSize(value[0])}
                     />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="icon-size">Icon Size: {iconSize}px</Label>
-                    <Slider
-                      id="icon-size"
-                      min={32}
-                      max={96}
-                      step={4}
-                      value={[iconSize]}
-                      onValueChange={(value) => setIconSize(value[0])}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-               <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg"><ShieldCheck /> Data Management</CardTitle>
-                    <CardDescription>Backup or restore all application data.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="grid sm:grid-cols-2 gap-4">
-                    <Button onClick={handleExport} variant="outline" className="w-full">
-                      <Download className="mr-2 h-4 w-4" /> Export
-                    </Button>
-                    <Button onClick={() => importInputRef.current?.click()} variant="outline" className="w-full">
-                      <Upload className="mr-2 h-4 w-4" /> Import
-                    </Button>
-                    <input type="file" ref={importInputRef} className="hidden" accept=".json" onChange={handleImport} />
-                  </CardContent>
-                </Card>
-             <Card className="lg:col-span-2">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Palette/> Color Palette</CardTitle>
-                    <CardDescription>Adjust colors for light and dark themes. Changes are previewed live.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Tabs defaultValue="light" className="w-full">
-                        <TabsList className="grid w-full grid-cols-2">
-                            <TabsTrigger value="light">Light Mode</TabsTrigger>
-                            <TabsTrigger value="dark">Dark Mode</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="light" className="space-y-4 pt-4">
-                            <ColorPicker label="Background" value={lightColors.background} onChange={(c) => setLightColors(p => ({...p, background: c}))} />
-                            <ColorPicker label="Foreground" value={lightColors.foreground} onChange={(c) => setLightColors(p => ({...p, foreground: c}))} />
-                            <ColorPicker label="Primary" value={lightColors.primary} onChange={(c) => setLightColors(p => ({...p, primary: c}))} />
-                            <ColorPicker label="Accent" value={lightColors.accent} onChange={(c) => setLightColors(p => ({...p, accent: c}))} />
-                             <ColorPicker label="Card" value={lightColors.card} onChange={(c) => setLightColors(p => ({...p, card: c}))} />
-                        </TabsContent>
-                         <TabsContent value="dark" className="space-y-4 pt-4">
-                            <ColorPicker label="Background" value={darkColors.background} onChange={(c) => setDarkColors(p => ({...p, background: c}))} />
-                            <ColorPicker label="Foreground" value={darkColors.foreground} onChange={(c) => setDarkColors(p => ({...p, foreground: c}))} />
-                            <ColorPicker label="Primary" value={darkColors.primary} onChange={(c) => setDarkColors(p => ({...p, primary: c}))} />
-                            <ColorPicker label="Accent" value={darkColors.accent} onChange={(c) => setDarkColors(p => ({...p, accent: c}))} />
-                            <ColorPicker label="Card" value={darkColors.card} onChange={(c) => setDarkColors(p => ({...p, card: c}))} />
-                        </TabsContent>
-                    </Tabs>
-                </CardContent>
-             </Card>
-             <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Type /> Typography</CardTitle>
-                    <CardDescription>Manage the font used in the application.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <div className="flex items-center justify-between">
-                        <Label htmlFor="font-select">Font Family</Label>
-                        <Select value={font} onValueChange={handleFontChange}>
-                            <SelectTrigger className="w-[180px]">
-                                <SelectValue placeholder="Select a font" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {availableFonts.map(f => (
-                                    <SelectItem key={f.name} value={f.name}>{f.name}</SelectItem>
-                                ))}
-                                {customFont && <SelectItem value="CustomFont">Custom Font</SelectItem>}
-                            </SelectContent>
-                        </Select>
                     </div>
-                    <div>
-                      <Label htmlFor="font-upload" className="text-sm font-medium">Upload Custom Font</Label>
-                       <Input id="font-upload" type="file" accept=".ttf,.otf,.woff,.woff2" className="mt-2" onChange={handleCustomFontUpload} />
-                       <p className="text-xs text-muted-foreground mt-2">Upload a .ttf, .otf, .woff, or .woff2 file.</p>
-                    </div>
-                </CardContent>
+                </div>
+                <div>
+                <Label htmlFor="logo-upload">Upload New Logo</Label>
+                <Input id="logo-upload" type="file" accept="image/*" className="mt-2" onChange={handleLogoUpload} />
+                </div>
+            </CardContent>
+            </Card>
+            <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg"><LayoutDashboard /> Dashboard</CardTitle>
+                <CardDescription>Customize dashboard card appearance.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                <div className="space-y-2">
+                <Label htmlFor="card-size">Card Size: {cardSize}px</Label>
+                <Slider
+                    id="card-size"
+                    min={120}
+                    max={280}
+                    step={4}
+                    value={[cardSize]}
+                    onValueChange={(value) => setCardSize(value[0])}
+                />
+                </div>
+                <div className="space-y-2">
+                <Label htmlFor="icon-size">Icon Size: {iconSize}px</Label>
+                <Slider
+                    id="icon-size"
+                    min={32}
+                    max={96}
+                    step={4}
+                    value={[iconSize]}
+                    onValueChange={(value) => setIconSize(value[0])}
+                />
+                </div>
+            </CardContent>
+            </Card>
+            <Card className="lg:col-span-2">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Palette/> Color Palette</CardTitle>
+                <CardDescription>Adjust colors for light and dark themes. Changes are previewed live.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Tabs defaultValue="light" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="light">Light Mode</TabsTrigger>
+                        <TabsTrigger value="dark">Dark Mode</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="light" className="space-y-4 pt-4">
+                        <ColorPicker label="Background" value={lightColors.background} onChange={(c) => setLightColors(p => ({...p, background: c}))} />
+                        <ColorPicker label="Foreground" value={lightColors.foreground} onChange={(c) => setLightColors(p => ({...p, foreground: c}))} />
+                        <ColorPicker label="Primary" value={lightColors.primary} onChange={(c) => setLightColors(p => ({...p, primary: c}))} />
+                        <ColorPicker label="Accent" value={lightColors.accent} onChange={(c) => setLightColors(p => ({...p, accent: c}))} />
+                        <ColorPicker label="Card" value={lightColors.card} onChange={(c) => setLightColors(p => ({...p, card: c}))} />
+                    </TabsContent>
+                        <TabsContent value="dark" className="space-y-4 pt-4">
+                        <ColorPicker label="Background" value={darkColors.background} onChange={(c) => setDarkColors(p => ({...p, background: c}))} />
+                        <ColorPicker label="Foreground" value={darkColors.foreground} onChange={(c) => setDarkColors(p => ({...p, foreground: c}))} />
+                        <ColorPicker label="Primary" value={darkColors.primary} onChange={(c) => setDarkColors(p => ({...p, primary: c}))} />
+                        <ColorPicker label="Accent" value={darkColors.accent} onChange={(c) => setDarkColors(p => ({...p, accent: c}))} />
+                        <ColorPicker label="Card" value={darkColors.card} onChange={(c) => setDarkColors(p => ({...p, card: c}))} />
+                    </TabsContent>
+                </Tabs>
+            </CardContent>
+            </Card>
+            <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Type /> Typography</CardTitle>
+                <CardDescription>Manage the font used in the application.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                <div className="flex items-center justify-between">
+                    <Label htmlFor="font-select">Font Family</Label>
+                    <Select value={font} onValueChange={handleFontChange}>
+                        <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Select a font" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {availableFonts.map(f => (
+                                <SelectItem key={f.name} value={f.name}>{f.name}</SelectItem>
+                            ))}
+                            {customFont && <SelectItem value="CustomFont">Custom Font</SelectItem>}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div>
+                    <Label htmlFor="font-upload" className="text-sm font-medium">Upload Custom Font</Label>
+                    <Input id="font-upload" type="file" accept=".ttf,.otf,.woff,.woff2" className="mt-2" onChange={handleCustomFontUpload} />
+                    <p className="text-xs text-muted-foreground mt-2">Upload a .ttf, .otf, .woff, or .woff2 file.</p>
+                </div>
+            </CardContent>
             </Card>
         </div>
+        
+        <Card className="mt-6">
+            <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg"><ShieldCheck /> Data Management</CardTitle>
+            <CardDescription>Backup or restore all application data. Your data is stored in the browser, so be sure to make regular backups.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="p-4 border rounded-lg flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <p className="font-medium">Export all application data</p>
+                    <Button onClick={handleExport} variant="outline">
+                        <Download className="mr-2 h-4 w-4" /> Export Data
+                    </Button>
+                </div>
+                 <div className="p-4 border rounded-lg space-y-4">
+                    <p className="font-medium">Import data from a backup file</p>
+                    <p className="text-sm text-destructive">Warning: Importing data will overwrite all existing data in the application. This action cannot be undone.</p>
+                    <div className="flex flex-col sm:flex-row items-center gap-4">
+                        <Input type="file" ref={importInputRef} className="max-w-xs" accept=".json" onChange={handleImportFileSelect} />
+                        <Button onClick={handleRunImport} disabled={!importFile}>
+                            <Play className="mr-2 h-4 w-4" /> Run Import
+                        </Button>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
       </main>
     </div>
   )
 }
-
-    
