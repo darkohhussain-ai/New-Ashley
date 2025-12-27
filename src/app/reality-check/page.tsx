@@ -9,7 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/context/app-provider';
-import { RealityCheck, RealityCheckResponse } from '@/lib/types';
+import { RealityCheck } from '@/lib/types';
+import type { RealityCheckResponse } from '@/lib/types';
 import { formatISO } from 'date-fns';
 import { realityCheck } from '@/ai/flows/reality-check-flow';
 
@@ -33,15 +34,15 @@ export default function RealityCheckPage() {
     setGeneratedAnswers(null);
     setSelectedAnswer(null);
 
-    try {
-      const response = await realityCheck({ question });
-      setGeneratedAnswers(response);
-    } catch (error) {
-      console.error("Error generating answers:", error);
-      toast({ variant: 'destructive', title: 'Failed to generate answers', description: 'An error occurred while communicating with the AI.' });
-    } finally {
+    // Simulate an offline response
+    setTimeout(() => {
+      setGeneratedAnswers({
+        answer1: "This is the first placeholder answer, focusing on a direct approach.",
+        answer2: "This is a second, alternative perspective on the question provided.",
+        answer3: "This is a third, more creative or abstract response to the user's query."
+      });
       setIsLoading(false);
-    }
+    }, 1500);
   };
   
   const handleSaveFeedback = () => {
