@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { ArrowLeft, PackagePlus, ListPlus, Archive } from 'lucide-react';
+import { ArrowLeft, PackagePlus, ListPlus, Archive, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -23,8 +23,8 @@ const menuItems = [
     description: "Select staged items and generate a final cargo transfer slip."
   },
   {
-    title: "Transfer Archive",
-    icon: Archive,
+    title: "View Transfers",
+    icon: Eye,
     href: "/transmit/archive",
     color: "bg-purple-500",
     description: "View and retrieve previously created transfer slips."

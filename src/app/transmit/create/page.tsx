@@ -62,6 +62,7 @@ export default function CreateTransferPage() {
   const [selectedItems, setSelectedItems] = useState<Record<string, boolean>>({});
   
   const [lastTransfer, setLastTransfer] = useState<Transfer | null>(null);
+  const [lastTransferItems, setLastTransferItems] = useState<Item[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   
   const defaultLogo = "https://i.ibb.co/68RvM01/ashley-logo.png";
@@ -111,6 +112,8 @@ export default function CreateTransferPage() {
             warehouseManagerName,
             itemIds: selectedItemIds
         };
+        
+        const itemsForThisTransfer = stagedItems?.filter(item => selectedItemIds.includes(item.id)) || [];
 
         const batch = writeBatch(firestore);
         const transferRef = doc(firestore, 'transfers', transferId);
@@ -124,6 +127,7 @@ export default function CreateTransferPage() {
         await batch.commit();
         
         setLastTransfer(transferData);
+        setLastTransferItems(itemsForThisTransfer);
         setIsModalOpen(true);
         toast({ title: 'Success!', description: 'Transfer slip created successfully.' });
 
@@ -140,16 +144,9 @@ export default function CreateTransferPage() {
         setIsSaving(false);
     }
   };
-  
-  const lastTransferItems = useMemo(() => {
-      if(!lastTransfer || !stagedItems) return [];
-      const itemMap = new Map(stagedItems.map(i => [i.id, i]));
-      return lastTransfer.itemIds.map(id => itemMap.get(id)).filter(Boolean) as Item[];
-  }, [lastTransfer, stagedItems]);
-
 
   const handleDownloadPdf = async () => {
-    if (!pdfCardRef.current || !lastTransfer) return;
+    if (!pdfCardRef.current || !lastTransfer || !lastTransferItems) return;
     
     const canvas = await html2canvas(pdfCardRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
     const imgData = canvas.toDataURL('image/png');

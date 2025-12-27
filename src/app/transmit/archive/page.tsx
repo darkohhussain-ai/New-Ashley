@@ -3,9 +3,9 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection, Timestamp } from 'firebase/firestore';
-import { ArrowLeft, Archive, Calendar as CalendarIcon, Truck, User } from 'lucide-react';
+import { ArrowLeft, Archive, Calendar as CalendarIcon, Truck, User, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { format } from 'date-fns';
@@ -23,8 +23,9 @@ type Transfer = {
 
 export default function TransferArchivePage() {
   const firestore = useFirestore();
+  const { user, isUserLoading } = useUser();
 
-  const transfersRef = useMemoFirebase(() => (firestore ? collection(firestore, 'transfers') : null), [firestore]);
+  const transfersRef = useMemoFirebase(() => (firestore && user ? collection(firestore, 'transfers') : null), [firestore, user]);
   const { data: transfers, isLoading } = useCollection<Transfer>(transfersRef);
 
   const sortedTransfers = useMemo(() => {
@@ -40,10 +41,10 @@ export default function TransferArchivePage() {
             <ArrowLeft />
           </Link>
         </Button>
-        <h1 className="text-2xl md:text-3xl font-bold">Transfer Archive</h1>
+        <h1 className="text-2xl md:text-3xl font-bold">View Transfers</h1>
       </header>
       <main>
-        {isLoading ? (
+        {isLoading || isUserLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[...Array(6)].map((_, i) => (
                     <Card key={i} className="animate-pulse">
@@ -62,20 +63,25 @@ export default function TransferArchivePage() {
         ) : sortedTransfers.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {sortedTransfers.map(transfer => (
-              <Card key={transfer.id} className="hover:border-primary/50 hover:shadow-lg transition-all h-full flex flex-col">
-                <CardHeader>
-                  <CardTitle className="text-lg leading-tight">{transfer.cargoName}</CardTitle>
-                  <CardDescription>To: {transfer.destinationCity}</CardDescription>
-                </CardHeader>
-                <CardContent className="flex-grow space-y-3 text-sm text-muted-foreground">
-                  <p className="flex items-center gap-2"><CalendarIcon className="w-4 h-4 text-primary" /> {format(transfer.transferDate.toDate(), 'PPP')}</p>
-                  <p className="flex items-center gap-2"><Truck className="w-4 h-4 text-primary" /> Driver: {transfer.driverName}</p>
-                  <p className="flex items-center gap-2"><User className="w-4 h-4 text-primary" /> Manager: {transfer.warehouseManagerName}</p>
-                </CardContent>
-                <CardContent>
-                    <p className="font-bold text-center text-primary">{transfer.itemIds.length} items</p>
-                </CardContent>
-              </Card>
+                <Card key={transfer.id} className="hover:border-primary/50 hover:shadow-lg transition-all h-full flex flex-col">
+                    <CardHeader>
+                    <CardTitle className="text-lg leading-tight">{transfer.cargoName}</CardTitle>
+                    <CardDescription>To: {transfer.destinationCity}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex-grow space-y-3 text-sm text-muted-foreground">
+                    <p className="flex items-center gap-2"><CalendarIcon className="w-4 h-4 text-primary" /> {format(transfer.transferDate.toDate(), 'PPP')}</p>
+                    <p className="flex items-center gap-2"><Truck className="w-4 h-4 text-primary" /> Driver: {transfer.driverName}</p>
+                    <p className="flex items-center gap-2"><User className="w-4 h-4 text-primary" /> Manager: {transfer.warehouseManagerName}</p>
+                    </CardContent>
+                    <CardContent className="flex justify-between items-center">
+                        <p className="font-bold text-sm text-primary">{transfer.itemIds.length} items</p>
+                        <Button asChild variant="outline" size="sm">
+                            <Link href={`/transmit/archive/${transfer.id}`}>
+                                <Eye className="mr-2 h-4 w-4"/> View
+                            </Link>
+                        </Button>
+                    </CardContent>
+                </Card>
             ))}
           </div>
         ) : (
@@ -89,4 +95,3 @@ export default function TransferArchivePage() {
     </div>
   );
 }
-
