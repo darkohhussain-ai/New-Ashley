@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking, useUser } from '@/firebase';
 import { collection, Timestamp, doc } from 'firebase/firestore';
-import { ArrowLeft, Plus, Trash2, Calendar as CalendarIcon, DollarSign, User } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Calendar as CalendarIcon, DollarSign, User, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -18,6 +18,11 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { ChartContainer } from '@/components/ui/chart';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
 
 type Employee = {
   id: string;
@@ -57,6 +62,7 @@ export default function ExpensesPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const { user, isUserLoading } = useUser();
+  const chartRef = useRef<HTMLDivElement>(null);
 
   // Data fetching
   const employeesRef = useMemoFirebase(() => (firestore && user ? collection(firestore, 'employees') : null), [firestore, user]);
@@ -88,6 +94,10 @@ export default function ExpensesPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+        toast({ variant: 'destructive', title: 'Authentication Error', description: 'You must be logged in to perform this action.' });
+        return;
+    }
     if (!firestore || !selectedEmployee || !amount || !date) {
         toast({
             variant: "destructive",
@@ -123,8 +133,8 @@ export default function ExpensesPage() {
       });
   }
 
-  const { expensesByEmployee, grandTotal } = useMemo(() => {
-    if (!expenses || !employees) return { expensesByEmployee: new Map(), grandTotal: 0 };
+  const { expensesByEmployee, grandTotal, chartData } = useMemo(() => {
+    if (!expenses || !employees) return { expensesByEmployee: new Map(), grandTotal: 0, chartData: [] };
 
     const grouped = new Map<string, { employee: Employee; expenses: Expense[]; total: number }>();
     let total = 0;
@@ -151,11 +161,53 @@ export default function ExpensesPage() {
         });
     });
     
-    // Sort employees by name
+    // Sort employees by name for the list view
     const sortedGrouped = new Map([...grouped.entries()].sort((a, b) => a[1].employee.name.localeCompare(b[1].employee.name)));
 
-    return { expensesByEmployee: sortedGrouped, grandTotal: total };
+    const chartData = Array.from(sortedGrouped.values()).map(data => ({
+        name: data.employee.name.split(' ')[0], // Use first name for chart label
+        total: data.total
+    })).sort((a,b) => b.total - a.total);
+
+    return { expensesByEmployee: sortedGrouped, grandTotal: total, chartData };
   }, [expenses, employees]);
+
+  const handleDownloadReport = async () => {
+    if (!chartRef.current) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not generate report.' });
+        return;
+    }
+    const doc = new jsPDF();
+    
+    doc.setFontSize(18);
+    doc.text(`Employee Expenses Report`, 14, 22);
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    doc.text(`Generated on: ${format(new Date(), 'PPP')}`, 14, 30);
+
+    // Add chart image
+    const canvas = await (await import('html2canvas')).default(chartRef.current, { scale: 2, backgroundColor: null });
+    const imgData = canvas.toDataURL('image/png');
+    const pdfWidth = doc.internal.pageSize.getWidth();
+    doc.addImage(imgData, 'PNG', 14, 40, pdfWidth - 28, 100);
+    
+    const tableData = Array.from(expensesByEmployee.values()).flatMap(empData => 
+        empData.expenses.map(exp => [
+            empData.employee.name,
+            formatCurrency(exp.amount),
+            format(safeDate(exp.date) || new Date(), 'PP'),
+            exp.notes || ''
+        ])
+    );
+    
+    autoTable(doc, {
+        startY: 150,
+        head: [['Employee', 'Amount', 'Date', 'Notes']],
+        body: tableData,
+    });
+
+    doc.save(`employee-expenses-report-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+  }
 
   const isLoading = isLoadingEmployees || isLoadingExpenses || isUserLoading;
 
@@ -166,18 +218,24 @@ export default function ExpensesPage() {
           <div className="container mx-auto flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Button variant="outline" size="icon" asChild>
-                <Link href="/">
+                <Link href="/ashley-expenses">
                   <ArrowLeft />
-                  <span className="sr-only">Back to Dashboard</span>
+                  <span className="sr-only">Back to Ashley Expenses</span>
                 </Link>
               </Button>
-              <h1 className="text-xl font-bold">Expenses</h1>
+              <h1 className="text-xl font-bold">Ashley Expenses</h1>
             </div>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" /> Add Expense
-              </Button>
-            </DialogTrigger>
+            <div className='flex items-center gap-2'>
+                <Button onClick={handleDownloadReport} variant="outline" disabled={expensesByEmployee.size === 0}>
+                    <FileDown className="mr-2 h-4 w-4"/>
+                    Download Report
+                </Button>
+                <DialogTrigger asChild>
+                <Button>
+                    <Plus className="mr-2 h-4 w-4" /> Add Expense
+                </Button>
+                </DialogTrigger>
+            </div>
           </div>
         </header>
 
@@ -242,6 +300,7 @@ export default function ExpensesPage() {
       <main className="container mx-auto p-4 md:p-8">
         {isLoading ? (
             <div className="space-y-6">
+                 <Card className="animate-pulse"><CardHeader><div className="h-48 w-full rounded bg-muted"></div></CardHeader></Card>
                 {[...Array(2)].map((_, i) => (
                     <Card key={i} className="animate-pulse">
                         <CardHeader><div className="h-7 w-48 rounded bg-muted"></div></CardHeader>
@@ -251,6 +310,30 @@ export default function ExpensesPage() {
             </div>
         ) : expensesByEmployee.size > 0 ? (
             <>
+                <Card className="mb-8" ref={chartRef}>
+                    <CardHeader>
+                        <CardTitle>Expenses per Employee</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ChartContainer config={{}} className="h-[250px] w-full">
+                            <ResponsiveContainer>
+                                <BarChart data={chartData} margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                    <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${formatCurrency(value)}`}/>
+                                    <Tooltip
+                                        cursor={{ fill: 'hsla(var(--muted), 0.5)' }}
+                                        contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}
+                                        labelStyle={{ color: 'hsl(var(--foreground))' }}
+                                        formatter={(value: number) => [formatCurrency(value), 'Total']}
+                                    />
+                                    <Legend />
+                                    <Bar dataKey="total" fill="hsl(var(--primary))" name="Total Expenses" radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </ChartContainer>
+                    </CardContent>
+                </Card>
                 <div className="space-y-6">
                     {Array.from(expensesByEmployee.entries()).map(([employeeId, data]) => (
                         <Card key={employeeId}>
