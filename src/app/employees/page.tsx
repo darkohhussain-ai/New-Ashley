@@ -364,6 +364,7 @@ function AddEmployeeDialog({ open, onOpenChange }: { open: boolean, onOpenChange
 export default function EmployeesPage() {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
+  const { toast } = useToast();
 
   const employeesRef = useMemoFirebase(() => (firestore && user ? collection(firestore, "employees") : null), [firestore, user]);
   const { data: employees, isLoading } = useCollection<Employee>(employeesRef);
@@ -371,7 +372,60 @@ export default function EmployeesPage() {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
   const [isAddDialogOpen, setAddDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const isSeeding = false; // Seeding is complete
+  const [isCleaning, setIsCleaning] = useState(false);
+  const cleanupPerformed = useLocalStorage('employee-cleanup-performed', false);
+
+
+  useEffect(() => {
+    if (employees && !cleanupPerformed[0] && !isCleaning) {
+      const cleanupDuplicates = async () => {
+        setIsCleaning(true);
+        const nameMap = new Map<string, Employee[]>();
+        employees.forEach(emp => {
+          const existing = nameMap.get(emp.name) || [];
+          nameMap.set(emp.name, [...existing, emp]);
+        });
+
+        const batch = writeBatch(firestore);
+        let deletedCount = 0;
+
+        nameMap.forEach((duplicates) => {
+          if (duplicates.length > 1) {
+            // Keep the first one, delete the rest
+            const toDelete = duplicates.slice(1);
+            toDelete.forEach(dup => {
+              batch.delete(doc(firestore, "employees", dup.id));
+              deletedCount++;
+            });
+          }
+        });
+
+        if (deletedCount > 0) {
+          try {
+            await batch.commit();
+            toast({
+              title: "Data Cleanup Successful",
+              description: `Removed ${deletedCount} duplicate employee(s).`,
+            });
+            cleanupPerformed[1](true); // Set flag to prevent running again
+          } catch (error) {
+            console.error("Error cleaning up duplicates:", error);
+            toast({
+              variant: "destructive",
+              title: "Cleanup Failed",
+              description: "Could not remove duplicate employees.",
+            });
+          }
+        } else {
+            // No duplicates found, just set the flag
+            cleanupPerformed[1](true);
+        }
+        setIsCleaning(false);
+      };
+      
+      cleanupDuplicates();
+    }
+  }, [employees, firestore, toast, cleanupPerformed, isCleaning]);
 
 
   const sortedAndFilteredEmployees = useMemo(() => {
@@ -410,7 +464,7 @@ export default function EmployeesPage() {
                      <Button onClick={() => setAddDialogOpen(true)} className="w-full"><Plus className="mr-2 h-4 w-4" /> Add Employee</Button>
                 </div>
                 <div className="flex-1 overflow-y-auto">
-                    {isLoading || isUserLoading || isSeeding ? (
+                    {isLoading || isUserLoading || isCleaning ? (
                          <div className="p-4 space-y-2">{[...Array(8)].map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
                     ) : sortedAndFilteredEmployees.length > 0 ? (
                         <div className="p-2 space-y-1">
@@ -443,7 +497,7 @@ export default function EmployeesPage() {
                 {selectedEmployeeId ? (
                     <EmployeeDetailView employeeId={selectedEmployeeId} onDeselect={() => setSelectedEmployeeId(null)}/>
                 ) : (
-                    !(isLoading || isUserLoading || isSeeding) && (
+                    !(isLoading || isUserLoading || isCleaning) && (
                         <div className="text-center">
                             <Building className="mx-auto h-16 w-16 text-muted-foreground" />
                             <h2 className="mt-4 text-2xl font-bold">Select an Employee</h2>
