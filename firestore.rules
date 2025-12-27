@@ -8,56 +8,8 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    match /users/{userId}/{document=**} {
+    match /{document=**} {
       allow read, write: if isSignedIn();
-    }
-    match /volunteers/{volunteerId} {
-      allow read, write: if isSignedIn();
-    }
-    match /settings/{settingId} {
-      allow read, write: if isSignedIn();
-    }
-    match /application_logos/{logoId} {
-      allow read, write: if isSignedIn();
-    }
-    match /roles_admin/{userId} {
-      allow read, write: if isSignedIn();
-    }
-    match /overtime/{overtimeId} {
-      allow read, write: if isSignedIn();
-    }
-    match /employees/{employeeId} {
-      allow read, write: if true;
-    }
-    match /expenses/{expenseId} {
-      allow read, write: if isSignedIn();
-    }
-    match /bonuses/{bonusId} {
-      allow read, write: if isSignedIn();
-    }
-    match /cash_withdrawals/{withdrawalId} {
-      allow read, write: if isSignedIn();
-    }
-    match /excel_files/{fileId} {
-      allow read, write: if isSignedIn();
-    }
-    match /excel_files/{fileId}/items/{itemId} {
-      allow read, write: if isSignedIn();
-    }
-    match /storage_locations/{locationId} {
-      allow read, write: if isSignedIn();
-    }
-    match /sold_item_receipts/{receiptId} {
-      allow read, write: if isSignedIn();
-    }
-    match /items/{itemId} {
-      allow read, write: if isSignedIn();
-    }
-    match /transfers/{transferId} {
-      allow read, write: if isSignedIn();
-    }
-    match /marketing-evaluations/{evaluationId} {
-      allow read, write: if true;
     }
   }
 }
