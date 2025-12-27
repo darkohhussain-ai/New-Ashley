@@ -3,7 +3,7 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Star, Loader2, ChevronsRight } from 'lucide-react';
+import { ArrowLeft, Star, Loader2, ChevronsRight, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -15,6 +15,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useAppContext } from '@/context/app-provider';
 import type { Employee, EvaluationResponse } from '@/lib/types';
 import { formatISO } from 'date-fns';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 
 const questions = [
     { id: 'q1', text: 'Commitment to work' },
@@ -40,14 +42,65 @@ const answerOptions = [
     { label: 'Needs Improvement', value: 1 },
 ];
 
+function AddMarketingEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean, onOpenChange: (open: boolean) => void, addEmployee: (employee: Omit<Employee, 'id'>) => void }) {
+    const { toast } = useToast();
+    const [name, setName] = useState("");
+
+    const resetForm = () => {
+        setName("");
+        onOpenChange(false);
+    };
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        
+        if (!name.trim()) {
+            toast({
+                variant: 'destructive',
+                title: 'Name is required',
+                description: 'Please enter a name for the employee.',
+            });
+            return;
+        }
+
+        const employeeData: Omit<Employee, 'id'> = { 
+          name: name.trim(),
+          jobTitle: 'Marketing',
+        };
+        
+        addEmployee(employeeData);
+        toast({ title: "Employee Added", description: `${name} has been added as a Marketing employee.` });
+        resetForm();
+    };
+    
+    return (
+        <Dialog open={open} onOpenChange={(isOpen) => { onOpenChange(isOpen); if (!isOpen) resetForm(); }}>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader><DialogTitle>Add Marketing Employee</DialogTitle></DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4 pt-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="name">Employee Name</Label>
+                        <Input id="name" value={name} onChange={e => setName(e.target.value)} required placeholder="e.g. Jane Smith" />
+                    </div>
+                    <DialogFooter>
+                        <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
+                        <Button type="submit">Add Employee</Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
 export default function MarketingEvaluationPage() {
     const { toast } = useToast();
-    const { employees, evaluations, setEvaluations } = useAppContext();
+    const { employees, setEmployees, evaluations, setEvaluations } = useAppContext();
 
     const [selectedEmployee, setSelectedEmployee] = useState<string>('');
     const [responses, setResponses] = useState<Record<string, number>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [isAddDialogOpen, setAddDialogOpen] = useState(false);
 
     const marketingEmployees = useMemo(() => {
         return employees.filter(e => e.jobTitle === 'Marketing');
@@ -58,6 +111,14 @@ export default function MarketingEvaluationPage() {
             setIsLoading(false);
         }
     }, [employees, evaluations]);
+
+    const addMarketingEmployee = (employeeData: Omit<Employee, 'id'>) => {
+        const newEmployee: Employee = {
+          id: crypto.randomUUID(),
+          ...employeeData
+        };
+        setEmployees([...employees, newEmployee]);
+    };
 
     const handleResponseChange = (questionId: string, value: string) => {
         setResponses(prev => ({ ...prev, [questionId]: parseInt(value) }));
@@ -124,11 +185,17 @@ export default function MarketingEvaluationPage() {
 
     return (
         <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
-            <header className="flex items-center gap-4 mb-8">
-                <Button variant="outline" size="icon" asChild>
-                    <Link href="/"><ArrowLeft /></Link>
+            <AddMarketingEmployeeDialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen} addEmployee={addMarketingEmployee} />
+            <header className="flex items-center justify-between gap-4 mb-8">
+                <div className='flex items-center gap-4'>
+                    <Button variant="outline" size="icon" asChild>
+                        <Link href="/"><ArrowLeft /></Link>
+                    </Button>
+                    <h1 className="text-2xl md:text-3xl font-bold">Marketing Employee Evaluation</h1>
+                </div>
+                <Button onClick={() => setAddDialogOpen(true)}>
+                    <Plus className="mr-2 h-4 w-4" /> Add Marketing Employee
                 </Button>
-                <h1 className="text-2xl md:text-3xl font-bold">Marketing Employee Evaluation</h1>
             </header>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
