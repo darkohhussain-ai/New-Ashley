@@ -148,11 +148,15 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
         return { totalExpenses: total, sortedExpenses: sorted };
     }, [expenses]);
 
-    const { totalOvertime, sortedOvertime } = useMemo(() => {
-        if (!overtime) return { totalOvertime: 0, sortedOvertime: [] };
-        const total = overtime.reduce((sum, ot) => sum + ot.totalAmount, 0);
+    const { totalOvertimeAmount, totalOvertimeHours, sortedOvertime } = useMemo(() => {
+        if (!overtime) return { totalOvertimeAmount: 0, totalOvertimeHours: 0, sortedOvertime: [] };
+        const totals = overtime.reduce((acc, ot) => {
+            acc.totalAmount += ot.totalAmount;
+            acc.totalHours += ot.hours;
+            return acc;
+        }, { totalAmount: 0, totalHours: 0 });
         const sorted = [...overtime].sort((a, b) => b.date.toDate().getTime() - a.date.toDate().getTime());
-        return { totalOvertime: total, sortedOvertime: sorted };
+        return { totalOvertimeAmount: totals.totalAmount, totalOvertimeHours: totals.totalHours, sortedOvertime: sorted };
     }, [overtime]);
 
     const { totalBonuses, sortedBonuses } = useMemo(() => {
@@ -376,7 +380,15 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                                     </Table>
                                 ) : <p className="text-sm text-center text-muted-foreground py-4">No overtime.</p>}
                             </CardContent>
-                            {sortedOvertime.length > 0 && <CardFooter className="justify-end gap-2 bg-muted/50 font-bold text-sm"><span className="text-muted-foreground">Total:</span><span className="text-orange-500">{formatCurrency(totalOvertime)}</span></CardFooter>}
+                            {sortedOvertime.length > 0 && 
+                                <CardFooter className="justify-between gap-2 bg-muted/50 font-bold text-sm">
+                                    <span className="text-muted-foreground">Total:</span>
+                                    <div className="text-right">
+                                        <p className="text-orange-500">{totalOvertimeHours.toFixed(2)} hours</p>
+                                        <p className="text-orange-500">{formatCurrency(totalOvertimeAmount)}</p>
+                                    </div>
+                                </CardFooter>
+                            }
                         </Card>
 
                          <Card>
@@ -664,3 +676,5 @@ export default function EmployeesPage() {
     </div>
   )
 }
+
+    
