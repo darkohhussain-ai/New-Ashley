@@ -1,49 +1,90 @@
 'use client';
     
 import {
+  setDoc,
+  doc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
   CollectionReference,
   DocumentReference,
   SetOptions,
 } from 'firebase/firestore';
-
-const logStyle = "background: #fde047; color: #713f12; font-weight: bold; padding: 2px 6px; border-radius: 4px;";
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 /**
- * OFFLINE VERSION: Initiates a setDoc operation for a document reference.
- * Logs the action to the console instead of writing to Firestore.
+ * Initiates a non-blocking `setDoc` operation.
+ * It does not wait for the server to confirm the write.
+ * Errors, especially permission errors, are caught and emitted globally.
+ * @param {DocumentReference} docRef The reference to the document.
+ * @param {any} data The data to set.
+ * @param {SetOptions} options Options for the set operation.
  */
 export function setDocumentNonBlocking(docRef: DocumentReference, data: any, options: SetOptions) {
-  console.log(`%cOFFLINE MODE`, logStyle, `Mock setDoc on path: ${docRef.path}`, { data, options });
-  // No-op in offline mode
+  setDoc(docRef, data, options).catch((error: any) => {
+    const contextualError = new FirestorePermissionError({
+      path: docRef.path,
+      operation: options && 'merge' in options ? 'update' : 'create',
+      requestResourceData: data,
+    });
+    errorEmitter.emit('permission-error', contextualError);
+  });
 }
 
-
 /**
- * OFFLINE VERSION: Initiates an addDoc operation for a collection reference.
- * Logs the action to the console instead of writing to Firestore.
+ * Initiates a non-blocking `addDoc` operation.
+ * It does not wait for the server to confirm the write.
+ * Errors, especially permission errors, are caught and emitted globally.
+ * @param {CollectionReference} colRef The reference to the collection.
+ * @param {any} data The data for the new document.
  */
 export function addDocumentNonBlocking(colRef: CollectionReference, data: any) {
-  console.log(`%cOFFLINE MODE`, logStyle, `Mock addDoc to collection: ${colRef.path}`, { data });
-  // Return a resolved promise with a mock doc ref
-  return Promise.resolve({ id: `mock_${Date.now()}` } as DocumentReference);
+  return addDoc(colRef, data).catch((error: any) => {
+    const contextualError = new FirestorePermissionError({
+      path: colRef.path,
+      operation: 'create',
+      requestResourceData: data,
+    });
+    errorEmitter.emit('permission-error', contextualError);
+    // Return a rejected promise to allow for local error handling if needed
+    return Promise.reject(contextualError);
+  });
 }
 
-
 /**
- * OFFLINE VERSION: Initiates an updateDoc operation for a document reference.
- * Logs the action to the console instead of writing to Firestore.
+ * Initiates a non-blocking `updateDoc` operation.
+ * It does not wait for the server to confirm the write.
+ * Errors, especially permission errors, are caught and emitted globally.
+ * @param {DocumentReference} docRef The reference to the document.
+ * @param {any} data The data to update.
  */
 export function updateDocumentNonBlocking(docRef: DocumentReference, data: any) {
-  console.log(`%cOFFLINE MODE`, logStyle, `Mock updateDoc on path: ${docRef.path}`, { data });
-  // No-op in offline mode
+  return updateDoc(docRef, data).catch((error: any) => {
+    const contextualError = new FirestorePermissionError({
+      path: docRef.path,
+      operation: 'update',
+      requestResourceData: data,
+    });
+    errorEmitter.emit('permission-error', contextualError);
+    return Promise.reject(contextualError);
+  });
 }
 
 
 /**
- * OFFLINE VERSION: Initiates a deleteDoc operation for a document reference.
- * Logs the action to the console instead of writing to Firestore.
+ * Initiates a non-blocking `deleteDoc` operation.
+ * It does not wait for the server to confirm the deletion.
+ * Errors, especially permission errors, are caught and emitted globally.
+ * @param {DocumentReference} docRef The reference to the document to delete.
  */
 export function deleteDocumentNonBlocking(docRef: DocumentReference) {
-  console.log(`%cOFFLINE MODE`, logStyle, `Mock deleteDoc on path: ${docRef.path}`);
-  // No-op in offline mode
+  return deleteDoc(docRef).catch((error: any) => {
+    const contextualError = new FirestorePermissionError({
+      path: docRef.path,
+      operation: 'delete',
+    });
+    errorEmitter.emit('permission-error', contextualError);
+    return Promise.reject(contextualError);
+  });
 }

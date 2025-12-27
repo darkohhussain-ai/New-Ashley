@@ -2,28 +2,9 @@
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
 import { FirebaseApp } from 'firebase/app';
-import { Firestore } from 'firebase/firestore';
-import { Auth, User } from 'firebase/auth';
-
-// --- MOCK USER FOR OFFLINE DEVELOPMENT ---
-const mockUser: User = {
-    uid: 'mock-user-123',
-    email: 'offline-user@example.com',
-    emailVerified: true,
-    displayName: 'Offline User',
-    isAnonymous: false,
-    photoURL: 'https://picsum.photos/seed/mock-user/100/100',
-    providerData: [],
-    metadata: {},
-    providerId: 'password',
-    tenantId: null,
-    delete: async () => {},
-    getIdToken: async () => 'mock-token',
-    getIdTokenResult: async () => ({} as any),
-    reload: async () => {},
-    toJSON: () => ({}),
-};
-
+import { Firestore, onSnapshot, doc } from 'firestore';
+import { Auth, User, onAuthStateChanged } from 'firebase/auth';
+import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
 interface FirebaseProviderProps {
   children: ReactNode;
@@ -64,23 +45,51 @@ export interface UserHookResult {
 export const FirebaseContext = createContext<FirebaseContextState | undefined>(undefined);
 
 /**
- * OFFLINE VERSION of FirebaseProvider. Manages and provides mock Firebase services and user state.
+ * Manages and provides Firebase services and user authentication state.
+ * @param {FirebaseProviderProps} props The provider props.
+ * @returns {React.FC} A React component that provides the Firebase context.
  */
-export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({ children }) => {
-  
+export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({ children, firebaseApp, firestore, auth }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [isUserLoading, setIsUserLoading] = useState(true);
+  const [userError, setUserError] = useState<Error | null>(null);
+
+  // Determine if Firebase services are available
+  const areServicesAvailable = !!(firebaseApp && firestore && auth);
+
+  useEffect(() => {
+    if (areServicesAvailable) {
+      const unsubscribe = onAuthStateChanged(
+        auth!,
+        (user) => {
+          setUser(user);
+          setIsUserLoading(false);
+        },
+        (error) => {
+          setUserError(error);
+          setIsUserLoading(false);
+        }
+      );
+      return () => unsubscribe();
+    } else {
+      setIsUserLoading(false);
+    }
+  }, [areServicesAvailable, auth]);
+
   const contextValue = useMemo((): FirebaseContextState => ({
-      areServicesAvailable: true,
-      firebaseApp: null, // Not available in offline mode
-      firestore: null,   // Not available in offline mode
-      auth: null,        // Not available in offline mode
-      user: mockUser,
-      isUserLoading: false, // Always false in offline mode
-      userError: null,
-  }), []);
+      areServicesAvailable,
+      firebaseApp: firebaseApp || null,
+      firestore: firestore || null,
+      auth: auth || null,
+      user,
+      isUserLoading,
+      userError,
+  }), [areServicesAvailable, firebaseApp, firestore, auth, user, isUserLoading, userError]);
 
   return (
     <FirebaseContext.Provider value={contextValue}>
       {children}
+      <FirebaseErrorListener />
     </FirebaseContext.Provider>
   );
 };
@@ -88,7 +97,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({ children }) 
 /**
  * Hook to access core Firebase services and user authentication state.
  * Throws error if core services are not available or used outside provider.
- * NOTE: In offline mode, services will be null.
+ * @returns {FirebaseServicesAndUser} An object containing the Firebase services and user state.
  */
 export const useFirebase = (): Partial<FirebaseServicesAndUser> => {
   const context = useContext(FirebaseContext);
@@ -97,32 +106,44 @@ export const useFirebase = (): Partial<FirebaseServicesAndUser> => {
     throw new Error('useFirebase must be used within a FirebaseProvider.');
   }
 
+  // If services aren't available yet, return a loading state.
+  if (!context.areServicesAvailable) {
+    return {
+      isUserLoading: context.isUserLoading,
+      user: null,
+      userError: context.userError,
+    };
+  }
+
   return {
-    firebaseApp: context.firebaseApp as FirebaseApp, // Casting to satisfy type, will be null
-    firestore: context.firestore as Firestore, // Casting to satisfy type, will be null
-    auth: context.auth as Auth, // Casting to satisfy type, will be null
+    firebaseApp: context.firebaseApp as FirebaseApp,
+    firestore: context.firestore as Firestore,
+    auth: context.auth as Auth,
     user: context.user,
     isUserLoading: context.isUserLoading,
     userError: context.userError,
   };
 };
 
-/** Hook to access Firebase Auth instance. Will be null in offline mode. */
+/** Hook to access Firebase Auth instance. Throws error if not available. */
 export const useAuth = (): Auth => {
   const { auth } = useFirebase();
-  return auth as Auth;
+  if (!auth) throw new Error('Firebase Auth is not available.');
+  return auth;
 };
 
-/** Hook to access Firestore instance. Will be null in offline mode. */
+/** Hook to access Firestore instance. Throws error if not available. */
 export const useFirestore = (): Firestore => {
   const { firestore } = useFirebase();
-  return firestore as Firestore;
+  if (!firestore) throw new Error('Firestore is not available.');
+  return firestore;
 };
 
-/** Hook to access Firebase App instance. Will be null in offline mode. */
+/** Hook to access Firebase App instance. Throws error if not available. */
 export const useFirebaseApp = (): FirebaseApp => {
   const { firebaseApp } = useFirebase();
-  return firebaseApp as FirebaseApp;
+  if (!firebaseApp) throw new Error('Firebase App is not available.');
+  return firebaseApp;
 };
 
 type MemoFirebase <T> = T & {__memo?: boolean};
@@ -136,10 +157,7 @@ export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | 
   return memoized;
 }
 
-/**
- * Hook specifically for accessing the authenticated user's state.
- * Returns a mock user in offline mode.
- */
+/** Hook specifically for accessing the authenticated user's state. */
 export const useUser = (): UserHookResult => {
   const { user, isUserLoading, userError } = useFirebase();
   return { user: user || null, isUserLoading: !!isUserLoading, userError: userError || null };
