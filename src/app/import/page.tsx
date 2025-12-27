@@ -1,11 +1,10 @@
-
 'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Loader2, File, CheckCircle, Save } from 'lucide-react';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection, doc, writeBatch, Timestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -33,6 +32,7 @@ export default function ImportPage() {
   const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
+  const { user } = useUser();
 
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -43,7 +43,7 @@ export default function ImportPage() {
   const [categoryName, setCategoryName] = useState('');
   const [date, setDate] = useState<Date | undefined>(new Date());
   
-  const employeesRef = useMemoFirebase(() => (firestore ? collection(firestore, 'employees') : null), [firestore]);
+  const employeesRef = useMemoFirebase(() => (firestore && user ? collection(firestore, 'employees') : null), [firestore, user]);
   const { data: employees, isLoading: isLoadingEmployees } = useCollection<Employee>(employeesRef);
   
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

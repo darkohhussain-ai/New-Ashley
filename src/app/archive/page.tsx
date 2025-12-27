@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useMemo } from 'react';
 import Link from 'next/link';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection, Timestamp } from 'firebase/firestore';
 import { ArrowLeft, FileText, Calendar as CalendarIcon, User, Building, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -28,11 +27,12 @@ type Employee = {
 
 export default function ArchivePage() {
   const firestore = useFirestore();
+  const { user, isUserLoading } = useUser();
 
-  const filesRef = useMemoFirebase(() => (firestore ? collection(firestore, 'excel_files') : null), [firestore]);
+  const filesRef = useMemoFirebase(() => (firestore && user ? collection(firestore, 'excel_files') : null), [firestore, user]);
   const { data: files, isLoading: isLoadingFiles } = useCollection<ExcelFile>(filesRef);
 
-  const employeesRef = useMemoFirebase(() => (firestore ? collection(firestore, 'employees') : null), [firestore]);
+  const employeesRef = useMemoFirebase(() => (firestore && user ? collection(firestore, 'employees') : null), [firestore, user]);
   const { data: employees, isLoading: isLoadingEmployees } = useCollection<Employee>(employeesRef);
 
   const getEmployeeName = (id: string) => {
@@ -48,7 +48,7 @@ export default function ArchivePage() {
     });
   }, [files]);
   
-  const isLoading = isLoadingFiles || isLoadingEmployees;
+  const isLoading = isLoadingFiles || isLoadingEmployees || isUserLoading;
 
   return (
     <div className="min-h-screen bg-background text-foreground">

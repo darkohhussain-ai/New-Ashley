@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking, useUser } from '@/firebase';
 import { collection, query, where, Timestamp, doc } from 'firebase/firestore';
 import { ArrowLeft, Plus, Trash2, Calendar as CalendarIcon, Clock, User, Edit, Save, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -46,6 +45,7 @@ const formatCurrency = (amount: number) => {
 export default function OvertimePage() {
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { user, isUserLoading } = useUser();
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   
@@ -59,15 +59,15 @@ export default function OvertimePage() {
   const [editingRecord, setEditingRecord] = useState<Overtime | null>(null);
 
   // Data fetching
-  const employeesRef = useMemoFirebase(() => (firestore ? collection(firestore, 'employees') : null), [firestore]);
+  const employeesRef = useMemoFirebase(() => (firestore && user ? collection(firestore, 'employees') : null), [firestore, user]);
   const { data: employees, isLoading: isLoadingEmployees } = useCollection<Employee>(employeesRef);
 
   const overtimeQuery = useMemoFirebase(() => {
-    if (!firestore || !selectedDate) return null;
+    if (!firestore || !selectedDate || !user) return null;
     const start = startOfDay(selectedDate);
     const end = endOfDay(selectedDate);
     return query(collection(firestore, 'overtime'), where('date', '>=', start), where('date', '<=', end));
-  }, [firestore, selectedDate]);
+  }, [firestore, selectedDate, user]);
 
   const { data: overtimeRecords, isLoading: isLoadingOvertime } = useCollection<Overtime>(overtimeQuery);
 
@@ -171,6 +171,8 @@ export default function OvertimePage() {
     );
   }, [overtimeRecords]);
 
+  const isLoading = isLoadingEmployees || isLoadingOvertime || isUserLoading;
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="bg-card border-b p-4">
@@ -257,7 +259,7 @@ export default function OvertimePage() {
               </CardHeader>
               <CardContent>
                 <div className="divide-y">
-                  {isLoadingOvertime ? (
+                  {isLoading ? (
                     <div className="p-8 text-center text-muted-foreground">Loading records...</div>
                   ) : overtimeRecords && overtimeRecords.length > 0 ? (
                     overtimeRecords.map(record => (

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect, useRef } from "react"
-import { useCollection, useDoc, useFirestore, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase"
+import { useCollection, useDoc, useFirestore, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking, useUser } from "@/firebase"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -50,8 +50,9 @@ const safeDate = (dateValue: Timestamp | Date | undefined): Date | null => {
 function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, onDeselect: () => void }) {
     const firestore = useFirestore();
     const { toast } = useToast();
+    const { user, isUserLoading } = useUser();
 
-    const employeeRef = useMemoFirebase(() => (firestore && employeeId ? doc(firestore, 'employees', employeeId) : null), [firestore, employeeId]);
+    const employeeRef = useMemoFirebase(() => (firestore && employeeId && user ? doc(firestore, 'employees', employeeId) : null), [firestore, employeeId, user]);
     const { data: employee, isLoading } = useDoc<Employee>(employeeRef);
 
     const [isEditing, setIsEditing] = useState(false);
@@ -136,7 +137,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
         pdf.save(`${employee.name.replace(/ /g, '_')}_card.pdf`);
     };
 
-    if (isLoading) {
+    if (isLoading || isUserLoading) {
         return <div className="p-8 w-full"><Skeleton className="h-[400px] w-full" /></div>;
     }
     if (!employee) {
@@ -351,7 +352,9 @@ function AddEmployeeDialog({ open, onOpenChange }: { open: boolean, onOpenChange
 
 export default function EmployeesPage() {
   const firestore = useFirestore();
-  const employeesRef = useMemoFirebase(() => firestore ? collection(firestore, "employees") : null, [firestore]);
+  const { user, isUserLoading } = useUser();
+
+  const employeesRef = useMemoFirebase(() => (firestore && user ? collection(firestore, "employees") : null), [firestore, user]);
   const { data: employees, isLoading } = useCollection<Employee>(employeesRef);
   
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
@@ -394,7 +397,7 @@ export default function EmployeesPage() {
                      <Button onClick={() => setAddDialogOpen(true)} className="w-full"><Plus className="mr-2 h-4 w-4" /> Add Employee</Button>
                 </div>
                 <div className="flex-1 overflow-y-auto">
-                    {isLoading ? (
+                    {isLoading || isUserLoading ? (
                          <div className="p-4 space-y-2">{[...Array(8)].map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
                     ) : sortedAndFilteredEmployees.length > 0 ? (
                         <div className="p-2 space-y-1">
@@ -427,7 +430,7 @@ export default function EmployeesPage() {
                 {selectedEmployeeId ? (
                     <EmployeeDetailView employeeId={selectedEmployeeId} onDeselect={() => setSelectedEmployeeId(null)}/>
                 ) : (
-                    !isLoading && (
+                    !(isLoading || isUserLoading) && (
                         <div className="text-center">
                             <Building className="mx-auto h-16 w-16 text-muted-foreground" />
                             <h2 className="mt-4 text-2xl font-bold">Select an Employee</h2>

@@ -1,10 +1,9 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useFirestore, useDoc, useCollection, useMemoFirebase, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useDoc, useCollection, useMemoFirebase, deleteDocumentNonBlocking, updateDocumentNonBlocking, useUser } from '@/firebase';
 import { doc, collection, Timestamp, writeBatch } from 'firebase/firestore';
 import { ArrowLeft, User, Calendar as CalendarIcon, Building, FileText, MapPin, Edit, Trash2, Save, X, ArrowUpDown, ArrowDown, ArrowUp, FileSpreadsheet, ChevronLeft, ChevronRight, Download, Search, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -132,6 +131,7 @@ export default function FileDetailPage() {
   const { toast } = useToast();
   const fileId = params.id as string;
   const firestore = useFirestore();
+  const { user, isUserLoading } = useUser();
 
   const [isEditing, setIsEditing] = useState(false);
   const [editableItems, setEditableItems] = useState<Item[]>([]);
@@ -153,16 +153,16 @@ export default function FileDetailPage() {
   
   const updateFileInputRef = useRef<HTMLInputElement>(null);
 
-  const fileRef = useMemoFirebase(() => (firestore && fileId ? doc(firestore, 'excel_files', fileId) : null), [firestore, fileId]);
+  const fileRef = useMemoFirebase(() => (firestore && fileId && user ? doc(firestore, 'excel_files', fileId) : null), [firestore, fileId, user]);
   const { data: file, isLoading: isLoadingFile } = useDoc<ExcelFile>(fileRef);
 
-  const itemsRef = useMemoFirebase(() => (firestore && fileId ? collection(firestore, `excel_files/${fileId}/items`) : null), [firestore, fileId]);
+  const itemsRef = useMemoFirebase(() => (firestore && fileId && user ? collection(firestore, `excel_files/${fileId}/items`) : null), [firestore, fileId, user]);
   const { data: items, isLoading: isLoadingItems } = useCollection<Item>(itemsRef);
   
-  const employeesRef = useMemoFirebase(() => (firestore ? collection(firestore, 'employees') : null), [firestore]);
+  const employeesRef = useMemoFirebase(() => (firestore && user ? collection(firestore, 'employees') : null), [firestore, user]);
   const { data: employees, isLoading: isLoadingEmployees } = useCollection<Employee>(employeesRef);
   
-  const locationsRef = useMemoFirebase(() => (firestore ? collection(firestore, 'storage_locations') : null), [firestore]);
+  const locationsRef = useMemoFirebase(() => (firestore && user ? collection(firestore, 'storage_locations') : null), [firestore, user]);
   const { data: locations, isLoading: isLoadingLocations } = useCollection<StorageLocation>(locationsRef);
 
   const pdfCardRef = useRef<HTMLDivElement>(null);
@@ -419,7 +419,7 @@ export default function FileDetailPage() {
   };
 
 
-  const isLoading = isLoadingFile || isLoadingItems || isLoadingEmployees || isLoadingLocations;
+  const isLoading = isLoadingFile || isLoadingItems || isLoadingEmployees || isLoadingLocations || isUserLoading;
 
   const getEmployeeName = (id: string) => employees?.find(e => e.id === id)?.name || '...';
   const getLocationName = (id?: string) => locations?.find(l => l.id === id)?.name || '...';

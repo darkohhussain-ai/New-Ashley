@@ -1,11 +1,10 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Plus, Trash2, Save, Loader2, Calendar, MapPin } from 'lucide-react';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection, doc, writeBatch, Timestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -37,6 +36,7 @@ export default function NewFilePage() {
   const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
+  const { user } = useUser();
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -54,10 +54,10 @@ export default function NewFilePage() {
   const [filterAshleyFloor, setFilterAshleyFloor] = useState('All');
   const [filterAshleyArea, setFilterAshleyArea] = useState('All');
 
-  const employeesRef = useMemoFirebase(() => (firestore ? collection(firestore, 'employees') : null), [firestore]);
+  const employeesRef = useMemoFirebase(() => (firestore && user ? collection(firestore, 'employees') : null), [firestore, user]);
   const { data: employees, isLoading: isLoadingEmployees } = useCollection<Employee>(employeesRef);
   
-  const locationsRef = useMemoFirebase(() => (firestore ? collection(firestore, 'storage_locations') : null), [firestore]);
+  const locationsRef = useMemoFirebase(() => (firestore && user ? collection(firestore, 'storage_locations') : null), [firestore, user]);
   const { data: locations, isLoading: isLoadingLocations } = useCollection<StorageLocation>(locationsRef);
 
 

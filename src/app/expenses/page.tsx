@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking, useUser } from '@/firebase';
 import { collection, Timestamp, doc } from 'firebase/firestore';
 import { ArrowLeft, Plus, Trash2, Calendar as CalendarIcon, DollarSign, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -57,10 +56,11 @@ const safeDate = (dateValue: Timestamp | Date | undefined): Date | null => {
 export default function ExpensesPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { user, isUserLoading } = useUser();
 
   // Data fetching
-  const employeesRef = useMemoFirebase(() => (firestore ? collection(firestore, 'employees') : null), [firestore]);
-  const expensesRef = useMemoFirebase(() => (firestore ? collection(firestore, 'expenses') : null), [firestore]);
+  const employeesRef = useMemoFirebase(() => (firestore && user ? collection(firestore, 'employees') : null), [firestore, user]);
+  const expensesRef = useMemoFirebase(() => (firestore && user ? collection(firestore, 'expenses') : null), [firestore, user]);
 
   const { data: employees, isLoading: isLoadingEmployees } = useCollection<Employee>(employeesRef);
   const { data: expenses, isLoading: isLoadingExpenses } = useCollection<Expense>(expensesRef);
@@ -157,7 +157,7 @@ export default function ExpensesPage() {
     return { expensesByEmployee: sortedGrouped, grandTotal: total };
   }, [expenses, employees]);
 
-  const isLoading = isLoadingEmployees || isLoadingExpenses;
+  const isLoading = isLoadingEmployees || isLoadingExpenses || isUserLoading;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
