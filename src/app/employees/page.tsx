@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
-import { format } from "date-fns"
+import { format, startOfMonth, endOfMonth } from "date-fns"
 import { cn } from "@/lib/utils"
 import { collection, doc, Timestamp, writeBatch, query, where } from "firebase/firestore"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -102,7 +102,18 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
     const expensesQuery = useMemoFirebase(() => (firestore && user && employeeId ? query(collection(firestore, 'expenses'), where('employeeId', '==', employeeId)) : null), [firestore, user, employeeId]);
     const { data: expenses, isLoading: isLoadingExpenses } = useCollection<Expense>(expensesQuery);
 
-    const overtimeQuery = useMemoFirebase(() => (firestore && user && employeeId ? query(collection(firestore, 'overtime'), where('employeeId', '==', employeeId)) : null), [firestore, user, employeeId]);
+    const overtimeQuery = useMemoFirebase(() => {
+        if (!firestore || !user || !employeeId) return null;
+        const today = new Date();
+        const start = startOfMonth(today);
+        const end = endOfMonth(today);
+        return query(
+            collection(firestore, 'overtime'), 
+            where('employeeId', '==', employeeId),
+            where('date', '>=', start),
+            where('date', '<=', end)
+        );
+    }, [firestore, user, employeeId]);
     const { data: overtime, isLoading: isLoadingOvertime } = useCollection<Overtime>(overtimeQuery);
     
     const bonusesQuery = useMemoFirebase(() => (firestore && user && employeeId ? query(collection(firestore, 'bonuses'), where('employeeId', '==', employeeId)) : null), [firestore, user, employeeId]);
@@ -370,7 +381,13 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
 
                         <Card>
                             <CardHeader>
-                                <CardTitle className="flex items-center gap-2"><Clock className="w-5 h-5 text-orange-500"/> Overtime</CardTitle>
+                                <div className="flex justify-between items-center">
+                                    <CardTitle className="flex items-center gap-2">
+                                        <Clock className="w-5 h-5 text-orange-500"/> Overtime
+                                    </CardTitle>
+                                    <Badge variant="outline">{totalOvertimeHours.toFixed(2)} hrs</Badge>
+                                </div>
+                                <CardDescription>This Month: {format(new Date(), 'MMMM yyyy')}</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 {isLoadingOvertime ? <Skeleton className="h-20 w-full" /> : sortedOvertime.length > 0 ? (
@@ -378,15 +395,12 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                                         <TableHeader><TableRow><TableHead>Date</TableHead><TableHead className="text-right">Amount</TableHead></TableRow></TableHeader>
                                         <TableBody>{sortedOvertime.slice(0, 3).map(o => (<TableRow key={o.id}><TableCell>{format(o.date.toDate(), 'PP')}</TableCell><TableCell className="text-right">{formatCurrency(o.totalAmount)}</TableCell></TableRow>))}</TableBody>
                                     </Table>
-                                ) : <p className="text-sm text-center text-muted-foreground py-4">No overtime.</p>}
+                                ) : <p className="text-sm text-center text-muted-foreground py-4">No overtime this month.</p>}
                             </CardContent>
                             {sortedOvertime.length > 0 && 
-                                <CardFooter className="justify-between gap-2 bg-muted/50 font-bold text-sm">
-                                    <span className="text-muted-foreground">Total:</span>
-                                    <div className="text-right">
-                                        <p className="text-orange-500">{totalOvertimeHours.toFixed(2)} hours</p>
-                                        <p className="text-orange-500">{formatCurrency(totalOvertimeAmount)}</p>
-                                    </div>
+                                <CardFooter className="justify-end gap-2 bg-muted/50 font-bold text-sm">
+                                    <span className="text-muted-foreground">Month's Total:</span>
+                                    <span className="text-orange-500">{formatCurrency(totalOvertimeAmount)}</span>
                                 </CardFooter>
                             }
                         </Card>
