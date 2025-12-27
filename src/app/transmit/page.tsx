@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { ArrowLeft, PackagePlus, ListPlus, Archive, Eye } from 'lucide-react';
+import { ArrowLeft, PackagePlus, ListPlus, Eye, ClipboardList } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -13,21 +13,24 @@ const menuItems = [
     icon: ListPlus,
     href: "/transmit/add",
     color: "bg-blue-500",
-    description: "Add new items to the transfer list and manage them before shipping."
+  },
+  {
+    title: "View Staged Items",
+    icon: ClipboardList,
+    href: "/transmit/staged",
+    color: "bg-orange-500",
   },
   {
     title: "Create Transfer Slip",
     icon: PackagePlus,
     href: "/transmit/create",
     color: "bg-green-500",
-    description: "Select staged items and generate a final cargo transfer slip."
   },
   {
     title: "View Transfers",
     icon: Eye,
     href: "/transmit/archive",
     color: "bg-purple-500",
-    description: "View and retrieve previously created transfer slips."
   }
 ];
 
@@ -46,7 +49,7 @@ export default function TransmitDashboardPage() {
         </div>
       </header>
       <main className='container mx-auto p-4 md:p-8'>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {menuItems.map((item) => (
             <Link key={item.title} href={item.href} className="group block" passHref>
                 <Card className={cn("h-48 flex flex-col items-center justify-center text-white transition-transform transform hover:-translate-y-1 hover:shadow-xl", item.color)}>
