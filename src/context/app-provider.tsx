@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { createContext, useContext, ReactNode, useMemo } from 'react';
+import React, { createContext, useContext, ReactNode } from 'react';
 import useLocalStorage from '@/hooks/use-local-storage';
 import { 
     Employee, 
@@ -49,14 +49,13 @@ interface AppState {
 const AppContext = createContext<AppState | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-    const memoizedInitialData = useMemo(() => initialData, []);
 
-    const [employees, setEmployees] = useLocalStorage<Employee[]>('employees', memoizedInitialData.employees);
-    const [excelFiles, setExcelFiles] = useLocalStorage<ExcelFile[]>('excel_files', memoizedInitialData.excelFiles);
-    const [items, setItems] = useLocalStorage<Item[]>('items', memoizedInitialData.items);
-    const [locations, setLocations] = useLocalStorage<StorageLocation[]>('storage_locations', memoizedInitialData.locations);
-    const [expenses, setExpenses] = useLocalStorage<Expense[]>('expenses', memoizedInitialData.expenses);
-    const [overtime, setOvertime] = useLocalStorage<Overtime[]>('overtime', memoizedInitialData.overtime);
+    const [employees, setEmployees] = useLocalStorage<Employee[]>('employees', initialData.employees);
+    const [excelFiles, setExcelFiles] = useLocalStorage<ExcelFile[]>('excel_files', initialData.excelFiles);
+    const [items, setItems] = useLocalStorage<Item[]>('items', initialData.items);
+    const [locations, setLocations] = useLocalStorage<StorageLocation[]>('storage_locations', initialData.locations);
+    const [expenses, setExpenses] = useLocalStorage<Expense[]>('expenses', initialData.expenses);
+    const [overtime, setOvertime] = useLocalStorage<Overtime[]>('overtime', initialData.overtime);
     const [bonuses, setBonuses] = useLocalStorage<Bonus[]>('bonuses', []);
     const [withdrawals, setWithdrawals] = useLocalStorage<CashWithdrawal[]>('cash_withdrawals', []);
     const [receipts, setReceipts] = useLocalStorage<SoldItemReceipt[]>('sold_item_receipts', []);
