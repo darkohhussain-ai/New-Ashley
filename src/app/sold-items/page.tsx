@@ -3,7 +3,7 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { useFirestore, addDocumentNonBlocking, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, addDocumentNonBlocking, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection, Timestamp } from 'firebase/firestore';
 import { ArrowLeft, Plus, Save, Trash2, Calendar as CalendarIcon, Loader2, List, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -30,6 +30,7 @@ type SoldItemReceipt = {
 export default function SoldItemsCheckPage() {
     const firestore = useFirestore();
     const { toast } = useToast();
+    const { user, isUserLoading } = useUser();
 
     const [receiptNumberDigits, setReceiptNumberDigits] = useState('');
     const [receiptDate, setReceiptDate] = useState<Date | undefined>();
@@ -38,7 +39,7 @@ export default function SoldItemsCheckPage() {
     const [currentCategory, setCurrentCategory] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
-    const receiptsRef = useMemoFirebase(() => firestore ? collection(firestore, 'sold_item_receipts') : null, [firestore]);
+    const receiptsRef = useMemoFirebase(() => (firestore && user) ? collection(firestore, 'sold_item_receipts') : null, [firestore, user]);
     const { data: savedReceipts, isLoading: isLoadingReceipts } = useCollection<SoldItemReceipt>(receiptsRef);
 
     const fullReceiptNumber = `115-0${receiptNumberDigits}`;
@@ -102,6 +103,8 @@ export default function SoldItemsCheckPage() {
             return b.receiptNumber.localeCompare(a.receiptNumber);
         })
     }, [savedReceipts])
+
+    const isLoading = isUserLoading || isLoadingReceipts;
 
     return (
         <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
@@ -191,7 +194,7 @@ export default function SoldItemsCheckPage() {
                         </CardHeader>
                         <CardContent>
                             <div className="max-h-[600px] overflow-y-auto">
-                                {isLoadingReceipts ? (
+                                {isLoading ? (
                                     <div className="flex justify-center p-8"><Loader2 className="animate-spin text-primary" /></div>
                                 ) : sortedReceipts.length > 0 ? (
                                     <div className="space-y-4">
