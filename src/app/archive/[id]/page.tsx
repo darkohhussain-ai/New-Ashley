@@ -3,8 +3,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useFirestore, useDoc, useCollection, useMemoFirebase, deleteDocumentNonBlocking, updateDocumentNonBlocking, useUser } from '@/firebase';
-import { doc, collection, Timestamp, writeBatch } from 'firebase/firestore';
 import { ArrowLeft, User, Calendar as CalendarIcon, Building, FileText, MapPin, Edit, Trash2, Save, X, ArrowUpDown, ArrowDown, ArrowUp, FileSpreadsheet, ChevronLeft, ChevronRight, Download, Search, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
@@ -13,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
@@ -25,33 +23,10 @@ import html2canvas from 'html2canvas';
 import { FilePdfCard } from '@/components/archive/file-pdf-card';
 import useLocalStorage from '@/hooks/use-local-storage';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
+import { useAppContext } from '@/context/app-provider';
+import type { ExcelFile, Item, Employee, StorageLocation } from '@/lib/types';
 
 
-type ExcelFile = {
-  id: string;
-  storekeeperId: string;
-  storageName: string;
-  categoryName: string;
-  date: Timestamp;
-  source: string;
-  type: 'new' | 'imported';
-};
-
-type Item = {
-  id: string;
-  fileId: string;
-  model: string;
-  quantity: number;
-  notes?: string;
-  storageStatus?: 'Correct' | 'Less' | 'More' | '';
-  modelCondition?: 'Wrapped' | 'Damaged' | '';
-  quantityPerCondition?: number;
-  locationId?: string;
-  updateStatus?: 'NEW' | 'UPDATED' | 'DELETED' | '';
-};
-
-type Employee = { id: string; name: string; };
-type StorageLocation = { id: string; name: string; warehouseType: 'Ashley' | 'Huana'; };
 type SortableKeys = keyof Item;
 
 const PaginationControls = ({ currentPage, totalPages, onPageChange }: { currentPage: number, totalPages: number, onPageChange: (page: number) => void }) => {
@@ -130,9 +105,14 @@ export default function FileDetailPage() {
   const router = useRouter();
   const { toast } = useToast();
   const fileId = params.id as string;
-  const firestore = useFirestore();
-  const { user, isUserLoading } = useUser();
+  const { 
+    excelFiles, setExcelFiles, 
+    items, setItems: setAllItems, 
+    employees, 
+    locations 
+  } = useAppContext();
 
+  const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editableItems, setEditableItems] = useState<Item[]>([]);
   const [editableFile, setEditableFile] = useState<Partial<ExcelFile>>({});
@@ -152,54 +132,43 @@ export default function FileDetailPage() {
   const [logoSrc] = useLocalStorage('app-logo', defaultLogo);
   
   const updateFileInputRef = useRef<HTMLInputElement>(null);
-
-  const fileRef = useMemoFirebase(() => (firestore && fileId && user ? doc(firestore, 'excel_files', fileId) : null), [firestore, fileId, user]);
-  const { data: file, isLoading: isLoadingFile } = useDoc<ExcelFile>(fileRef);
-
-  const itemsRef = useMemoFirebase(() => (firestore && fileId && user ? collection(firestore, `excel_files/${fileId}/items`) : null), [firestore, fileId, user]);
-  const { data: items, isLoading: isLoadingItems } = useCollection<Item>(itemsRef);
-  
-  const employeesRef = useMemoFirebase(() => (firestore && user ? collection(firestore, 'employees') : null), [firestore, user]);
-  const { data: employees, isLoading: isLoadingEmployees } = useCollection<Employee>(employeesRef);
-  
-  const locationsRef = useMemoFirebase(() => (firestore && user ? collection(firestore, 'storage_locations') : null), [firestore, user]);
-  const { data: locations, isLoading: isLoadingLocations } = useCollection<StorageLocation>(locationsRef);
-
   const pdfCardRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (items) {
-      setEditableItems(JSON.parse(JSON.stringify(items.map(item => ({...item, updateStatus: ''}))))); // Deep copy
-    }
-  }, [items]);
   
+  const file = useMemo(() => excelFiles.find(f => f.id === fileId), [excelFiles, fileId]);
+  const fileItems = useMemo(() => items.filter(i => i.fileId === fileId), [items, fileId]);
+
   useEffect(() => {
     if (file) {
       setEditableFile(JSON.parse(JSON.stringify(file))); // Deep copy
+      setEditableItems(JSON.parse(JSON.stringify(fileItems.map(item => ({...item, updateStatus: ''}))))); // Deep copy
+      setIsLoading(false);
+    } else if (excelFiles.length > 0){
+        // If files are loaded but this one isn't found
+        setIsLoading(false);
     }
-  }, [file]);
+  }, [file, fileItems, excelFiles]);
+  
 
   useEffect(() => {
     if (isEditing) {
         setEditableItems(current => current.map(item => ({ ...item, updateStatus: '' })));
         const qtyMap: Record<string, number> = {};
-        items?.forEach(item => { qtyMap[item.id] = item.quantity; });
+        fileItems?.forEach(item => { qtyMap[item.id] = item.quantity; });
         setOriginalQuantities(qtyMap);
     } else {
         setOriginalQuantities({});
         if(file) setEditableFile(JSON.parse(JSON.stringify(file))); // Reset on cancel
     }
-  }, [isEditing, items, file]);
+  }, [isEditing, fileItems, file]);
 
   const { statusChartData, conditionChartData } = useMemo(() => {
-    if (!items) return { statusChartData: [], conditionChartData: [] };
+    if (!fileItems) return { statusChartData: [], conditionChartData: [] };
 
-    const totalItems = items.length;
+    const totalItems = fileItems.length;
     if (totalItems === 0) return { statusChartData: [], conditionChartData: [] };
     
-    // Status data
     const statusCounts: Record<string, number> = { 'Not Checked': 0, Correct: 0, Less: 0, More: 0 };
-    items.forEach(item => {
+    fileItems.forEach(item => {
         const status = item.storageStatus || 'Not Checked';
         statusCounts[status] = (statusCounts[status] || 0) + 1;
     });
@@ -210,9 +179,8 @@ export default function FileDetailPage() {
       fill: statusChartConfig[name as keyof typeof statusChartConfig]?.color || '#ccc'
     })).filter(d => d.value > 0);
     
-    // Condition data
     const conditionCounts: Record<string, number> = { 'Not Damaged': 0, Wrapped: 0, Damaged: 0 };
-    items.forEach(item => {
+    fileItems.forEach(item => {
       if (item.modelCondition === 'Damaged') {
         conditionCounts.Damaged++;
       } else if (item.modelCondition === 'Wrapped') {
@@ -229,10 +197,10 @@ export default function FileDetailPage() {
     })).filter(d => d.value > 0);
 
     return { statusChartData, conditionChartData };
-  }, [items]);
+  }, [fileItems]);
 
   const sortedItems = useMemo(() => {
-    let itemsToProcess = isEditing ? editableItems : (items || []);
+    let itemsToProcess = isEditing ? editableItems : (fileItems || []);
     
     if (searchQuery) {
       itemsToProcess = itemsToProcess.filter(item => 
@@ -259,7 +227,7 @@ export default function FileDetailPage() {
       });
     }
     return sortableItems;
-  }, [isEditing, editableItems, items, sortConfig, searchQuery]);
+  }, [isEditing, editableItems, fileItems, sortConfig, searchQuery]);
 
   const paginatedItems = useMemo(() => {
       return sortedItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -294,55 +262,49 @@ export default function FileDetailPage() {
   };
   
   const handleSave = async () => {
-    if (!firestore || !fileId) return;
-    const batch = writeBatch(firestore);
+    if (!fileId) return;
 
-    // Update the main file document if it has changed
-    const fileDocRef = doc(firestore, 'excel_files', fileId);
-    if (editableFile.storageName && editableFile.storageName !== file?.storageName) {
-        batch.update(fileDocRef, { storageName: editableFile.storageName });
-    }
+    // Update file details
+    setExcelFiles(excelFiles.map(f => f.id === fileId ? { ...f, ...editableFile } : f));
     
-    // Track original items to find which ones were deleted
-    const originalItemIds = new Set(items?.map(i => i.id));
-    const editableItemIds = new Set(editableItems.map(i => i.id));
+    // Update items
+    const originalItemIds = new Set(fileItems.map(i => i.id));
+    const finalItemIds = new Set<string>();
+
+    const updatedItems: Item[] = [];
+    const newItems: Item[] = [];
 
     editableItems.forEach(item => {
-        const { id, fileId: fId, updateStatus, ...itemData } = item;
-        const itemRef = doc(firestore, `excel_files/${fileId}/items`, id);
-        
+        finalItemIds.add(item.id);
+        const { updateStatus, ...itemData } = item;
         if (updateStatus === 'NEW') {
-            const newItemRef = doc(collection(firestore, `excel_files/${fileId}/items`));
-            batch.set(newItemRef, {...itemData, id: newItemRef.id, fileId });
-        } else if (originalItemIds.has(id)) { // only update existing items
-            batch.update(itemRef, { ...itemData });
+            const newItem = {...itemData, id: crypto.randomUUID(), fileId};
+            newItems.push(newItem);
+        } else if (originalItemIds.has(item.id)) {
+            updatedItems.push(itemData as Item);
         }
     });
 
-    // Handle deletions
-    originalItemIds.forEach(originalId => {
-        if (!editableItemIds.has(originalId)) {
-            const itemToDeleteRef = doc(firestore, `excel_files/${fileId}/items`, originalId);
-            batch.delete(itemToDeleteRef);
-        }
-    });
+    const deletedItemIds = Array.from(originalItemIds).filter(id => !finalItemIds.has(id));
 
-    try {
-        await batch.commit();
-        toast({ title: "Success", description: "All changes have been saved." });
-        setIsEditing(false);
-    } catch(e) {
-        console.error("Save error: ", e);
-        toast({ variant: "destructive", title: "Error", description: "Could not save changes." });
-    }
+    setAllItems(prevAllItems => [
+      // Items that are not part of this file
+      ...prevAllItems.filter(item => item.fileId !== fileId),
+      // Items that are not deleted
+      ...prevAllItems.filter(item => item.fileId === fileId && !deletedItemIds.includes(item.id))
+                     .map(oldItem => updatedItems.find(upd => upd.id === oldItem.id) || oldItem),
+      // New items
+      ...newItems
+    ]);
+
+    toast({ title: "Success", description: "All changes have been saved." });
+    setIsEditing(false);
   };
 
 
   const handleDeleteFile = () => {
-    if(!firestore || !fileId) return;
-    const docRef = doc(firestore, 'excel_files', fileId);
-    // Note: This doesn't delete subcollections in Firestore. For a full cleanup, a Cloud Function would be needed.
-    deleteDocumentNonBlocking(docRef);
+    setExcelFiles(excelFiles.filter(f => f.id !== fileId));
+    setAllItems(items.filter(i => i.fileId !== fileId));
     toast({ title: "File Deleted", description: `The Excel file has been removed.` });
     router.push('/archive');
   }
@@ -373,23 +335,18 @@ export default function FileDetailPage() {
       const updatedItems: Item[] = [];
       const existingModelsInNewFile = new Set<string>();
 
-      // Rule A & B: Update existing models or mark for deletion
       currentItems.forEach(item => {
           const newItemData = importedItems.get(item.model);
           if (newItemData) {
-              // Rule A
               if (item.quantity !== newItemData.quantity) {
                   updatedItems.push({ ...item, quantity: newItemData.quantity, updateStatus: 'UPDATED' });
               } else {
-                  updatedItems.push(item); // No change
+                  updatedItems.push(item);
               }
               existingModelsInNewFile.add(item.model);
-          } else {
-            // Rule B is implicitly handled by not adding it to updatedItems, so it will be deleted on save.
           }
       });
       
-      // Rule C: Add new models
       importedItems.forEach((newItemData, model) => {
         if (!existingModelsInNewFile.has(model)) {
             updatedItems.push({
@@ -413,13 +370,10 @@ export default function FileDetailPage() {
       console.error("Error processing update file:", error);
       toast({ variant: "destructive", title: "File Error", description: "Could not process the uploaded file." });
     } finally {
-        // Reset the input value to allow uploading the same file again
         if(updateFileInputRef.current) updateFileInputRef.current.value = "";
     }
   };
 
-
-  const isLoading = isLoadingFile || isLoadingItems || isLoadingEmployees || isLoadingLocations || isUserLoading;
 
   const getEmployeeName = (id: string) => employees?.find(e => e.id === id)?.name || '...';
   const getLocationName = (id?: string) => locations?.find(l => l.id === id)?.name || '...';
@@ -607,7 +561,7 @@ export default function FileDetailPage() {
         accept=".xlsx,.xls"
       />
      <div style={{ position: 'absolute', left: '-9999px', top: '-9999px', background: 'white', color: 'black' }}>
-          {file && employeeForFile && items && (
+          {file && employeeForFile && fileItems && (
             <div ref={pdfCardRef} style={{ width: '700px' }}>
                 <FilePdfCard
                     file={{...(file || {}), ...editableFile} as ExcelFile}
@@ -691,7 +645,7 @@ export default function FileDetailPage() {
                                 <span className="flex items-center gap-2"><Building className="w-4 h-4"/>{file.source}</span>
                                 <span className="flex items-center gap-2">
                                   <CalendarIcon className="w-4 h-4"/>
-                                  {file.date && typeof file.date.toDate === 'function' ? format(file.date.toDate(), 'PPP') : 'Invalid Date'}
+                                  {file.date ? format(parseISO(file.date), 'PPP') : 'Invalid Date'}
                                 </span>
                             </CardDescription>
                         </div>

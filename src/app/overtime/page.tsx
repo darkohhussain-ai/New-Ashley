@@ -2,8 +2,8 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking, useUser } from '@/firebase';
-import { collection, query, where, Timestamp, doc, getDocs } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
+import { collection, Timestamp, doc, addDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { ArrowLeft, Plus, Trash2, Calendar as CalendarIcon, Clock, User, Edit, Save, X, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +22,9 @@ import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
 import { ReportPdfHeader } from '@/components/reports/report-pdf-header';
 import useLocalStorage from '@/hooks/use-local-storage';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
+
 
 type Employee = {
   id: string;
@@ -72,7 +75,7 @@ export default function OvertimePage() {
 
   // Data fetching
   const employeesRef = useMemoFirebase(() => (firestore && user ? collection(firestore, 'employees') : null), [firestore, user]);
-  const { data: employees, isLoading: isLoadingEmployees } = useCollection<Employee>(employeesRef);
+  const { data: employees, isLoading: isLoadingEmployees } = useCollection<Employee>(employeesRef?.path ?? '');
 
   const overtimeQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -80,7 +83,7 @@ export default function OvertimePage() {
     return collection(firestore, 'overtime');
   }, [firestore, user]);
 
-  const { data: allOvertimeRecords, isLoading: isLoadingOvertime } = useCollection<Overtime>(overtimeQuery);
+  const { data: allOvertimeRecords, isLoading: isLoadingOvertime } = useCollection<Overtime>(overtimeQuery?.path ?? '');
 
   const overtimeRecords = useMemo(() => {
     if (!allOvertimeRecords || !selectedDate) return [];
@@ -126,14 +129,18 @@ export default function OvertimePage() {
         totalAmount: editingRecord.hours * editingRecord.rate,
     };
     
-    updateDocumentNonBlocking(docRef, updatedData)
+    updateDoc(docRef, updatedData)
         .then(() => {
             toast({ title: 'Success', description: 'Overtime record updated.' });
             setEditingRecord(null);
         })
         .catch(e => {
-            console.error("Update error: ", e);
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not update record.' });
+            const permissionError = new FirestorePermissionError({
+              path: docRef.path,
+              operation: 'update',
+              requestResourceData: updatedData,
+            });
+            errorEmitter.emit('permission-error', permissionError);
         })
         .finally(() => setIsSaving(false));
   };
@@ -160,28 +167,35 @@ export default function OvertimePage() {
       notes,
     };
 
-    addDocumentNonBlocking(collection(firestore, 'overtime'), overtimeData)
+    addDoc(collection(firestore, 'overtime'), overtimeData)
       .then(() => {
         toast({ title: 'Overtime Added', description: 'The record has been added.' });
         resetForm();
       })
       .catch((e) => {
-        console.error("Add error: ", e);
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not add record.' });
+        const permissionError = new FirestorePermissionError({
+          path: 'overtime',
+          operation: 'create',
+          requestResourceData: overtimeData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
       })
       .finally(() => setIsSaving(false));
   };
 
-  const handleDelete = (recordId: string) => {
+  const handleDelete = (record: Overtime) => {
     if (!firestore) return;
-    const docRef = doc(firestore, 'overtime', recordId);
-    deleteDocumentNonBlocking(docRef)
+    const docRef = doc(firestore, 'overtime', record.id);
+    deleteDoc(docRef)
       .then(() => {
         toast({ title: 'Record Deleted', description: 'The overtime record has been removed.' });
       })
       .catch((e) => {
-        console.error("Delete error: ", e);
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not delete record.' });
+        const permissionError = new FirestorePermissionError({
+          path: docRef.path,
+          operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', permissionError);
       });
   };
 
@@ -436,7 +450,7 @@ export default function OvertimePage() {
                                                 </AlertDialogHeader>
                                                 <AlertDialogFooter>
                                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => handleDelete(record.id)}>Delete</AlertDialogAction>
+                                                    <AlertDialogAction onClick={() => handleDelete(record)}>Delete</AlertDialogAction>
                                                 </AlertDialogFooter>
                                             </AlertDialogContent>
                                         </AlertDialog>

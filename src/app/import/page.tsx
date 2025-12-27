@@ -4,8 +4,6 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Loader2, File, CheckCircle, Save } from 'lucide-react';
-import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection, doc, writeBatch, Timestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -14,11 +12,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
+import { format, formatISO } from 'date-fns';
 import * as XLSX from 'xlsx';
 import { cn } from '@/lib/utils';
+import { useAppContext } from '@/context/app-provider';
+import type { Item } from '@/lib/types';
 
-type Employee = { id: string; name: string; };
 
 type ImportedItem = {
   model: string;
@@ -29,10 +28,9 @@ type ImportedItem = {
 const sources = ["Showroom", "Ashley Store", "Huana Store"];
 
 export default function ImportPage() {
-  const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
-  const { user } = useUser();
+  const { employees, setExcelFiles, setItems } = useAppContext();
 
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -42,9 +40,6 @@ export default function ImportPage() {
   const [source, setSource] = useState('');
   const [categoryName, setCategoryName] = useState('');
   const [date, setDate] = useState<Date | undefined>(new Date());
-  
-  const employeesRef = useMemoFirebase(() => (firestore && user ? collection(firestore, 'employees') : null), [firestore, user]);
-  const { data: employees, isLoading: isLoadingEmployees } = useCollection<Employee>(employeesRef);
   
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -58,7 +53,7 @@ export default function ImportPage() {
   };
 
   const handleSaveAndContinue = async () => {
-    if (!firestore || !file || !storekeeperId || !source || !date || !categoryName) {
+    if (!file || !storekeeperId || !source || !date || !categoryName) {
       toast({ variant: 'destructive', title: 'Missing Information', description: 'Please fill out all fields and select a file.' });
       return;
     }
@@ -86,36 +81,26 @@ export default function ImportPage() {
         return;
       }
 
-      // Now save everything to Firestore in chunks
-      const fileId = doc(collection(firestore, 'dummy')).id;
+      const fileId = crypto.randomUUID();
       
       const fileData = {
         id: fileId,
         storekeeperId,
         storageName: file.name,
         categoryName,
-        date: Timestamp.fromDate(date!),
+        date: formatISO(date!),
         source,
         type: 'imported' as const
       };
-      const fileRef = doc(firestore, 'excel_files', fileId);
       
-      // We can set the main file doc first
-      await writeBatch(firestore).set(fileRef, fileData).commit();
+      const newItems: Item[] = parsedItems.map(item => ({
+        id: crypto.randomUUID(),
+        fileId: fileId,
+        ...item
+      }));
 
-      // Then batch the items
-      const chunkSize = 400; // Firestore batch writes can have up to 500 operations
-      for (let i = 0; i < parsedItems.length; i += chunkSize) {
-          const chunk = parsedItems.slice(i, i + chunkSize);
-          const batch = writeBatch(firestore);
-          chunk.forEach(item => {
-              const itemId = doc(collection(firestore, 'dummy')).id;
-              const itemRef = doc(firestore, `excel_files/${fileId}/items`, itemId);
-              const itemData = { ...item, id: itemId, fileId };
-              batch.set(itemRef, itemData);
-          });
-          await batch.commit();
-      }
+      setExcelFiles(prev => [...prev, fileData]);
+      setItems(prev => [...prev, ...newItems]);
 
       toast({ title: 'Success!', description: 'File imported. You can now edit the item details.' });
       router.push(`/archive/${fileId}`);
@@ -168,13 +153,11 @@ export default function ImportPage() {
                       <SelectValue placeholder="Select an employee" />
                       </SelectTrigger>
                       <SelectContent>
-                      {isLoadingEmployees ? (
-                          <SelectItem value="loading" disabled>Loading...</SelectItem>
-                      ) : (
+                      {
                           employees?.map(emp => (
                           <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>
                           ))
-                      )}
+                      }
                       </SelectContent>
                   </Select>
               </div>

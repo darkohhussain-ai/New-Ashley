@@ -1,17 +1,15 @@
 
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useMemo, useRef } from 'react';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, collection, Timestamp } from 'firebase/firestore';
 import { ArrowLeft, User, Calendar as CalendarIcon, Building, FileText, MapPin, Download, FileSpreadsheet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -20,31 +18,9 @@ import html2canvas from 'html2canvas';
 import { FilePdfCard } from '@/components/archive/file-pdf-card';
 import useLocalStorage from '@/hooks/use-local-storage';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
+import { useAppContext } from '@/context/app-provider';
+import type { Employee, ExcelFile, Item, StorageLocation } from '@/lib/types';
 
-type ExcelFile = {
-  id: string;
-  storekeeperId: string;
-  storageName: string;
-  categoryName: string;
-  date: Timestamp;
-  source: string;
-  type: 'new' | 'imported';
-};
-
-type Item = {
-  id: string;
-  fileId: string;
-  model: string;
-  quantity: number;
-  notes?: string;
-  storageStatus?: 'Correct' | 'Less' | 'More' | '';
-  modelCondition?: 'Wrapped' | 'Damaged' | '';
-  quantityPerCondition?: number;
-  locationId?: string;
-};
-
-type Employee = { id: string; name: string; };
-type StorageLocation = { id: string; name: string; warehouseType: 'Ashley' | 'Huana'; };
 
 const statusChartConfig = {
   'Not Checked': { label: 'Not Checked', color: 'hsl(var(--muted-foreground))' },
@@ -63,31 +39,22 @@ const conditionChartConfig = {
 export default function PdfViewPage() {
   const params = useParams();
   const fileId = params.id as string;
-  const firestore = useFirestore();
+  const { excelFiles, items, employees, locations } = useAppContext();
 
   const defaultLogo = "https://i.ibb.co/68RvM01/ashley-logo.png";
   const [logoSrc] = useLocalStorage('app-logo', defaultLogo);
 
-  const fileRef = useMemoFirebase(() => (firestore && fileId ? doc(firestore, 'excel_files', fileId) : null), [firestore, fileId]);
-  const { data: file, isLoading: isLoadingFile } = useDoc<ExcelFile>(fileRef);
-
-  const itemsRef = useMemoFirebase(() => (firestore && fileId ? collection(firestore, `excel_files/${fileId}/items`) : null), [firestore, fileId]);
-  const { data: items, isLoading: isLoadingItems } = useCollection<Item>(itemsRef);
+  const file = useMemo(() => excelFiles.find(f => f.id === fileId), [excelFiles, fileId]);
+  const fileItems = useMemo(() => items.filter(i => i.fileId === fileId), [items, fileId]);
   
-  const employeesRef = useMemoFirebase(() => (firestore ? collection(firestore, 'employees') : null), [firestore]);
-  const { data: employees, isLoading: isLoadingEmployees } = useCollection<Employee>(employeesRef);
-  
-  const locationsRef = useMemoFirebase(() => (firestore ? collection(firestore, 'storage_locations') : null), [firestore]);
-  const { data: locations, isLoading: isLoadingLocations } = useCollection<StorageLocation>(locationsRef);
-
   const pdfCardRef = useRef<HTMLDivElement>(null);
 
   const { statusChartData, conditionChartData } = useMemo(() => {
-    if (!items) return { statusChartData: [], conditionChartData: [] };
-    if (items.length === 0) return { statusChartData: [], conditionChartData: [] };
+    if (!fileItems) return { statusChartData: [], conditionChartData: [] };
+    if (fileItems.length === 0) return { statusChartData: [], conditionChartData: [] };
     
     const statusCounts: Record<string, number> = { 'Not Checked': 0, Correct: 0, Less: 0, More: 0 };
-    items.forEach(item => {
+    fileItems.forEach(item => {
         const status = item.storageStatus || 'Not Checked';
         statusCounts[status] = (statusCounts[status] || 0) + 1;
     });
@@ -99,7 +66,7 @@ export default function PdfViewPage() {
     })).filter(d => d.value > 0);
     
     const conditionCounts: Record<string, number> = { 'Not Damaged': 0, Wrapped: 0, Damaged: 0 };
-    items.forEach(item => {
+    fileItems.forEach(item => {
       if (item.modelCondition === 'Damaged') {
         conditionCounts.Damaged++;
       } else if (item.modelCondition === 'Wrapped') {
@@ -116,15 +83,15 @@ export default function PdfViewPage() {
     })).filter(d => d.value > 0);
 
     return { statusChartData, conditionChartData };
-  }, [items]);
+  }, [fileItems]);
 
-  const isLoading = isLoadingFile || isLoadingItems || isLoadingEmployees || isLoadingLocations;
+  const isLoading = !file || !fileItems || !employees || !locations;
 
   const getEmployeeName = (id: string) => employees?.find(e => e.id === id)?.name || '...';
   const getLocationName = (id?: string) => locations?.find(l => l.id === id)?.name || 'N/A';
 
   const handleDownloadPdf = async () => {
-    if (!file || !items || !pdfCardRef.current) return;
+    if (!file || !fileItems || !pdfCardRef.current) return;
     
     const canvas = await html2canvas(pdfCardRef.current, { scale: 2, useCORS: true, backgroundColor: null });
     const imgData = canvas.toDataURL('image/png');
@@ -141,7 +108,7 @@ export default function PdfViewPage() {
     autoTable(pdf, {
       startY: finalImgHeight + 30,
       head: [['Model', 'Qty', 'Storage Status', 'Condition', 'Qty/Cond', 'Location', 'Notes']],
-      body: items.map(item => [
+      body: fileItems.map(item => [
         item.model,
         item.quantity,
         item.storageStatus || '',
@@ -159,8 +126,8 @@ export default function PdfViewPage() {
   };
 
   const handleDownloadExcel = () => {
-    if (!file || !items) return;
-    const dataToExport = items.map(item => ({
+    if (!file || !fileItems) return;
+    const dataToExport = fileItems.map(item => ({
       'Model': item.model,
       'Quantity': item.quantity,
       'Storage Status': item.storageStatus || '',
@@ -204,7 +171,7 @@ export default function PdfViewPage() {
   return (
     <>
      <div style={{ position: 'absolute', left: '-9999px', top: '-9999px', background: 'white', color: 'black' }}>
-          {file && employeeForFile && items && (
+          {file && employeeForFile && fileItems && (
             <div ref={pdfCardRef} style={{ width: '700px' }}>
                 <FilePdfCard
                     file={file}
@@ -241,7 +208,7 @@ export default function PdfViewPage() {
                     <CardDescription className="grid grid-cols-2 md:flex md:items-center gap-x-6 gap-y-2 text-sm pt-2">
                         <span className="flex items-center gap-2"><User className="w-4 h-4"/>{getEmployeeName(file.storekeeperId)}</span>
                         <span className="flex items-center gap-2"><Building className="w-4 h-4"/>{file.source}</span>
-                        <span className="flex items-center gap-2"><CalendarIcon className="w-4 h-4"/>{file.date && typeof file.date.toDate === 'function' ? format(file.date.toDate(), 'PPP') : 'Invalid Date'}</span>
+                        <span className="flex items-center gap-2"><CalendarIcon className="w-4 h-4"/>{file.date ? format(parseISO(file.date), 'PPP') : 'Invalid Date'}</span>
                     </CardDescription>
                 </CardHeader>
               </Card>
@@ -291,7 +258,7 @@ export default function PdfViewPage() {
           </div>
         
           <Card className="lg:col-span-2">
-            <CardHeader><CardTitle>Items ({items?.length || 0})</CardTitle></CardHeader>
+            <CardHeader><CardTitle>Items ({fileItems?.length || 0})</CardTitle></CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
                 <Table>
@@ -307,7 +274,7 @@ export default function PdfViewPage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {items?.map((item) => (
+                        {fileItems?.map((item) => (
                             <TableRow key={item.id}>
                                 <TableCell className="font-medium">{item.model}</TableCell>
                                 <TableCell>{item.quantity}</TableCell>
@@ -323,7 +290,7 @@ export default function PdfViewPage() {
                                 <TableCell>{item.notes || 'N/A'}</TableCell>
                             </TableRow>
                         ))}
-                        {(!items || items.length === 0) && (
+                        {(!fileItems || fileItems.length === 0) && (
                             <TableRow><TableCell colSpan={7} className="text-center h-24">No items found.</TableCell></TableRow>
                         )}
                     </TableBody>

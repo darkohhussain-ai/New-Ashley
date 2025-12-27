@@ -2,7 +2,6 @@
 "use client"
 
 import { useState, useMemo, useEffect, useRef } from "react"
-import { useCollection, useDoc, useFirestore, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking, useUser } from "@/firebase"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -10,9 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
-import { format, startOfMonth, endOfMonth } from "date-fns"
+import { format, parseISO } from "date-fns"
 import { cn } from "@/lib/utils"
-import { collection, doc, Timestamp, writeBatch, query, where } from "firebase/firestore"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ArrowLeft, Plus, User, Calendar as CalendarIcon, Edit, Trash2, Save, X, Upload, Download, Mail, Phone, Cake, Briefcase, Search, Building, DollarSign, Clock, Gift, Banknote } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
@@ -26,53 +24,9 @@ import useLocalStorage from '@/hooks/use-local-storage'
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { useAppContext } from "@/context/app-provider"
+import type { Employee, Expense, Overtime, Bonus, CashWithdrawal } from "@/lib/types"
 
-
-type Employee = {
-  id: string;
-  name: string;
-  jobTitle?: string;
-  employmentStartDate?: Timestamp | Date;
-  dateOfBirth?: Timestamp | Date;
-  email?: string;
-  phone?: string;
-  photoUrl?: string;
-  notes?: string;
-}
-
-type Expense = {
-  id: string;
-  employeeId: string;
-  amount: number;
-  date: Timestamp;
-  notes?: string;
-};
-
-type Overtime = {
-  id: string;
-  employeeId: string;
-  date: Timestamp;
-  hours: number;
-  rate: number;
-  totalAmount: number;
-  notes?: string;
-};
-
-type Bonus = {
-  id: string;
-  employeeId: string;
-  amount: number;
-  date: Timestamp;
-  notes?: string;
-};
-
-type CashWithdrawal = {
-  id: string;
-  employeeId: string;
-  amount: number;
-  date: Timestamp;
-  notes?: string;
-};
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -82,46 +36,27 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
-const safeDate = (dateValue: Timestamp | Date | undefined): Date | null => {
+const safeDate = (dateValue: string | undefined): Date | null => {
   if (!dateValue) return null;
-  if (dateValue instanceof Date) return dateValue;
-  if (typeof (dateValue as Timestamp).toDate === 'function') {
-    return (dateValue as Timestamp).toDate();
-  }
-  const parsed = new Date(dateValue as any);
+  const parsed = parseISO(dateValue);
   return isNaN(parsed.getTime()) ? null : parsed;
 };
 
 function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, onDeselect: () => void }) {
-    const firestore = useFirestore();
     const { toast } = useToast();
-    const { user, isUserLoading } = useUser();
+    const { 
+        employees, setEmployees,
+        expenses,
+        overtime,
+        bonuses,
+        withdrawals,
+    } = useAppContext();
 
-    const employeeRef = useMemoFirebase(() => (firestore && employeeId ? doc(firestore, 'employees', employeeId) : null), [firestore, employeeId]);
-    const { data: employee, isLoading } = useDoc<Employee>(employeeRef);
-
-    const expensesQuery = useMemoFirebase(() => (firestore && employeeId ? query(collection(firestore, 'expenses'), where('employeeId', '==', employeeId)) : null), [firestore, employeeId]);
-    const { data: expenses, isLoading: isLoadingExpenses } = useCollection<Expense>(expensesQuery);
-
-    const overtimeQuery = useMemoFirebase(() => {
-        if (!firestore || !employeeId) return null;
-        const today = new Date();
-        const start = startOfMonth(today);
-        const end = endOfMonth(today);
-        return query(
-            collection(firestore, 'overtime'), 
-            where('employeeId', '==', employeeId),
-            where('date', '>=', start),
-            where('date', '<=', end)
-        );
-    }, [firestore, employeeId]);
-    const { data: overtime, isLoading: isLoadingOvertime } = useCollection<Overtime>(overtimeQuery);
-    
-    const bonusesQuery = useMemoFirebase(() => (firestore && employeeId ? query(collection(firestore, 'bonuses'), where('employeeId', '==', employeeId)) : null), [firestore, employeeId]);
-    const { data: bonuses, isLoading: isLoadingBonuses } = useCollection<Bonus>(bonusesQuery);
-
-    const withdrawalsQuery = useMemoFirebase(() => (firestore && employeeId ? query(collection(firestore, 'cash_withdrawals'), where('employeeId', '==', employeeId)) : null), [firestore, employeeId]);
-    const { data: withdrawals, isLoading: isLoadingWithdrawals } = useCollection<CashWithdrawal>(withdrawalsQuery);
+    const employee = useMemo(() => employees.find(e => e.id === employeeId), [employees, employeeId]);
+    const employeeExpenses = useMemo(() => expenses.filter(e => e.employeeId === employeeId), [expenses, employeeId]);
+    const employeeOvertime = useMemo(() => overtime.filter(e => e.employeeId === employeeId), [overtime, employeeId]);
+    const employeeBonuses = useMemo(() => bonuses.filter(e => e.employeeId === employeeId), [bonuses, employeeId]);
+    const employeeWithdrawals = useMemo(() => withdrawals.filter(e => e.employeeId === employeeId), [withdrawals, employeeId]);
 
 
     const [isEditing, setIsEditing] = useState(false);
@@ -154,36 +89,36 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
     }, [employee]);
 
     const { totalExpenses, sortedExpenses } = useMemo(() => {
-        if (!expenses) return { totalExpenses: 0, sortedExpenses: [] };
-        const total = expenses.reduce((sum, exp) => sum + exp.amount, 0);
-        const sorted = [...expenses].sort((a,b) => b.date.toDate().getTime() - a.date.toDate().getTime());
+        if (!employeeExpenses) return { totalExpenses: 0, sortedExpenses: [] };
+        const total = employeeExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+        const sorted = [...employeeExpenses].sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
         return { totalExpenses: total, sortedExpenses: sorted };
-    }, [expenses]);
+    }, [employeeExpenses]);
 
     const { totalOvertimeAmount, totalOvertimeHours, sortedOvertime } = useMemo(() => {
-        if (!overtime) return { totalOvertimeAmount: 0, totalOvertimeHours: 0, sortedOvertime: [] };
-        const totals = overtime.reduce((acc, ot) => {
+        if (!employeeOvertime) return { totalOvertimeAmount: 0, totalOvertimeHours: 0, sortedOvertime: [] };
+        const totals = employeeOvertime.reduce((acc, ot) => {
             acc.totalAmount += ot.totalAmount;
             acc.totalHours += ot.hours;
             return acc;
         }, { totalAmount: 0, totalHours: 0 });
-        const sorted = [...overtime].sort((a, b) => b.date.toDate().getTime() - a.date.toDate().getTime());
+        const sorted = [...employeeOvertime].sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
         return { totalOvertimeAmount: totals.totalAmount, totalOvertimeHours: totals.totalHours, sortedOvertime: sorted };
-    }, [overtime]);
+    }, [employeeOvertime]);
 
     const { totalBonuses, sortedBonuses } = useMemo(() => {
-        if (!bonuses) return { totalBonuses: 0, sortedBonuses: [] };
-        const total = bonuses.reduce((sum, b) => sum + b.amount, 0);
-        const sorted = [...bonuses].sort((a, b) => b.date.toDate().getTime() - a.date.toDate().getTime());
+        if (!employeeBonuses) return { totalBonuses: 0, sortedBonuses: [] };
+        const total = employeeBonuses.reduce((sum, b) => sum + b.amount, 0);
+        const sorted = [...employeeBonuses].sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
         return { totalBonuses: total, sortedBonuses: sorted };
-    }, [bonuses]);
+    }, [employeeBonuses]);
 
     const { totalWithdrawals, sortedWithdrawals } = useMemo(() => {
-        if (!withdrawals) return { totalWithdrawals: 0, sortedWithdrawals: [] };
-        const total = withdrawals.reduce((sum, w) => sum + w.amount, 0);
-        const sorted = [...withdrawals].sort((a, b) => b.date.toDate().getTime() - a.date.toDate().getTime());
+        if (!employeeWithdrawals) return { totalWithdrawals: 0, sortedWithdrawals: [] };
+        const total = employeeWithdrawals.reduce((sum, w) => sum + w.amount, 0);
+        const sorted = [...employeeWithdrawals].sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
         return { totalWithdrawals: total, sortedWithdrawals: sorted };
-    }, [withdrawals]);
+    }, [employeeWithdrawals]);
 
     const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -198,33 +133,28 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
     };
 
     const handleUpdate = () => {
-        if (!firestore || !employeeId || !name) return;
+        if (!employeeId || !name) return;
         
         const updatedData: Partial<Employee> = {
             name,
             jobTitle,
-            employmentStartDate: employmentStartDate ? Timestamp.fromDate(employmentStartDate) : undefined,
+            employmentStartDate: employmentStartDate ? employmentStartDate.toISOString() : undefined,
+            dateOfBirth: dateOfBirth ? dateOfBirth.toISOString() : undefined,
             email,
             phone,
             photoUrl,
             notes,
         };
 
-        if (dateOfBirth) {
-            updatedData.dateOfBirth = Timestamp.fromDate(dateOfBirth);
-        }
-
-        const docRef = doc(firestore, 'employees', employeeId);
-        updateDocumentNonBlocking(docRef, updatedData);
+        setEmployees(employees.map(emp => emp.id === employeeId ? { ...emp, ...updatedData } : emp));
         
         toast({ title: "Success", description: "Employee details updated." });
         setIsEditing(false);
     };
     
     const handleDelete = () => {
-        if(!firestore || !employeeId) return;
-        const docRef = doc(firestore, 'employees', employeeId);
-        deleteDocumentNonBlocking(docRef);
+        if(!employeeId) return;
+        setEmployees(employees.filter(e => e.id !== employeeId));
         toast({ title: "Employee Deleted", description: `${employee?.name} has been removed.` });
         onDeselect();
     }
@@ -238,9 +168,6 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
         pdf.save(`${employee.name.replace(/ /g, '_')}_card.pdf`);
     };
 
-    if (isLoading || isUserLoading) {
-        return <div className="p-8 w-full"><Skeleton className="h-[400px] w-full" /></div>;
-    }
     if (!employee) {
         return (
             <div className="flex flex-col items-center justify-center h-full text-center p-8">
@@ -370,10 +297,10 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                                 <CardTitle className="flex items-center gap-2"><DollarSign className="w-5 h-5 text-blue-500"/> Expenses</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                {isLoadingExpenses ? <Skeleton className="h-20 w-full" /> : sortedExpenses.length > 0 ? (
+                                {sortedExpenses.length > 0 ? (
                                     <Table>
                                         <TableHeader><TableRow><TableHead>Date</TableHead><TableHead className="text-right">Amount</TableHead></TableRow></TableHeader>
-                                        <TableBody>{sortedExpenses.slice(0, 3).map(e => (<TableRow key={e.id}><TableCell>{format(e.date.toDate(), 'PP')}</TableCell><TableCell className="text-right">{formatCurrency(e.amount)}</TableCell></TableRow>))}</TableBody>
+                                        <TableBody>{sortedExpenses.slice(0, 3).map(e => (<TableRow key={e.id}><TableCell>{format(parseISO(e.date), 'PP')}</TableCell><TableCell className="text-right">{formatCurrency(e.amount)}</TableCell></TableRow>))}</TableBody>
                                     </Table>
                                 ) : <p className="text-sm text-center text-muted-foreground py-4">No expenses.</p>}
                             </CardContent>
@@ -391,10 +318,10 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                                 <CardDescription>This Month: {format(new Date(), 'MMMM yyyy')}</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                {isLoadingOvertime ? <Skeleton className="h-20 w-full" /> : sortedOvertime.length > 0 ? (
+                                {sortedOvertime.length > 0 ? (
                                     <Table>
                                         <TableHeader><TableRow><TableHead>Date</TableHead><TableHead className="text-right">Amount</TableHead></TableRow></TableHeader>
-                                        <TableBody>{sortedOvertime.slice(0, 3).map(o => (<TableRow key={o.id}><TableCell>{format(o.date.toDate(), 'PP')}</TableCell><TableCell className="text-right">{formatCurrency(o.totalAmount)}</TableCell></TableRow>))}</TableBody>
+                                        <TableBody>{sortedOvertime.slice(0, 3).map(o => (<TableRow key={o.id}><TableCell>{format(parseISO(o.date), 'PP')}</TableCell><TableCell className="text-right">{formatCurrency(o.totalAmount)}</TableCell></TableRow>))}</TableBody>
                                     </Table>
                                 ) : <p className="text-sm text-center text-muted-foreground py-4">No overtime this month.</p>}
                             </CardContent>
@@ -411,10 +338,10 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                                 <CardTitle className="flex items-center gap-2"><Gift className="w-5 h-5 text-green-500"/> Bonuses</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                {isLoadingBonuses ? <Skeleton className="h-20 w-full" /> : sortedBonuses.length > 0 ? (
+                                {sortedBonuses.length > 0 ? (
                                     <Table>
                                         <TableHeader><TableRow><TableHead>Date</TableHead><TableHead className="text-right">Amount</TableHead></TableRow></TableHeader>
-                                        <TableBody>{sortedBonuses.slice(0, 3).map(b => (<TableRow key={b.id}><TableCell>{format(b.date.toDate(), 'PP')}</TableCell><TableCell className="text-right">{formatCurrency(b.amount)}</TableCell></TableRow>))}</TableBody>
+                                        <TableBody>{sortedBonuses.slice(0, 3).map(b => (<TableRow key={b.id}><TableCell>{format(parseISO(b.date), 'PP')}</TableCell><TableCell className="text-right">{formatCurrency(b.amount)}</TableCell></TableRow>))}</TableBody>
                                     </Table>
                                 ) : <p className="text-sm text-center text-muted-foreground py-4">No bonuses.</p>}
                             </CardContent>
@@ -426,10 +353,10 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                                 <CardTitle className="flex items-center gap-2"><Banknote className="w-5 h-5 text-rose-500"/> Cash Withdrawals</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                {isLoadingWithdrawals ? <Skeleton className="h-20 w-full" /> : sortedWithdrawals.length > 0 ? (
+                                {sortedWithdrawals.length > 0 ? (
                                     <Table>
                                         <TableHeader><TableRow><TableHead>Date</TableHead><TableHead className="text-right">Amount</TableHead></TableRow></TableHeader>
-                                        <TableBody>{sortedWithdrawals.slice(0, 3).map(w => (<TableRow key={w.id}><TableCell>{format(w.date.toDate(), 'PP')}</TableCell><TableCell className="text-right">{formatCurrency(w.amount)}</TableCell></TableRow>))}</TableBody>
+                                        <TableBody>{sortedWithdrawals.slice(0, 3).map(w => (<TableRow key={w.id}><TableCell>{format(parseISO(w.date), 'PP')}</TableCell><TableCell className="text-right">{formatCurrency(w.amount)}</TableCell></TableRow>))}</TableBody>
                                     </Table>
                                 ) : <p className="text-sm text-center text-muted-foreground py-4">No withdrawals.</p>}
                             </CardContent>
@@ -443,9 +370,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
     )
 }
 
-function AddEmployeeDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void }) {
-    const firestore = useFirestore();
-    const employeesRef = useMemoFirebase(() => (firestore ? collection(firestore, "employees") : null), [firestore]);
+function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean, onOpenChange: (open: boolean) => void, addEmployee: (employee: Omit<Employee, 'id'>) => void }) {
     const { toast } = useToast();
     
     const [name, setName] = useState("");
@@ -466,7 +391,7 @@ function AddEmployeeDialog({ open, onOpenChange }: { open: boolean, onOpenChange
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         
-        if (!name.trim() || !firestore || !employeesRef) {
+        if (!name.trim()) {
             toast({
                 variant: 'destructive',
                 title: 'Name is required',
@@ -475,19 +400,18 @@ function AddEmployeeDialog({ open, onOpenChange }: { open: boolean, onOpenChange
             return;
         }
 
-        const employeeData: Partial<Omit<Employee, 'id'>> = { 
+        const employeeData: Omit<Employee, 'id'> = { 
           name,
-          photoUrl: photoUrl || `https://picsum.photos/seed/${name.replace(/\s/g, '-')}/400`
+          photoUrl: photoUrl || `https://picsum.photos/seed/${name.replace(/\s/g, '-')}/400`,
+          jobTitle: jobTitle || undefined,
+          email: email || undefined,
+          phone: phone || undefined,
+          notes: notes || undefined,
+          employmentStartDate: employmentStartDate?.toISOString(),
+          dateOfBirth: dateOfBirth?.toISOString(),
         };
-
-        if (jobTitle) employeeData.jobTitle = jobTitle;
-        if (email) employeeData.email = email;
-        if (phone) employeeData.phone = phone;
-        if (notes) employeeData.notes = notes;
-        if (employmentStartDate) employeeData.employmentStartDate = Timestamp.fromDate(employmentStartDate);
-        if (dateOfBirth) employeeData.dateOfBirth = Timestamp.fromDate(dateOfBirth);
         
-        addDocumentNonBlocking(employeesRef, employeeData);
+        addEmployee(employeeData);
         toast({ title: "Employee Added", description: `${name} has been added to the list.` });
         resetForm();
     };
@@ -529,151 +453,25 @@ function AddEmployeeDialog({ open, onOpenChange }: { open: boolean, onOpenChange
 }
 
 export default function EmployeesPage() {
-  const firestore = useFirestore();
-  const { toast } = useToast();
-
-  const employeesRef = useMemoFirebase(() => (firestore ? collection(firestore, "employees") : null), [firestore]);
-  const { data: employees, isLoading } = useCollection<Employee>(employeesRef);
-  
+  const { employees, setEmployees } = useAppContext();
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
   const [isAddDialogOpen, setAddDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isCleaning, setIsCleaning] = useState(false);
-  const [cleanupPerformed, setCleanupPerformed] = useLocalStorage('employee-cleanup-performed', false);
 
-  const [dataLoadPerformed, setDataLoadPerformed] = useLocalStorage('employee-data-load-performed-v3', false);
-
-
-  useEffect(() => {
-    if (employees && !dataLoadPerformed && firestore) {
-        const newEmployees = [
-            { name: "Kamaran Omar Rauf", employmentStartDate: new Date("2025-09-15") },
-            { name: "Danar Mohammed Basam", employmentStartDate: new Date("2024-05-20") },
-            { name: "Darko Haider Hussein", employmentStartDate: new Date("2025-05-01") },
-            { name: "Raber Mohammed Mahmoud", employmentStartDate: new Date("2024-04-20") },
-            { name: "Razhan Salih Fatah", employmentStartDate: new Date("2024-07-13") },
-            { name: "Sarwat Qadir Mohammed", employmentStartDate: new Date("2024-10-16") },
-            { name: "Govar Sardar Ahmed", employmentStartDate: new Date("2025-02-01") },
-            { name: "Mohammed Hamid Mohammed", employmentStartDate: new Date("2024-10-03") },
-            { name: "Imad Sabah Nuri", employmentStartDate: new Date("2023-11-15") },
-            { name: "Rebin Sabah Nuri", employmentStartDate: new Date("2024-06-22") },
-            { name: "Rawand Najat Mohammed Hassan", employmentStartDate: new Date("2025-05-10") },
-            { name: "Sahand Mariwan Hama Saeed", employmentStartDate: new Date("2024-01-01") },
-            { name: "Shadoman Yadgar Rahim", employmentStartDate: new Date("2024-09-30") },
-            { name: "Hardy Azad Ahmed", employmentStartDate: new Date("2025-05-13") },
-            { name: "Haval Habib Hama Raza", employmentStartDate: new Date("2025-05-13") },
-            { name: "Tari Mawloud Hama", employmentStartDate: new Date("2025-05-10") },
-            { name: "Karzan Dara Bakr", employmentStartDate: new Date("2025-05-13") },
-            { name: "Hunar Jamal", employmentStartDate: new Date("2024-08-01") },
-            { name: "Sarkawt Mohammed Ali", employmentStartDate: new Date("2024-09-01") },
-            { name: "Salar Othman Hama", employmentStartDate: new Date("2025-05-13") },
-            { name: "Ahmad Abdulla", jobTitle: "Marketing" },
-            { name: "Ahmed Mohammed", jobTitle: "Marketing" },
-            { name: "Aso Omar", jobTitle: "Marketing" },
-            { name: "Aza Fayaq", jobTitle: "Marketing" },
-            { name: "Dana Ali", jobTitle: "Marketing" },
-            { name: "Dlshad Abdulla", jobTitle: "Marketing" },
-            { name: "Dyar Faraidun", jobTitle: "Marketing" },
-            { name: "Harem Najm", jobTitle: "Marketing" },
-            { name: "Karwan Jamal", jobTitle: "Marketing" },
-            { name: "Pshtiwan Fayaq", jobTitle: "Marketing" },
-            { name: "Rekan Abdulla", jobTitle: "Marketing" },
-            { name: "Shvan Jalal", jobTitle: "Marketing" },
-        ];
-
-        const existingNames = new Set(employees.map(e => e.name.toLowerCase()));
-        
-        const employeesToAdd = newEmployees.filter(ne => !existingNames.has(ne.name.toLowerCase()));
-
-        if (employeesToAdd.length > 0) {
-            const batch = writeBatch(firestore);
-            employeesToAdd.forEach(emp => {
-                const newDocRef = doc(collection(firestore, "employees"));
-                const data: Partial<Employee> = {
-                  name: emp.name,
-                  photoUrl: `https://picsum.photos/seed/${emp.name.replace(/\s/g, '-')}/400`
-                }
-                if (emp.employmentStartDate) {
-                  data.employmentStartDate = Timestamp.fromDate(emp.employmentStartDate)
-                }
-                if (emp.jobTitle) {
-                  data.jobTitle = emp.jobTitle;
-                }
-                batch.set(newDocRef, data);
-            });
-
-            batch.commit().then(() => {
-                toast({
-                    title: "Employees Added",
-                    description: `${employeesToAdd.length} new employees have been added to your list.`,
-                });
-                setDataLoadPerformed(true);
-            }).catch(err => {
-                console.error("Error adding new employees:", err);
-                toast({
-                    variant: "destructive",
-                    title: "Data Load Failed",
-                    description: "Could not add new employees from the image.",
-                });
-            });
-        } else {
-             setDataLoadPerformed(true);
-        }
-    }
-  }, [employees, dataLoadPerformed, firestore, toast, setDataLoadPerformed]);
-
+  const addEmployee = (employeeData: Omit<Employee, 'id'>) => {
+    const newEmployee: Employee = {
+      id: crypto.randomUUID(),
+      ...employeeData
+    };
+    setEmployees([...employees, newEmployee]);
+  };
 
   useEffect(() => {
-    if (employees && !cleanupPerformed && !isCleaning) {
-      const cleanupDuplicates = async () => {
-        if (!firestore) return;
-        setIsCleaning(true);
-        const nameMap = new Map<string, Employee[]>();
-        employees.forEach(emp => {
-          const existing = nameMap.get(emp.name) || [];
-          nameMap.set(emp.name, [...existing, emp]);
-        });
-
-        const batch = writeBatch(firestore);
-        let deletedCount = 0;
-
-        nameMap.forEach((duplicates) => {
-          if (duplicates.length > 1) {
-            // Keep the first one, delete the rest
-            const toDelete = duplicates.slice(1);
-            toDelete.forEach(dup => {
-              batch.delete(doc(firestore, "employees", dup.id));
-              deletedCount++;
-            });
-          }
-        });
-
-        if (deletedCount > 0) {
-          try {
-            await batch.commit();
-            toast({
-              title: "Data Cleanup Successful",
-              description: `Removed ${deletedCount} duplicate employee(s).`,
-            });
-            setCleanupPerformed(true); // Set flag to prevent running again
-          } catch (error) {
-            console.error("Error cleaning up duplicates:", error);
-            toast({
-              variant: "destructive",
-              title: "Cleanup Failed",
-              description: "Could not remove duplicate employees.",
-            });
-          }
-        } else {
-            // No duplicates found, just set the flag
-            setCleanupPerformed(true);
-        }
-        setIsCleaning(false);
-      };
-      
-      cleanupDuplicates();
+    if (employees) {
+      setIsLoading(false);
     }
-  }, [employees, firestore, toast, cleanupPerformed, setCleanupPerformed, isCleaning]);
+  }, [employees]);
 
 
   const sortedAndFilteredEmployees = useMemo(() => {
@@ -682,12 +480,10 @@ export default function EmployeesPage() {
     return filtered.sort((a, b) => a.name.localeCompare(b.name));
   }, [employees, searchQuery]);
 
-  // Automatically select the first employee if none is selected and data is available
   useEffect(() => {
     if (!selectedEmployeeId && sortedAndFilteredEmployees.length > 0) {
       setSelectedEmployeeId(sortedAndFilteredEmployees[0].id);
     }
-     // If the selected employee is no longer in the list (due to filtering), deselect it
     if (selectedEmployeeId && !sortedAndFilteredEmployees.some(e => e.id === selectedEmployeeId)) {
         setSelectedEmployeeId(sortedAndFilteredEmployees[0]?.id || null);
     }
@@ -695,7 +491,7 @@ export default function EmployeesPage() {
 
   return (
     <div className="h-screen w-screen flex flex-col bg-background text-foreground">
-        <AddEmployeeDialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen} />
+        <AddEmployeeDialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen} addEmployee={addEmployee} />
         <header className="bg-card border-b p-4">
             <div className="container mx-auto flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -706,7 +502,6 @@ export default function EmployeesPage() {
         </header>
 
         <div className="flex flex-1 overflow-hidden">
-            {/* Left Column: Employee List */}
             <aside className="w-full max-w-xs border-r flex flex-col">
                 <div className="p-4 space-y-4 border-b">
                     <div className="relative">
@@ -716,7 +511,7 @@ export default function EmployeesPage() {
                      <Button onClick={() => setAddDialogOpen(true)} className="w-full"><Plus className="mr-2 h-4 w-4" /> Add Employee</Button>
                 </div>
                 <div className="flex-1 overflow-y-auto">
-                    {isLoading || isCleaning ? (
+                    {isLoading ? (
                          <div className="p-4 space-y-2">{[...Array(8)].map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
                     ) : sortedAndFilteredEmployees.length > 0 ? (
                         <div className="p-2 space-y-1">
@@ -744,12 +539,11 @@ export default function EmployeesPage() {
                 </div>
             </aside>
             
-            {/* Right Column: Employee Details */}
             <main className="flex-1 flex items-center justify-center overflow-y-auto">
                 {selectedEmployeeId ? (
                     <EmployeeDetailView employeeId={selectedEmployeeId} onDeselect={() => setSelectedEmployeeId(null)}/>
                 ) : (
-                    !(isLoading || isCleaning) && (
+                    !isLoading && (
                         <div className="text-center">
                             <Building className="mx-auto h-16 w-16 text-muted-foreground" />
                             <h2 className="mt-4 text-2xl font-bold">Select an Employee</h2>
@@ -762,5 +556,3 @@ export default function EmployeesPage() {
     </div>
   )
 }
-
-    

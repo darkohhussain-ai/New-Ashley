@@ -3,8 +3,6 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking, useUser } from '@/firebase';
-import { collection, query, where, Timestamp, doc } from 'firebase/firestore';
 import { ArrowLeft, Plus, Trash2, Edit, Save, X, Loader2, ListPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -15,23 +13,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-
-type Item = {
-  id: string;
-  model: string;
-  quantity: number;
-  destination: string;
-  notes?: string;
-  transferId?: string | null;
-  createdAt: Timestamp;
-};
+import { useAppContext } from '@/context/app-provider';
+import type { ItemForTransfer } from '@/lib/types';
+import { formatISO } from 'date-fns';
 
 const destinations = ["Erbil", "Baghdad", "Diwan", "Dohuk"];
 
 export default function AddItemsPage() {
-  const firestore = useFirestore();
   const { toast } = useToast();
-  const { user } = useUser();
+  const { transferItems, setTransferItems } = useAppContext();
 
   const [isSaving, setIsSaving] = useState(false);
   
@@ -42,14 +32,17 @@ export default function AddItemsPage() {
   const [notes, setNotes] = useState('');
 
   // Editing state
-  const [editingItem, setEditingItem] = useState<Item | null>(null);
+  const [editingItem, setEditingItem] = useState<ItemForTransfer | null>(null);
+  
+  const isLoadingItems = !transferItems;
 
-  const itemsRef = useMemoFirebase(() => (firestore && user ? query(collection(firestore, 'items'), where('transferId', '==', null)) : null), [firestore, user]);
-  const { data: stagedItems, isLoading: isLoadingItems } = useCollection<Item>(itemsRef);
+  const stagedItems = useMemo(() => {
+      return transferItems.filter(item => !item.transferId);
+  }, [transferItems]);
 
   const sortedItems = useMemo(() => {
     if (!stagedItems) return [];
-    return [...stagedItems].sort((a, b) => b.createdAt.toDate().getTime() - a.createdAt.toDate().getTime());
+    return [...stagedItems].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [stagedItems]);
   
   const resetForm = () => {
@@ -60,64 +53,44 @@ export default function AddItemsPage() {
   }
 
   const handleAddItem = () => {
-    if (!firestore || !model.trim() || !destination) {
+    if (!model.trim() || !destination) {
       toast({ variant: 'destructive', title: 'Missing Information', description: 'Please provide a model and destination.' });
       return;
     }
     
     setIsSaving(true);
-    const newItemData = {
+    const newItemData: ItemForTransfer = {
+        id: crypto.randomUUID(),
         model: model.trim(),
         quantity,
         destination,
         notes,
         transferId: null,
-        createdAt: Timestamp.now()
+        createdAt: formatISO(new Date())
     };
     
-    addDocumentNonBlocking(collection(firestore, 'items'), newItemData)
-    .then(() => {
-        toast({ title: 'Item Added', description: `${model} has been added to the transfer list.` });
-        resetForm();
-    })
-    .catch(err => {
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not add item.'});
-        console.error(err);
-    })
-    .finally(() => setIsSaving(false));
+    setTransferItems([...transferItems, newItemData]);
+    toast({ title: 'Item Added', description: `${model} has been added to the transfer list.` });
+    resetForm();
+    setIsSaving(false);
   };
   
   const handleUpdateItem = () => {
-    if (!firestore || !editingItem || !editingItem.model.trim()) return;
+    if (!editingItem || !editingItem.model.trim()) return;
 
     setIsSaving(true);
-    const itemRef = doc(firestore, 'items', editingItem.id);
-    const { id, createdAt, ...updateData } = { ...editingItem, model: editingItem.model.trim() };
-
-    updateDocumentNonBlocking(itemRef, updateData)
-    .then(() => {
-        toast({ title: 'Item Updated', description: 'Your changes have been saved.' });
-        setEditingItem(null);
-    })
-    .catch(err => {
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not update item.'});
-        console.error(err);
-    })
-    .finally(() => setIsSaving(false));
+    setTransferItems(transferItems.map(item => item.id === editingItem.id ? editingItem : item));
+    toast({ title: 'Item Updated', description: 'Your changes have been saved.' });
+    setEditingItem(null);
+    setIsSaving(false);
   };
 
-  const handleDeleteItem = (item: Item) => {
-    if (!firestore) return;
-    deleteDocumentNonBlocking(doc(firestore, 'items', item.id))
-      .then(() => {
-        toast({ title: 'Item Removed', description: `${item.model} has been removed.` });
-      })
-      .catch(err => {
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not remove item.' });
-      });
+  const handleDeleteItem = (itemToDelete: ItemForTransfer) => {
+    setTransferItems(transferItems.filter(item => item.id !== itemToDelete.id));
+    toast({ title: 'Item Removed', description: `${itemToDelete.model} has been removed.` });
   };
   
-  const startEditing = (item: Item) => {
+  const startEditing = (item: ItemForTransfer) => {
     setEditingItem(JSON.parse(JSON.stringify(item))); // Deep copy
   }
 

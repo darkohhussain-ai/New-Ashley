@@ -3,8 +3,6 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, where, Timestamp } from 'firebase/firestore';
 import { ArrowLeft, Loader2, ListPlus, FileDown, Building } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -12,28 +10,19 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
+import { useAppContext } from '@/context/app-provider';
+import { ItemForTransfer } from '@/lib/types';
 
-type Item = {
-  id: string;
-  model: string;
-  quantity: number;
-  destination: string;
-  notes?: string;
-  transferId?: string | null;
-  createdAt: Timestamp;
-};
 
 const destinations = ["Erbil", "Baghdad", "Diwan", "Dohuk"];
 
 export default function StagedItemsPage() {
-  const firestore = useFirestore();
-  const { user, isUserLoading } = useUser();
+  const { transferItems } = useAppContext();
   const [selectedDestination, setSelectedDestination] = useState<string | null>(null);
 
-  const itemsRef = useMemoFirebase(() => (
-    (firestore && user) ? query(collection(firestore, 'items'), where('transferId', '==', null)) : null
-  ), [firestore, user]);
-  const { data: stagedItems, isLoading: isLoadingItems } = useCollection<Item>(itemsRef);
+  const isLoadingItems = !transferItems;
+  const stagedItems = useMemo(() => transferItems.filter(item => !item.transferId), [transferItems]);
+
 
   const itemsForSelectedDestination = useMemo(() => {
     if (!stagedItems || !selectedDestination) return [];
@@ -61,9 +50,7 @@ export default function StagedItemsPage() {
     doc.save(`staged-items-${selectedDestination}-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
   };
 
-  const isLoading = isLoadingItems || isUserLoading;
-
-  if (isLoading) {
+  if (isLoadingItems) {
       return (
         <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
             <header className="flex items-center gap-4 mb-8">

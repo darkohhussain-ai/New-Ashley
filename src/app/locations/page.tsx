@@ -3,8 +3,6 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { collection, doc, writeBatch, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import { ArrowLeft, Plus, Trash2, Warehouse, MapPin, Loader2, Wand2, Map, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,50 +14,27 @@ import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
+import { useAppContext } from '@/context/app-provider';
+import type { Item, StorageLocation, ExcelFile } from '@/lib/types';
 
-type StorageLocation = {
-  id: string;
-  name: string;
-  warehouseType: 'Ashley' | 'Huana';
-};
-
-type Item = {
-  id: string;
-  fileId: string;
-  model: string;
-  quantity: number;
-  locationId?: string;
-};
-
-type ExcelFile = {
-  id: string;
-  storageName: string;
-  date: Timestamp;
-};
 
 type SearchResult = Item & {
     locationName: string;
     fileName: string;
-    excelFileDate: Timestamp;
+    excelFileDate: string;
     warehouseType: 'Ashley' | 'Huana' | null;
 };
 
 export default function LocationsPage() {
-  const firestore = useFirestore();
+  const { locations, setLocations, items: allItems, excelFiles } = useAppContext();
   const { toast } = useToast();
 
-  const locationsRef = useMemoFirebase(() => (firestore ? collection(firestore, 'storage_locations') : null), [firestore]);
-  const { data: locations, isLoading } = useCollection<StorageLocation>(locationsRef);
-  
-  const excelFilesRef = useMemoFirebase(() => (firestore ? collection(firestore, 'excel_files') : null), [firestore]);
-  const { data: excelFiles, isLoading: isLoadingExcelFiles } = useCollection<ExcelFile>(excelFilesRef);
+  const [isLoading, setIsLoading] = useState(true);
   
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [allItems, setAllItems] = useState<Item[]>([]);
-  const [isLoadingAllItems, setIsLoadingAllItems] = useState(true);
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [open, setOpen] = useState(false);
@@ -86,25 +61,10 @@ export default function LocationsPage() {
   const [filterAshleyArea, setFilterAshleyArea] = useState('All');
 
   useEffect(() => {
-    const fetchAllItems = async () => {
-      if (!firestore || !excelFiles || excelFiles.length === 0) {
-        if (!isLoadingExcelFiles) setIsLoadingAllItems(false);
-        return;
-      }
-      setIsLoadingAllItems(true);
-      let allItemsData: Item[] = [];
-      for (const file of excelFiles) {
-        const itemsCollectionRef = collection(firestore, `excel_files/${file.id}/items`);
-        const itemsSnapshot = await getDocs(itemsCollectionRef);
-        const fileItems = itemsSnapshot.docs.map(doc => ({ ...doc.data() } as Item));
-        allItemsData = [...allItemsData, ...fileItems];
-      }
-      setAllItems(allItemsData);
-      setIsLoadingAllItems(false);
-    };
-
-    fetchAllItems();
-  }, [firestore, excelFiles, isLoadingExcelFiles]);
+    if (locations && allItems && excelFiles) {
+        setIsLoading(false);
+    }
+  },[locations, allItems, excelFiles]);
 
   const getLocationInfo = (locationId?: string) => {
     if (!locationId) return { name: 'N/A', warehouseType: null };
@@ -136,7 +96,7 @@ export default function LocationsPage() {
           ...item,
           locationName: locationInfo.name,
           fileName: fileInfo?.storageName || 'Unknown File',
-          excelFileDate: fileInfo?.date || Timestamp.now(),
+          excelFileDate: fileInfo?.date || new Date().toISOString(),
           warehouseType: locationInfo.warehouseType,
         };
       });
@@ -188,7 +148,7 @@ export default function LocationsPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firestore || !generatedCode || !warehouseType) {
+    if (!generatedCode || !warehouseType) {
       toast({
         variant: "destructive",
         title: "Incomplete Code",
@@ -202,8 +162,8 @@ export default function LocationsPage() {
         return;
     }
 
-    const locationData = { name: generatedCode, warehouseType };
-    addDocumentNonBlocking(locationsRef!, locationData);
+    const locationData: StorageLocation = { id: crypto.randomUUID(), name: generatedCode, warehouseType };
+    setLocations([...locations, locationData]);
     
     toast({
       title: "Location Added",
@@ -213,18 +173,18 @@ export default function LocationsPage() {
   };
   
   const handleGenerateAll = async () => {
-    if (!firestore || !locations) return;
+    if (!locations) return;
 
     setIsGenerating(true);
     const existingNames = new Set(locations.map(l => l.name));
-    let newLocations: { name: string; warehouseType: 'Ashley' | 'Huana' }[] = [];
+    let newLocations: StorageLocation[] = [];
 
     // Huana: 3 warehouses, 2 floors, 8 sections
     for (let w = 1; w <= 3; w++) {
       for (let f = 1; f <= 2; f++) {
         for (let s = 1; s <= 8; s++) {
           const code = `H-${w}-${f}-${s}`;
-          if (!existingNames.has(code)) newLocations.push({ name: code, warehouseType: 'Huana' });
+          if (!existingNames.has(code)) newLocations.push({ id: crypto.randomUUID(), name: code, warehouseType: 'Huana' });
         }
       }
     }
@@ -232,14 +192,14 @@ export default function LocationsPage() {
     // Ashley Floor 4: 16 sections
     for (let s = 1; s <= 16; s++) {
       const code = `A-4-${s}`;
-      if (!existingNames.has(code)) newLocations.push({ name: code, warehouseType: 'Ashley' });
+      if (!existingNames.has(code)) newLocations.push({ id: crypto.randomUUID(), name: code, warehouseType: 'Ashley' });
     }
 
     // Ashley Floor 3, Area 1: 6 units, 4 sections
     for (let u = 1; u <= 6; u++) {
       for (let s = 1; s <= 4; s++) {
         const code = `A-3-1-${u}-${s}`;
-        if (!existingNames.has(code)) newLocations.push({ name: code, warehouseType: 'Ashley' });
+        if (!existingNames.has(code)) newLocations.push({ id: crypto.randomUUID(), name: code, warehouseType: 'Ashley' });
       }
     }
 
@@ -247,7 +207,7 @@ export default function LocationsPage() {
     const officeCodes = ['RF', 'RB', 'MF', 'MB', 'LF', 'LB'];
     for (const oc of officeCodes) {
       const code = `A-3-O-${oc}`;
-      if (!existingNames.has(code)) newLocations.push({ name: code, warehouseType: 'Ashley' });
+      if (!existingNames.has(code)) newLocations.push({ id: crypto.randomUUID(), name: code, warehouseType: 'Ashley' });
     }
 
     if (newLocations.length === 0) {
@@ -256,32 +216,14 @@ export default function LocationsPage() {
       return;
     }
 
-    try {
-      // Use chunks to avoid exceeding batch write limits if there are many locations
-      const chunkSize = 400;
-      for (let i = 0; i < newLocations.length; i += chunkSize) {
-          const chunk = newLocations.slice(i, i + chunkSize);
-          const batch = writeBatch(firestore);
-          chunk.forEach(loc => {
-            const newDocRef = doc(collection(firestore, 'storage_locations'));
-            batch.set(newDocRef, loc);
-          });
-          await batch.commit();
-      }
-      toast({ title: "Success", description: `${newLocations.length} new location(s) have been added.` });
-    } catch (e) {
-      console.error("Failed to generate all locations:", e);
-      toast({ variant: "destructive", title: "Error", description: "Could not add new locations." });
-    } finally {
-      setIsGenerating(false);
-    }
+    setLocations(prev => [...prev, ...newLocations]);
+    toast({ title: "Success", description: `${newLocations.length} new location(s) have been added.` });
+    setIsGenerating(false);
   };
 
 
   const handleDelete = (locationId: string) => {
-    if (!firestore) return;
-    const docRef = doc(firestore, 'storage_locations', locationId);
-    deleteDocumentNonBlocking(docRef);
+    setLocations(locations.filter(loc => loc.id !== locationId));
     toast({
       title: "Location Deleted",
       description: "The location has been removed.",
@@ -289,27 +231,12 @@ export default function LocationsPage() {
   };
 
   const handleDeleteAll = async () => {
-    if (!firestore || !locations || locations.length === 0) return;
-
-    try {
-      const batch = writeBatch(firestore);
-      locations.forEach(loc => {
-        const docRef = doc(firestore, 'storage_locations', loc.id);
-        batch.delete(docRef);
-      });
-      await batch.commit();
-      toast({
+    if (!locations || locations.length === 0) return;
+    setLocations([]);
+    toast({
         title: "All Locations Deleted",
         description: "All storage locations have been removed.",
-      });
-    } catch (error) {
-      console.error("Failed to delete all locations:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Could not delete all locations.",
-      });
-    }
+    });
   };
 
   const sortedLocations = useMemo(() => {
@@ -535,7 +462,7 @@ export default function LocationsPage() {
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                     />
-                    <Button onClick={handleSearch} disabled={isSearching || isLoadingAllItems}>
+                    <Button onClick={handleSearch} disabled={isSearching || isLoading}>
                         {isSearching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
                         Search
                     </Button>
@@ -568,7 +495,7 @@ export default function LocationsPage() {
                                         </TableCell>
                                         <TableCell>{item.quantity}</TableCell>
                                         <TableCell>{item.locationName}</TableCell>
-                                        <TableCell>{format(item.excelFileDate.toDate(), 'PPP')}</TableCell>
+                                        <TableCell>{format(parseISO(item.excelFileDate), 'PPP')}</TableCell>
                                         <TableCell>
                                             {item.locationId && item.warehouseType && (
                                                 <Button variant="outline" size="sm" asChild>

@@ -1,22 +1,10 @@
-
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, Mail, Phone, Cake } from "lucide-react";
-import { format } from 'date-fns';
-import { Timestamp } from "firebase/firestore";
+import { format, parseISO } from 'date-fns';
 import Image from 'next/image';
-
-type Employee = {
-  id: string;
-  name: string;
-  jobTitle?: string;
-  employmentStartDate: Timestamp | Date;
-  dateOfBirth?: Timestamp | Date;
-  email?: string;
-  phone?: string;
-  photoUrl?: string;
-};
+import type { Employee } from "@/lib/types";
 
 type EmployeePdfCardProps = {
   employee: Employee;
@@ -25,13 +13,10 @@ type EmployeePdfCardProps = {
 
 export function EmployeePdfCard({ employee, logoSrc }: EmployeePdfCardProps) {
   
-  const safeDate = (dateValue: Timestamp | Date | undefined): Date | null => {
+  const safeDate = (dateValue: string | undefined): Date | null => {
     if (!dateValue) return null;
-    if (dateValue instanceof Date) return dateValue;
-    if (typeof (dateValue as Timestamp).toDate === 'function') {
-      return (dateValue as Timestamp).toDate();
-    }
-    return null;
+    const parsed = parseISO(dateValue);
+    return isNaN(parsed.getTime()) ? null : parsed;
   }
   
   const safeDateOfBirth = safeDate(employee.dateOfBirth);

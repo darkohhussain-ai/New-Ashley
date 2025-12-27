@@ -1,0 +1,53 @@
+import { Employee, ExcelFile, Item, StorageLocation, Expense, Overtime } from '@/lib/types';
+import { formatISO } from 'date-fns';
+
+const now = formatISO(new Date());
+
+export const initialData: {
+    employees: Employee[],
+    excelFiles: ExcelFile[],
+    items: Item[],
+    locations: StorageLocation[],
+    expenses: Expense[],
+    overtime: Overtime[],
+} = {
+    employees: [
+        { id: "1", name: "Kamaran Omar Rauf", employmentStartDate: formatISO(new Date("2025-09-15")) },
+        { id: "2", name: "Danar Mohammed Basam", employmentStartDate: formatISO(new Date("2024-05-20")) },
+        { id: "3", name: "Darko Haider Hussein", employmentStartDate: formatISO(new Date("2025-05-01")) },
+        { id: "4", name: "Raber Mohammed Mahmoud", employmentStartDate: formatISO(new Date("2024-04-20")) },
+        { id: "5", name: "Razhan Salih Fatah", employmentStartDate: formatISO(new Date("2024-07-13")) },
+        { id: "6", name: "Sarwat Qadir Mohammed", employmentStartDate: formatISO(new Date("2024-10-16")) },
+        { id: "7", name: "Govar Sardar Ahmed", employmentStartDate: formatISO(new Date("2025-02-01")) },
+        { id: "8", name: "Mohammed Hamid Mohammed", employmentStartDate: formatISO(new Date("2024-10-03")) },
+        { id: "9", name: "Imad Sabah Nuri", employmentStartDate: formatISO(new Date("2023-11-15")) },
+        { id: "10", name: "Rebin Sabah Nuri", employmentStartDate: formatISO(new Date("2024-06-22")) },
+        { id: "11", name: "Rawand Najat Mohammed Hassan", employmentStartDate: formatISO(new Date("2025-05-10")) },
+        { id: "12", name: "Sahand Mariwan Hama Saeed", employmentStartDate: formatISO(new Date("2024-01-01")) },
+        { id: "13", name: "Shadoman Yadgar Rahim", employmentStartDate: formatISO(new Date("2024-09-30")) },
+        { id: "14", name: "Hardy Azad Ahmed", employmentStartDate: formatISO(new Date("2025-05-13")) },
+        { id: "15", name: "Haval Habib Hama Raza", employmentStartDate: formatISO(new Date("2025-05-13")) },
+        { id: "16", name: "Tari Mawloud Hama", employmentStartDate: formatISO(new Date("2025-05-10")) },
+        { id: "17", name: "Karzan Dara Bakr", employmentStartDate: formatISO(new Date("2025-05-13")) },
+        { id: "18", name: "Hunar Jamal", employmentStartDate: formatISO(new Date("2024-08-01")) },
+        { id: "19", name: "Sarkawt Mohammed Ali", employmentStartDate: formatISO(new Date("2024-09-01")) },
+        { id: "20", name: "Salar Othman Hama", employmentStartDate: formatISO(new Date("2025-05-13")) },
+        { id: "21", name: "Ahmad Abdulla", jobTitle: "Marketing" },
+        { id: "22", name: "Ahmed Mohammed", jobTitle: "Marketing" },
+        { id: "23", name: "Aso Omar", jobTitle: "Marketing" },
+        { id: "24", name: "Aza Fayaq", jobTitle: "Marketing" },
+        { id: "25", name: "Dana Ali", jobTitle: "Marketing" },
+        { id: "26", name: "Dlshad Abdulla", jobTitle: "Marketing" },
+        { id: "27", name: "Dyar Faraidun", jobTitle: "Marketing" },
+        { id: "28", name: "Harem Najm", jobTitle: "Marketing" },
+        { id: "29", name: "Karwan Jamal", jobTitle: "Marketing" },
+        { id: "30", name: "Pshtiwan Fayaq", jobTitle: "Marketing" },
+        { id: "31", name: "Rekan Abdulla", jobTitle: "Marketing" },
+        { id: "32", name: "Shvan Jalal", jobTitle: "Marketing" },
+    ],
+    excelFiles: [],
+    items: [],
+    locations: [],
+    expenses: [],
+    overtime: [],
+};

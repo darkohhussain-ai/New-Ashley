@@ -2,16 +2,13 @@
 "use client"
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { Users, Box, ArrowRightLeft, Settings as SettingsIcon, CreditCard, Bell, ChevronDown, Calendar, Clock, PackagePlus, Star } from "lucide-react"
+import { Users, Box, Settings as SettingsIcon, CreditCard, Bell, ChevronDown, Calendar, Clock, PackagePlus, Star } from "lucide-react"
 import { DashboardCard } from "@/components/dashboard/dashboard-card"
 import useLocalStorage from "@/hooks/use-local-storage"
-import { useUser } from "@/firebase"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { format } from 'date-fns';
-import Link from "next/link";
 
 export default function Dashboard() {
-  const { user } = useUser();
   const [date, setDate] = useState<Date | null>(null);
 
   // Load settings from localStorage
@@ -83,8 +80,8 @@ export default function Dashboard() {
               <Bell className="w-6 h-6 text-muted-foreground hover:text-primary cursor-pointer" />
               <div className="flex items-center gap-2 cursor-pointer">
                 <Avatar className="w-10 h-10">
-                  <AvatarImage src={user?.photoURL || undefined} />
-                  <AvatarFallback>{user?.email?.[0].toUpperCase() || 'A'}</AvatarFallback>
+                  <AvatarImage src={undefined} />
+                  <AvatarFallback>{'A'}</AvatarFallback>
                 </Avatar>
                 <ChevronDown className="w-4 h-4 text-muted-foreground" />
               </div>

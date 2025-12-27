@@ -3,9 +3,7 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, Trash2, Save, Loader2, Calendar, MapPin } from 'lucide-react';
-import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection, doc, writeBatch, Timestamp } from 'firebase/firestore';
+import { ArrowLeft, Plus, Trash2, Save, Loader2, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -14,29 +12,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
+import { format, formatISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
+import { useAppContext } from '@/context/app-provider';
+import type { NewItem, StorageLocation } from '@/lib/types';
 
-type Employee = { id: string; name: string; };
-type StorageLocation = { id: string; name: string; warehouseType: 'Ashley' | 'Huana'; };
-
-type NewItem = {
-  tempId: number;
-  model: string;
-  quantity: number;
-  notes: string;
-  locationId: string;
-};
 
 const sources = ["Showroom", "Ashley Store", "Huana Store"];
 
 export default function NewFilePage() {
-  const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
-  const { user } = useUser();
+  const { employees, locations, setExcelFiles, setItems: setAllItems } = useAppContext();
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -54,13 +43,6 @@ export default function NewFilePage() {
   const [filterAshleyFloor, setFilterAshleyFloor] = useState('All');
   const [filterAshleyArea, setFilterAshleyArea] = useState('All');
 
-  const employeesRef = useMemoFirebase(() => (firestore && user ? collection(firestore, 'employees') : null), [firestore, user]);
-  const { data: employees, isLoading: isLoadingEmployees } = useCollection<Employee>(employeesRef);
-  
-  const locationsRef = useMemoFirebase(() => (firestore && user ? collection(firestore, 'storage_locations') : null), [firestore, user]);
-  const { data: locations, isLoading: isLoadingLocations } = useCollection<StorageLocation>(locationsRef);
-
-
   const addNewItem = () => {
     setItems(prev => [...prev, { tempId: Date.now(), model: '', quantity: 1, notes: '', locationId: '' }]);
   };
@@ -76,46 +58,35 @@ export default function NewFilePage() {
   };
   
   const handleSave = async () => {
-      if (!firestore || !storageName || !categoryName || !storekeeperId || !source || !date || items.length === 0) {
+      if (!storageName || !categoryName || !storekeeperId || !source || !date || items.length === 0) {
         toast({ variant: 'destructive', title: 'Missing Information', description: 'Please fill out all file details and add at least one item.' });
         return;
       }
       setIsSaving(true);
       
-      const fileId = doc(collection(firestore, 'dummy')).id;
+      const fileId = crypto.randomUUID();
 
-      try {
-        const batch = writeBatch(firestore);
-        
-        const fileData = {
-          id: fileId,
-          storekeeperId,
-          storageName,
-          categoryName,
-          date: Timestamp.fromDate(date!),
-          source,
-          type: 'new'
-        };
-        const fileRef = doc(firestore, 'excel_files', fileId);
-        batch.set(fileRef, fileData);
+      const fileData = {
+        id: fileId,
+        storekeeperId,
+        storageName,
+        categoryName,
+        date: formatISO(date),
+        source,
+        type: 'new' as const
+      };
+      
+      const newItems = items.map(item => {
+          const { tempId, ...itemData } = item;
+          return { ...itemData, id: crypto.randomUUID(), fileId: fileId };
+      });
 
-        items.forEach(item => {
-            const { tempId, ...itemData } = item;
-            const itemId = doc(collection(firestore, 'dummy')).id;
-            const itemRef = doc(firestore, `excel_files/${fileId}/items`, itemId);
-            const finalItemData = { ...itemData, id: itemId, fileId };
-            batch.set(itemRef, finalItemData);
-        });
+      setExcelFiles(prev => [...prev, fileData]);
+      setAllItems(prev => [...prev, ...newItems]);
 
-        await batch.commit();
-
-        toast({ title: 'Success!', description: `File "${storageName}" and its items have been saved.` });
-        router.push('/archive');
-      } catch (error) {
-          console.error("Error saving data:", error);
-          toast({ variant: 'destructive', title: 'Save Error', description: 'Could not save the data to the database.' });
-          setIsSaving(false);
-      }
+      toast({ title: 'Success!', description: `File "${storageName}" and its items have been saved.` });
+      router.push('/archive');
+      setIsSaving(false);
   };
   
   const getWarehouseTypeFromSource = (source?: string) => {
@@ -191,11 +162,9 @@ export default function NewFilePage() {
                         <Select onValueChange={setStorekeeperId} value={storekeeperId}>
                             <SelectTrigger id="storekeeper"><SelectValue placeholder="Select an employee" /></SelectTrigger>
                             <SelectContent>
-                            {isLoadingEmployees ? (
-                                <SelectItem value="loading" disabled>Loading...</SelectItem>
-                            ) : (
+                            {
                                 employees?.map(emp => <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>)
-                            )}
+                            }
                             </SelectContent>
                         </Select>
                     </div>
@@ -310,7 +279,7 @@ export default function NewFilePage() {
                                             <Select 
                                                 value={item.locationId} 
                                                 onValueChange={v => handleItemChange(index, 'locationId', v === 'none' ? '' : v)}
-                                                disabled={!warehouseType || isLoadingLocations}
+                                                disabled={!warehouseType}
                                             >
                                                 <SelectTrigger>
                                                     <SelectValue placeholder={warehouseType ? "Select..." : "Set source"} />
@@ -349,5 +318,3 @@ export default function NewFilePage() {
     </div>
   );
 }
-
-    

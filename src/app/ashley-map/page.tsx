@@ -3,8 +3,6 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
 import { ArrowLeft, Box, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -12,24 +10,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
-import { useSearchParams } from 'next/navigation';
+import { useAppContext } from '@/context/app-provider';
+import type { Item, StorageLocation } from '@/lib/types';
 
-type StorageLocation = {
-  id: string;
-  name: string;
-  warehouseType: 'Ashley' | 'Huana';
-};
-
-type Item = {
-  id: string;
-  model: string;
-  quantity: number;
-  locationId?: string;
-};
-
-type ExcelFile = {
-  id: string;
-};
 
 const SectionButton = ({ id, code, items, onClick, className, isHighlighted }: { id: string, code: string; items: Item[]; onClick: () => void, className?: string, isHighlighted?: boolean }) => {
   const itemCount = items.length;
@@ -56,63 +39,41 @@ const SectionButton = ({ id, code, items, onClick, className, isHighlighted }: {
 };
 
 export default function AshleyMapPage() {
-  const firestore = useFirestore();
-  const searchParams = useSearchParams();
-  const highlightId = window.location.hash.substring(1);
+  const { locations, items: allItems } = useAppContext();
+  const [highlightId, setHighlightId] = useState('');
 
   const [selectedLocation, setSelectedLocation] = useState<StorageLocation | null>(null);
   const [itemsInLocation, setItemsInLocation] = useState<Item[]>([]);
-  const [isLoadingItems, setIsLoadingItems] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [allItems, setAllItems] = useState<Item[]>([]);
-  const [isLoadingAllItems, setIsLoadingAllItems] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const locationsRef = useMemoFirebase(() => (firestore ? query(collection(firestore, 'storage_locations'), where('warehouseType', '==', 'Ashley')) : null), [firestore]);
-  const { data: ashleyLocations, isLoading: isLoadingLocations } = useCollection<StorageLocation>(locationsRef);
-  
-  const excelFilesRef = useMemoFirebase(() => (firestore ? collection(firestore, 'excel_files') : null), [firestore]);
-  const { data: excelFiles, isLoading: isLoadingExcelFiles } = useCollection<ExcelFile>(excelFilesRef);
+  const ashleyLocations = useMemo(() => locations.filter(l => l.warehouseType === 'Ashley'), [locations]);
 
   useEffect(() => {
-    if (highlightId) {
-      const element = document.getElementById(highlightId);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
+    if (locations && allItems) {
+      setIsLoading(false);
     }
-  }, [highlightId, ashleyLocations]);
-
+  }, [locations, allItems]);
+  
   useEffect(() => {
-    const fetchAllItems = async () => {
-      if (!firestore || !excelFiles || excelFiles.length === 0) {
-        if(!isLoadingExcelFiles) setIsLoadingAllItems(false);
-        return;
-      }
-      
-      setIsLoadingAllItems(true);
-      let allItemsData: Item[] = [];
-      
-      for (const file of excelFiles) {
-        const itemsCollectionRef = collection(firestore, `excel_files/${file.id}/items`);
-        const itemsSnapshot = await getDocs(itemsCollectionRef);
-        const fileItems = itemsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Item));
-        allItemsData = [...allItemsData, ...fileItems];
-      }
-      
-      setAllItems(allItemsData);
-      setIsLoadingAllItems(false);
-    };
+    if (typeof window !== 'undefined') {
+        const hash = window.location.hash.substring(1);
+        setHighlightId(hash);
+        if (hash) {
+            const element = document.getElementById(hash);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+    }
+  }, [ashleyLocations]);
 
-    fetchAllItems();
-  }, [firestore, excelFiles, isLoadingExcelFiles]);
 
   const handleSectionClick = (location: StorageLocation) => {
     setSelectedLocation(location);
     setIsDialogOpen(true);
-    setIsLoadingItems(true);
     const foundItems = allItems.filter(item => item.locationId === location.id);
     setItemsInLocation(foundItems);
-    setIsLoadingItems(false);
   };
 
   const { floor4, floor3 } = useMemo(() => {
@@ -157,8 +118,6 @@ export default function AshleyMapPage() {
         return acc;
     }, new Map<string, Item[]>());
   }, [allItems]);
-
-  const isLoading = isLoadingLocations || isLoadingAllItems;
 
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -265,11 +224,7 @@ export default function AshleyMapPage() {
           <CardDescription>A list of all items currently stored in this section.</CardDescription>
         </DialogHeader>
         <div className="max-h-[60vh] overflow-y-auto">
-          {isLoadingItems ? (
-             <div className="flex items-center justify-center p-8">
-                <Loader2 className="animate-spin text-primary h-8 w-8"/>
-             </div>
-          ) : itemsInLocation.length > 0 ? (
+          {itemsInLocation.length > 0 ? (
             <Table>
                 <TableHeader>
                     <TableRow>

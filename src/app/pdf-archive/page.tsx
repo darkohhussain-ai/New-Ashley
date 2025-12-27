@@ -3,37 +3,16 @@
 
 import { useMemo } from 'react';
 import Link from 'next/link';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, Timestamp } from 'firebase/firestore';
 import { ArrowLeft, FileText, Calendar as CalendarIcon, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
-
-type ExcelFile = {
-  id: string;
-  storekeeperId: string;
-  storageName: string;
-  categoryName: string;
-  date: Timestamp;
-  source: string;
-  type: 'new' | 'imported';
-};
-
-type Employee = {
-  id: string;
-  name: string;
-};
+import { useAppContext } from '@/context/app-provider';
 
 export default function PdfArchivePage() {
-  const firestore = useFirestore();
-
-  const filesRef = useMemoFirebase(() => (firestore ? collection(firestore, 'excel_files') : null), [firestore]);
-  const { data: files, isLoading: isLoadingFiles } = useCollection<ExcelFile>(filesRef);
-
-  const employeesRef = useMemoFirebase(() => (firestore ? collection(firestore, 'employees') : null), [firestore]);
-  const { data: employees, isLoading: isLoadingEmployees } = useCollection<Employee>(employeesRef);
+  const { excelFiles: files, employees } = useAppContext();
+  const isLoading = !files || !employees;
 
   const getEmployeeName = (id: string) => {
     return employees?.find(e => e.id === id)?.name || 'Unknown';
@@ -42,13 +21,11 @@ export default function PdfArchivePage() {
   const sortedFiles = useMemo(() => {
     if (!files) return [];
     return [...files].sort((a, b) => {
-      const dateA = a.date && typeof a.date.toDate === 'function' ? a.date.toDate().getTime() : 0;
-      const dateB = b.date && typeof b.date.toDate === 'function' ? b.date.toDate().getTime() : 0;
+      const dateA = a.date ? parseISO(a.date).getTime() : 0;
+      const dateB = b.date ? parseISO(b.date).getTime() : 0;
       return dateB - dateA;
     });
   }, [files]);
-  
-  const isLoading = isLoadingFiles || isLoadingEmployees;
 
   return (
     <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
@@ -91,7 +68,7 @@ export default function PdfArchivePage() {
                   </CardHeader>
                   <CardContent className="p-2 mt-auto text-xs text-muted-foreground w-full">
                      <p className="flex items-center justify-center gap-1.5"><User className="w-3 h-3"/> {getEmployeeName(file.storekeeperId)}</p>
-                     <p className="flex items-center justify-center gap-1.5 mt-1"><CalendarIcon className="w-3 h-3"/> {file.date && typeof file.date.toDate === 'function' ? format(file.date.toDate(), 'PPP') : 'Invalid Date'}</p>
+                     <p className="flex items-center justify-center gap-1.5 mt-1"><CalendarIcon className="w-3 h-3"/> {file.date ? format(parseISO(file.date), 'PPP') : 'Invalid Date'}</p>
                   </CardContent>
                 </Card>
               </Link>

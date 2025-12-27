@@ -1,36 +1,23 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import Link from 'next/link';
-import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection, Timestamp } from 'firebase/firestore';
 import { ArrowLeft, Archive, Calendar as CalendarIcon, Truck, User, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAppContext } from '@/context/app-provider';
 
-type Transfer = {
-  id: string;
-  transferDate: Timestamp;
-  cargoName: string;
-  destinationCity: string;
-  driverName: string;
-  warehouseManagerName: string;
-  itemIds: string[];
-};
 
 export default function TransferArchivePage() {
-  const firestore = useFirestore();
-  const { user, isUserLoading } = useUser();
-
-  const transfersRef = useMemoFirebase(() => (firestore && user ? collection(firestore, 'transfers') : null), [firestore, user]);
-  const { data: transfers, isLoading } = useCollection<Transfer>(transfersRef);
+  const { transfers } = useAppContext();
+  const isLoading = !transfers;
 
   const sortedTransfers = useMemo(() => {
     if (!transfers) return [];
-    return [...transfers].sort((a, b) => b.transferDate.toDate().getTime() - a.transferDate.toDate().getTime());
+    return [...transfers].sort((a, b) => new Date(b.transferDate).getTime() - new Date(a.transferDate).getTime());
   }, [transfers]);
 
   return (
@@ -44,7 +31,7 @@ export default function TransferArchivePage() {
         <h1 className="text-2xl md:text-3xl font-bold">View Transfers</h1>
       </header>
       <main>
-        {isLoading || isUserLoading ? (
+        {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[...Array(6)].map((_, i) => (
                     <Card key={i} className="animate-pulse">
@@ -69,7 +56,7 @@ export default function TransferArchivePage() {
                     <CardDescription>To: {transfer.destinationCity}</CardDescription>
                     </CardHeader>
                     <CardContent className="flex-grow space-y-3 text-sm text-muted-foreground">
-                    <p className="flex items-center gap-2"><CalendarIcon className="w-4 h-4 text-primary" /> {format(transfer.transferDate.toDate(), 'PPP')}</p>
+                    <p className="flex items-center gap-2"><CalendarIcon className="w-4 h-4 text-primary" /> {format(parseISO(transfer.transferDate), 'PPP')}</p>
                     <p className="flex items-center gap-2"><Truck className="w-4 h-4 text-primary" /> Driver: {transfer.driverName}</p>
                     <p className="flex items-center gap-2"><User className="w-4 h-4 text-primary" /> Manager: {transfer.warehouseManagerName}</p>
                     </CardContent>

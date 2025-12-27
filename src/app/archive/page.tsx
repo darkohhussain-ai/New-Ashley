@@ -1,54 +1,37 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection, Timestamp } from 'firebase/firestore';
 import { ArrowLeft, FileText, Calendar as CalendarIcon, User, Building, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAppContext } from '@/context/app-provider';
+import type { Employee, ExcelFile } from '@/lib/types';
 
-type ExcelFile = {
-  id: string;
-  storekeeperId: string;
-  storageName: string;
-  date: Timestamp;
-  source: string;
-  type: 'new' | 'imported';
-};
-
-type Employee = {
-  id: string;
-  name: string;
-};
 
 export default function ArchivePage() {
-  const firestore = useFirestore();
-  const { user, isUserLoading } = useUser();
-
-  const filesRef = useMemoFirebase(() => (firestore && user ? collection(firestore, 'excel_files') : null), [firestore, user]);
-  const { data: files, isLoading: isLoadingFiles } = useCollection<ExcelFile>(filesRef);
-
-  const employeesRef = useMemoFirebase(() => (firestore && user ? collection(firestore, 'employees') : null), [firestore, user]);
-  const { data: employees, isLoading: isLoadingEmployees } = useCollection<Employee>(employeesRef);
+  const { excelFiles, employees } = useAppContext();
+  const [isLoading, setIsLoading] = useState(true);
 
   const getEmployeeName = (id: string) => {
     return employees?.find(e => e.id === id)?.name || 'Unknown';
   };
 
   const sortedFiles = useMemo(() => {
-    if (!files) return [];
-    return [...files].sort((a, b) => {
-      const dateA = a.date && typeof a.date.toDate === 'function' ? a.date.toDate().getTime() : 0;
-      const dateB = b.date && typeof b.date.toDate === 'function' ? b.date.toDate().getTime() : 0;
+    if (!excelFiles) return [];
+    return [...excelFiles].sort((a, b) => {
+      const dateA = a.date ? parseISO(a.date).getTime() : 0;
+      const dateB = b.date ? parseISO(b.date).getTime() : 0;
       return dateB - dateA;
     });
-  }, [files]);
+  }, [excelFiles]);
   
-  const isLoading = isLoadingFiles || isLoadingEmployees || isUserLoading;
+  if (excelFiles && employees && isLoading) {
+    setIsLoading(false);
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -97,7 +80,7 @@ export default function ArchivePage() {
                 <CardContent className="flex-grow space-y-3 text-sm text-muted-foreground">
                   <p className="flex items-center gap-2"><User className="w-4 h-4 text-primary" /> {getEmployeeName(file.storekeeperId)}</p>
                   <p className="flex items-center gap-2"><Building className="w-4 h-4 text-primary" /> {file.source}</p>
-                  <p className="flex items-center gap-2"><CalendarIcon className="w-4 h-4 text-primary" /> {file.date && typeof file.date.toDate === 'function' ? format(file.date.toDate(), 'PPP') : 'Invalid Date'}</p>
+                  <p className="flex items-center gap-2"><CalendarIcon className="w-4 h-4 text-primary" /> {file.date ? format(parseISO(file.date), 'PPP') : 'Invalid Date'}</p>
                 </CardContent>
               </Card>
             ))}

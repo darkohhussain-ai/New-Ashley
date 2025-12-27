@@ -1,11 +1,9 @@
 
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, useUser } from '@/firebase';
-import { collection, query, where, Timestamp } from 'firebase/firestore';
-import { ArrowLeft, Star, TrendingUp, TrendingDown, ChevronsRight, Loader2 } from 'lucide-react';
+import { ArrowLeft, Star, Loader2, ChevronsRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -14,6 +12,9 @@ import { Label } from "@/components/ui/label";
 import { useToast } from '@/hooks/use-toast';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useAppContext } from '@/context/app-provider';
+import type { Employee, EvaluationResponse } from '@/lib/types';
+import { formatISO } from 'date-fns';
 
 const questions = [
     { id: 'q1', text: 'Commitment to work' },
@@ -39,32 +40,24 @@ const answerOptions = [
     { label: 'Needs Improvement', value: 1 },
 ];
 
-type Employee = {
-    id: string;
-    name: string;
-    jobTitle?: string;
-}
-
-type EvaluationResponse = {
-    employeeId: string;
-    totalScore: number;
-    date: Timestamp;
-    responses: { questionId: string; answer: number }[];
-};
-
 export default function MarketingEvaluationPage() {
-    const firestore = useFirestore();
     const { toast } = useToast();
+    const { employees, evaluations, setEvaluations } = useAppContext();
 
     const [selectedEmployee, setSelectedEmployee] = useState<string>('');
     const [responses, setResponses] = useState<Record<string, number>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const marketingEmployeesRef = useMemoFirebase(() => (firestore) ? query(collection(firestore, 'employees'), where('jobTitle', '==', 'Marketing')) : null, [firestore]);
-    const { data: marketingEmployees, isLoading: isLoadingEmployees } = useCollection<Employee>(marketingEmployeesRef);
-
-    const evaluationsRef = useMemoFirebase(() => (firestore) ? collection(firestore, 'marketing-evaluations') : null, [firestore]);
-    const { data: evaluations, isLoading: isLoadingEvaluations } = useCollection<EvaluationResponse>(evaluationsRef);
+    const marketingEmployees = useMemo(() => {
+        return employees.filter(e => e.jobTitle === 'Marketing');
+    }, [employees]);
+    
+    useState(() => {
+        if(employees && evaluations) {
+            setIsLoading(false);
+        }
+    }, [employees, evaluations]);
 
     const handleResponseChange = (questionId: string, value: string) => {
         setResponses(prev => ({ ...prev, [questionId]: parseInt(value) }));
@@ -79,29 +72,23 @@ export default function MarketingEvaluationPage() {
             toast({ variant: 'destructive', title: 'Error', description: 'Please answer all questions.' });
             return;
         }
-        if (!firestore) return;
 
         setIsSubmitting(true);
         const totalScore = Object.values(responses).reduce((sum, value) => sum + value, 0);
         
-        const evaluationData = {
+        const evaluationData: EvaluationResponse = {
+            id: crypto.randomUUID(),
             employeeId: selectedEmployee,
-            date: Timestamp.now(),
+            date: formatISO(new Date()),
             responses: Object.entries(responses).map(([questionId, answer]) => ({ questionId, answer })),
             totalScore,
         };
 
-        try {
-            await addDocumentNonBlocking(collection(firestore, 'marketing-evaluations'), evaluationData);
-            toast({ title: 'Success', description: 'Evaluation submitted successfully.' });
-            setSelectedEmployee('');
-            setResponses({});
-        } catch (error) {
-            console.error("Error submitting evaluation:", error);
-            toast({ variant: 'destructive', title: 'Error', description: 'Failed to submit evaluation.' });
-        } finally {
-            setIsSubmitting(false);
-        }
+        setEvaluations([...evaluations, evaluationData]);
+        toast({ title: 'Success', description: 'Evaluation submitted successfully.' });
+        setSelectedEmployee('');
+        setResponses({});
+        setIsSubmitting(false);
     };
 
     const evaluationSummary = useMemo(() => {
@@ -113,7 +100,7 @@ export default function MarketingEvaluationPage() {
                 return { employeeId: emp.id, name: emp.name, score: 0 };
             }
             // Use the most recent evaluation for simplicity
-            const latestEval = empEvaluations.sort((a, b) => b.date.toMillis() - a.date.toMillis())[0];
+            const latestEval = empEvaluations.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
             return { employeeId: emp.id, name: emp.name, score: latestEval.totalScore };
         });
 
@@ -125,7 +112,7 @@ export default function MarketingEvaluationPage() {
         
         const latestEval = evaluations
             .filter(e => e.employeeId === selectedEmployee)
-            .sort((a,b) => b.date.toMillis() - a.date.toMillis())[0];
+            .sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
 
         if (!latestEval) return [];
 
@@ -134,8 +121,6 @@ export default function MarketingEvaluationPage() {
             return { name: questionText, score: res.answer };
         });
     }, [selectedEmployee, evaluations]);
-
-    const isLoading = isLoadingEmployees || isLoadingEvaluations;
 
     return (
         <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
@@ -159,7 +144,7 @@ export default function MarketingEvaluationPage() {
                                     <SelectValue placeholder="Select an employee to evaluate..." />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {isLoadingEmployees ? (
+                                    {isLoading ? (
                                         <SelectItem value="loading" disabled>Loading employees...</SelectItem>
                                     ) : (
                                         marketingEmployees?.map(emp => (
@@ -269,4 +254,3 @@ export default function MarketingEvaluationPage() {
         </div>
     );
 }
-

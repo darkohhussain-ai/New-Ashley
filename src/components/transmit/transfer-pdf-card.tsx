@@ -1,20 +1,10 @@
-
 'use client';
 
 import { Calendar, Truck } from "lucide-react";
-import { format } from 'date-fns';
-import { Timestamp } from "firebase/firestore";
+import { format, parseISO } from 'date-fns';
 import Image from 'next/image';
+import type { Transfer } from "@/lib/types";
 
-type Transfer = {
-  id: string;
-  transferDate: Timestamp;
-  cargoName: string;
-  destinationCity: string;
-  driverName: string;
-  warehouseManagerName: string;
-  itemIds: string[];
-};
 
 type TransferPdfCardProps = {
   transfer: Transfer;
@@ -24,17 +14,7 @@ type TransferPdfCardProps = {
 
 export function TransferPdfCard({ transfer, logoSrc, totalItems }: TransferPdfCardProps) {
   
-  const safeDate = (dateValue: Timestamp | Date | undefined): Date | null => {
-    if (!dateValue) return null;
-    if (dateValue instanceof Date) return dateValue;
-    if (typeof (dateValue as Timestamp).toDate === 'function') {
-      return (dateValue as Timestamp).toDate();
-    }
-    return null;
-  }
-  
-  const safeTransferDate = safeDate(transfer.transferDate);
-  const formattedDate = safeTransferDate ? format(safeTransferDate, 'MMMM d, yyyy') : 'N/A';
+  const formattedDate = transfer.transferDate ? format(parseISO(transfer.transferDate), 'MMMM d, yyyy') : 'N/A';
 
   return (
     <div className="bg-white text-black w-full p-4 font-sans border-2 border-gray-200 rounded-xl" style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" }}>

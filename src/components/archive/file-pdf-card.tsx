@@ -1,28 +1,13 @@
-
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ChartConfig, ChartContainer } from "@/components/ui/chart";
 import { User, Calendar, Building } from "lucide-react";
-import { format } from 'date-fns';
-import { Timestamp } from "firebase/firestore";
+import { format, parseISO } from 'date-fns';
 import Image from 'next/image';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+import type { Employee, ExcelFile } from "@/lib/types";
 
-type ExcelFile = {
-  id: string;
-  storekeeperId: string;
-  storageName: string;
-  categoryName: string;
-  date: Timestamp;
-  source: string;
-  type: 'new' | 'imported';
-};
-
-type Employee = {
-    id: string;
-    name: string;
-};
 
 type ChartData = { name: string, value: number, fill: string }[];
 
@@ -87,13 +72,10 @@ const ChartWithSummary = ({ title, data, config }: { title: string, data: ChartD
 
 export function FilePdfCard({ file, employee, logoSrc, statusData, conditionData }: FilePdfCardProps) {
   
-  const safeDate = (dateValue: Timestamp | Date | undefined): Date | null => {
+  const safeDate = (dateValue: string | undefined): Date | null => {
     if (!dateValue) return null;
-    if (dateValue instanceof Date) return dateValue;
-    if (typeof (dateValue as Timestamp).toDate === 'function') {
-      return (dateValue as Timestamp).toDate();
-    }
-    return null;
+    const parsed = parseISO(dateValue);
+    return isNaN(parsed.getTime()) ? null : parsed;
   }
   
   const safeFileDate = safeDate(file.date);

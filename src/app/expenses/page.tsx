@@ -2,8 +2,6 @@
 
 import { useState, useMemo, useRef } from 'react';
 import Link from 'next/link';
-import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking, useUser } from '@/firebase';
-import { collection, Timestamp, doc } from 'firebase/firestore';
 import { ArrowLeft, Plus, Trash2, Calendar as CalendarIcon, DollarSign, User, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,7 +12,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -25,19 +23,9 @@ import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
 import { ReportPdfHeader } from '@/components/reports/report-pdf-header';
 import useLocalStorage from '@/hooks/use-local-storage';
+import { useAppContext } from '@/context/app-provider';
+import type { Employee, Expense } from '@/lib/types';
 
-type Employee = {
-  id: string;
-  name: string;
-};
-
-type Expense = {
-  id: string;
-  employeeId: string;
-  amount: number;
-  date: Timestamp;
-  notes?: string;
-};
 
 // Helper function to format currency
 const formatCurrency = (amount: number) => {
@@ -47,34 +35,24 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
-// Helper to safely convert Firestore Timestamp or JS Date to a JS Date
-const safeDate = (dateValue: Timestamp | Date | undefined): Date | null => {
+// Helper to safely convert string to a JS Date
+const safeDate = (dateValue: string | undefined): Date | null => {
   if (!dateValue) return null;
-  if (dateValue instanceof Date) return dateValue;
-  if (typeof (dateValue as Timestamp).toDate === 'function') {
-    return (dateValue as Timestamp).toDate();
-  }
-  // Try to parse if it's a string or number, though this is less ideal
-  const parsed = new Date(dateValue as any);
+  const parsed = parseISO(dateValue);
   return isNaN(parsed.getTime()) ? null : parsed;
 };
 
 
 export default function ExpensesPage() {
-  const firestore = useFirestore();
   const { toast } = useToast();
-  const { user, isUserLoading } = useUser();
+  const { employees, expenses, setExpenses } = useAppContext();
+  const [isLoading, setIsLoading] = useState(true);
+
   const chartRef = useRef<HTMLDivElement>(null);
   const pdfHeaderRef = useRef<HTMLDivElement>(null);
   const defaultLogo = "https://i.ibb.co/68RvM01/ashley-logo.png";
   const [logoSrc] = useLocalStorage('app-logo', defaultLogo);
 
-  // Data fetching
-  const employeesRef = useMemoFirebase(() => (firestore && user ? collection(firestore, 'employees') : null), [firestore, user]);
-  const expensesRef = useMemoFirebase(() => (firestore && user ? collection(firestore, 'expenses') : null), [firestore, user]);
-
-  const { data: employees, isLoading: isLoadingEmployees } = useCollection<Employee>(employeesRef);
-  const { data: expenses, isLoading: isLoadingExpenses } = useCollection<Expense>(expensesRef);
 
   // Form state
   const [open, setOpen] = useState(false);
@@ -88,6 +66,10 @@ export default function ExpensesPage() {
     return [...employees].sort((a, b) => a.name.localeCompare(b.name));
   }, [employees]);
 
+  if(employees && expenses && isLoading) {
+      setIsLoading(false);
+  }
+
 
   const resetForm = () => {
     setSelectedEmployee('');
@@ -99,11 +81,7 @@ export default function ExpensesPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) {
-        toast({ variant: 'destructive', title: 'Authentication Error', description: 'You must be logged in to perform this action.' });
-        return;
-    }
-    if (!firestore || !selectedEmployee || !amount || !date) {
+    if (!selectedEmployee || !amount || !date) {
         toast({
             variant: "destructive",
             title: "Missing Fields",
@@ -112,14 +90,15 @@ export default function ExpensesPage() {
         return;
     }
 
-    const expenseData = {
+    const expenseData: Expense = {
+      id: crypto.randomUUID(),
       employeeId: selectedEmployee,
       amount: parseFloat(amount),
-      date: Timestamp.fromDate(date),
+      date: date.toISOString(),
       notes,
     };
     
-    addDocumentNonBlocking(expensesRef!, expenseData);
+    setExpenses([...expenses, expenseData]);
     
     toast({
         title: "Expense Added",
@@ -129,9 +108,7 @@ export default function ExpensesPage() {
   };
   
   const handleDelete = (expenseId: string) => {
-      if(!firestore) return;
-      const docRef = doc(firestore, 'expenses', expenseId);
-      deleteDocumentNonBlocking(docRef);
+      setExpenses(expenses.filter(exp => exp.id !== expenseId));
       toast({
           title: "Expense Deleted",
           description: "The expense has been removed."
@@ -157,7 +134,6 @@ export default function ExpensesPage() {
       }
     }
     
-    // Sort expenses by date for each employee
     grouped.forEach(entry => {
         entry.expenses.sort((a, b) => {
             const dateA = safeDate(a.date)?.getTime() || 0;
@@ -166,7 +142,6 @@ export default function ExpensesPage() {
         });
     });
     
-    // Sort employees by name for the list view
     const sortedGrouped = new Map([...grouped.entries()].sort((a, b) => a[1].employee.name.localeCompare(b[1].employee.name)));
 
     const chartData = Array.from(sortedGrouped.values()).map(data => ({
@@ -229,8 +204,6 @@ export default function ExpensesPage() {
     doc.save(`employee-expenses-report-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
   }
 
-  const isLoading = isLoadingEmployees || isLoadingExpenses || isUserLoading;
-
   return (
     <>
      <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
@@ -281,7 +254,7 @@ export default function ExpensesPage() {
                   <SelectValue placeholder="Select an employee" />
                 </SelectTrigger>
                 <SelectContent>
-                  {isLoadingEmployees ? (
+                  {isLoading ? (
                     <SelectItem value="loading" disabled>Loading...</SelectItem>
                   ) : (
                     sortedEmployees?.map(emp => (

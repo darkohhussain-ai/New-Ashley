@@ -1,8 +1,9 @@
+// Your web app's Firebase configuration
 export const firebaseConfig = {
-  "projectId": "ashley-drp-manager-2-344-86215",
-  "appId": "1:904752146842:web:eaa26db2b4fc93adbd3223",
-  "apiKey": "AIzaSyBPMA63W6P0QAdwIs6L6QpKIIyNR2QJNpc",
-  "authDomain": "ashley-drp-manager-2-344-86215.firebaseapp.com",
-  "measurementId": "",
-  "messagingSenderId": "904752146842"
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_AUTH_DOMAIN",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_STORAGE_BUCKET",
+  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };

@@ -3,8 +3,6 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { useFirestore, addDocumentNonBlocking, useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection, Timestamp } from 'firebase/firestore';
 import { ArrowLeft, Plus, Save, Trash2, Calendar as CalendarIcon, Loader2, List, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -13,24 +11,16 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
+import { format, formatISO, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { useAppContext } from '@/context/app-provider';
+import type { SoldItemReceipt } from '@/lib/types';
 
-
-type SoldItemReceipt = {
-    id: string;
-    receiptNumber: string;
-    receiptDate?: Timestamp;
-    customerName?: string;
-    itemCategories: string[];
-}
 
 export default function SoldItemsCheckPage() {
-    const firestore = useFirestore();
     const { toast } = useToast();
-    const { user, isUserLoading } = useUser();
+    const { receipts: savedReceipts, setReceipts } = useAppContext();
 
     const [receiptNumberDigits, setReceiptNumberDigits] = useState('');
     const [receiptDate, setReceiptDate] = useState<Date | undefined>();
@@ -39,8 +29,7 @@ export default function SoldItemsCheckPage() {
     const [currentCategory, setCurrentCategory] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
-    const receiptsRef = useMemoFirebase(() => (firestore && user) ? collection(firestore, 'sold_item_receipts') : null, [firestore, user]);
-    const { data: savedReceipts, isLoading: isLoadingReceipts } = useCollection<SoldItemReceipt>(receiptsRef);
+    const isLoading = !savedReceipts;
 
     const fullReceiptNumber = `115-0${receiptNumberDigits}`;
 
@@ -64,10 +53,6 @@ export default function SoldItemsCheckPage() {
     };
 
     const handleSaveReceipt = async () => {
-        if (!user) {
-            toast({ variant: 'destructive', title: 'Authentication Error', description: 'You must be signed in to save a receipt.' });
-            return;
-        }
         if (receiptNumberDigits.length !== 4) {
             toast({ variant: 'destructive', title: 'Invalid Receipt Number', description: 'Please enter exactly 4 digits for the receipt number.' });
             return;
@@ -76,39 +61,31 @@ export default function SoldItemsCheckPage() {
             toast({ variant: 'destructive', title: 'No Categories', description: 'Please add at least one item category.' });
             return;
         }
-        if (!firestore) return;
 
         setIsSaving(true);
-        const receiptData = {
+        const receiptData: SoldItemReceipt = {
+            id: crypto.randomUUID(),
             receiptNumber: fullReceiptNumber,
-            receiptDate: receiptDate ? Timestamp.fromDate(receiptDate) : undefined,
+            receiptDate: receiptDate ? formatISO(receiptDate) : undefined,
             customerName: customerName || undefined,
             itemCategories,
         };
 
-        try {
-            await addDocumentNonBlocking(collection(firestore, 'sold_item_receipts'), receiptData);
-            toast({ title: 'Receipt Saved!', description: `Receipt ${fullReceiptNumber} has been recorded.` });
-            resetForm();
-        } catch (error) {
-            console.error("Error saving receipt:", error);
-            toast({ variant: 'destructive', title: 'Save Error', description: 'Could not save the receipt.' });
-        } finally {
-            setIsSaving(false);
-        }
+        setReceipts([...savedReceipts, receiptData]);
+        toast({ title: 'Receipt Saved!', description: `Receipt ${fullReceiptNumber} has been recorded.` });
+        resetForm();
+        setIsSaving(false);
     };
     
     const sortedReceipts = useMemo(() => {
         if (!savedReceipts) return [];
         return [...savedReceipts].sort((a,b) => {
-            const dateA = a.receiptDate?.toDate().getTime() || 0;
-            const dateB = b.receiptDate?.toDate().getTime() || 0;
+            const dateA = a.receiptDate ? parseISO(a.receiptDate).getTime() : 0;
+            const dateB = b.receiptDate ? parseISO(b.receiptDate).getTime() : 0;
             if(dateB !== dateA) return dateB - dateA;
             return b.receiptNumber.localeCompare(a.receiptNumber);
         })
     }, [savedReceipts])
-
-    const isLoading = isUserLoading || isLoadingReceipts;
 
     return (
         <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
@@ -183,7 +160,7 @@ export default function SoldItemsCheckPage() {
                                     ))}
                                 </div>
                             </div>
-                            <Button onClick={handleSaveReceipt} disabled={isSaving || isUserLoading} className="w-full">
+                            <Button onClick={handleSaveReceipt} disabled={isSaving || isLoading} className="w-full">
                                 {isSaving ? <Loader2 className="animate-spin mr-2" /> : <Save className="mr-2" />}
                                 Save Receipt
                             </Button>
@@ -209,7 +186,7 @@ export default function SoldItemsCheckPage() {
                                                         <p className="font-bold font-mono text-primary">{receipt.receiptNumber}</p>
                                                         {receipt.customerName && <p className="text-sm text-muted-foreground">{receipt.customerName}</p>}
                                                     </div>
-                                                    {receipt.receiptDate && <p className="text-xs text-muted-foreground">{format(receipt.receiptDate.toDate(), 'PPP')}</p>}
+                                                    {receipt.receiptDate && <p className="text-xs text-muted-foreground">{format(parseISO(receipt.receiptDate), 'PPP')}</p>}
                                                 </div>
                                                 <div className="flex flex-wrap gap-2 pt-3">
                                                     {receipt.itemCategories.map(cat => <Badge key={cat}>{cat}</Badge>)}

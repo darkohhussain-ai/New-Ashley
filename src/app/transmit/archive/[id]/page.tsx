@@ -1,16 +1,13 @@
 
 'use client';
 
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { useFirestore, useCollection, useDoc, useMemoFirebase, useUser } from '@/firebase';
-import { collection, doc, query, where, Timestamp } from 'firebase/firestore';
-import { ArrowLeft, Calendar, Truck, FileDown, User, Warehouse, Loader2 } from 'lucide-react';
+import { ArrowLeft, Calendar, Truck, FileDown, User, Warehouse } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { format, parseISO } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TransferPdfCard } from '@/components/transmit/transfer-pdf-card';
 import useLocalStorage from '@/hooks/use-local-storage';
@@ -18,48 +15,22 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAppContext } from '@/context/app-provider';
+import type { Transfer, ItemForTransfer } from '@/lib/types';
 
-type Item = {
-  id: string;
-  model: string;
-  quantity: number;
-  destination: string;
-  notes?: string;
-  transferId?: string | null;
-  createdAt: Timestamp;
-};
-
-type Transfer = {
-  id: string;
-  transferDate: Timestamp;
-  cargoName: string;
-  destinationCity: string;
-  driverName: string;
-  warehouseManagerName: string;
-  itemIds: string[];
-};
 
 export default function ViewTransferPage() {
   const { id: transferId } = useParams();
-  const firestore = useFirestore();
-  const { user, isUserLoading } = useUser();
+  const { transfers, transferItems } = useAppContext();
 
-  const [isSaving, setIsSaving] = useState(false);
-  
   const defaultLogo = "https://i.ibb.co/68RvM01/ashley-logo.png";
   const [logoSrc] = useLocalStorage('app-logo', defaultLogo);
   const pdfCardRef = useRef<HTMLDivElement>(null);
   
-  const transferRef = useMemoFirebase(() => (firestore && user && transferId ? doc(firestore, 'transfers', transferId as string) : null), [firestore, user, transferId]);
-  const { data: transfer, isLoading: isLoadingTransfer } = useDoc<Transfer>(transferRef);
+  const transfer = useMemo(() => transfers.find(t => t.id === transferId), [transfers, transferId]);
+  const items = useMemo(() => transferItems.filter(i => i.transferId === transferId), [transferItems, transferId]);
 
-  const itemsQuery = useMemoFirebase(() => {
-    if (!firestore || !user || !transferId) return null;
-    return query(collection(firestore, 'items'), where('transferId', '==', transferId));
-  }, [firestore, user, transferId]);
-  const { data: items, isLoading: isLoadingItems } = useCollection<Item>(itemsQuery);
-
-  const isLoading = isLoadingTransfer || isLoadingItems || isUserLoading;
+  const isLoading = !transfer || !items;
 
   const handleDownloadPdf = async () => {
     if (!pdfCardRef.current || !transfer || !items) return;
@@ -132,7 +103,7 @@ export default function ViewTransferPage() {
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
                     <p className="flex gap-2 items-center"><Truck className="w-4 h-4 text-primary"/> <strong>Destination:</strong> {transfer.destinationCity}</p>
-                    <p className="flex gap-2 items-center"><Calendar className="w-4 h-4 text-primary"/> <strong>Date:</strong> {format(transfer.transferDate.toDate(), 'PPP')}</p>
+                    <p className="flex gap-2 items-center"><Calendar className="w-4 h-4 text-primary"/> <strong>Date:</strong> {format(parseISO(transfer.transferDate), 'PPP')}</p>
                     <p className="flex gap-2 items-center"><User className="w-4 h-4 text-primary"/> <strong>Driver:</strong> {transfer.driverName}</p>
                     <p className="flex gap-2 items-center"><Warehouse className="w-4 h-4 text-primary"/> <strong>Manager:</strong> {transfer.warehouseManagerName}</p>
                 </CardContent>

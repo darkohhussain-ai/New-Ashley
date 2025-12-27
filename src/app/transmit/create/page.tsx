@@ -3,8 +3,6 @@
 
 import { useState, useMemo, useRef } from 'react';
 import Link from 'next/link';
-import { useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking, useUser } from '@/firebase';
-import { collection, doc, writeBatch, Timestamp, query, where } from 'firebase/firestore';
 import { ArrowLeft, Calendar, Truck, FileDown, User, Warehouse, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -13,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
+import { format, formatISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -24,34 +22,15 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useAppContext } from '@/context/app-provider';
+import type { Transfer, ItemForTransfer } from '@/lib/types';
 
-
-type Item = {
-  id: string;
-  model: string;
-  quantity: number;
-  destination: string;
-  notes?: string;
-  transferId?: string | null;
-  createdAt: Timestamp;
-};
-
-type Transfer = {
-  id: string;
-  transferDate: Timestamp;
-  cargoName: string;
-  destinationCity: string;
-  driverName: string;
-  warehouseManagerName: string;
-  itemIds: string[];
-};
 
 const destinations = ["Erbil", "Baghdad", "Diwan", "Dohuk"];
 
 export default function CreateTransferPage() {
-  const firestore = useFirestore();
   const { toast } = useToast();
-  const { user } = useUser();
+  const { transferItems, setTransferItems, transfers, setTransfers } = useAppContext();
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -63,15 +42,15 @@ export default function CreateTransferPage() {
   const [selectedItems, setSelectedItems] = useState<Record<string, boolean>>({});
   
   const [lastTransfer, setLastTransfer] = useState<Transfer | null>(null);
-  const [lastTransferItems, setLastTransferItems] = useState<Item[]>([]);
+  const [lastTransferItems, setLastTransferItems] = useState<ItemForTransfer[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   
   const defaultLogo = "https://i.ibb.co/68RvM01/ashley-logo.png";
   const [logoSrc] = useLocalStorage('app-logo', defaultLogo);
   const pdfCardRef = useRef<HTMLDivElement>(null);
   
-  const itemsRef = useMemoFirebase(() => (firestore && user ? query(collection(firestore, 'items'), where('transferId', '==', null)) : null), [firestore, user]);
-  const { data: stagedItems, isLoading: isLoadingItems, setData: setStagedItems } = useCollection<Item>(itemsRef);
+  const stagedItems = useMemo(() => transferItems.filter(item => !item.transferId), [transferItems]);
+  const isLoadingItems = !transferItems;
 
   const filteredItems = useMemo(() => {
     if (!stagedItems) return [];
@@ -94,19 +73,19 @@ export default function CreateTransferPage() {
   const handleCreateTransfer = async () => {
     const selectedItemIds = Object.keys(selectedItems).filter(id => selectedItems[id]);
 
-    if (!firestore || !destinationCity || !driverName || !warehouseManagerName || !transferDate || selectedItemIds.length === 0) {
+    if (!destinationCity || !driverName || !warehouseManagerName || !transferDate || selectedItemIds.length === 0) {
       toast({ variant: 'destructive', title: 'Missing Information', description: 'Please fill out all transfer details and select at least one item.' });
       return;
     }
     setIsSaving(true);
     
     try {
-        const transferId = doc(collection(firestore, 'dummy')).id;
+        const transferId = crypto.randomUUID();
         const cargoName = `Transfer to ${destinationCity} - ${format(transferDate, 'yyyy-MM-dd')}`;
         
         const transferData: Transfer = {
             id: transferId,
-            transferDate: Timestamp.fromDate(transferDate),
+            transferDate: formatISO(transferDate),
             cargoName,
             destinationCity,
             driverName,
@@ -116,16 +95,8 @@ export default function CreateTransferPage() {
         
         const itemsForThisTransfer = stagedItems?.filter(item => selectedItemIds.includes(item.id)) || [];
 
-        const batch = writeBatch(firestore);
-        const transferRef = doc(firestore, 'transfers', transferId);
-        batch.set(transferRef, transferData);
-
-        selectedItemIds.forEach(itemId => {
-            const itemRef = doc(firestore, `items`, itemId);
-            batch.update(itemRef, { transferId: transferId });
-        });
-
-        await batch.commit();
+        setTransfers([...transfers, transferData]);
+        setTransferItems(transferItems.map(item => selectedItemIds.includes(item.id) ? { ...item, transferId } : item));
         
         setLastTransfer(transferData);
         setLastTransferItems(itemsForThisTransfer);
@@ -317,7 +288,7 @@ export default function CreateTransferPage() {
                    <h3 className="text-lg font-semibold mb-2">Transfer Summary</h3>
                    <div className="grid grid-cols-2 gap-4 text-sm mb-4">
                         <p className="flex gap-2"><Truck className="w-4 h-4 text-primary"/> <strong>Destination:</strong> {lastTransfer.destinationCity}</p>
-                        <p className="flex gap-2"><Calendar className="w-4 h-4 text-primary"/> <strong>Date:</strong> {format(lastTransfer.transferDate.toDate(), 'PPP')}</p>
+                        <p className="flex gap-2"><Calendar className="w-4 h-4 text-primary"/> <strong>Date:</strong> {format(parseISO(lastTransfer.transferDate), 'PPP')}</p>
                         <p className="flex gap-2"><User className="w-4 h-4 text-primary"/> <strong>Driver:</strong> {lastTransfer.driverName}</p>
                         <p className="flex gap-2"><Warehouse className="w-4 h-4 text-primary"/> <strong>Manager:</strong> {lastTransfer.warehouseManagerName}</p>
                    </div>
