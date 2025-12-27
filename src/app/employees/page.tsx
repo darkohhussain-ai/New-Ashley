@@ -269,6 +269,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
 
 function AddEmployeeDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void }) {
     const firestore = useFirestore();
+    const { user } = useUser();
     const employeesRef = useMemoFirebase(() => firestore ? collection(firestore, "employees") : null, [firestore]);
     const { toast } = useToast();
     
@@ -289,6 +290,15 @@ function AddEmployeeDialog({ open, onOpenChange }: { open: boolean, onOpenChange
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        if (!user) {
+            toast({
+                variant: 'destructive',
+                title: 'Not Authenticated',
+                description: 'You must be logged in to add an employee.',
+            });
+            return;
+        }
+
         if (!name.trim() || !firestore || !employeesRef) {
             toast({
                 variant: 'destructive',
@@ -298,7 +308,7 @@ function AddEmployeeDialog({ open, onOpenChange }: { open: boolean, onOpenChange
             return;
         }
 
-        const employeeData: Omit<Employee, 'id'> = { name };
+        const employeeData: Partial<Omit<Employee, 'id'>> = { name };
 
         if (jobTitle) employeeData.jobTitle = jobTitle;
         if (email) employeeData.email = email;
