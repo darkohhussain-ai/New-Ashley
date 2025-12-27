@@ -17,7 +17,6 @@ import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import placeHolderImages from '@/lib/placeholder-images.json'
 import { Slider } from '@/components/ui/slider'
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { Inter, Roboto, Open_Sans, Lato } from 'next/font/google';
 
@@ -156,18 +155,6 @@ export default function SettingsPage() {
   const [iconSize, setIconSize] = useState(savedIconSize);
 
   const importInputRef = useRef<HTMLInputElement>(null)
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  const onWheel = (e: React.WheelEvent<HTMLDivElement>) => {
-    if (scrollRef.current) {
-      if (e.deltaY === 0) return;
-      e.preventDefault();
-      scrollRef.current.scrollTo({
-        left: scrollRef.current.scrollLeft + e.deltaY * 2,
-        behavior: 'smooth'
-      });
-    }
-  };
 
   const applyColors = (colors: ThemeColors) => {
     const root = document.documentElement;
@@ -431,9 +418,8 @@ export default function SettingsPage() {
         </div>
       </header>
       <main className="p-4 md:p-6 container mx-auto">
-        <ScrollArea className="w-full whitespace-nowrap" onWheel={onWheel}>
-          <div className="flex w-max space-x-8 pb-4" ref={scrollRef}>
-              <Card className='w-[350px]'>
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-lg"><Palette /> Appearance</CardTitle>
                     <CardDescription>Customize the look and feel.</CardDescription>
@@ -469,7 +455,7 @@ export default function SettingsPage() {
                     </AlertDialog>
                 </CardContent>
               </Card>
-              <Card className='w-[350px]'>
+              <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg"><ImageIcon /> Branding</CardTitle>
                   <CardDescription>Manage your application's logo.</CardDescription>
@@ -495,7 +481,7 @@ export default function SettingsPage() {
                   </div>
                 </CardContent>
               </Card>
-               <Card className='w-[350px]'>
+               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg"><LayoutDashboard /> Dashboard</CardTitle>
                   <CardDescription>Customize dashboard card appearance.</CardDescription>
@@ -525,7 +511,7 @@ export default function SettingsPage() {
                   </div>
                 </CardContent>
               </Card>
-               <Card className='w-[350px]'>
+               <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-lg"><ShieldCheck /> Data Management</CardTitle>
                     <CardDescription>Backup or restore all application data.</CardDescription>
@@ -540,7 +526,7 @@ export default function SettingsPage() {
                     <input type="file" ref={importInputRef} className="hidden" accept=".json" onChange={handleImport} />
                   </CardContent>
                 </Card>
-             <Card className='w-[450px]'>
+             <Card className="lg:col-span-2">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><Palette/> Color Palette</CardTitle>
                     <CardDescription>Adjust colors for light and dark themes. Changes are previewed live.</CardDescription>
@@ -568,7 +554,7 @@ export default function SettingsPage() {
                     </Tabs>
                 </CardContent>
              </Card>
-             <Card className='w-[350px]'>
+             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><Type /> Typography</CardTitle>
                     <CardDescription>Manage the font used in the application.</CardDescription>
@@ -595,10 +581,10 @@ export default function SettingsPage() {
                     </div>
                 </CardContent>
             </Card>
-          </div>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
+        </div>
       </main>
     </div>
   )
 }
+
+    
