@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Volunteer": {
@@ -204,6 +205,50 @@
         "receiptNumber",
         "itemCategories"
       ]
+    },
+    "Overtime": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Overtime",
+      "type": "object",
+      "description": "Represents an overtime record for an employee.",
+      "properties": {
+        "id": { "type": "string" },
+        "employeeId": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "hours": { "type": "number" },
+        "rate": { "type": "number" },
+        "totalAmount": { "type": "number" },
+        "notes": { "type": "string" }
+      },
+      "required": ["id", "employeeId", "date", "hours", "rate", "totalAmount"]
+    },
+    "Bonus": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Bonus",
+      "type": "object",
+      "description": "Represents a loading/unloading bonus for an employee.",
+      "properties": {
+        "id": { "type": "string" },
+        "employeeId": { "type": "string" },
+        "amount": { "type": "number" },
+        "date": { "type": "string", "format": "date-time" },
+        "notes": { "type": "string" }
+      },
+      "required": ["id", "employeeId", "amount", "date"]
+    },
+    "CashWithdrawal": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "CashWithdrawal",
+      "type": "object",
+      "description": "Represents a cash withdrawal by an employee.",
+      "properties": {
+        "id": { "type": "string" },
+        "employeeId": { "type": "string" },
+        "amount": { "type": "number" },
+        "date": { "type": "string", "format": "date-time" },
+        "notes": { "type": "string" }
+      },
+      "required": ["id", "employeeId", "amount", "date"]
     }
   },
   "auth": {
@@ -218,35 +263,20 @@
         "path": "/users/{userId}",
         "definition": {
           "entityName": "User",
-          "schema": {
-            "$ref": "#/backend/entities/User"
-          },
-          "description": "Stores user profiles.  Path-based ownership ensures only the authenticated user (or an admin) can access their profile data.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique ID of the user."
-            }
-          ]
+          "schema": { "$ref": "#/backend/entities/User" },
+          "description": "Stores user profiles. Path-based ownership ensures only the authenticated user (or an admin) can access their profile data.",
+          "params": [{ "name": "userId", "description": "The unique ID of the user." }]
         }
       },
       {
         "path": "/users/{userId}/settings/{settingId}",
         "definition": {
           "entityName": "Setting",
-          "schema": {
-            "$ref": "#/backend/entities/Setting"
-          },
+          "schema": { "$ref": "#/backend/entities/Setting" },
           "description": "Stores user-specific settings. Path-based ownership ensures only the authenticated user (or an admin) can access their settings data.",
           "params": [
-            {
-              "name": "userId",
-              "description": "The unique ID of the user."
-            },
-            {
-              "name": "settingId",
-              "description": "The unique ID of the setting."
-            }
+            { "name": "userId", "description": "The unique ID of the user." },
+            { "name": "settingId", "description": "The unique ID of the setting." }
           ]
         }
       },
@@ -254,19 +284,11 @@
         "path": "/users/{userId}/logos/{logoId}",
         "definition": {
           "entityName": "Logo",
-          "schema": {
-            "$ref": "#/backend/entities/Logo"
-          },
+          "schema": { "$ref": "#/backend/entities/Logo" },
           "description": "Stores user-specific logos. Path-based ownership ensures only the authenticated user (or an admin) can access their logo data.",
           "params": [
-            {
-              "name": "userId",
-              "description": "The unique ID of the user."
-            },
-            {
-              "name": "logoId",
-              "description": "The unique ID of the logo."
-            }
+            { "name": "userId", "description": "The unique ID of the user." },
+            { "name": "logoId", "description": "The unique ID of the logo." }
           ]
         }
       },
@@ -274,48 +296,54 @@
         "path": "/volunteers/{volunteerId}",
         "definition": {
           "entityName": "Volunteer",
-          "schema": {
-            "$ref": "#/backend/entities/Volunteer"
-          },
-          "description": "Stores volunteer information.  Admin roles will be enforced through a separate mechanism (e.g., a dedicated `/roles_admin/{uid}` collection).",
-          "params": [
-            {
-              "name": "volunteerId",
-              "description": "The unique ID of the volunteer."
-            }
-          ]
+          "schema": { "$ref": "#/backend/entities/Volunteer" },
+          "description": "Stores volunteer information. Admin roles will be enforced through a separate mechanism (e.g., a dedicated `/roles_admin/{uid}` collection).",
+          "params": [{ "name": "volunteerId", "description": "The unique ID of the volunteer." }]
         }
       },
       {
         "path": "/roles_admin/{userId}",
         "definition": {
           "entityName": "adminRole",
-          "schema": {
-            "$ref": "#/backend/entities/User"
-          },
+          "schema": { "$ref": "#/backend/entities/User" },
           "description": "Documents in this collection grant admin privileges to the corresponding user ID. Existence, not content, determines admin status.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique ID of the user."
-            }
-          ]
+          "params": [{ "name": "userId", "description": "The unique ID of the user." }]
         }
       },
       {
         "path": "/sold_item_receipts/{receiptId}",
         "definition": {
           "entityName": "SoldItemReceipt",
-          "schema": {
-            "$ref": "#/backend/entities/SoldItemReceipt"
-          },
+          "schema": { "$ref": "#/backend/entities/SoldItemReceipt" },
           "description": "Stores sold item receipts. Assumes that all authenticated users can create and view receipts.",
-          "params": [
-            {
-              "name": "receiptId",
-              "description": "The unique ID of the receipt."
-            }
-          ]
+          "params": [{ "name": "receiptId", "description": "The unique ID of the receipt." }]
+        }
+      },
+      {
+        "path": "/overtime/{overtimeId}",
+        "definition": {
+          "entityName": "Overtime",
+          "schema": { "$ref": "#/backend/entities/Overtime" },
+          "description": "Stores employee overtime records.",
+          "params": [{ "name": "overtimeId", "description": "The unique ID of the overtime record." }]
+        }
+      },
+      {
+        "path": "/bonuses/{bonusId}",
+        "definition": {
+          "entityName": "Bonus",
+          "schema": { "$ref": "#/backend/entities/Bonus" },
+          "description": "Stores employee bonus records.",
+          "params": [{ "name": "bonusId", "description": "The unique ID of the bonus record." }]
+        }
+      },
+      {
+        "path": "/cash_withdrawals/{withdrawalId}",
+        "definition": {
+          "entityName": "CashWithdrawal",
+          "schema": { "$ref": "#/backend/entities/CashWithdrawal" },
+          "description": "Stores employee cash withdrawal records.",
+          "params": [{ "name": "withdrawalId", "description": "The unique ID of the withdrawal record." }]
         }
       }
     ],

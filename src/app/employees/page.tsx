@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useMemo, useEffect, useRef } from "react"
@@ -13,7 +14,7 @@ import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { collection, doc, Timestamp, writeBatch, query, where } from "firebase/firestore"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ArrowLeft, Plus, User, Calendar as CalendarIcon, Edit, Trash2, Save, X, Upload, Download, Mail, Phone, Cake, Briefcase, Search, Building, DollarSign } from 'lucide-react'
+import { ArrowLeft, Plus, User, Calendar as CalendarIcon, Edit, Trash2, Save, X, Upload, Download, Mail, Phone, Cake, Briefcase, Search, Building, DollarSign, Clock, Gift, Banknote } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
@@ -39,6 +40,32 @@ type Employee = {
 }
 
 type Expense = {
+  id: string;
+  employeeId: string;
+  amount: number;
+  date: Timestamp;
+  notes?: string;
+};
+
+type Overtime = {
+  id: string;
+  employeeId: string;
+  date: Timestamp;
+  hours: number;
+  rate: number;
+  totalAmount: number;
+  notes?: string;
+};
+
+type Bonus = {
+  id: string;
+  employeeId: string;
+  amount: number;
+  date: Timestamp;
+  notes?: string;
+};
+
+type CashWithdrawal = {
   id: string;
   employeeId: string;
   amount: number;
@@ -72,10 +99,18 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
     const employeeRef = useMemoFirebase(() => (firestore && employeeId && user ? doc(firestore, 'employees', employeeId) : null), [firestore, employeeId, user]);
     const { data: employee, isLoading } = useDoc<Employee>(employeeRef);
 
-    const expensesQuery = useMemoFirebase(() => (
-        firestore && user && employeeId ? query(collection(firestore, 'expenses'), where('employeeId', '==', employeeId)) : null
-    ), [firestore, user, employeeId]);
+    const expensesQuery = useMemoFirebase(() => (firestore && user && employeeId ? query(collection(firestore, 'expenses'), where('employeeId', '==', employeeId)) : null), [firestore, user, employeeId]);
     const { data: expenses, isLoading: isLoadingExpenses } = useCollection<Expense>(expensesQuery);
+
+    const overtimeQuery = useMemoFirebase(() => (firestore && user && employeeId ? query(collection(firestore, 'overtime'), where('employeeId', '==', employeeId)) : null), [firestore, user, employeeId]);
+    const { data: overtime, isLoading: isLoadingOvertime } = useCollection<Overtime>(overtimeQuery);
+    
+    const bonusesQuery = useMemoFirebase(() => (firestore && user && employeeId ? query(collection(firestore, 'bonuses'), where('employeeId', '==', employeeId)) : null), [firestore, user, employeeId]);
+    const { data: bonuses, isLoading: isLoadingBonuses } = useCollection<Bonus>(bonusesQuery);
+
+    const withdrawalsQuery = useMemoFirebase(() => (firestore && user && employeeId ? query(collection(firestore, 'cash_withdrawals'), where('employeeId', '==', employeeId)) : null), [firestore, user, employeeId]);
+    const { data: withdrawals, isLoading: isLoadingWithdrawals } = useCollection<CashWithdrawal>(withdrawalsQuery);
+
 
     const [isEditing, setIsEditing] = useState(false);
     const [name, setName] = useState('');
@@ -112,6 +147,27 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
         const sorted = [...expenses].sort((a,b) => b.date.toDate().getTime() - a.date.toDate().getTime());
         return { totalExpenses: total, sortedExpenses: sorted };
     }, [expenses]);
+
+    const { totalOvertime, sortedOvertime } = useMemo(() => {
+        if (!overtime) return { totalOvertime: 0, sortedOvertime: [] };
+        const total = overtime.reduce((sum, ot) => sum + ot.totalAmount, 0);
+        const sorted = [...overtime].sort((a, b) => b.date.toDate().getTime() - a.date.toDate().getTime());
+        return { totalOvertime: total, sortedOvertime: sorted };
+    }, [overtime]);
+
+    const { totalBonuses, sortedBonuses } = useMemo(() => {
+        if (!bonuses) return { totalBonuses: 0, sortedBonuses: [] };
+        const total = bonuses.reduce((sum, b) => sum + b.amount, 0);
+        const sorted = [...bonuses].sort((a, b) => b.date.toDate().getTime() - a.date.toDate().getTime());
+        return { totalBonuses: total, sortedBonuses: sorted };
+    }, [bonuses]);
+
+    const { totalWithdrawals, sortedWithdrawals } = useMemo(() => {
+        if (!withdrawals) return { totalWithdrawals: 0, sortedWithdrawals: [] };
+        const total = withdrawals.reduce((sum, w) => sum + w.amount, 0);
+        const sorted = [...withdrawals].sort((a, b) => b.date.toDate().getTime() - a.date.toDate().getTime());
+        return { totalWithdrawals: total, sortedWithdrawals: sorted };
+    }, [withdrawals]);
 
     const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -291,44 +347,69 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                         </CardContent>
                     </Card>
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Expense History</CardTitle>
-                            <CardDescription>A record of all expenses submitted by this employee.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                             {isLoadingExpenses ? (
-                                <Skeleton className="h-24 w-full" />
-                            ) : sortedExpenses.length > 0 ? (
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Date</TableHead>
-                                            <TableHead>Notes</TableHead>
-                                            <TableHead className="text-right">Amount</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {sortedExpenses.map(expense => (
-                                            <TableRow key={expense.id}>
-                                                <TableCell>{format(expense.date.toDate(), 'PPP')}</TableCell>
-                                                <TableCell className="text-muted-foreground">{expense.notes || 'N/A'}</TableCell>
-                                                <TableCell className="text-right font-medium">{formatCurrency(expense.amount)}</TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            ) : (
-                                <p className="text-sm text-muted-foreground text-center py-8">No expenses recorded for this employee.</p>
-                            )}
-                        </CardContent>
-                        {sortedExpenses.length > 0 && (
-                            <CardFooter className="justify-end gap-4 bg-muted/50 font-bold">
-                                <span>Total Expenses</span>
-                                <span className="text-primary text-xl">{formatCurrency(totalExpenses)}</span>
-                            </CardFooter>
-                        )}
-                    </Card>
+                    {/* Financial Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2"><DollarSign className="w-5 h-5 text-blue-500"/> Expenses</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {isLoadingExpenses ? <Skeleton className="h-20 w-full" /> : sortedExpenses.length > 0 ? (
+                                    <Table>
+                                        <TableHeader><TableRow><TableHead>Date</TableHead><TableHead className="text-right">Amount</TableHead></TableRow></TableHeader>
+                                        <TableBody>{sortedExpenses.slice(0, 3).map(e => (<TableRow key={e.id}><TableCell>{format(e.date.toDate(), 'PP')}</TableCell><TableCell className="text-right">{formatCurrency(e.amount)}</TableCell></TableRow>))}</TableBody>
+                                    </Table>
+                                ) : <p className="text-sm text-center text-muted-foreground py-4">No expenses.</p>}
+                            </CardContent>
+                            {sortedExpenses.length > 0 && <CardFooter className="justify-end gap-2 bg-muted/50 font-bold text-sm"><span className="text-muted-foreground">Total:</span><span className="text-blue-500">{formatCurrency(totalExpenses)}</span></CardFooter>}
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2"><Clock className="w-5 h-5 text-orange-500"/> Overtime</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {isLoadingOvertime ? <Skeleton className="h-20 w-full" /> : sortedOvertime.length > 0 ? (
+                                    <Table>
+                                        <TableHeader><TableRow><TableHead>Date</TableHead><TableHead className="text-right">Amount</TableHead></TableRow></TableHeader>
+                                        <TableBody>{sortedOvertime.slice(0, 3).map(o => (<TableRow key={o.id}><TableCell>{format(o.date.toDate(), 'PP')}</TableCell><TableCell className="text-right">{formatCurrency(o.totalAmount)}</TableCell></TableRow>))}</TableBody>
+                                    </Table>
+                                ) : <p className="text-sm text-center text-muted-foreground py-4">No overtime.</p>}
+                            </CardContent>
+                            {sortedOvertime.length > 0 && <CardFooter className="justify-end gap-2 bg-muted/50 font-bold text-sm"><span className="text-muted-foreground">Total:</span><span className="text-orange-500">{formatCurrency(totalOvertime)}</span></CardFooter>}
+                        </Card>
+
+                         <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2"><Gift className="w-5 h-5 text-green-500"/> Bonuses</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {isLoadingBonuses ? <Skeleton className="h-20 w-full" /> : sortedBonuses.length > 0 ? (
+                                    <Table>
+                                        <TableHeader><TableRow><TableHead>Date</TableHead><TableHead className="text-right">Amount</TableHead></TableRow></TableHeader>
+                                        <TableBody>{sortedBonuses.slice(0, 3).map(b => (<TableRow key={b.id}><TableCell>{format(b.date.toDate(), 'PP')}</TableCell><TableCell className="text-right">{formatCurrency(b.amount)}</TableCell></TableRow>))}</TableBody>
+                                    </Table>
+                                ) : <p className="text-sm text-center text-muted-foreground py-4">No bonuses.</p>}
+                            </CardContent>
+                            {sortedBonuses.length > 0 && <CardFooter className="justify-end gap-2 bg-muted/50 font-bold text-sm"><span className="text-muted-foreground">Total:</span><span className="text-green-500">{formatCurrency(totalBonuses)}</span></CardFooter>}
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2"><Banknote className="w-5 h-5 text-rose-500"/> Cash Withdrawals</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {isLoadingWithdrawals ? <Skeleton className="h-20 w-full" /> : sortedWithdrawals.length > 0 ? (
+                                    <Table>
+                                        <TableHeader><TableRow><TableHead>Date</TableHead><TableHead className="text-right">Amount</TableHead></TableRow></TableHeader>
+                                        <TableBody>{sortedWithdrawals.slice(0, 3).map(w => (<TableRow key={w.id}><TableCell>{format(w.date.toDate(), 'PP')}</TableCell><TableCell className="text-right">{formatCurrency(w.amount)}</TableCell></TableRow>))}</TableBody>
+                                    </Table>
+                                ) : <p className="text-sm text-center text-muted-foreground py-4">No withdrawals.</p>}
+                            </CardContent>
+                            {sortedWithdrawals.length > 0 && <CardFooter className="justify-end gap-2 bg-muted/50 font-bold text-sm"><span className="text-muted-foreground">Total:</span><span className="text-rose-500">{formatCurrency(totalWithdrawals)}</span></CardFooter>}
+                        </Card>
+                    </div>
+
                 </div>
             </div>
         </>
