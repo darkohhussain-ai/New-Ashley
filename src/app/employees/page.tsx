@@ -574,6 +574,9 @@ export default function EmployeesPage() {
             { name: "Haval Habib Hama Raza", employmentStartDate: new Date("2025-05-13") },
             { name: "Tari Mawloud Hama", employmentStartDate: new Date("2025-05-10") },
             { name: "Karzan Dara Bakr", employmentStartDate: new Date("2025-05-13") },
+            { name: "Hunar Jamal", employmentStartDate: new Date("2024-08-01") },
+            { name: "Sarkawt Mohammed Ali", employmentStartDate: new Date("2024-09-01") },
+            { name: "Salar Othman Hama", employmentStartDate: new Date("2025-05-13") }
         ];
 
         const existingNames = new Set(employees.map(e => e.name.toLowerCase()));
@@ -751,5 +754,7 @@ export default function EmployeesPage() {
     </div>
   )
 }
+
+    
 
     
