@@ -2,7 +2,7 @@
 "use client"
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { Users, Box, Settings as SettingsIcon, CreditCard, Bell, ChevronDown, Calendar, Clock, PackagePlus, Star } from "lucide-react"
+import { Users, Box, Settings as SettingsIcon, CreditCard, Bell, ChevronDown, Calendar, Clock, PackagePlus, Star, CheckSquare } from "lucide-react"
 import { DashboardCard } from "@/components/dashboard/dashboard-card"
 import useLocalStorage from "@/hooks/use-local-storage"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -46,6 +46,7 @@ export default function Dashboard() {
     { title: "Ashley Expenses", icon: CreditCard, href: "/ashley-expenses", color: "bg-blue-500" },
     { title: "Placement & Storage", icon: Box, href: "/items", color: "bg-green-500" },
     { title: "Transmit Cargo", icon: PackagePlus, href: "/transmit", color: "bg-yellow-500" },
+    { title: "Reality Check", icon: CheckSquare, href: "/reality-check", color: "bg-indigo-500" },
     { title: "Settings", icon: SettingsIcon, href: "/settings", color: "bg-purple-500" },
   ]
 
@@ -94,7 +95,7 @@ export default function Dashboard() {
           <h2 className="text-2xl font-bold">Welcome Back</h2>
           <p className="text-muted-foreground">Select a service to continue.</p>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {menuItems.map((item) => (
             <DashboardCard 
                 key={item.title} 

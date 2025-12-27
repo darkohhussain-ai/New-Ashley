@@ -1,4 +1,5 @@
 
+
 export type Employee = {
   id: string;
   name: string;
@@ -114,3 +115,19 @@ export type EvaluationResponse = {
     date: string;
     responses: { questionId: string; answer: number }[];
 };
+
+export type RealityCheck = {
+    id: string;
+    question: string;
+    answer1: string;
+    answer2: string;
+    answer3: string;
+    chosenAnswer: string;
+    createdAt: string;
+}
+
+export type RealityCheckResponse = {
+    answer1: string;
+    answer2: string;
+    answer3: string;
+}

@@ -1,5 +1,5 @@
 
-import { Employee, ExcelFile, Item, StorageLocation, Expense, Overtime, Bonus, CashWithdrawal, SoldItemReceipt, Transfer, ItemForTransfer, EvaluationResponse } from '@/lib/types';
+import { Employee, ExcelFile, Item, StorageLocation, Expense, Overtime, Bonus, CashWithdrawal, SoldItemReceipt, Transfer, ItemForTransfer, EvaluationResponse, RealityCheck } from '@/lib/types';
 
 export const initialData: {
     employees: Employee[],
@@ -14,6 +14,7 @@ export const initialData: {
     transfers: Transfer[],
     transferItems: ItemForTransfer[],
     evaluations: EvaluationResponse[],
+    realityChecks: RealityCheck[],
 } = {
     employees: [
         { id: "1", name: "Kamaran Omar Rauf", employmentStartDate: "2025-09-15T00:00:00.000Z" },
@@ -60,4 +61,5 @@ export const initialData: {
     transfers: [],
     transferItems: [],
     evaluations: [],
+    realityChecks: [],
 };
