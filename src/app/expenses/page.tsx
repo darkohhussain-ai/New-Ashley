@@ -21,8 +21,10 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { ChartContainer } from '@/components/ui/chart';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
-
+import autoTable from 'jspdf-autotable';
+import html2canvas from 'html2canvas';
+import { ReportPdfHeader } from '@/components/reports/report-pdf-header';
+import useLocalStorage from '@/hooks/use-local-storage';
 
 type Employee = {
   id: string;
@@ -63,6 +65,9 @@ export default function ExpensesPage() {
   const { toast } = useToast();
   const { user, isUserLoading } = useUser();
   const chartRef = useRef<HTMLDivElement>(null);
+  const pdfHeaderRef = useRef<HTMLDivElement>(null);
+  const defaultLogo = "https://i.ibb.co/68RvM01/ashley-logo.png";
+  const [logoSrc] = useLocalStorage('app-logo', defaultLogo);
 
   // Data fetching
   const employeesRef = useMemoFirebase(() => (firestore && user ? collection(firestore, 'employees') : null), [firestore, user]);
@@ -173,22 +178,30 @@ export default function ExpensesPage() {
   }, [expenses, employees]);
 
   const handleDownloadReport = async () => {
-    const doc = new jsPDF();
-    const today = new Date();
-
-    // Add header
-    doc.setFontSize(10);
-    doc.text(format(today, 'dd/MM/yyyy'), 14, 15);
-    doc.addImage("https://i.ibb.co/wJm3Sg7/ashley-logo-new.png", 'PNG', doc.internal.pageSize.width - 34, 10, 20, 20);
-    doc.setFontSize(14);
-    doc.text('Employee Expenses Report', doc.internal.pageSize.width / 2, 20, { align: 'center'});
-    doc.line(14, 30, doc.internal.pageSize.width - 14, 30);
+    if (!pdfHeaderRef.current) return;
     
+    const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
+    const headerCanvas = await html2canvas(pdfHeaderRef.current, { scale: 2, backgroundColor: null });
+    const headerImgData = headerCanvas.toDataURL('image/png');
+    const pdfWidth = doc.internal.pageSize.getWidth();
+    const headerRatio = headerCanvas.width / headerCanvas.height;
+    const finalHeaderWidth = pdfWidth - 28;
+    const finalHeaderHeight = finalHeaderWidth / headerRatio;
+    
+    doc.addImage(headerImgData, 'PNG', 14, 14, finalHeaderWidth, finalHeaderHeight);
+    let currentY = finalHeaderHeight + 30;
+
     if (chartRef.current) {
         try {
-            const canvas = await (await import('html2canvas')).default(chartRef.current, { scale: 2, backgroundColor: '#ffffff' });
-            const imgData = canvas.toDataURL('image/png');
-            doc.addImage(imgData, 'PNG', 14, 40, doc.internal.pageSize.width - 28, 80);
+            const chartCanvas = await html2canvas(chartRef.current, { scale: 2, backgroundColor: '#ffffff' });
+            const chartImgData = chartCanvas.toDataURL('image/png');
+            const chartRatio = chartCanvas.width / chartCanvas.height;
+            const finalChartWidth = pdfWidth - 28;
+            const finalChartHeight = finalChartWidth / chartRatio;
+
+            doc.addImage(chartImgData, 'PNG', 14, currentY, finalChartWidth, finalChartHeight);
+            currentY += finalChartHeight + 20;
+
         } catch(e) {
             console.error("Error generating chart image for PDF:", e);
         }
@@ -203,8 +216,8 @@ export default function ExpensesPage() {
         ])
     );
     
-    (doc as any).autoTable({
-        startY: chartRef.current ? 130 : 40,
+    autoTable(doc, {
+        startY: currentY,
         head: [['Employee', 'Date', 'Notes', 'Amount']],
         body: tableData,
         foot: [['Grand Total', '', '', formatCurrency(grandTotal)]],
@@ -219,6 +232,16 @@ export default function ExpensesPage() {
   const isLoading = isLoadingEmployees || isLoadingExpenses || isUserLoading;
 
   return (
+    <>
+     <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+         <div ref={pdfHeaderRef} style={{ width: '700px', background: 'white', color: 'black' }}>
+            <ReportPdfHeader
+              title="Employee Expenses Report"
+              subtitle={`As of ${format(new Date(), 'PPP')}`}
+              logoSrc={logoSrc}
+            />
+          </div>
+    </div>
     <div className="min-h-screen bg-background text-foreground">
       <Dialog open={open} onOpenChange={(isOpen) => { setOpen(isOpen); if(!isOpen) resetForm(); }}>
         <header className="bg-card border-b p-4">
@@ -321,7 +344,7 @@ export default function ExpensesPage() {
                     <CardHeader>
                         <CardTitle>Expenses per Employee</CardTitle>
                     </CardHeader>
-                    <CardContent ref={chartRef}>
+                    <CardContent ref={chartRef} className="bg-background">
                         <ChartContainer config={{}} className="h-[250px] w-full">
                             <ResponsiveContainer>
                                 <BarChart data={chartData} margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
@@ -419,5 +442,6 @@ export default function ExpensesPage() {
       </main>
     </Dialog>
     </div>
+    </>
   );
 }

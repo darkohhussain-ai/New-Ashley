@@ -18,8 +18,10 @@ import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
-
+import autoTable from 'jspdf-autotable';
+import html2canvas from 'html2canvas';
+import { ReportPdfHeader } from '@/components/reports/report-pdf-header';
+import useLocalStorage from '@/hooks/use-local-storage';
 
 type Employee = {
   id: string;
@@ -50,6 +52,8 @@ export default function OvertimePage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const { user, isUserLoading } = useUser();
+  const defaultLogo = "https://i.ibb.co/68RvM01/ashley-logo.png";
+  const [logoSrc] = useLocalStorage('app-logo', defaultLogo);
 
   const [view, setView] = useState<'daily' | 'monthly'>('daily');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
@@ -62,6 +66,9 @@ export default function OvertimePage() {
 
   // Editing state
   const [editingRecord, setEditingRecord] = useState<Overtime | null>(null);
+  
+  const pdfHeaderRef = useRef<HTMLDivElement>(null);
+
 
   // Data fetching
   const employeesRef = useMemoFirebase(() => (firestore && user ? collection(firestore, 'employees') : null), [firestore, user]);
@@ -201,26 +208,26 @@ export default function OvertimePage() {
     }
   }, [overtimeRecords, view, employees]);
 
-  const handleDownloadPdf = () => {
-    if (!selectedDate) return;
+ const handleDownloadPdf = async () => {
+    if (!selectedDate || !pdfHeaderRef.current) return;
+    
+    const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
+    const canvas = await html2canvas(pdfHeaderRef.current, { scale: 2, useCORS: true, backgroundColor: null });
+    const imgData = canvas.toDataURL('image/png');
+    const pdfWidth = doc.internal.pageSize.getWidth();
+    const imgWidth = canvas.width;
+    const imgHeight = canvas.height;
+    const ratio = imgWidth / imgHeight;
+    const finalImgWidth = pdfWidth - 28;
+    const finalImgHeight = finalImgWidth / ratio;
+    
+    doc.addImage(imgData, 'PNG', 14, 14, finalImgWidth, finalImgHeight);
+    
+    const startY = finalImgHeight + 30;
 
-    const doc = new jsPDF();
-    const today = new Date();
-    
-    // Add header
-    doc.setFontSize(10);
-    doc.text(format(today, 'dd/MM/yyyy'), 14, 15);
-    doc.addImage("https://i.ibb.co/wJm3Sg7/ashley-logo-new.png", 'PNG', doc.internal.pageSize.width - 34, 10, 20, 20);
-    doc.setFontSize(14);
-    doc.text('Overtime Report', doc.internal.pageSize.width / 2, 20, { align: 'center'});
-    doc.line(14, 30, doc.internal.pageSize.width - 14, 30);
-    
     if (view === 'daily') {
-        doc.setFontSize(16);
-        doc.text(`Daily Report - ${format(selectedDate, 'PPP')}`, doc.internal.pageSize.width / 2, 45, { align: 'center'});
-        
-        (doc as any).autoTable({
-            startY: 55,
+        autoTable(doc, {
+            startY: startY,
             head: [['Employee', 'Hours', 'Notes', 'Amount']],
             body: (overtimeRecords || []).map(item => [
                 getEmployeeName(item.employeeId), 
@@ -233,15 +240,10 @@ export default function OvertimePage() {
             headStyles: { fillColor: [22, 163, 74] },
             footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' }
         });
-
         doc.save(`overtime-report-${format(selectedDate, 'yyyy-MM-dd')}.pdf`);
     } else { // monthly
-        const monthName = format(selectedDate, 'MMMM yyyy');
-        doc.setFontSize(16);
-        doc.text(`Monthly Report - ${monthName}`, doc.internal.pageSize.width / 2, 45, { align: 'center'});
-        
-        (doc as any).autoTable({
-            startY: 55,
+        autoTable(doc, {
+            startY: startY,
             head: [['Employee', 'Total Hours', 'Total Amount']],
             body: monthlyReportData.map(item => [item.employeeName, item.totalHours.toFixed(2), formatCurrency(item.totalAmount)]),
             foot: [['Grand Total', totalHours.toFixed(2), formatCurrency(totalAmount)]],
@@ -249,14 +251,26 @@ export default function OvertimePage() {
             headStyles: { fillColor: [22, 163, 74] },
             footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' }
         });
-
         doc.save(`overtime-report-${format(selectedDate, 'yyyy-MM')}.pdf`);
     }
   };
 
+
   const isLoading = isLoadingEmployees || isLoadingOvertime || isUserLoading;
 
   return (
+    <>
+    <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+      {selectedDate && (
+         <div ref={pdfHeaderRef} style={{ width: '700px', background: 'white', color: 'black' }}>
+            <ReportPdfHeader
+              title="Overtime Report"
+              subtitle={view === 'daily' ? format(selectedDate, 'PPP') : format(selectedDate, 'MMMM yyyy')}
+              logoSrc={logoSrc}
+            />
+          </div>
+      )}
+    </div>
     <div className="min-h-screen bg-background text-foreground">
       <header className="bg-card border-b p-4">
         <div className="container mx-auto flex items-center justify-between">
@@ -487,5 +501,6 @@ export default function OvertimePage() {
         )}
       </main>
     </div>
+    </>
   );
 }
