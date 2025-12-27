@@ -1,9 +1,9 @@
 // Your web app's Firebase configuration
 export const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyDPs5gL7pD4gRLsC6Gfl79Pj3z4CjWc",
+  authDomain: "ashleydrp-d883b.firebaseapp.com",
+  projectId: "ashleydrp-d883b",
+  storageBucket: "ashleydrp-d883b.appspot.com",
+  messagingSenderId: "565895788414",
+  appId: "1:565895788414:web:0b25a3536b13e9a3f2d5e2"
 };
