@@ -1,6 +1,5 @@
 
-import { Employee, ExcelFile, Item, StorageLocation, Expense, Overtime } from '@/lib/types';
-import { formatISO } from 'date-fns';
+import { Employee, ExcelFile, Item, StorageLocation, Expense, Overtime, Bonus, CashWithdrawal, SoldItemReceipt, Transfer, ItemForTransfer, EvaluationResponse } from '@/lib/types';
 
 export const initialData: {
     employees: Employee[],
@@ -9,6 +8,12 @@ export const initialData: {
     locations: StorageLocation[],
     expenses: Expense[],
     overtime: Overtime[],
+    bonuses: Bonus[],
+    withdrawals: CashWithdrawal[],
+    receipts: SoldItemReceipt[],
+    transfers: Transfer[],
+    transferItems: ItemForTransfer[],
+    evaluations: EvaluationResponse[],
 } = {
     employees: [
         { id: "1", name: "Kamaran Omar Rauf", employmentStartDate: "2025-09-15T00:00:00.000Z" },
@@ -49,4 +54,10 @@ export const initialData: {
     locations: [],
     expenses: [],
     overtime: [],
+    bonuses: [],
+    withdrawals: [],
+    receipts: [],
+    transfers: [],
+    transferItems: [],
+    evaluations: [],
 };

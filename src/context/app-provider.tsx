@@ -17,7 +17,10 @@ import {
     ItemForTransfer,
     EvaluationResponse
 } from '@/lib/types';
-import { initialData } from './initial-data';
+import { initialData as initialDataObject } from './initial-data';
+
+// Define the initial data as a constant outside the component to ensure it's a stable reference.
+const initialData = initialDataObject;
 
 interface AppState {
     employees: Employee[];
@@ -56,12 +59,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const [locations, setLocations] = useLocalStorage<StorageLocation[]>('storage_locations', initialData.locations);
     const [expenses, setExpenses] = useLocalStorage<Expense[]>('expenses', initialData.expenses);
     const [overtime, setOvertime] = useLocalStorage<Overtime[]>('overtime', initialData.overtime);
-    const [bonuses, setBonuses] = useLocalStorage<Bonus[]>('bonuses', []);
-    const [withdrawals, setWithdrawals] = useLocalStorage<CashWithdrawal[]>('cash_withdrawals', []);
-    const [receipts, setReceipts] = useLocalStorage<SoldItemReceipt[]>('sold_item_receipts', []);
-    const [transfers, setTransfers] = useLocalStorage<Transfer[]>('transfers', []);
-    const [transferItems, setTransferItems] = useLocalStorage<ItemForTransfer[]>('transfer_items', []);
-    const [evaluations, setEvaluations] = useLocalStorage<EvaluationResponse[]>('marketing-evaluations', []);
+    const [bonuses, setBonuses] = useLocalStorage<Bonus[]>('bonuses', initialData.bonuses);
+    const [withdrawals, setWithdrawals] = useLocalStorage<CashWithdrawal[]>('cash_withdrawals', initialData.withdrawals);
+    const [receipts, setReceipts] = useLocalStorage<SoldItemReceipt[]>('sold_item_receipts', initialData.receipts);
+    const [transfers, setTransfers] = useLocalStorage<Transfer[]>('transfers', initialData.transfers);
+    const [transferItems, setTransferItems] = useLocalStorage<ItemForTransfer[]>('transfer_items', initialData.transferItems);
+    const [evaluations, setEvaluations] = useLocalStorage<EvaluationResponse[]>('marketing-evaluations', initialData.evaluations);
 
     const value = {
         employees, setEmployees,
