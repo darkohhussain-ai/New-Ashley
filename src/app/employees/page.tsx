@@ -11,10 +11,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
-import { collection, doc, Timestamp, writeBatch } from "firebase/firestore"
+import { collection, doc, Timestamp, writeBatch, query, where } from "firebase/firestore"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ArrowLeft, Plus, User, Calendar as CalendarIcon, Edit, Trash2, Save, X, Upload, Download, Mail, Phone, Cake, Briefcase, Search, Building } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { ArrowLeft, Plus, User, Calendar as CalendarIcon, Edit, Trash2, Save, X, Upload, Download, Mail, Phone, Cake, Briefcase, Search, Building, DollarSign } from 'lucide-react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
@@ -23,6 +23,7 @@ import html2canvas from 'html2canvas'
 import jsPDF from 'jspdf'
 import useLocalStorage from '@/hooks/use-local-storage'
 import { Skeleton } from "@/components/ui/skeleton"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 
 type Employee = {
@@ -36,6 +37,22 @@ type Employee = {
   photoUrl?: string;
   notes?: string;
 }
+
+type Expense = {
+  id: string;
+  employeeId: string;
+  amount: number;
+  date: Timestamp;
+  notes?: string;
+};
+
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'IQD',
+    maximumFractionDigits: 0,
+  }).format(amount);
+};
 
 const safeDate = (dateValue: Timestamp | Date | undefined): Date | null => {
   if (!dateValue) return null;
@@ -54,6 +71,11 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
 
     const employeeRef = useMemoFirebase(() => (firestore && employeeId && user ? doc(firestore, 'employees', employeeId) : null), [firestore, employeeId, user]);
     const { data: employee, isLoading } = useDoc<Employee>(employeeRef);
+
+    const expensesQuery = useMemoFirebase(() => (
+        firestore && user && employeeId ? query(collection(firestore, 'expenses'), where('employeeId', '==', employeeId)) : null
+    ), [firestore, user, employeeId]);
+    const { data: expenses, isLoading: isLoadingExpenses } = useCollection<Expense>(expensesQuery);
 
     const [isEditing, setIsEditing] = useState(false);
     const [name, setName] = useState('');
@@ -83,6 +105,13 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
             setNotes(employee.notes || '');
         }
     }, [employee]);
+
+    const { totalExpenses, sortedExpenses } = useMemo(() => {
+        if (!expenses) return { totalExpenses: 0, sortedExpenses: [] };
+        const total = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+        const sorted = [...expenses].sort((a,b) => b.date.toDate().getTime() - a.date.toDate().getTime());
+        return { totalExpenses: total, sortedExpenses: sorted };
+    }, [expenses]);
 
     const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -185,7 +214,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                         </>
                     )}
                 </header>
-                <div className="flex-1 overflow-y-auto p-6">
+                <div className="flex-1 overflow-y-auto p-6 space-y-6">
                     <Card className="border-0 shadow-none">
                         <CardHeader className="flex-col md:flex-row gap-6 space-y-0 items-start">
                              <div className="relative">
@@ -260,6 +289,45 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                                 ) : (<p className="whitespace-pre-wrap text-muted-foreground">{employee.notes || 'No notes.'}</p>)}
                             </div>
                         </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Expense History</CardTitle>
+                            <CardDescription>A record of all expenses submitted by this employee.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                             {isLoadingExpenses ? (
+                                <Skeleton className="h-24 w-full" />
+                            ) : sortedExpenses.length > 0 ? (
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Date</TableHead>
+                                            <TableHead>Notes</TableHead>
+                                            <TableHead className="text-right">Amount</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {sortedExpenses.map(expense => (
+                                            <TableRow key={expense.id}>
+                                                <TableCell>{format(expense.date.toDate(), 'PPP')}</TableCell>
+                                                <TableCell className="text-muted-foreground">{expense.notes || 'N/A'}</TableCell>
+                                                <TableCell className="text-right font-medium">{formatCurrency(expense.amount)}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            ) : (
+                                <p className="text-sm text-muted-foreground text-center py-8">No expenses recorded for this employee.</p>
+                            )}
+                        </CardContent>
+                        {sortedExpenses.length > 0 && (
+                            <CardFooter className="justify-end gap-4 bg-muted/50 font-bold">
+                                <span>Total Expenses</span>
+                                <span className="text-primary text-xl">{formatCurrency(totalExpenses)}</span>
+                            </CardFooter>
+                        )}
                     </Card>
                 </div>
             </div>
@@ -373,12 +441,13 @@ export default function EmployeesPage() {
   const [isAddDialogOpen, setAddDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isCleaning, setIsCleaning] = useState(false);
-  const cleanupPerformed = useLocalStorage('employee-cleanup-performed', false);
+  const [cleanupPerformed, setCleanupPerformed] = useLocalStorage('employee-cleanup-performed', false);
 
 
   useEffect(() => {
-    if (employees && !cleanupPerformed[0] && !isCleaning) {
+    if (employees && !cleanupPerformed && !isCleaning) {
       const cleanupDuplicates = async () => {
+        if (!firestore) return;
         setIsCleaning(true);
         const nameMap = new Map<string, Employee[]>();
         employees.forEach(emp => {
@@ -407,7 +476,7 @@ export default function EmployeesPage() {
               title: "Data Cleanup Successful",
               description: `Removed ${deletedCount} duplicate employee(s).`,
             });
-            cleanupPerformed[1](true); // Set flag to prevent running again
+            setCleanupPerformed(true); // Set flag to prevent running again
           } catch (error) {
             console.error("Error cleaning up duplicates:", error);
             toast({
@@ -418,14 +487,14 @@ export default function EmployeesPage() {
           }
         } else {
             // No duplicates found, just set the flag
-            cleanupPerformed[1](true);
+            setCleanupPerformed(true);
         }
         setIsCleaning(false);
       };
       
       cleanupDuplicates();
     }
-  }, [employees, firestore, toast, cleanupPerformed, isCleaning]);
+  }, [employees, firestore, toast, cleanupPerformed, setCleanupPerformed, isCleaning]);
 
 
   const sortedAndFilteredEmployees = useMemo(() => {
@@ -438,6 +507,10 @@ export default function EmployeesPage() {
   useEffect(() => {
     if (!selectedEmployeeId && sortedAndFilteredEmployees.length > 0) {
       setSelectedEmployeeId(sortedAndFilteredEmployees[0].id);
+    }
+     // If the selected employee is no longer in the list (due to filtering), deselect it
+    if (selectedEmployeeId && !sortedAndFilteredEmployees.some(e => e.id === selectedEmployeeId)) {
+        setSelectedEmployeeId(sortedAndFilteredEmployees[0]?.id || null);
     }
   }, [sortedAndFilteredEmployees, selectedEmployeeId]);
 

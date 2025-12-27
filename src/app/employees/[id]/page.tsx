@@ -1,15 +1,24 @@
 'use client';
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 
 export default function EmployeeDetailRedirect() {
   const router = useRouter();
+  const params = useParams();
+  const { id } = params;
 
   useEffect(() => {
     // This page is no longer used. The functionality has been merged into /employees.
-    // We redirect users back to the main employees page to ensure they use the new layout.
-    router.replace('/employees');
-  }, [router]);
+    // We redirect users back to the main employees page, but can pass the ID as a query param
+    // if we wanted to auto-select that employee on load. For now, a simple redirect is fine.
+    if (id) {
+        // Optional: Implement logic to auto-select the employee on the main page.
+        // For now, just redirecting is cleaner.
+        router.replace(`/employees?selected=${id}`);
+    } else {
+        router.replace('/employees');
+    }
+  }, [router, id]);
 
   // Render a simple loading state while redirecting
   return (
