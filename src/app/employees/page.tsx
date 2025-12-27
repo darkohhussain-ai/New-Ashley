@@ -551,6 +551,66 @@ export default function EmployeesPage() {
   const [isCleaning, setIsCleaning] = useState(false);
   const [cleanupPerformed, setCleanupPerformed] = useLocalStorage('employee-cleanup-performed', false);
 
+  const [dataLoadPerformed, setDataLoadPerformed] = useLocalStorage('employee-data-load-performed-v1', false);
+
+
+  useEffect(() => {
+    if (employees && !dataLoadPerformed && firestore && user) {
+        const newEmployees = [
+            { name: "Kamaran Omar Rauf", employmentStartDate: new Date("2025-09-15") },
+            { name: "Danar Mohammed Basam", employmentStartDate: new Date("2024-05-20") },
+            { name: "Darko Haider Hussein", employmentStartDate: new Date("2025-05-01") },
+            { name: "Raber Mohammed Mahmoud", employmentStartDate: new Date("2024-04-20") },
+            { name: "Razhan Salih Fatah", employmentStartDate: new Date("2024-07-13") },
+            { name: "Sarwat Qadir Mohammed", employmentStartDate: new Date("2024-10-16") },
+            { name: "Govar Sardar Ahmed", employmentStartDate: new Date("2025-02-01") },
+            { name: "Mohammed Hamid Mohammed", employmentStartDate: new Date("2024-10-03") },
+            { name: "Imad Sabah Nuri", employmentStartDate: new Date("2023-11-15") },
+            { name: "Rebin Sabah Nuri", employmentStartDate: new Date("2024-06-22") },
+            { name: "Rawand Najat Mohammed Hassan", employmentStartDate: new Date("2025-05-10") },
+            { name: "Sahand Mariwan Hama Saeed", employmentStartDate: new Date("2024-01-01") },
+            { name: "Shadoman Yadgar Rahim", employmentStartDate: new Date("2024-09-30") },
+            { name: "Hardy Azad Ahmed", employmentStartDate: new Date("2025-05-13") },
+            { name: "Haval Habib Hama Raza", employmentStartDate: new Date("2025-05-13") },
+            { name: "Tari Mawloud Hama", employmentStartDate: new Date("2025-05-10") },
+            { name: "Karzan Dara Bakr", employmentStartDate: new Date("2025-05-13") },
+        ];
+
+        const existingNames = new Set(employees.map(e => e.name.toLowerCase()));
+        
+        const employeesToAdd = newEmployees.filter(ne => !existingNames.has(ne.name.toLowerCase()));
+
+        if (employeesToAdd.length > 0) {
+            const batch = writeBatch(firestore);
+            employeesToAdd.forEach(emp => {
+                const newDocRef = doc(collection(firestore, "employees"));
+                batch.set(newDocRef, {
+                    ...emp,
+                    employmentStartDate: Timestamp.fromDate(emp.employmentStartDate),
+                    photoUrl: `https://picsum.photos/seed/${emp.name.replace(/\s/g, '-')}/400`
+                });
+            });
+
+            batch.commit().then(() => {
+                toast({
+                    title: "Employees Added",
+                    description: `${employeesToAdd.length} new employees have been added to your list.`,
+                });
+                setDataLoadPerformed(true);
+            }).catch(err => {
+                console.error("Error adding new employees:", err);
+                toast({
+                    variant: "destructive",
+                    title: "Data Load Failed",
+                    description: "Could not add new employees from the image.",
+                });
+            });
+        } else {
+             setDataLoadPerformed(true);
+        }
+    }
+  }, [employees, dataLoadPerformed, firestore, user, toast, setDataLoadPerformed]);
+
 
   useEffect(() => {
     if (employees && !cleanupPerformed && !isCleaning) {
