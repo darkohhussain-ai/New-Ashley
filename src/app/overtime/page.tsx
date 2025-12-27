@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
@@ -16,7 +17,7 @@ import { format, startOfDay, endOfDay, startOfMonth, endOfMonth } from 'date-fns
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -168,7 +169,7 @@ export default function OvertimePage() {
   };
 
   const { totalHours, totalAmount, monthlyReportData } = useMemo(() => {
-    if (!overtimeRecords) return { totalHours: 0, totalAmount: 0, monthlyReportData: [] };
+    if (!overtimeRecords || !employees) return { totalHours: 0, totalAmount: 0, monthlyReportData: [] };
 
     if (view === 'daily') {
         const { totalHours, totalAmount } = overtimeRecords.reduce(
@@ -435,13 +436,13 @@ export default function OvertimePage() {
                                     </TableRow>
                                 ))}
                             </TableBody>
-                            <CardFooter className="flex justify-between font-bold py-4">
-                                <span>Grand Total</span>
-                                <div className='text-right'>
-                                    <p>{totalHours.toFixed(2)} hours</p>
-                                    <p className="text-primary">{formatCurrency(totalAmount)}</p>
-                                </div>
-                            </CardFooter>
+                            <TableFooter>
+                                <TableRow>
+                                    <TableCell className="font-bold">Grand Total</TableCell>
+                                    <TableCell className="text-right font-bold">{totalHours.toFixed(2)}</TableCell>
+                                    <TableCell className="text-right font-bold text-primary">{formatCurrency(totalAmount)}</TableCell>
+                                </TableRow>
+                            </TableFooter>
                         </Table>
                     ) : (
                         <div className="py-8 text-center text-muted-foreground">No overtime records for this month.</div>
