@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { format, startOfDay, endOfDay, startOfMonth, endOfMonth } from 'date-fns';
+import { format, startOfDay, endOfDay, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -75,13 +75,23 @@ export default function OvertimePage() {
   const { data: employees, isLoading: isLoadingEmployees } = useCollection<Employee>(employeesRef);
 
   const overtimeQuery = useMemoFirebase(() => {
-    if (!firestore || !selectedDate || !user) return null;
+    if (!firestore || !user) return null;
+    // Fetch all overtime records and filter on the client
+    return collection(firestore, 'overtime');
+  }, [firestore, user]);
+
+  const { data: allOvertimeRecords, isLoading: isLoadingOvertime } = useCollection<Overtime>(overtimeQuery);
+
+  const overtimeRecords = useMemo(() => {
+    if (!allOvertimeRecords || !selectedDate) return [];
     const start = view === 'daily' ? startOfDay(selectedDate) : startOfMonth(selectedDate);
     const end = view === 'daily' ? endOfDay(selectedDate) : endOfMonth(selectedDate);
-    return query(collection(firestore, 'overtime'), where('date', '>=', start), where('date', '<=', end));
-  }, [firestore, selectedDate, user, view]);
+    return allOvertimeRecords.filter(record => {
+        const recordDate = record.date.toDate();
+        return isWithinInterval(recordDate, { start, end });
+    });
+  }, [allOvertimeRecords, selectedDate, view]);
 
-  const { data: overtimeRecords, isLoading: isLoadingOvertime } = useCollection<Overtime>(overtimeQuery);
 
   const sortedEmployees = useMemo(() => {
     if (!employees) return [];
