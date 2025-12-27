@@ -1,9 +1,8 @@
+
 'use client';
 
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import Link from 'next/link';
-import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection, Timestamp, doc, addDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { ArrowLeft, Plus, Trash2, Calendar as CalendarIcon, Clock, User, Edit, Save, X, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { format, startOfDay, endOfDay, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
+import { format, startOfDay, endOfDay, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -22,24 +21,9 @@ import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
 import { ReportPdfHeader } from '@/components/reports/report-pdf-header';
 import useLocalStorage from '@/hooks/use-local-storage';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
+import { useAppContext } from '@/context/app-provider';
+import type { Employee, Overtime } from '@/lib/types';
 
-
-type Employee = {
-  id: string;
-  name: string;
-};
-
-type Overtime = {
-  id: string;
-  employeeId: string;
-  date: Timestamp;
-  hours: number;
-  rate: number;
-  totalAmount: number;
-  notes?: string;
-};
 
 const OVERTIME_RATE = 5000; // Default: 5,000 IQD per hour
 
@@ -52,9 +36,8 @@ const formatCurrency = (amount: number) => {
 };
 
 export default function OvertimePage() {
-  const firestore = useFirestore();
   const { toast } = useToast();
-  const { user, isUserLoading } = useUser();
+  const { employees, overtime: allOvertimeRecords, setOvertime: setAllOvertimeRecords } = useAppContext();
   const defaultLogo = "https://i.ibb.co/68RvM01/ashley-logo.png";
   const [logoSrc] = useLocalStorage('app-logo', defaultLogo);
 
@@ -72,25 +55,12 @@ export default function OvertimePage() {
   
   const pdfHeaderRef = useRef<HTMLDivElement>(null);
 
-
-  // Data fetching
-  const employeesRef = useMemoFirebase(() => (firestore && user ? collection(firestore, 'employees') : null), [firestore, user]);
-  const { data: employees, isLoading: isLoadingEmployees } = useCollection<Employee>(employeesRef?.path ?? '');
-
-  const overtimeQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    // Fetch all overtime records and filter on the client
-    return collection(firestore, 'overtime');
-  }, [firestore, user]);
-
-  const { data: allOvertimeRecords, isLoading: isLoadingOvertime } = useCollection<Overtime>(overtimeQuery?.path ?? '');
-
   const overtimeRecords = useMemo(() => {
     if (!allOvertimeRecords || !selectedDate) return [];
     const start = view === 'daily' ? startOfDay(selectedDate) : startOfMonth(selectedDate);
     const end = view === 'daily' ? endOfDay(selectedDate) : endOfMonth(selectedDate);
     return allOvertimeRecords.filter(record => {
-        const recordDate = record.date.toDate();
+        const recordDate = parseISO(record.date);
         return isWithinInterval(recordDate, { start, end });
     });
   }, [allOvertimeRecords, selectedDate, view]);
@@ -110,7 +80,7 @@ export default function OvertimePage() {
   };
   
   const startEditing = (record: Overtime) => {
-    setEditingRecord(record);
+    setEditingRecord(JSON.parse(JSON.stringify(record))); // Deep copy
   };
   
   const cancelEditing = () => {
@@ -118,85 +88,49 @@ export default function OvertimePage() {
   };
   
   const handleUpdateRecord = () => {
-    if(!firestore || !editingRecord) return;
+    if(!editingRecord) return;
     
     setIsSaving(true);
-    const docRef = doc(firestore, 'overtime', editingRecord.id);
     
     const updatedData = {
-        hours: editingRecord.hours,
-        notes: editingRecord.notes,
+        ...editingRecord,
         totalAmount: editingRecord.hours * editingRecord.rate,
     };
     
-    updateDoc(docRef, updatedData)
-        .then(() => {
-            toast({ title: 'Success', description: 'Overtime record updated.' });
-            setEditingRecord(null);
-        })
-        .catch(e => {
-            const permissionError = new FirestorePermissionError({
-              path: docRef.path,
-              operation: 'update',
-              requestResourceData: updatedData,
-            });
-            errorEmitter.emit('permission-error', permissionError);
-        })
-        .finally(() => setIsSaving(false));
+    setAllOvertimeRecords(allOvertimeRecords.map(rec => rec.id === updatedData.id ? updatedData : rec));
+    toast({ title: 'Success', description: 'Overtime record updated.' });
+    setEditingRecord(null);
+    setIsSaving(false);
   };
 
 
   const handleAddOvertime = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) {
-        toast({ variant: 'destructive', title: 'Authentication Error', description: 'You must be logged in to perform this action.' });
-        return;
-    }
-    if (!firestore || !selectedEmployee || !hours || !selectedDate) {
+    if (!selectedEmployee || !hours || !selectedDate) {
       toast({ variant: 'destructive', title: 'Missing Fields', description: 'Please select an employee and enter the hours.' });
       return;
     }
     
     setIsSaving(true);
-    const overtimeData = {
+    const overtimeData: Overtime = {
+      id: crypto.randomUUID(),
       employeeId: selectedEmployee,
-      date: Timestamp.fromDate(selectedDate),
+      date: selectedDate.toISOString(),
       hours: parseFloat(hours),
       rate: OVERTIME_RATE,
       totalAmount: parseFloat(hours) * OVERTIME_RATE,
       notes,
     };
 
-    addDoc(collection(firestore, 'overtime'), overtimeData)
-      .then(() => {
-        toast({ title: 'Overtime Added', description: 'The record has been added.' });
-        resetForm();
-      })
-      .catch((e) => {
-        const permissionError = new FirestorePermissionError({
-          path: 'overtime',
-          operation: 'create',
-          requestResourceData: overtimeData,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-      })
-      .finally(() => setIsSaving(false));
+    setAllOvertimeRecords([...allOvertimeRecords, overtimeData]);
+    toast({ title: 'Overtime Added', description: 'The record has been added.' });
+    resetForm();
+    setIsSaving(false);
   };
 
   const handleDelete = (record: Overtime) => {
-    if (!firestore) return;
-    const docRef = doc(firestore, 'overtime', record.id);
-    deleteDoc(docRef)
-      .then(() => {
-        toast({ title: 'Record Deleted', description: 'The overtime record has been removed.' });
-      })
-      .catch((e) => {
-        const permissionError = new FirestorePermissionError({
-          path: docRef.path,
-          operation: 'delete',
-        });
-        errorEmitter.emit('permission-error', permissionError);
-      });
+    setAllOvertimeRecords(allOvertimeRecords.filter(rec => rec.id !== record.id));
+    toast({ title: 'Record Deleted', description: 'The overtime record has been removed.' });
   };
 
   const { totalHours, totalAmount, monthlyReportData } = useMemo(() => {
@@ -279,8 +213,7 @@ export default function OvertimePage() {
     }
   };
 
-
-  const isLoading = isLoadingEmployees || isLoadingOvertime || isUserLoading;
+  const isLoading = !employees || !allOvertimeRecords;
 
   return (
     <>
@@ -350,7 +283,7 @@ export default function OvertimePage() {
                             <SelectValue placeholder="Select an employee" />
                         </SelectTrigger>
                         <SelectContent>
-                            {isLoadingEmployees ? (
+                            {isLoading ? (
                             <SelectItem value="loading" disabled>Loading...</SelectItem>
                             ) : (
                             sortedEmployees.map(emp => (

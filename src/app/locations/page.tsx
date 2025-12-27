@@ -633,7 +633,7 @@ export default function LocationsPage() {
                             <div key={loc.id} className="py-2 flex justify-between items-center group">
                                <div className="font-mono flex items-center gap-2 text-sm">
                                   <MapPin className="w-4 h-4 text-muted-foreground"/>{loc.name}
-                               </div>
+                                </div>
                                <AlertDialog>
                                   <AlertDialogTrigger asChild>
                                     <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">

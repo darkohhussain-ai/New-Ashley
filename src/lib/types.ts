@@ -102,6 +102,11 @@ export type ItemForTransfer = {
   createdAt: string;
 };
 
+export type NewItem = Omit<Item, 'id' | 'fileId' | 'storageStatus' | 'modelCondition' | 'quantityPerCondition' | 'updateStatus'> & {
+  tempId: number;
+  locationId: string;
+};
+
 export type EvaluationResponse = {
     id: string;
     employeeId: string;

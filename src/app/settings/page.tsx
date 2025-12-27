@@ -18,8 +18,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import placeHolderImages from '@/lib/placeholder-images.json'
 import { Slider } from '@/components/ui/slider'
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
-import { useFirestore } from '@/firebase'
-import { getDocs, collection, writeBatch, doc } from 'firebase/firestore'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { Inter, Roboto, Open_Sans, Lato } from 'next/font/google';
 
@@ -132,7 +130,6 @@ function ColorPicker({ label, value, onChange }: { label: string, value: string,
 export default function SettingsPage() {
   const { toast } = useToast()
   const { theme, setTheme } = useTheme()
-  const firestore = useFirestore();
   const [mounted, setMounted] = useState(false)
   
   const [savedFont, setSavedFont] = useLocalStorage('app-font', 'Inter')
@@ -332,49 +329,25 @@ export default function SettingsPage() {
     toast({ title: 'Settings Reset', description: 'All appearance settings have been reset to their default values.' });
   }
   
-  const handleExport = async () => {
-    if (!firestore) {
-        toast({ variant: 'destructive', title: 'Export failed', description: 'Database connection not available.' });
-        return;
-    }
-    
+  const handleExport = () => {
     try {
-        const backupData: { [key: string]: any } = {
-            localStorage: {},
-            firestore: {}
-        };
+        const backupData: { [key: string]: any } = {};
         
-        // 1. Get localStorage data
-        const keysToExport = ['app-logo', 'app-logo-size', 'app-font', 'custom-font', 'light-theme-colors', 'dark-theme-colors', 'ashley-drp-theme', 'dashboard-card-size', 'dashboard-icon-size'];
-        keysToExport.forEach(key => {
-            const item = localStorage.getItem(key);
-            if (item) {
-                try {
-                    backupData.localStorage[key] = JSON.parse(item);
-                } catch {
-                    backupData.localStorage[key] = item;
-                }
-            }
-        });
-
-        // 2. Get Firestore data
-        const collectionsToExport = ['employees', 'expenses', 'excel_files', 'storage_locations'];
-        for (const collectionName of collectionsToExport) {
-            const querySnapshot = await getDocs(collection(firestore, collectionName));
-            backupData.firestore[collectionName] = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-            // Handle subcollections for excel_files
-            if (collectionName === 'excel_files') {
-                backupData.firestore.items = [];
-                for (const fileDoc of querySnapshot.docs) {
-                    const itemsSnapshot = await getDocs(collection(firestore, `excel_files/${fileDoc.id}/items`));
-                    const items = itemsSnapshot.docs.map(itemDoc => ({ id: itemDoc.id, ...itemDoc.data() }));
-                    backupData.firestore.items.push(...items);
+        // Iterate over all keys in localStorage
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key) {
+                const item = localStorage.getItem(key);
+                if (item) {
+                    try {
+                        backupData[key] = JSON.parse(item);
+                    } catch {
+                        backupData[key] = item;
+                    }
                 }
             }
         }
         
-        // 3. Create and download blob
         const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -394,43 +367,20 @@ export default function SettingsPage() {
 
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && firestore) {
+    if (file) {
       const reader = new FileReader();
       reader.onload = async (event) => {
         try {
           const backupData = JSON.parse(event.target?.result as string);
           
-          // 1. Restore localStorage
-          for (const key in backupData.localStorage) {
-            const value = typeof backupData.localStorage[key] === 'object' 
-                ? JSON.stringify(backupData.localStorage[key]) 
-                : backupData.localStorage[key];
-            localStorage.setItem(key, value);
+          for (const key in backupData) {
+            if (Object.prototype.hasOwnProperty.call(backupData, key)) {
+                const value = typeof backupData[key] === 'object' 
+                    ? JSON.stringify(backupData[key]) 
+                    : backupData[key];
+                localStorage.setItem(key, value);
+            }
           }
-
-          // 2. Restore Firestore
-          const firestoreData = backupData.firestore;
-          const batch = writeBatch(firestore);
-
-          for (const collectionName in firestoreData) {
-            if (collectionName === 'items') continue; // handle items separately
-            const collectionData = firestoreData[collectionName];
-            collectionData.forEach((docData: any) => {
-              const { id, ...data } = docData;
-              batch.set(doc(firestore, collectionName, id), data);
-            });
-          }
-          
-          if (firestoreData.items) {
-             firestoreData.items.forEach((itemData: any) => {
-                const { id, fileId, ...data } = itemData;
-                if(fileId) {
-                   batch.set(doc(firestore, `excel_files/${fileId}/items`, id), data);
-                }
-             });
-          }
-
-          await batch.commit();
 
           toast({ title: 'Data imported successfully!', description: 'The page will now reload to apply changes.' });
           setTimeout(() => window.location.reload(), 2000);
@@ -578,7 +528,7 @@ export default function SettingsPage() {
                <Card className='w-[350px]'>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-lg"><ShieldCheck /> Data Management</CardTitle>
-                    <CardDescription>Backup or restore your settings.</CardDescription>
+                    <CardDescription>Backup or restore all application data.</CardDescription>
                   </CardHeader>
                   <CardContent className="grid sm:grid-cols-2 gap-4">
                     <Button onClick={handleExport} variant="outline" className="w-full">
