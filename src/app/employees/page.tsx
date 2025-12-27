@@ -551,7 +551,7 @@ export default function EmployeesPage() {
   const [isCleaning, setIsCleaning] = useState(false);
   const [cleanupPerformed, setCleanupPerformed] = useLocalStorage('employee-cleanup-performed', false);
 
-  const [dataLoadPerformed, setDataLoadPerformed] = useLocalStorage('employee-data-load-performed-v2', false);
+  const [dataLoadPerformed, setDataLoadPerformed] = useLocalStorage('employee-data-load-performed-v3', false);
 
 
   useEffect(() => {
@@ -772,7 +772,5 @@ export default function EmployeesPage() {
     </div>
   )
 }
-
-    
 
     
