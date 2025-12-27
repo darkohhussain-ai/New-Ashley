@@ -50,16 +50,16 @@ export function useCollection<T = any>(
 ): UseCollectionResult<T> {
   const [data, setData] = useState<WithId<T>[] | null>(null);
   const [error, setError] = useState<FirestoreError | Error | null>(null);
-  const { isUserLoading } = useFirebase();
+  const { user, isUserLoading } = useFirebase();
 
   // Combine local loading state with user loading state
   const [isCollectionLoading, setIsCollectionLoading] = useState<boolean>(true);
   const isLoading = isUserLoading || isCollectionLoading;
 
   useEffect(() => {
-    // Wait until Firebase auth is initialized and we have a query
-    if (isUserLoading || !memoizedTargetRefOrQuery) {
-      if (!memoizedTargetRefOrQuery) {
+    // Wait until Firebase auth is initialized, we have a user, and a query.
+    if (isUserLoading || !user || !memoizedTargetRefOrQuery) {
+      if (!memoizedTargetRefOrQuery || !user) {
         setIsCollectionLoading(false);
       }
       return;
@@ -103,7 +103,7 @@ export function useCollection<T = any>(
     );
 
     return () => unsubscribe();
-  }, [memoizedTargetRefOrQuery, isUserLoading]);
+  }, [memoizedTargetRefOrQuery, isUserLoading, user]);
   
   return { data, isLoading, error, setData };
 }

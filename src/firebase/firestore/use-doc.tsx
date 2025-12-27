@@ -36,16 +36,16 @@ export function useDoc<T = any>(
 ): UseDocResult<T> {
   const [data, setData] = useState<WithId<T> | null>(null);
   const [error, setError] = useState<FirestoreError | Error | null>(null);
-  const { isUserLoading } = useFirebase();
+  const { user, isUserLoading } = useFirebase();
 
   const [isDocLoading, setIsDocLoading] = useState<boolean>(true);
   const isLoading = isUserLoading || isDocLoading;
 
 
   useEffect(() => {
-    // Wait until Firebase auth is initialized and we have a document reference
-    if (isUserLoading || !memoizedDocRef) {
-      if (!memoizedDocRef) {
+    // Wait until Firebase auth is initialized, we have a user, and a doc ref.
+    if (isUserLoading || !user || !memoizedDocRef) {
+      if (!memoizedDocRef || !user) {
         setIsDocLoading(false);
       }
       return;
@@ -81,7 +81,7 @@ export function useDoc<T = any>(
     );
 
     return () => unsubscribe();
-  }, [memoizedDocRef, isUserLoading]);
+  }, [memoizedDocRef, isUserLoading, user]);
 
   return { data, isLoading, error };
 }
