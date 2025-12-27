@@ -2,14 +2,8 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Helper functions to promote readable, secure, and maintainable rules.
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
     match /{document=**} {
-      allow read, write: if isSignedIn();
+      allow read, write: if true;
     }
   }
 }
