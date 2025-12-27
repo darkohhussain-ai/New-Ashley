@@ -3,15 +3,14 @@
 import { useState, useEffect } from 'react';
 import {
   Query,
+  onSnapshot,
   DocumentData,
   FirestoreError,
-  onSnapshot,
   QuerySnapshot,
   CollectionReference,
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import { useFirebase } from '@/firebase/provider';
 
 /** Utility type to add an 'id' field to a given type T. */
 export type WithId<T> = T & { id: string };
@@ -24,7 +23,6 @@ export interface UseCollectionResult<T> {
   data: WithId<T>[] | null; // Document data with ID, or null.
   isLoading: boolean;       // True if loading.
   error: FirestoreError | Error | null; // Error object, or null.
-  setData: React.Dispatch<React.SetStateAction<WithId<T>[] | null>>;
 }
 
 /* Internal implementation of Query:
@@ -40,70 +38,77 @@ export interface InternalQuery extends Query<DocumentData> {
 }
 
 /**
- * Custom hook that listens to a Firestore collection and provides real-time updates.
- * @template T Type of the document data in the collection.
- * @param {CollectionReference<DocumentData> | Query<DocumentData> | null | undefined} memoizedTargetRefOrQuery A memoized Firestore collection/query reference.
- * @returns {UseCollectionResult<T>} An object containing the collection data, loading state, and error.
+ * React hook to subscribe to a Firestore collection or query in real-time.
+ * Handles nullable references/queries.
+ * 
+ *
+ * IMPORTANT! YOU MUST MEMOIZE the inputted memoizedTargetRefOrQuery or BAD THINGS WILL HAPPEN
+ * use useMemo to memoize it per React guidence.  Also make sure that it's dependencies are stable
+ * references
+ *  
+ * @template T Optional type for document data. Defaults to any.
+ * @param {CollectionReference<DocumentData> | Query<DocumentData> | null | undefined} targetRefOrQuery -
+ * The Firestore CollectionReference or Query. Waits if null/undefined.
+ * @returns {UseCollectionResult<T>} Object with data, isLoading, error.
  */
 export function useCollection<T = any>(
     memoizedTargetRefOrQuery: ((CollectionReference<DocumentData> | Query<DocumentData>) & {__memo?: boolean})  | null | undefined,
 ): UseCollectionResult<T> {
-  const [data, setData] = useState<WithId<T>[] | null>(null);
-  const [error, setError] = useState<FirestoreError | Error | null>(null);
-  const { user, isUserLoading } = useFirebase();
+  type ResultItemType = WithId<T>;
+  type StateDataType = ResultItemType[] | null;
 
-  // Combine local loading state with user loading state
-  const [isCollectionLoading, setIsCollectionLoading] = useState<boolean>(true);
-  const isLoading = isUserLoading || isCollectionLoading;
+  const [data, setData] = useState<StateDataType>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<FirestoreError | Error | null>(null);
 
   useEffect(() => {
-    // Wait until Firebase auth is initialized, we have a user, and a query.
-    if (isUserLoading || !user || !memoizedTargetRefOrQuery) {
-      if (!memoizedTargetRefOrQuery || !user) {
-        setIsCollectionLoading(false);
-      }
+    if (!memoizedTargetRefOrQuery) {
+      setData(null);
+      setIsLoading(false);
+      setError(null);
       return;
     }
-    
-    if(!memoizedTargetRefOrQuery.__memo) {
-      console.warn("useCollection was passed a query that was not wrapped in useMemoFirebase. This can lead to infinite render loops.");
-    }
 
-    setIsCollectionLoading(true);
+    setIsLoading(true);
+    setError(null);
 
+    // Directly use memoizedTargetRefOrQuery as it's assumed to be the final query
     const unsubscribe = onSnapshot(
       memoizedTargetRefOrQuery,
       (snapshot: QuerySnapshot<DocumentData>) => {
-        const docs = snapshot.docs.map((doc) => ({
-          ...doc.data(),
-          id: doc.id,
-        })) as WithId<T>[];
-        setData(docs);
-        setIsCollectionLoading(false);
-        setError(null);
-      },
-      (err: FirestoreError) => {
-        let path = "unknown";
-        if(memoizedTargetRefOrQuery.type === 'collection') {
-          path = (memoizedTargetRefOrQuery as CollectionReference).path;
-        } else if(memoizedTargetRefOrQuery.type === 'query') {
-          path = (memoizedTargetRefOrQuery as any)._query.path.segments.join('/');
+        const results: ResultItemType[] = [];
+        for (const doc of snapshot.docs) {
+          results.push({ ...(doc.data() as T), id: doc.id });
         }
-        
+        setData(results);
+        setError(null);
+        setIsLoading(false);
+      },
+      (error: FirestoreError) => {
+        // This logic extracts the path from either a ref or a query
+        const path: string =
+          memoizedTargetRefOrQuery.type === 'collection'
+            ? (memoizedTargetRefOrQuery as CollectionReference).path
+            : (memoizedTargetRefOrQuery as unknown as InternalQuery)._query.path.canonicalString()
+
         const contextualError = new FirestorePermissionError({
           operation: 'list',
-          path: path,
+          path,
         })
-        
+
+        setError(contextualError)
+        setData(null)
+        setIsLoading(false)
+
+        // trigger global error propagation
         errorEmitter.emit('permission-error', contextualError);
-        setError(contextualError);
-        setIsCollectionLoading(false);
-        setData(null);
       }
     );
 
     return () => unsubscribe();
-  }, [memoizedTargetRefOrQuery, isUserLoading, user]);
-  
-  return { data, isLoading, error, setData };
+  }, [memoizedTargetRefOrQuery]); // Re-run if the target query/reference changes.
+  if(memoizedTargetRefOrQuery && !memoizedTargetRefOrQuery.__memo) {
+    throw new Error(memoizedTargetRefOrQuery + ' was not properly memoized using useMemoFirebase');
+  }
+  return { data, isLoading, error };
 }

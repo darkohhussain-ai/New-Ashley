@@ -1,332 +1,172 @@
-
 {
   "entities": {
-    "Employee": {
+    "Volunteer": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Employee",
+      "title": "Volunteer",
       "type": "object",
-      "description": "Represents an employee within the application.",
+      "description": "Represents a volunteer in the HR section of the application.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the Employee entity."
+          "description": "Unique identifier for the Volunteer entity."
         },
-        "name": {
+        "firstName": {
           "type": "string",
-          "description": "The name of the employee."
+          "description": "The first name of the volunteer."
         },
-        "jobTitle": {
+        "lastName": {
           "type": "string",
-          "description": "The job title of the employee."
-        },
-        "employmentStartDate": {
-          "type": "string",
-          "description": "The date the employee started employment.",
-          "format": "date-time"
-        },
-        "dateOfBirth": {
-          "type": "string",
-          "description": "The employee's date of birth.",
-          "format": "date-time"
+          "description": "The last name of the volunteer."
         },
         "email": {
           "type": "string",
-          "description": "The employee's email address.",
+          "description": "The email address of the volunteer.",
           "format": "email"
         },
         "phone": {
           "type": "string",
-          "description": "The employee's phone number."
+          "description": "The phone number of the volunteer."
         },
-        "photoUrl": {
+        "address": {
           "type": "string",
-          "description": "URL of the employee's photo.",
-          "format": "uri"
+          "description": "The address of the volunteer."
         },
-        "notes": {
+        "dateOfBirth": {
           "type": "string",
-          "description": "Notes or additional information about the employee."
-        }
-      },
-      "required": [
-        "id",
-        "name"
-      ]
-    },
-    "Expense": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Expense",
-      "type": "object",
-      "description": "Represents an expense incurred by an employee.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Expense entity."
-        },
-        "employeeId": {
-          "type": "string",
-          "description": "Reference to Employee. (Relationship: Employee 1:N Expense)"
-        },
-        "amount": {
-          "type": "number",
-          "description": "The amount of the expense."
-        },
-        "date": {
-          "type": "string",
-          "description": "The date the expense was incurred.",
+          "description": "The date of birth of the volunteer.",
           "format": "date-time"
         },
-        "notes": {
+        "availability": {
           "type": "string",
-          "description": "Notes or description of the expense."
-        }
-      },
-      "required": [
-        "id",
-        "employeeId",
-        "amount",
-        "date"
-      ]
-    },
-    "MonthlyReport": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "MonthlyReport",
-      "type": "object",
-      "description": "Represents a monthly expense report for an employee.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the MonthlyReport entity."
+          "description": "Volunteer's availability schedule."
         },
-        "employeeId": {
-          "type": "string",
-          "description": "Reference to Employee. (Relationship: Employee 1:N MonthlyReport)"
-        },
-        "month": {
-          "type": "string",
-          "description": "The month the report is for (e.g., YYYY-MM).",
-          "format": "date-time"
-        },
-        "totalExpenses": {
-          "type": "number",
-          "description": "The total expenses for the employee for the month."
-        }
-      },
-      "required": [
-        "id",
-        "employeeId",
-        "month",
-        "totalExpenses"
-      ]
-    },
-    "ArchivedExpenseList": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "ArchivedExpenseList",
-      "type": "object",
-      "description": "Represents an archived expense list for a specific month.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the ArchivedExpenseList entity."
-        },
-        "month": {
-          "type": "string",
-          "description": "The month the archived list is for (e.g., YYYY-MM).",
-          "format": "date-time"
-        },
-        "expenseIds": {
+        "skills": {
           "type": "array",
-          "description": "References to Expenses. (Relationship: ArchivedExpenseList 1:N Expense)",
+          "description": "List of skills the volunteer possesses.",
           "items": {
             "type": "string"
           }
-        }
-      },
-      "required": [
-        "id",
-        "month",
-        "expenseIds"
-      ]
-    },
-    "StorageLocation": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "StorageLocation",
-      "type": "object",
-      "description": "Represents a storage location.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the StorageLocation entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "Name of the location."
-        },
-        "warehouseType": {
-          "type": "string",
-          "description": "The type of warehouse (Ashley or Huana).",
-          "enum": ["Ashley", "Huana"]
-        }
-      },
-      "required": ["id", "name", "warehouseType"]
-    },
-    "ExcelFile": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "ExcelFile",
-      "type": "object",
-      "description": "Represents a created or imported Excel file.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the ExcelFile entity."
-        },
-        "storekeeperId": {
-          "type": "string",
-          "description": "ID of the storekeeper employee."
-        },
-        "storageName": {
-          "type": "string",
-          "description": "Name of the storage."
-        },
-        "categoryName": {
-          "type": "string",
-          "description": "Name of the category for the imported items."
-        },
-        "date": {
-          "type": "string",
-          "description": "Date of the file.",
-          "format": "date-time"
-        },
-        "source": {
-            "type": "string",
-            "description": "Source of the imported file.",
-            "enum": ["Showroom", "Ashley Store", "Huana Store"]
-        },
-        "type": {
-          "type": "string",
-          "description": "Type of file (new or imported).",
-          "enum": ["new", "imported"]
-        }
-      },
-      "required": ["id", "storekeeperId", "date", "type", "storageName", "categoryName", "source"]
-    },
-    "Item": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Item",
-      "type": "object",
-      "description": "Represents an item to be transferred. It is staged before being assigned to a transfer.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Item entity."
-        },
-        "model": {
-          "type": "string",
-          "description": "The model of the item."
-        },
-        "quantity": {
-          "type": "number",
-          "description": "The quantity of the item."
         },
         "notes": {
           "type": "string",
-          "description": "Notes about the item."
-        },
-        "destination": {
-          "type": "string",
-          "description": "The destination city for the item.",
-          "enum": ["Erbil", "Baghdad", "Diwan", "Dohuk"]
-        },
-        "transferId": {
-          "type": "string",
-          "description": "The ID of the transfer slip this item belongs to. Null if not yet transferred."
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Timestamp when the item was added to the transfer list."
-        }
-      },
-      "required": ["id", "model", "quantity", "destination", "createdAt"]
-    },
-    "Transfer": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Transfer",
-      "type": "object",
-      "description": "Represents a cargo transfer slip, archiving a collection of transferred items.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Transfer entity."
-        },
-        "transferDate": {
-          "type": "string",
-          "format": "date-time",
-          "description": "The date the transfer was created."
-        },
-        "cargoName": {
-          "type": "string",
-          "description": "A descriptive name for the cargo transfer."
-        },
-        "destinationCity": {
-          "type": "string",
-          "description": "The destination city for the transfer."
-        },
-        "driverName": {
-          "type": "string",
-          "description": "The name of the driver."
-        },
-        "warehouseManagerName": {
-          "type": "string",
-          "description": "The name of the warehouse manager."
-        },
-        "itemIds": {
-          "type": "array",
-          "items": { "type": "string" },
-          "description": "An array of item IDs included in this transfer."
+          "description": "Any notes regarding the volunteer."
         }
       },
       "required": [
         "id",
-        "transferDate",
-        "cargoName",
-        "destinationCity",
-        "driverName",
-        "warehouseManagerName",
-        "itemIds"
+        "firstName",
+        "lastName",
+        "email"
       ]
     },
-    "SoldItemReceipt": {
-      "title": "Sold Item Receipt",
+    "Setting": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Setting",
       "type": "object",
-      "description": "Represents a receipt for sold items, tracking categories of items sold.",
+      "description": "Represents a user-configurable setting for the application.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the Sold Item Receipt entity."
+          "description": "Unique identifier for the Setting entity."
         },
-        "receiptNumber": {
+        "userId": {
           "type": "string",
-          "description": "The receipt number, formatted as 115-0XXXX."
+          "description": "Reference to User. (Relationship: User 1:N Setting)"
         },
-        "receiptDate": {
+        "theme": {
           "type": "string",
-          "format": "date-time",
-          "description": "The date the receipt was issued."
+          "description": "The user-selected theme (e.g., light, dark)."
         },
-        "customerName": {
+        "primaryColor": {
           "type": "string",
-          "description": "The name of the customer who made the purchase."
+          "description": "The user-selected primary color."
         },
-        "itemCategories": {
-          "type": "array",
-          "description": "A list of categories for the items sold.",
-          "items": {
-            "type": "string"
-          }
+        "backgroundColor": {
+          "type": "string",
+          "description": "The user-selected background color."
+        },
+        "accentColor": {
+          "type": "string",
+          "description": "The user-selected accent color."
+        },
+        "font": {
+          "type": "string",
+          "description": "The user-selected font."
         }
       },
-      "required": ["id", "receiptNumber", "itemCategories"]
+      "required": [
+        "id",
+        "userId",
+        "theme"
+      ]
+    },
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        },
+        "username": {
+          "type": "string",
+          "description": "The username of the user."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the user.",
+          "format": "email"
+        },
+        "isAdmin": {
+          "type": "boolean",
+          "description": "Indicates if the user is an administrator."
+        }
+      },
+      "required": [
+        "id",
+        "username",
+        "email"
+      ]
+    },
+    "Logo": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Logo",
+      "type": "object",
+      "description": "Represents the application's logo.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Logo entity."
+        },
+        "fileName": {
+          "type": "string",
+          "description": "Name of the logo image file."
+        },
+        "fileType": {
+          "type": "string",
+          "description": "Type of the logo image file (e.g., PNG, JPEG)."
+        },
+        "fileSize": {
+          "type": "number",
+          "description": "Size of the logo image file in bytes."
+        },
+        "uploadDate": {
+          "type": "string",
+          "description": "Date and time when the logo was uploaded.",
+          "format": "date-time"
+        },
+        "dataURL": {
+          "type": "string",
+          "description": "Data URL representing the logo image."
+        }
+      },
+      "required": [
+        "id",
+        "fileName",
+        "fileType"
+      ]
     }
   },
   "auth": {
@@ -338,83 +178,94 @@
   "firestore": {
     "structure": [
       {
-        "path": "/employees/{employeeId}",
+        "path": "/users/{userId}",
         "definition": {
-          "entityName": "Employee",
+          "entityName": "User",
           "schema": {
-            "$ref": "#/backend/entities/Employee"
+            "$ref": "#/backend/entities/User"
           },
-          "description": "Stores employee profiles.",
-          "params": [{ "name": "employeeId", "description": "Unique identifier for the employee." }]
+          "description": "Stores user profiles.  Path-based ownership ensures only the authenticated user (or an admin) can access their profile data.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique ID of the user."
+            }
+          ]
         }
       },
       {
-        "path": "/expenses/{expenseId}",
+        "path": "/users/{userId}/settings/{settingId}",
         "definition": {
-          "entityName": "Expense",
+          "entityName": "Setting",
           "schema": {
-            "$ref": "#/backend/entities/Expense"
+            "$ref": "#/backend/entities/Setting"
           },
-          "description": "Stores expenses for each employee.",
-          "params": [{ "name": "expenseId", "description": "Unique identifier for the expense." }]
+          "description": "Stores user-specific settings. Path-based ownership ensures only the authenticated user (or an admin) can access their settings data.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique ID of the user."
+            },
+            {
+              "name": "settingId",
+              "description": "The unique ID of the setting."
+            }
+          ]
         }
       },
       {
-        "path": "/storage_locations/{locationId}",
+        "path": "/users/{userId}/logos/{logoId}",
         "definition": {
-          "entityName": "StorageLocation",
+          "entityName": "Logo",
           "schema": {
-            "$ref": "#/backend/entities/StorageLocation"
+            "$ref": "#/backend/entities/Logo"
           },
-          "description": "Stores storage locations.",
-          "params": [{ "name": "locationId", "description": "Unique identifier for the storage location." }]
+          "description": "Stores user-specific logos. Path-based ownership ensures only the authenticated user (or an admin) can access their logo data.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique ID of the user."
+            },
+            {
+              "name": "logoId",
+              "description": "The unique ID of the logo."
+            }
+          ]
         }
       },
       {
-        "path": "/excel_files/{fileId}",
+        "path": "/volunteers/{volunteerId}",
         "definition": {
-          "entityName": "ExcelFile",
+          "entityName": "Volunteer",
           "schema": {
-            "$ref": "#/backend/entities/ExcelFile"
+            "$ref": "#/backend/entities/Volunteer"
           },
-          "description": "Stores metadata for created or imported Excel files. This collection is now primarily for inventory management and is separate from the transfer process.",
-          "params": [{ "name": "fileId", "description": "Unique identifier for the file." }]
+          "description": "Stores volunteer information.  Admin roles will be enforced through a separate mechanism (e.g., a dedicated `/roles_admin/{uid}` collection).",
+          "params": [
+            {
+              "name": "volunteerId",
+              "description": "The unique ID of the volunteer."
+            }
+          ]
         }
       },
       {
-        "path": "/items/{itemId}",
+        "path": "/roles_admin/{userId}",
         "definition": {
-          "entityName": "Item",
+          "entityName": "adminRole",
           "schema": {
-            "$ref": "#/backend/entities/Item"
+            "$ref": "#/backend/entities/User"
           },
-          "description": "Stores items staged for transfer. Once transferred, they are linked to a Transfer record via transferId.",
-          "params": [{ "name": "itemId", "description": "Unique identifier for the item." }]
-        }
-      },
-      {
-        "path": "/transfers/{transferId}",
-        "definition": {
-          "entityName": "Transfer",
-          "schema": {
-            "$ref": "#/backend/entities/Transfer"
-          },
-          "description": "Stores archived transfer slips for cargo shipments.",
-          "params": [{ "name": "transferId", "description": "Unique identifier for the transfer." }]
-        }
-      },
-      {
-        "path": "/sold_item_receipts/{receiptId}",
-        "definition": {
-          "entityName": "SoldItemReceipt",
-          "schema": {
-            "$ref": "#/backend/entities/SoldItemReceipt"
-          },
-          "description": "Stores records of sold item receipts.",
-          "params": [{ "name": "receiptId", "description": "Unique identifier for the receipt." }]
+          "description": "Documents in this collection grant admin privileges to the corresponding user ID. Existence, not content, determines admin status.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique ID of the user."
+            }
+          ]
         }
       }
     ],
-    "reasoning": "The data model is updated to support the new cargo transfer workflow. A top-level `/items` collection is introduced to stage items before they are assigned to a transfer. This decouples the transfer process from the main inventory stored in `/excel_files`. The `/transfers` collection will archive the created transfer slips, linking to the items that were part of that shipment. A new `SoldItemReceipt` entity and `/sold_item_receipts` collection have been added to track sold items. This structure provides a clear and scalable way to manage the entire lifecycle of a cargo transfer. The Overtime entity and collection have been removed."
+    "reasoning": "The Firestore structure is designed to address the 'auth/configuration-not-found' error, which typically indicates an issue with Firebase initialization or configuration. However, based on the provided app description and entities, the structure prioritizes secure data management and adheres to the principle of Authorization Independence.  User settings and logos are stored as user-owned data. This approach enables simple security rules based on `request.auth.uid`. Volunteers are stored at the top level with the expectation that they are managed by admins.  This structure relies on path-based ownership and simplifies security rules. All list operations are secured because data requiring different access roles is segregated into different collections."
   }
 }
