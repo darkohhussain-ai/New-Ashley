@@ -1,8 +1,8 @@
 export const firebaseConfig = {
-  "projectId": "studio-1995603560-fe228",
-  "appId": "1:400653600210:web:177c58d071e2d764ac340b",
-  "apiKey": "AIzaSyAEOaydFqWeZfiUzV57KWvxBW2BH67ybpc",
-  "authDomain": "studio-1995603560-fe228.firebaseapp.com",
+  "projectId": "ashley-drp-manager-2-530-df5f2",
+  "appId": "1:227758088432:web:6fd03595fb0a09e2c0e235",
+  "apiKey": "AIzaSyDFZe4xkp9GZdrWurACvxnOlR1MbKTziXU",
+  "authDomain": "ashley-drp-manager-2-530-df5f2.firebaseapp.com",
   "measurementId": "",
-  "messagingSenderId": "400653600210"
+  "messagingSenderId": "227758088432"
 };
