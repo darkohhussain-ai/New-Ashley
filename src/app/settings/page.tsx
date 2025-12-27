@@ -5,7 +5,7 @@ import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowLeft, Download, Upload, Save, Palette, Type, ShieldCheck, Image as ImageIcon, LayoutDashboard, RefreshCcw, Play } from 'lucide-react'
-import useLocalStorage from '@/hooks/use-local-storage'
+import useLocalStorage, { getAllDataForExport, importData } from '@/hooks/use-local-storage'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
@@ -318,26 +318,10 @@ export default function SettingsPage() {
     toast({ title: 'Settings Reset', description: 'All appearance settings have been reset to their default values.' });
   }
   
-  const handleExport = () => {
+  const handleExport = async () => {
     try {
-        const backupData: { [key: string]: any } = {};
-        
-        // Iterate over all keys in localStorage
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key) {
-                const item = localStorage.getItem(key);
-                if (item) {
-                    try {
-                        backupData[key] = JSON.parse(item);
-                    } catch {
-                        backupData[key] = item;
-                    }
-                }
-            }
-        }
-        
-        const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+        const data = await getAllDataForExport();
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -367,15 +351,7 @@ export default function SettingsPage() {
       reader.onload = async (event) => {
         try {
           const backupData = JSON.parse(event.target?.result as string);
-          
-          for (const key in backupData) {
-            if (Object.prototype.hasOwnProperty.call(backupData, key)) {
-                const value = typeof backupData[key] === 'object' 
-                    ? JSON.stringify(backupData[key]) 
-                    : backupData[key];
-                localStorage.setItem(key, value);
-            }
-          }
+          await importData(backupData);
 
           toast({ title: 'Data imported successfully!', description: 'The page will now reload to apply changes.' });
           setTimeout(() => window.location.reload(), 2000);
