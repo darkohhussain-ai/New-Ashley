@@ -2,7 +2,7 @@
 "use client"
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { Users, Box, ArrowRightLeft, Settings as SettingsIcon, CreditCard, Bell, ChevronDown, Calendar, Clock, PackagePlus } from "lucide-react"
+import { Users, Box, ArrowRightLeft, Settings as SettingsIcon, CreditCard, Bell, ChevronDown, Calendar, Clock, PackagePlus, Star } from "lucide-react"
 import { DashboardCard } from "@/components/dashboard/dashboard-card"
 import useLocalStorage from "@/hooks/use-local-storage"
 import { useUser } from "@/firebase"
@@ -45,6 +45,7 @@ export default function Dashboard() {
 
   const menuItems = [
     { title: "Employees", icon: Users, href: "/employees", color: "bg-pink-500" },
+    { title: "Marketing Evaluation", icon: Star, href: "/marketing-evaluation", color: "bg-cyan-500" },
     { title: "Ashley Expenses", icon: CreditCard, href: "/ashley-expenses", color: "bg-blue-500" },
     { title: "Placement & Storage", icon: Box, href: "/items", color: "bg-green-500" },
     { title: "Transmit Cargo", icon: PackagePlus, href: "/transmit", color: "bg-yellow-500" },

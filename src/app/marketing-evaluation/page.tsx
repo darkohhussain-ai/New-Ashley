@@ -1,0 +1,273 @@
+
+'use client';
+
+import { useState, useMemo, useEffect } from 'react';
+import Link from 'next/link';
+import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, useUser } from '@/firebase';
+import { collection, query, where, Timestamp } from 'firebase/firestore';
+import { ArrowLeft, Star, TrendingUp, TrendingDown, ChevronsRight, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { useToast } from '@/hooks/use-toast';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+
+const questions = [
+    { id: 'q1', text: 'Commitment to work' },
+    { id: 'q2', text: 'Adherence to working hours' },
+    { id: 'q3', text: 'Acceptance of responsibility' },
+    { id: 'q4', text: 'Initiative and offering suggestions' },
+    { id: 'q5', text: 'Relationship with colleagues' },
+    { id: 'q6', text: 'Appearance and personal hygiene' },
+    { id: 'q7', text: 'Speed of completion' },
+    { id: 'q8', text: 'Work accuracy' },
+    { id: 'q9', text: 'Learning speed' },
+    { id: 'q10', text: 'Problem-solving ability' },
+    { id: 'q11', text: 'Commitment to management directives' },
+    { id: 'q12', text: 'Ability to work under pressure' },
+    { id: 'q13', text: 'Trustworthiness' },
+    { id: 'q14', text: 'Customer service' },
+    { id: 'q15', text: 'Teamwork spirit' },
+    { id: 'q16', text: 'Continuous development' },
+];
+const answerOptions = [
+    { label: 'Excellent', value: 3 },
+    { label: 'Good', value: 2 },
+    { label: 'Needs Improvement', value: 1 },
+];
+
+type Employee = {
+    id: string;
+    name: string;
+    jobTitle?: string;
+}
+
+type EvaluationResponse = {
+    employeeId: string;
+    totalScore: number;
+    date: Timestamp;
+    responses: { questionId: string; answer: number }[];
+};
+
+export default function MarketingEvaluationPage() {
+    const firestore = useFirestore();
+    const { user } = useUser();
+    const { toast } = useToast();
+
+    const [selectedEmployee, setSelectedEmployee] = useState<string>('');
+    const [responses, setResponses] = useState<Record<string, number>>({});
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const marketingEmployeesRef = useMemoFirebase(() => (firestore && user) ? query(collection(firestore, 'employees'), where('jobTitle', '==', 'Marketing')) : null, [firestore, user]);
+    const { data: marketingEmployees, isLoading: isLoadingEmployees } = useCollection<Employee>(marketingEmployeesRef);
+
+    const evaluationsRef = useMemoFirebase(() => (firestore && user) ? collection(firestore, 'marketing-evaluations') : null, [firestore, user]);
+    const { data: evaluations, isLoading: isLoadingEvaluations } = useCollection<EvaluationResponse>(evaluationsRef);
+
+    const handleResponseChange = (questionId: string, value: string) => {
+        setResponses(prev => ({ ...prev, [questionId]: parseInt(value) }));
+    };
+    
+    const handleSubmit = async () => {
+        if (!selectedEmployee) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Please select an employee.' });
+            return;
+        }
+        if (Object.keys(responses).length !== questions.length) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Please answer all questions.' });
+            return;
+        }
+        if (!firestore) return;
+
+        setIsSubmitting(true);
+        const totalScore = Object.values(responses).reduce((sum, value) => sum + value, 0);
+        
+        const evaluationData = {
+            employeeId: selectedEmployee,
+            date: Timestamp.now(),
+            responses: Object.entries(responses).map(([questionId, answer]) => ({ questionId, answer })),
+            totalScore,
+        };
+
+        try {
+            await addDocumentNonBlocking(collection(firestore, 'marketing-evaluations'), evaluationData);
+            toast({ title: 'Success', description: 'Evaluation submitted successfully.' });
+            setSelectedEmployee('');
+            setResponses({});
+        } catch (error) {
+            console.error("Error submitting evaluation:", error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Failed to submit evaluation.' });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const evaluationSummary = useMemo(() => {
+        if (!evaluations || !marketingEmployees) return [];
+        
+        const summary = marketingEmployees.map(emp => {
+            const empEvaluations = evaluations.filter(e => e.employeeId === emp.id);
+            if (empEvaluations.length === 0) {
+                return { employeeId: emp.id, name: emp.name, score: 0 };
+            }
+            // Use the most recent evaluation for simplicity
+            const latestEval = empEvaluations.sort((a, b) => b.date.toMillis() - a.date.toMillis())[0];
+            return { employeeId: emp.id, name: emp.name, score: latestEval.totalScore };
+        });
+
+        return summary.sort((a, b) => b.score - a.score);
+    }, [evaluations, marketingEmployees]);
+    
+    const individualChartData = useMemo(() => {
+        if (!selectedEmployee || !evaluations) return [];
+        
+        const latestEval = evaluations
+            .filter(e => e.employeeId === selectedEmployee)
+            .sort((a,b) => b.date.toMillis() - a.date.toMillis())[0];
+
+        if (!latestEval) return [];
+
+        return latestEval.responses.map(res => {
+            const questionText = questions.find(q => q.id === res.questionId)?.text || 'Unknown';
+            return { name: questionText, score: res.answer };
+        });
+    }, [selectedEmployee, evaluations]);
+
+    const isLoading = isLoadingEmployees || isLoadingEvaluations;
+
+    return (
+        <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
+            <header className="flex items-center gap-4 mb-8">
+                <Button variant="outline" size="icon" asChild>
+                    <Link href="/"><ArrowLeft /></Link>
+                </Button>
+                <h1 className="text-2xl md:text-3xl font-bold">Marketing Employee Evaluation</h1>
+            </header>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Evaluation Form</CardTitle>
+                            <CardDescription>Select an employee and answer the questions below.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Select an employee to evaluate..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {isLoadingEmployees ? (
+                                        <SelectItem value="loading" disabled>Loading employees...</SelectItem>
+                                    ) : (
+                                        marketingEmployees?.map(emp => (
+                                            <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>
+                                        ))
+                                    )}
+                                </SelectContent>
+                            </Select>
+
+                            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-4">
+                                {questions.map((q, index) => (
+                                    <div key={q.id} className="p-4 border rounded-lg">
+                                        <p className="font-medium mb-3">{index + 1}. {q.text}</p>
+                                        <RadioGroup onValueChange={(value) => handleResponseChange(q.id, value)} value={String(responses[q.id] || '')}>
+                                            <div className="flex flex-wrap gap-4">
+                                                {answerOptions.map(opt => (
+                                                    <div key={opt.value} className="flex items-center space-x-2">
+                                                        <RadioGroupItem value={String(opt.value)} id={`${q.id}-${opt.value}`} />
+                                                        <Label htmlFor={`${q.id}-${opt.value}`}>{opt.label}</Label>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </RadioGroup>
+                                    </div>
+                                ))}
+                            </div>
+                             <Button onClick={handleSubmit} disabled={isSubmitting} className="w-full">
+                                {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <ChevronsRight className="mr-2"/>}
+                                Submit Evaluation
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </div>
+                <div className="lg:col-span-1 space-y-8">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Rankings</CardTitle>
+                             <CardDescription>Overall scores and ranking.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                           {isLoading ? <Loader2 className="animate-spin" /> : (
+                               <Table>
+                                   <TableHeader>
+                                       <TableRow>
+                                           <TableHead>Rank</TableHead>
+                                           <TableHead>Employee</TableHead>
+                                           <TableHead className="text-right">Score</TableHead>
+                                       </TableRow>
+                                   </TableHeader>
+                                   <TableBody>
+                                        {evaluationSummary.map((item, index) => (
+                                            <TableRow key={item.employeeId}>
+                                                <TableCell className="font-bold">{index + 1}</TableCell>
+                                                <TableCell>{item.name}</TableCell>
+                                                <TableCell className="text-right font-medium">{item.score}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                   </TableBody>
+                               </Table>
+                           )}
+                        </CardContent>
+                    </Card>
+
+                    {selectedEmployee && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>
+                                    {marketingEmployees?.find(e => e.id === selectedEmployee)?.name}'s Chart
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {individualChartData.length > 0 ? (
+                                    <ResponsiveContainer width="100%" height={300}>
+                                        <BarChart data={individualChartData} layout="vertical" margin={{ left: 80 }}>
+                                            <CartesianGrid strokeDasharray="3 3" />
+                                            <XAxis type="number" domain={[0, 3]} ticks={[1, 2, 3]} />
+                                            <YAxis type="category" dataKey="name" width={100} fontSize={12} />
+                                            <Tooltip />
+                                            <Bar dataKey="score" fill="hsl(var(--primary))" />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                ) : (
+                                    <p className="text-muted-foreground text-center">No evaluation data to display.</p>
+                                )}
+                            </CardContent>
+                        </Card>
+                    )}
+                     <Card>
+                        <CardHeader>
+                            <CardTitle>Overall Comparison</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ResponsiveContainer width="100%" height={300}>
+                                <BarChart data={evaluationSummary}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="name" fontSize={10} angle={-45} textAnchor="end" height={80} />
+                                    <YAxis />
+                                    <Tooltip />
+                                    <Legend />
+                                    <Bar dataKey="score" fill="hsl(var(--primary))" />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
+        </div>
+    );
+}
+

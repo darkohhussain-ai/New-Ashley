@@ -551,7 +551,7 @@ export default function EmployeesPage() {
   const [isCleaning, setIsCleaning] = useState(false);
   const [cleanupPerformed, setCleanupPerformed] = useLocalStorage('employee-cleanup-performed', false);
 
-  const [dataLoadPerformed, setDataLoadPerformed] = useLocalStorage('employee-data-load-performed-v1', false);
+  const [dataLoadPerformed, setDataLoadPerformed] = useLocalStorage('employee-data-load-performed-v2', false);
 
 
   useEffect(() => {
@@ -576,7 +576,19 @@ export default function EmployeesPage() {
             { name: "Karzan Dara Bakr", employmentStartDate: new Date("2025-05-13") },
             { name: "Hunar Jamal", employmentStartDate: new Date("2024-08-01") },
             { name: "Sarkawt Mohammed Ali", employmentStartDate: new Date("2024-09-01") },
-            { name: "Salar Othman Hama", employmentStartDate: new Date("2025-05-13") }
+            { name: "Salar Othman Hama", employmentStartDate: new Date("2025-05-13") },
+            { name: "Ahmad Abdulla", jobTitle: "Marketing" },
+            { name: "Ahmed Mohammed", jobTitle: "Marketing" },
+            { name: "Aso Omar", jobTitle: "Marketing" },
+            { name: "Aza Fayaq", jobTitle: "Marketing" },
+            { name: "Dana Ali", jobTitle: "Marketing" },
+            { name: "Dlshad Abdulla", jobTitle: "Marketing" },
+            { name: "Dyar Faraidun", jobTitle: "Marketing" },
+            { name: "Harem Najm", jobTitle: "Marketing" },
+            { name: "Karwan Jamal", jobTitle: "Marketing" },
+            { name: "Pshtiwan Fayaq", jobTitle: "Marketing" },
+            { name: "Rekan Abdulla", jobTitle: "Marketing" },
+            { name: "Shvan Jalal", jobTitle: "Marketing" },
         ];
 
         const existingNames = new Set(employees.map(e => e.name.toLowerCase()));
@@ -587,11 +599,17 @@ export default function EmployeesPage() {
             const batch = writeBatch(firestore);
             employeesToAdd.forEach(emp => {
                 const newDocRef = doc(collection(firestore, "employees"));
-                batch.set(newDocRef, {
-                    ...emp,
-                    employmentStartDate: Timestamp.fromDate(emp.employmentStartDate),
-                    photoUrl: `https://picsum.photos/seed/${emp.name.replace(/\s/g, '-')}/400`
-                });
+                const data: Partial<Employee> = {
+                  name: emp.name,
+                  photoUrl: `https://picsum.photos/seed/${emp.name.replace(/\s/g, '-')}/400`
+                }
+                if (emp.employmentStartDate) {
+                  data.employmentStartDate = Timestamp.fromDate(emp.employmentStartDate)
+                }
+                if (emp.jobTitle) {
+                  data.jobTitle = emp.jobTitle;
+                }
+                batch.set(newDocRef, data);
             });
 
             batch.commit().then(() => {

@@ -126,6 +126,44 @@
         "username",
         "accessLevel"
       ]
+    },
+    "MarketingEmployee": {
+      "title": "MarketingEmployee",
+      "description": "Represents a marketing employee being evaluated.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" }
+      }
+    },
+    "EvaluationQuestion": {
+      "title": "EvaluationQuestion",
+      "description": "Represents a single question in the employee evaluation.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "text": { "type": "string" }
+      }
+    },
+    "EvaluationResponse": {
+      "title": "EvaluationResponse",
+      "description": "Represents a submitted evaluation for a marketing employee.",
+      "type": "object",
+      "properties": {
+        "employeeId": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "responses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "questionId": { "type": "string" },
+              "answer": { "type": "integer", "enum": [1, 2, 3] }
+            }
+          }
+        },
+        "totalScore": { "type": "number" }
+      }
     }
   },
   "auth": {
@@ -194,6 +232,14 @@
             "$ref": "#/backend/entities/Overtime"
           },
           "description": "Stores overtime records."
+        }
+      },
+       {
+        "path": "/marketing-evaluations/{evaluationId}",
+        "definition": {
+          "entityName": "EvaluationResponse",
+          "schema": { "$ref": "#/backend/entities/EvaluationResponse" },
+          "description": "Stores evaluation responses for marketing employees."
         }
       }
     ]
