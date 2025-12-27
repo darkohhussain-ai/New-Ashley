@@ -3,7 +3,7 @@
 
 import { useState, useMemo, useRef } from 'react';
 import Link from 'next/link';
-import { useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking, useUser } from '@/firebase';
 import { collection, doc, writeBatch, Timestamp, query, where } from 'firebase/firestore';
 import { ArrowLeft, Calendar, Truck, FileDown, User, Warehouse, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -51,6 +51,7 @@ const destinations = ["Erbil", "Baghdad", "Diwan", "Dohuk"];
 export default function CreateTransferPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { user } = useUser();
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -69,7 +70,7 @@ export default function CreateTransferPage() {
   const [logoSrc] = useLocalStorage('app-logo', defaultLogo);
   const pdfCardRef = useRef<HTMLDivElement>(null);
   
-  const itemsRef = useMemoFirebase(() => (firestore ? query(collection(firestore, 'items'), where('transferId', '==', null)) : null), [firestore]);
+  const itemsRef = useMemoFirebase(() => (firestore && user ? query(collection(firestore, 'items'), where('transferId', '==', null)) : null), [firestore, user]);
   const { data: stagedItems, isLoading: isLoadingItems, setData: setStagedItems } = useCollection<Item>(itemsRef);
 
   const filteredItems = useMemo(() => {

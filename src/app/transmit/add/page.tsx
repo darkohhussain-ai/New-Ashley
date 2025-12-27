@@ -3,7 +3,7 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking, useUser } from '@/firebase';
 import { collection, query, where, Timestamp, doc } from 'firebase/firestore';
 import { ArrowLeft, Plus, Trash2, Edit, Save, X, Loader2, ListPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -31,6 +31,7 @@ const destinations = ["Erbil", "Baghdad", "Diwan", "Dohuk"];
 export default function AddItemsPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { user } = useUser();
 
   const [isSaving, setIsSaving] = useState(false);
   
@@ -43,7 +44,7 @@ export default function AddItemsPage() {
   // Editing state
   const [editingItem, setEditingItem] = useState<Item | null>(null);
 
-  const itemsRef = useMemoFirebase(() => (firestore ? query(collection(firestore, 'items'), where('transferId', '==', null)) : null), [firestore]);
+  const itemsRef = useMemoFirebase(() => (firestore && user ? query(collection(firestore, 'items'), where('transferId', '==', null)) : null), [firestore, user]);
   const { data: stagedItems, isLoading: isLoadingItems } = useCollection<Item>(itemsRef);
 
   const sortedItems = useMemo(() => {
