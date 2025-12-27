@@ -298,16 +298,15 @@ function AddEmployeeDialog({ open, onOpenChange }: { open: boolean, onOpenChange
             return;
         }
 
-        const employeeData: Omit<Employee, 'id'> = {
-            name, 
-            jobTitle: jobTitle || undefined,
-            email: email || undefined,
-            phone: phone || undefined,
-            notes: notes || undefined,
-            photoUrl: photoUrl || `https://picsum.photos/seed/${name.replace(/\s/g, '-')}/400`,
-            employmentStartDate: employmentStartDate ? Timestamp.fromDate(employmentStartDate) : undefined,
-            dateOfBirth: dateOfBirth ? Timestamp.fromDate(dateOfBirth) : undefined,
-        };
+        const employeeData: Omit<Employee, 'id'> = { name };
+
+        if (jobTitle) employeeData.jobTitle = jobTitle;
+        if (email) employeeData.email = email;
+        if (phone) employeeData.phone = phone;
+        if (notes) employeeData.notes = notes;
+        employeeData.photoUrl = photoUrl || `https://picsum.photos/seed/${name.replace(/\s/g, '-')}/400`;
+        if (employmentStartDate) employeeData.employmentStartDate = Timestamp.fromDate(employmentStartDate);
+        if (dateOfBirth) employeeData.dateOfBirth = Timestamp.fromDate(dateOfBirth);
         
         addDocumentNonBlocking(employeesRef, employeeData);
         toast({ title: "Employee Added", description: `${name} has been added to the list.` });
