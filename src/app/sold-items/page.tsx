@@ -64,6 +64,10 @@ export default function SoldItemsCheckPage() {
     };
 
     const handleSaveReceipt = async () => {
+        if (!user) {
+            toast({ variant: 'destructive', title: 'Authentication Error', description: 'You must be signed in to save a receipt.' });
+            return;
+        }
         if (receiptNumberDigits.length !== 4) {
             toast({ variant: 'destructive', title: 'Invalid Receipt Number', description: 'Please enter exactly 4 digits for the receipt number.' });
             return;
@@ -179,7 +183,7 @@ export default function SoldItemsCheckPage() {
                                     ))}
                                 </div>
                             </div>
-                            <Button onClick={handleSaveReceipt} disabled={isSaving} className="w-full">
+                            <Button onClick={handleSaveReceipt} disabled={isSaving || isUserLoading} className="w-full">
                                 {isSaving ? <Loader2 className="animate-spin mr-2" /> : <Save className="mr-2" />}
                                 Save Receipt
                             </Button>
