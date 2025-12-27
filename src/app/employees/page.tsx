@@ -25,6 +25,7 @@ import jsPDF from 'jspdf'
 import useLocalStorage from '@/hooks/use-local-storage'
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Badge } from "@/components/ui/badge"
 
 
 type Employee = {
@@ -690,5 +691,7 @@ export default function EmployeesPage() {
     </div>
   )
 }
+
+    
 
     
