@@ -1,13 +1,9 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
+import React, { createContext, useContext, useMemo } from 'react';
 import { type FirebaseApp } from 'firebase/app';
-import {
-  type Auth,
-  signInAnonymously,
-} from 'firebase/auth';
+import { type Auth } from 'firebase/auth';
 import { type Firestore } from 'firebase/firestore';
-import { useUser } from './auth/use-user';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
 interface FirebaseContextValue {
@@ -38,37 +34,6 @@ export function FirebaseProvider({
     </FirebaseContext.Provider>
   );
 }
-
-export function AuthGate({ children }: { children: React.ReactNode }) {
-    const auth = useAuth();
-    const { user, isUserLoading } = useUser();
-    const [isSigningIn, setIsSigningIn] = useState(true);
-
-    useEffect(() => {
-        if (isUserLoading) return; 
-
-        if (user) {
-            setIsSigningIn(false);
-        } else {
-            signInAnonymously(auth).catch((error) => {
-                console.error("Anonymous sign-in failed:", error);
-            }).finally(() => {
-                setIsSigningIn(false);
-            });
-        }
-    }, [user, isUserLoading, auth]);
-
-    if (isUserLoading || isSigningIn) {
-        return (
-            <div className="flex h-screen w-screen items-center justify-center">
-                <p>Loading...</p>
-            </div>
-        );
-    }
-    
-    return <>{children}</>;
-}
-
 
 export function useFirebase() {
   const context = useContext(FirebaseContext);
