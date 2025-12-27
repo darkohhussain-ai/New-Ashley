@@ -167,6 +167,43 @@
         "fileName",
         "fileType"
       ]
+    },
+    "SoldItemReceipt": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "SoldItemReceipt",
+      "type": "object",
+      "description": "Represents a receipt for sold items.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the SoldItemReceipt entity."
+        },
+        "receiptNumber": {
+          "type": "string",
+          "description": "The receipt number for the sold item."
+        },
+        "receiptDate": {
+          "type": "string",
+          "description": "The date of the receipt.",
+          "format": "date-time"
+        },
+        "customerName": {
+          "type": "string",
+          "description": "The name of the customer."
+        },
+        "itemCategories": {
+          "type": "array",
+          "description": "List of item categories on the receipt.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "receiptNumber",
+        "itemCategories"
+      ]
     }
   },
   "auth": {
@@ -264,8 +301,24 @@
             }
           ]
         }
+      },
+      {
+        "path": "/sold_item_receipts/{receiptId}",
+        "definition": {
+          "entityName": "SoldItemReceipt",
+          "schema": {
+            "$ref": "#/backend/entities/SoldItemReceipt"
+          },
+          "description": "Stores sold item receipts. Assumes that all authenticated users can create and view receipts.",
+          "params": [
+            {
+              "name": "receiptId",
+              "description": "The unique ID of the receipt."
+            }
+          ]
+        }
       }
     ],
-    "reasoning": "The Firestore structure is designed to address the 'auth/configuration-not-found' error, which typically indicates an issue with Firebase initialization or configuration. However, based on the provided app description and entities, the structure prioritizes secure data management and adheres to the principle of Authorization Independence.  User settings and logos are stored as user-owned data. This approach enables simple security rules based on `request.auth.uid`. Volunteers are stored at the top level with the expectation that they are managed by admins.  This structure relies on path-based ownership and simplifies security rules. All list operations are secured because data requiring different access roles is segregated into different collections."
+    "reasoning": "The Firestore structure is designed to address the 'auth/configuration-not-found' error, which typically indicates an issue with Firebase initialization or configuration. However, based on the provided app description and entities, the structure prioritizes secure data management and adheres to the principle of Authorization Independence.  User settings and logos are stored as user-owned data. This approach enables simple security rules based on `request.auth.uid`. Volunteers and receipts are stored at the top level with the expectation that they are managed by admins or any authenticated user respectively. This structure relies on path-based ownership and simplifies security rules. All list operations are secured because data requiring different access roles is segregated into different collections."
   }
 }
