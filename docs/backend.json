@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Volunteer": {
@@ -136,55 +137,13 @@
   "firestore": {
     "structure": [
       {
-        "path": "/users/{userId}/settings/{settingId}",
+        "path": "/users/{userId}",
         "definition": {
-          "entityName": "Settings",
+          "entityName": "User",
           "schema": {
-            "$ref": "#/backend/entities/Settings"
+            "$ref": "#/backend/entities/User"
           },
-          "description": "Stores user-specific settings. Path-based ownership ensures only the user can access their settings.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user."
-            },
-            {
-              "name": "settingId",
-              "description": "The unique identifier for the settings document."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/application_logos/{logoId}",
-        "definition": {
-          "entityName": "ApplicationLogo",
-          "schema": {
-            "$ref": "#/backend/entities/ApplicationLogo"
-          },
-          "description": "Stores application logo information.",
-          "params": [
-            {
-              "name": "logoId",
-              "description": "The unique identifier of the logo."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/roles_admin/{userId}",
-        "definition": {
-          "entityName": "AdminUser",
-          "schema": {
-            "$ref": "#/backend/entities/AdminUser"
-          },
-          "description": "Collection to store admin user roles. Existence of a document indicates admin privileges.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the admin user."
-            }
-          ]
+          "description": "Stores user profiles."
         }
       },
       {
@@ -194,13 +153,37 @@
           "schema": {
             "$ref": "#/backend/entities/Volunteer"
           },
-          "description": "Stores volunteer information.",
-          "params": [
-            {
-              "name": "volunteerId",
-              "description": "The unique identifier of the volunteer."
-            }
-          ]
+          "description": "Stores volunteer information."
+        }
+      },
+      {
+        "path": "/settings/{settingId}",
+        "definition": {
+          "entityName": "Settings",
+          "schema": {
+            "$ref": "#/backend/entities/Settings"
+          },
+          "description": "Stores application settings."
+        }
+      },
+      {
+        "path": "/application_logos/{logoId}",
+        "definition": {
+          "entityName": "ApplicationLogo",
+          "schema": {
+            "$ref": "#/backend/entities/ApplicationLogo"
+          },
+          "description": "Stores application logo information."
+        }
+      },
+      {
+        "path": "/roles_admin/{userId}",
+        "definition": {
+          "entityName": "AdminUser",
+          "schema": {
+            "$ref": "#/backend/entities/AdminUser"
+          },
+          "description": "Stores admin user roles."
         }
       },
       {
@@ -210,16 +193,9 @@
           "schema": {
             "$ref": "#/backend/entities/Overtime"
           },
-          "description": "Stores overtime data. Includes denormalized 'admins' map for authorization independence. Only admins can list.",
-          "params": [
-            {
-              "name": "overtimeId",
-              "description": "The unique identifier of the overtime entry."
-            }
-          ]
+          "description": "Stores overtime records."
         }
       }
-    ],
-    "reasoning": "Based on the provided information, the error indicates a permission issue when attempting to `list` documents in the `overtime` collection. Given the application's features and the need to manage volunteers, settings, and application logos, a role-based access control (RBAC) system is recommended, leveraging a dedicated collection for admin roles and denormalization of authorization data for collections. The 'overtime' collection isn't defined explicitly, so I'm making an assumption it exists and requires role-based access. This design prioritizes authorization independence, allowing for atomic operations and easier debugging.\n\n1.  **Authorization Independence:** The design denormalizes authorization data (admin roles) into the collections that require restricted access, eliminating the need for `get()` calls in security rules and enabling atomic operations.\n2.  **Structural Segregation:** User-specific data (settings) are stored under `/users/{userId}` to enforce path-based ownership. This ensures that a user can only access their own settings.\n3.  **Access Modeling:** Admins have global roles defined in `/roles_admin/{userId}`. Collections like `overtime` contain a denormalized `admins` map.  Security rules will check for the presence of a user's ID in the `admins` map to grant `list` or `read` access.\n4.  **QAPs (Rules are not Filters):** The structure supports secure `list` operations. The `admins` map allows rules to efficiently check if the requesting user is an admin without iterating through document contents.\n5. **Assumptions:**\n*   There is a collection called `overtime` (implied by the error message).  Access to this collection must be restricted to admins.\n*   Admin users are managed separately and assigned the `admin` role.\n\nTo fix the reported error, security rules will need to be implemented to ensure only authorized admins can list from the `overtime` collection."
+    ]
   }
 }
