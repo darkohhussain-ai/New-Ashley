@@ -364,7 +364,6 @@ function AddEmployeeDialog({ open, onOpenChange }: { open: boolean, onOpenChange
 export default function EmployeesPage() {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
-  const { toast } = useToast();
 
   const employeesRef = useMemoFirebase(() => (firestore && user ? collection(firestore, "employees") : null), [firestore, user]);
   const { data: employees, isLoading } = useCollection<Employee>(employeesRef);
@@ -372,74 +371,7 @@ export default function EmployeesPage() {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
   const [isAddDialogOpen, setAddDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-
-  const [dataSeeded, setDataSeeded] = useLocalStorage('employee-data-seeded-v2', false);
-  const [isSeeding, setIsSeeding] = useState(false);
-
-  useEffect(() => {
-    const seedData = async () => {
-      if (!firestore || !employeesRef || isSeeding || dataSeeded || (employees && employees.length > 0)) {
-        if (employees && employees.length > 0 && !dataSeeded) {
-          setDataSeeded(true);
-        }
-        return;
-      }
-
-      setIsSeeding(true);
-      toast({ title: 'Adding Employees', description: 'Populating the employee list...' });
-
-      const newEmployees = [
-          { name: 'Kamaran Omar Rauf', date: '15/9/2025' },
-          { name: 'Dana Mohammed Bassam', date: '20/5/2024' },
-          { name: 'Darko Haidar Hussein', date: '1/5/2025' },
-          { name: 'Rabar Mohammed Mahmoud', date: '20/4/2024' },
-          { name: 'Razhan Salih Fattah', date: '13/7/2024' },
-          { name: 'Sarwat Qadir Mohammed', date: '16/10/2024' },
-          { name: 'Govar Sardar Ahmed', date: '1/2/2025' },
-          { name: 'Mohammed Hamid Mohammed', date: '3/10/2024' },
-          { name: 'Imad Sabah Nuri', date: '15/11/2023' },
-          { name: 'Rebin Sabah Nuri', date: '22/6/2024' },
-          { name: 'Rawand Najat Mohammed Hassan', date: '10/5/2025' },
-          { name: 'Sahand Mariwan Hama Saeed', date: '1/1/2024' },
-          { name: 'Shadoman Yadgar Rahim', date: '30/9/2024' },
-          { name: 'Hardy Azad Ahmed', date: '13/5/2025' },
-          { name: 'Haval Habib Hama Raza', date: '13/5/2025' },
-          { name: 'Tariq Mawloud Hama', date: '10/5/2025' },
-          { name: 'Karzan Dara Bakr', date: '13/5/2025' },
-      ];
-
-      const parseDate = (dateString: string) => {
-        const parts = dateString.split('/');
-        // Month is 0-indexed in JS Date, so parts[1] - 1
-        return new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
-      };
-
-      try {
-        const batch = writeBatch(firestore);
-        newEmployees.forEach(emp => {
-          const newDocRef = doc(collection(firestore, 'employees'));
-          const employeeData: Partial<Omit<Employee, 'id'>> = {
-            name: emp.name,
-            employmentStartDate: Timestamp.fromDate(parseDate(emp.date)),
-            photoUrl: `https://picsum.photos/seed/${emp.name.replace(/\s/g, '-')}/400`
-          };
-          batch.set(newDocRef, employeeData);
-        });
-
-        await batch.commit();
-        toast({ title: 'Success!', description: 'All employees have been added.' });
-        setDataSeeded(true);
-      } catch (error) {
-        console.error('Error seeding data:', error);
-        toast({ variant: 'destructive', title: 'Seeding Failed', description: 'Could not add the employees.' });
-      } finally {
-        setIsSeeding(false);
-      }
-    };
-    if (user) { // Only run when user is available
-      seedData();
-    }
-  }, [firestore, employeesRef, user, employees, dataSeeded, setDataSeeded, isSeeding, toast]);
+  const isSeeding = false; // Seeding is complete
 
 
   const sortedAndFilteredEmployees = useMemo(() => {

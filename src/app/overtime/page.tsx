@@ -202,26 +202,49 @@ export default function OvertimePage() {
   }, [overtimeRecords, view, employees]);
 
   const handleDownloadPdf = () => {
-    if (!selectedDate || !monthlyReportData) return;
+    if (!selectedDate) return;
 
     const doc = new jsPDF();
-    const monthName = format(selectedDate, 'MMMM yyyy');
-
-    doc.setFontSize(18);
-    doc.text(`Monthly Overtime Report`, 14, 22);
-    doc.setFontSize(12);
-    doc.text(monthName, 14, 30);
     
-    autoTable(doc, {
-        startY: 40,
-        head: [['Employee', 'Total Hours', 'Total Amount']],
-        body: monthlyReportData.map(item => [item.employeeName, item.totalHours.toFixed(2), formatCurrency(item.totalAmount)]),
-        foot: [['Total', totalHours.toFixed(2), formatCurrency(totalAmount)]],
-        showFoot: 'lastPage',
-        footStyles: { fontStyle: 'bold', fillColor: [244, 244, 245] }
-    });
+    if (view === 'daily') {
+        doc.setFontSize(18);
+        doc.text(`Daily Overtime Report`, 14, 22);
+        doc.setFontSize(12);
+        doc.text(format(selectedDate, 'PPP'), 14, 30);
+        
+        autoTable(doc, {
+            startY: 40,
+            head: [['Employee', 'Hours', 'Amount', 'Notes']],
+            body: (overtimeRecords || []).map(item => [
+                getEmployeeName(item.employeeId), 
+                item.hours.toFixed(2), 
+                formatCurrency(item.totalAmount),
+                item.notes || ''
+            ]),
+            foot: [['Total', totalHours.toFixed(2), formatCurrency(totalAmount), '']],
+            showFoot: 'lastPage',
+            footStyles: { fontStyle: 'bold', fillColor: [244, 244, 245] }
+        });
 
-    doc.save(`overtime-report-${format(selectedDate, 'yyyy-MM')}.pdf`);
+        doc.save(`overtime-report-${format(selectedDate, 'yyyy-MM-dd')}.pdf`);
+    } else { // monthly
+        const monthName = format(selectedDate, 'MMMM yyyy');
+        doc.setFontSize(18);
+        doc.text(`Monthly Overtime Report`, 14, 22);
+        doc.setFontSize(12);
+        doc.text(monthName, 14, 30);
+        
+        autoTable(doc, {
+            startY: 40,
+            head: [['Employee', 'Total Hours', 'Total Amount']],
+            body: monthlyReportData.map(item => [item.employeeName, item.totalHours.toFixed(2), formatCurrency(item.totalAmount)]),
+            foot: [['Total', totalHours.toFixed(2), formatCurrency(totalAmount)]],
+            showFoot: 'lastPage',
+            footStyles: { fontStyle: 'bold', fillColor: [244, 244, 245] }
+        });
+
+        doc.save(`overtime-report-${format(selectedDate, 'yyyy-MM')}.pdf`);
+    }
   };
 
   const isLoading = isLoadingEmployees || isLoadingOvertime || isUserLoading;
@@ -318,8 +341,13 @@ export default function OvertimePage() {
 
             <div className="lg:col-span-2">
                 <Card>
-                <CardHeader>
-                    <CardTitle>Overtime Records for {selectedDate ? format(selectedDate, 'MMMM d, yyyy') : '...'}</CardTitle>
+                <CardHeader className="flex-row items-center justify-between">
+                    <div>
+                        <CardTitle>Overtime Records for {selectedDate ? format(selectedDate, 'MMMM d, yyyy') : '...'}</CardTitle>
+                    </div>
+                    <Button onClick={handleDownloadPdf} disabled={(overtimeRecords?.length || 0) === 0} variant="outline" size="sm">
+                        <FileDown className="mr-2 h-4 w-4" /> Download PDF
+                    </Button>
                 </CardHeader>
                 <CardContent>
                     <div className="divide-y">
