@@ -14,12 +14,34 @@ export default function Dashboard() {
   const { user } = useUser();
   const [date, setDate] = useState<Date | null>(null);
 
+  // Load settings from localStorage
+  const [savedLogoSrc] = useLocalStorage('app-logo', "https://i.ibb.co/wJm3Sg7/ashley-logo-new.png");
+  const [savedLogoSize] = useLocalStorage('app-logo-size', 80);
+  const [savedCardSize] = useLocalStorage('dashboard-card-size', 192);
+  const [savedIconSize] = useLocalStorage('dashboard-icon-size', 64);
+
+  // State for rendering, initialized to defaults to match server render
+  const [logoSrc, setLogoSrc] = useState("https://i.ibb.co/wJm3Sg7/ashley-logo-new.png");
+  const [logoSize, setLogoSize] = useState(80);
+  const [cardSize, setCardSize] = useState(192);
+  const [iconSize, setIconSize] = useState(64);
+  
+  const [isMounted, setIsMounted] = useState(false);
+
   useEffect(() => {
+    // This effect runs only on the client, after the component has mounted.
+    setIsMounted(true);
+    
+    setLogoSrc(savedLogoSrc);
+    setLogoSize(savedLogoSize);
+    setCardSize(savedCardSize);
+    setIconSize(savedIconSize);
+
     // Set the initial date only on the client
     setDate(new Date());
     const timer = setInterval(() => setDate(new Date()), 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [savedLogoSrc, savedLogoSize, savedCardSize, savedIconSize]);
 
   const menuItems = [
     { title: "Employees", icon: Users, href: "/employees", color: "bg-pink-500" },
@@ -28,17 +50,14 @@ export default function Dashboard() {
     { title: "Transmit Cargo", icon: PackagePlus, href: "/transmit", color: "bg-yellow-500" },
     { title: "Settings", icon: SettingsIcon, href: "/settings", color: "bg-purple-500" },
   ]
-  
-  const [logoSrc] = useLocalStorage('app-logo', "https://i.ibb.co/wJm3Sg7/ashley-logo-new.png");
-  const [savedLogoSize] = useLocalStorage('app-logo-size', 80);
-  const [cardSize] = useLocalStorage('dashboard-card-size', 192);
-  const [iconSize] = useLocalStorage('dashboard-icon-size', 64);
-  
-  const [logoSize, setLogoSize] = useState(80);
-  useEffect(() => {
-    setLogoSize(savedLogoSize);
-  }, [savedLogoSize]);
 
+  // We can return a loading state or the default view until the client has mounted
+  // to prevent hydration mismatch. Here, we render the default view on the server
+  // and then update it on the client once localStorage is available.
+  if (!isMounted) {
+      // Render a placeholder or the default server-rendered version.
+      // Returning the default version is okay since it will match the server.
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
