@@ -97,14 +97,14 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
     const { toast } = useToast();
     const { user, isUserLoading } = useUser();
 
-    const employeeRef = useMemoFirebase(() => (firestore && employeeId && user ? doc(firestore, 'employees', employeeId) : null), [firestore, employeeId, user]);
+    const employeeRef = useMemoFirebase(() => (firestore && employeeId ? doc(firestore, 'employees', employeeId) : null), [firestore, employeeId]);
     const { data: employee, isLoading } = useDoc<Employee>(employeeRef);
 
-    const expensesQuery = useMemoFirebase(() => (firestore && user && employeeId ? query(collection(firestore, 'expenses'), where('employeeId', '==', employeeId)) : null), [firestore, user, employeeId]);
+    const expensesQuery = useMemoFirebase(() => (firestore && employeeId ? query(collection(firestore, 'expenses'), where('employeeId', '==', employeeId)) : null), [firestore, employeeId]);
     const { data: expenses, isLoading: isLoadingExpenses } = useCollection<Expense>(expensesQuery);
 
     const overtimeQuery = useMemoFirebase(() => {
-        if (!firestore || !user || !employeeId) return null;
+        if (!firestore || !employeeId) return null;
         const today = new Date();
         const start = startOfMonth(today);
         const end = endOfMonth(today);
@@ -114,13 +114,13 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
             where('date', '>=', start),
             where('date', '<=', end)
         );
-    }, [firestore, user, employeeId]);
+    }, [firestore, employeeId]);
     const { data: overtime, isLoading: isLoadingOvertime } = useCollection<Overtime>(overtimeQuery);
     
-    const bonusesQuery = useMemoFirebase(() => (firestore && user && employeeId ? query(collection(firestore, 'bonuses'), where('employeeId', '==', employeeId)) : null), [firestore, user, employeeId]);
+    const bonusesQuery = useMemoFirebase(() => (firestore && employeeId ? query(collection(firestore, 'bonuses'), where('employeeId', '==', employeeId)) : null), [firestore, employeeId]);
     const { data: bonuses, isLoading: isLoadingBonuses } = useCollection<Bonus>(bonusesQuery);
 
-    const withdrawalsQuery = useMemoFirebase(() => (firestore && user && employeeId ? query(collection(firestore, 'cash_withdrawals'), where('employeeId', '==', employeeId)) : null), [firestore, user, employeeId]);
+    const withdrawalsQuery = useMemoFirebase(() => (firestore && employeeId ? query(collection(firestore, 'cash_withdrawals'), where('employeeId', '==', employeeId)) : null), [firestore, employeeId]);
     const { data: withdrawals, isLoading: isLoadingWithdrawals } = useCollection<CashWithdrawal>(withdrawalsQuery);
 
 
@@ -445,8 +445,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
 
 function AddEmployeeDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void }) {
     const firestore = useFirestore();
-    const { user } = useUser();
-    const employeesRef = useMemoFirebase(() => (firestore && user ? collection(firestore, "employees") : null), [firestore, user]);
+    const employeesRef = useMemoFirebase(() => (firestore ? collection(firestore, "employees") : null), [firestore]);
     const { toast } = useToast();
     
     const [name, setName] = useState("");
@@ -466,15 +465,7 @@ function AddEmployeeDialog({ open, onOpenChange }: { open: boolean, onOpenChange
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!user) {
-            toast({
-                variant: 'destructive',
-                title: 'Not Authenticated',
-                description: 'You must be logged in to add an employee.',
-            });
-            return;
-        }
-
+        
         if (!name.trim() || !firestore || !employeesRef) {
             toast({
                 variant: 'destructive',
@@ -539,10 +530,9 @@ function AddEmployeeDialog({ open, onOpenChange }: { open: boolean, onOpenChange
 
 export default function EmployeesPage() {
   const firestore = useFirestore();
-  const { user, isUserLoading } = useUser();
   const { toast } = useToast();
 
-  const employeesRef = useMemoFirebase(() => (firestore && user ? collection(firestore, "employees") : null), [firestore, user]);
+  const employeesRef = useMemoFirebase(() => (firestore ? collection(firestore, "employees") : null), [firestore]);
   const { data: employees, isLoading } = useCollection<Employee>(employeesRef);
   
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
@@ -555,7 +545,7 @@ export default function EmployeesPage() {
 
 
   useEffect(() => {
-    if (employees && !dataLoadPerformed && firestore && user) {
+    if (employees && !dataLoadPerformed && firestore) {
         const newEmployees = [
             { name: "Kamaran Omar Rauf", employmentStartDate: new Date("2025-09-15") },
             { name: "Danar Mohammed Basam", employmentStartDate: new Date("2024-05-20") },
@@ -630,7 +620,7 @@ export default function EmployeesPage() {
              setDataLoadPerformed(true);
         }
     }
-  }, [employees, dataLoadPerformed, firestore, user, toast, setDataLoadPerformed]);
+  }, [employees, dataLoadPerformed, firestore, toast, setDataLoadPerformed]);
 
 
   useEffect(() => {
@@ -726,7 +716,7 @@ export default function EmployeesPage() {
                      <Button onClick={() => setAddDialogOpen(true)} className="w-full"><Plus className="mr-2 h-4 w-4" /> Add Employee</Button>
                 </div>
                 <div className="flex-1 overflow-y-auto">
-                    {isLoading || isUserLoading || isCleaning ? (
+                    {isLoading || isCleaning ? (
                          <div className="p-4 space-y-2">{[...Array(8)].map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
                     ) : sortedAndFilteredEmployees.length > 0 ? (
                         <div className="p-2 space-y-1">
@@ -759,7 +749,7 @@ export default function EmployeesPage() {
                 {selectedEmployeeId ? (
                     <EmployeeDetailView employeeId={selectedEmployeeId} onDeselect={() => setSelectedEmployeeId(null)}/>
                 ) : (
-                    !(isLoading || isUserLoading || isCleaning) && (
+                    !(isLoading || isCleaning) && (
                         <div className="text-center">
                             <Building className="mx-auto h-16 w-16 text-muted-foreground" />
                             <h2 className="mt-4 text-2xl font-bold">Select an Employee</h2>

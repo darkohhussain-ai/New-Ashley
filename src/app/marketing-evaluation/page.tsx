@@ -54,17 +54,16 @@ type EvaluationResponse = {
 
 export default function MarketingEvaluationPage() {
     const firestore = useFirestore();
-    const { user } = useUser();
     const { toast } = useToast();
 
     const [selectedEmployee, setSelectedEmployee] = useState<string>('');
     const [responses, setResponses] = useState<Record<string, number>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const marketingEmployeesRef = useMemoFirebase(() => (firestore && user) ? query(collection(firestore, 'employees'), where('jobTitle', '==', 'Marketing')) : null, [firestore, user]);
+    const marketingEmployeesRef = useMemoFirebase(() => (firestore) ? query(collection(firestore, 'employees'), where('jobTitle', '==', 'Marketing')) : null, [firestore]);
     const { data: marketingEmployees, isLoading: isLoadingEmployees } = useCollection<Employee>(marketingEmployeesRef);
 
-    const evaluationsRef = useMemoFirebase(() => (firestore && user) ? collection(firestore, 'marketing-evaluations') : null, [firestore, user]);
+    const evaluationsRef = useMemoFirebase(() => (firestore) ? collection(firestore, 'marketing-evaluations') : null, [firestore]);
     const { data: evaluations, isLoading: isLoadingEvaluations } = useCollection<EvaluationResponse>(evaluationsRef);
 
     const handleResponseChange = (questionId: string, value: string) => {

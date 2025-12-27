@@ -27,7 +27,7 @@ service cloud.firestore {
       allow read, write: if isSignedIn();
     }
     match /employees/{employeeId} {
-      allow read, write: if isSignedIn();
+      allow read, write: if true;
     }
     match /expenses/{expenseId} {
       allow read, write: if isSignedIn();
@@ -55,6 +55,9 @@ service cloud.firestore {
     }
     match /transfers/{transferId} {
       allow read, write: if isSignedIn();
+    }
+    match /marketing-evaluations/{evaluationId} {
+      allow read, write: if true;
     }
   }
 }
