@@ -1,9 +1,140 @@
+/**
+ * This Firestore Security Ruleset implements a Role-Based Access Control (RBAC) model
+ * to secure an HR and administration application.
+ *
+ * Core Philosophy:
+ * The security model is centered around a dedicated 'roles_admin' collection, which
+ * explicitly defines users with administrator privileges. By default, access is denied.
+ * Authenticated users have limited permissions, while administrators are granted
+ * broader access to manage global application data.
+ *
+ * Data Structure:
+ * - User-specific data, like '/users/{userId}/settings', is nested under a user-
+ *   specific path. This enforces strict data ownership and privacy.
+ * - Global data, such as volunteers, application logos, and overtime records,
+ *   are stored in top-level collections.
+ *
+ * Key Security Decisions:
+ * - Admin Role: A user is considered an administrator if a document with their UID
+ *   exists in the '/roles_admin' collection. This provides a single, queryable
+ *   source of truth for administrative status.
+ * - Admin-Managed Data: Access to sensitive collections like 'volunteers' and
+ *   'overtime' is restricted exclusively to administrators for all operations.
+ * - Public Data: The 'application_logos' collection is publicly readable by anyone
+ *   but can only be modified by administrators.
+ * - User Data Privacy: Users can only access their own data subtree (e.g., their
+ *   own settings). They are prohibited from listing or accessing other users' data.
+ */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Grant access to any authenticated user
-    match /{document=**} {
-      allow read, write: if request.auth != null;
+
+    // Helper functions to promote readable, secure, and maintainable rules.
+
+    /**
+     * Checks if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the authenticated user's UID matches the provided userId.
+     * This is the foundation for the ownership-based security model.
+     * @param userId The user ID to check against the authenticated user's UID.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Checks if the user has administrative privileges.
+     * An admin is defined by the existence of a document in the 'roles_admin'
+     * collection with their UID as the document ID. This is a fast and efficient
+     * check that does not require reading document data.
+     */
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+
+    /**
+     * @description Parent path for all user-specific data. This match block itself
+     *              does not grant any permissions but enables access to nested
+     *              subcollections like 'settings'.
+     * @path        /users/{userId}
+     * @allow       (N/A) This rule only enables subcollection matching.
+     * @deny        A user trying to read or write their own /users/{userId} document.
+     * @principle   Enables path-based security for nested user data.
+     */
+    match /users/{userId} {
+      allow get, list, create, update, delete: if false;
+    }
+
+    /**
+     * @description Secures user-specific settings documents. Only the user who owns
+     *              the settings can read or write them.
+     * @path        /users/{userId}/settings/{settingId}
+     * @allow       (create) An authenticated user creating their own settings document.
+     * @deny        (get) A user trying to read another user's settings.
+     * @principle   Restricts access to a user's own data tree (Ownership model).
+     */
+    match /users/{userId}/settings/{settingId} {
+      allow get, list, create: if isOwner(userId);
+      allow update, delete: if isOwner(userId) && resource != null;
+    }
+
+    /**
+     * @description Manages application logo information. This data is public for
+     *              all users to read, but only administrators can manage the logos.
+     * @path        /application_logos/{logoId}
+     * @allow       (get) Any client, authenticated or not, reading a logo URL.
+     * @deny        (create) A non-admin user attempting to upload a new logo.
+     * @principle   Public read access with restricted, role-based writes.
+     */
+    match /application_logos/{logoId} {
+      allow get, list: if true;
+      allow create: if isAdmin();
+      allow update, delete: if isAdmin() && resource != null;
+    }
+
+    /**
+     * @description Defines which users have administrative privileges. Only existing
+     *              admins can grant or revoke admin status for other users.
+     * @path        /roles_admin/{userId}
+     * @allow       (create) An admin making another user an admin.
+     * @deny        (list) A non-admin user trying to see the list of admins.
+     * @principle   Secures the role management system itself (meta-security).
+     */
+    match /roles_admin/{userId} {
+      allow get, list, create: if isAdmin();
+      allow update, delete: if isAdmin() && resource != null;
+    }
+
+    /**
+     * @description Secures volunteer information. This is sensitive data that
+     *              should only be accessible to administrators.
+     * @path        /volunteers/{volunteerId}
+     * @allow       (list) An admin fetching the list of all volunteers.
+     * @deny        (get) A regular user attempting to read a volunteer's record.
+     * @principle   Restricts access to a collection based on a global admin role.
+     */
+    match /volunteers/{volunteerId} {
+      allow get, list, create: if isAdmin();
+      allow update, delete: if isAdmin() && resource != null;
+    }
+
+    /**
+     * @description Secures overtime records. This data is restricted to administrators.
+     *              This rule directly addresses the error reported by the user by
+     *              granting list permissions to admins.
+     * @path        /overtime/{overtimeId}
+     * @allow       (list) An admin fetching the list of overtime records.
+     * @deny        (list) A non-admin user attempting to list overtime, causing a permission error.
+     * @principle   Restricts access to a collection based on a global admin role.
+     */
+    match /overtime/{overtimeId} {
+      allow get, list, create: if isAdmin();
+      allow update, delete: if isAdmin() && resource != null;
     }
   }
 }
