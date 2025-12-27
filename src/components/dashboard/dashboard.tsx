@@ -30,9 +30,15 @@ export function Dashboard() {
   ]
   
   const [logoSrc] = useLocalStorage('app-logo', "https://i.ibb.co/68RvM01/ashley-logo.png");
-  const [logoSize] = useLocalStorage('app-logo-size', 32);
+  const [savedLogoSize] = useLocalStorage('app-logo-size', 80);
   const [cardSize] = useLocalStorage('dashboard-card-size', 192);
   const [iconSize] = useLocalStorage('dashboard-icon-size', 64);
+  
+  const [logoSize, setLogoSize] = useState(80);
+  useEffect(() => {
+    setLogoSize(savedLogoSize);
+  }, [savedLogoSize]);
+
 
   return (
     <div className="min-h-screen bg-background text-foreground">
