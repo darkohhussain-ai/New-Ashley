@@ -12,7 +12,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { format, parseISO } from "date-fns"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ArrowLeft, Plus, User, Calendar as CalendarIcon, Edit, Trash2, Save, X, Upload, Download, Mail, Phone, Cake, Briefcase, Search, Building, DollarSign, Clock, Gift, Banknote, Shield } from 'lucide-react'
+import { ArrowLeft, Plus, User, Calendar as CalendarIcon, Edit, Trash2, Save, X, Upload, Download, Mail, Phone, Cake, Briefcase, Search, Building, DollarSign, Clock, Gift, Banknote, Shield, FileDown, Printer } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
@@ -20,6 +20,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { EmployeePdfCard } from "@/components/employees/employee-pdf-card"
 import html2canvas from 'html2canvas'
 import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 import useLocalStorage from '@/hooks/use-local-storage'
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -27,6 +28,8 @@ import { Badge } from "@/components/ui/badge"
 import { useAppContext } from "@/context/app-provider"
 import type { Employee, Expense, Overtime, Bonus, CashWithdrawal } from "@/lib/types"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ReportPdfHeader } from "@/components/reports/report-pdf-header"
+import { Separator } from "@/components/ui/separator"
 
 
 const formatCurrency = (amount: number) => {
@@ -77,7 +80,8 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
     const defaultLogo = "https://picsum.photos/seed/ashley-logo/300/100";
     const [logoSrc] = useLocalStorage('app-logo', defaultLogo);
     
-    const pdfCardRef = useRef<HTMLDivElement>(null);
+    const cardPdfRef = useRef<HTMLDivElement>(null);
+    const reportPdfRef = useRef<HTMLDivElement>(null);
     const photoUploadRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -166,9 +170,9 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
         onDeselect();
     }
 
-    const handleDownloadPdf = async () => {
-        if (!pdfCardRef.current || !employee) return;
-        const canvas = await html2canvas(pdfCardRef.current, { scale: 3, useCORS: true, backgroundColor: null });
+    const handlePrintCard = async () => {
+        if (!cardPdfRef.current || !employee) return;
+        const canvas = await html2canvas(cardPdfRef.current, { scale: 3, useCORS: true, backgroundColor: null });
         const imgData = canvas.toDataURL('image/png');
         
         const pdf = new jsPDF({ 
@@ -179,6 +183,48 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
         
         pdf.addImage(imgData, 'PNG', 0, 0, 600, 360);
         pdf.save(`${employee.name.replace(/ /g, '_')}_card.pdf`);
+    };
+
+    const handleDownloadReport = async () => {
+        if (!reportPdfRef.current || !employee) return;
+
+        const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
+        
+        // 1. Add Header
+        const headerCanvas = await html2canvas(reportPdfRef.current, { scale: 2, useCORS: true, backgroundColor: null });
+        const headerImgData = headerCanvas.toDataURL('image/png');
+        const pdfWidth = doc.internal.pageSize.getWidth();
+        const headerRatio = headerCanvas.width / headerCanvas.height;
+        const finalHeaderWidth = pdfWidth - 28;
+        const finalHeaderHeight = finalHeaderWidth / headerRatio;
+        doc.addImage(headerImgData, 'PNG', 14, 14, finalHeaderWidth, finalHeaderHeight);
+
+        let startY = finalHeaderHeight + 30;
+
+        // 2. Add Tables for each financial section
+        const addSection = (title: string, data: any[], columns: string[], bodyMapper: (item: any) => any[], total: number) => {
+            if (data.length === 0) return;
+            doc.setFontSize(14);
+            doc.text(title, 14, startY);
+            startY += 10;
+            autoTable(doc, {
+                startY,
+                head: [columns],
+                body: data.map(bodyMapper),
+                foot: [['Total', '', formatCurrency(total)]],
+                theme: 'striped',
+                headStyles: { fillColor: [40, 40, 40] },
+                footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' }
+            });
+            startY = (doc as any).lastAutoTable.finalY + 20;
+        }
+
+        addSection('Expenses', sortedExpenses, ['Date', 'Notes', 'Amount'], (e) => [format(parseISO(e.date), 'PP'), e.notes || '', formatCurrency(e.amount)], totalExpenses);
+        addSection('Overtime', sortedOvertime, ['Date', 'Hours', 'Amount'], (o) => [format(parseISO(o.date), 'PP'), o.hours.toFixed(2), formatCurrency(o.totalAmount)], totalOvertimeAmount);
+        addSection('Bonuses', sortedBonuses, ['Date', 'Reason', 'Amount'], (b) => [format(parseISO(b.date), 'PP'), b.notes || '', formatCurrency(b.amount)], totalBonuses);
+        addSection('Cash Withdrawals', sortedWithdrawals, ['Date', 'Notes', 'Amount'], (w) => [format(parseISO(w.date), 'PP'), w.notes || '', formatCurrency(w.amount)], totalWithdrawals);
+        
+        pdf.save(`${employee.name}_report_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
     };
 
     if (!employee) {
@@ -197,7 +243,14 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
     return (
         <>
             <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-                <div ref={pdfCardRef}><EmployeePdfCard employee={employee} logoSrc={logoSrc} /></div>
+                <div ref={cardPdfRef}><EmployeePdfCard employee={employee} logoSrc={logoSrc} /></div>
+                <div ref={reportPdfRef} style={{ width: '700px', background: 'white', color: 'black' }}>
+                    <ReportPdfHeader
+                        title={`${employee.name}'s Report`}
+                        subtitle={`As of ${format(new Date(), 'PPP')}`}
+                        logoSrc={logoSrc}
+                    />
+                </div>
             </div>
             <div className="w-full h-full flex flex-col">
                 <header className="flex items-center justify-end gap-2 p-4 border-b">
@@ -209,7 +262,8 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                     ) : (
                         <>
                             <Button onClick={() => setIsEditing(true)}><Edit className="mr-2 h-4 w-4"/> Edit</Button>
-                            <Button onClick={handleDownloadPdf} variant="outline"><Download className="mr-2 h-4 w-4" /> PDF</Button>
+                            <Button onClick={handlePrintCard} variant="outline"><Printer className="mr-2 h-4 w-4" /> Print Card</Button>
+                            <Button onClick={handleDownloadReport} variant="outline"><FileDown className="mr-2 h-4 w-4" /> Download Report</Button>
                             <AlertDialog>
                                 <AlertDialogTrigger asChild><Button variant="destructive"><Trash2 className="mr-2 h-4 w-4"/> Delete</Button></AlertDialogTrigger>
                                 <AlertDialogContent>
@@ -510,37 +564,56 @@ export default function EmployeesPage() {
   }, [employees]);
 
 
-  const sortedAndFilteredEmployees = useMemo(() => {
-    if (!employees) return [];
+  const { warehouseEmployees, marketingEmployees } = useMemo(() => {
+    if (!employees) return { warehouseEmployees: [], marketingEmployees: [] };
     
     const filtered = employees.filter(emp => 
         emp.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
     
-    return filtered.sort((a, b) => {
-        const aIsMarketing = a.role === 'Marketing';
-        const bIsMarketing = b.role === 'Marketing';
+    const warehouse = filtered
+      .filter(e => e.role !== 'Marketing')
+      .sort((a,b) => a.name.localeCompare(b.name));
+      
+    const marketing = filtered
+      .filter(e => e.role === 'Marketing')
+      .sort((a,b) => a.name.localeCompare(b.name));
 
-        if (!aIsMarketing && bIsMarketing) {
-            return -1; // Warehouse employees come first
-        }
-        if (aIsMarketing && !bIsMarketing) {
-            return 1; // Marketing employees come after
-        }
-        
-        // If both are same type (both warehouse or both marketing), sort by name
-        return a.name.localeCompare(b.name);
-    });
+    return { warehouseEmployees: warehouse, marketingEmployees: marketing };
   }, [employees, searchQuery]);
 
   useEffect(() => {
-    if (!selectedEmployeeId && sortedAndFilteredEmployees.length > 0) {
-      setSelectedEmployeeId(sortedAndFilteredEmployees[0].id);
+    const allSorted = [...warehouseEmployees, ...marketingEmployees];
+    if (!selectedEmployeeId && allSorted.length > 0) {
+      setSelectedEmployeeId(allSorted[0].id);
     }
-    if (selectedEmployeeId && !sortedAndFilteredEmployees.some(e => e.id === selectedEmployeeId)) {
-        setSelectedEmployeeId(sortedAndFilteredEmployees[0]?.id || null);
+    if (selectedEmployeeId && !allSorted.some(e => e.id === selectedEmployeeId)) {
+        setSelectedEmployeeId(allSorted[0]?.id || null);
     }
-  }, [sortedAndFilteredEmployees, selectedEmployeeId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [warehouseEmployees, marketingEmployees, selectedEmployeeId]);
+  
+  const renderEmployeeList = (list: Employee[], title: string) => (
+    <>
+      <div className="px-3 py-2">
+        <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{title}</h2>
+        <Separator className="mt-1"/>
+      </div>
+      {list.map(emp => (
+        <button key={emp.id} onClick={() => setSelectedEmployeeId(emp.id)} className={cn("w-full text-left p-3 rounded-lg transition-colors flex items-center gap-4",
+            selectedEmployeeId === emp.id ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+        )}>
+            <Avatar className="w-10 h-10"><AvatarImage src={emp.photoUrl} /><AvatarFallback>{emp.name.charAt(0)}</AvatarFallback></Avatar>
+            <div>
+                <p className="font-semibold">{emp.name}</p>
+                <p className={cn("text-xs", selectedEmployeeId === emp.id ? "text-primary-foreground/80" : "text-muted-foreground")}>
+                    {emp.role || 'No Role'}
+                </p>
+            </div>
+        </button>
+      ))}
+    </>
+  )
 
   return (
     <div className="h-screen w-screen flex flex-col bg-background text-foreground">
@@ -566,21 +639,10 @@ export default function EmployeesPage() {
                 <div className="flex-1 overflow-y-auto">
                     {isLoading ? (
                          <div className="p-4 space-y-2">{[...Array(8)].map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
-                    ) : sortedAndFilteredEmployees.length > 0 ? (
+                    ) : (warehouseEmployees.length > 0 || marketingEmployees.length > 0) ? (
                         <div className="p-2 space-y-1">
-                            {sortedAndFilteredEmployees.map(emp => (
-                                <button key={emp.id} onClick={() => setSelectedEmployeeId(emp.id)} className={cn("w-full text-left p-3 rounded-lg transition-colors flex items-center gap-4",
-                                    selectedEmployeeId === emp.id ? "bg-primary text-primary-foreground" : "hover:bg-muted"
-                                )}>
-                                    <Avatar className="w-10 h-10"><AvatarImage src={emp.photoUrl} /><AvatarFallback>{emp.name.charAt(0)}</AvatarFallback></Avatar>
-                                    <div>
-                                        <p className="font-semibold">{emp.name}</p>
-                                        <p className={cn("text-xs", selectedEmployeeId === emp.id ? "text-primary-foreground/80" : "text-muted-foreground")}>
-                                            {emp.role || 'No Role'}
-                                        </p>
-                                    </div>
-                                </button>
-                            ))}
+                            {warehouseEmployees.length > 0 && renderEmployeeList(warehouseEmployees, 'Warehouse')}
+                            {marketingEmployees.length > 0 && renderEmployeeList(marketingEmployees, 'Marketing')}
                         </div>
                     ) : (
                          <div className="text-center p-8">
@@ -599,7 +661,7 @@ export default function EmployeesPage() {
                     !isLoading && (
                         <div className="text-center">
                             <Building className="mx-auto h-16 w-16 text-muted-foreground" />
-                            <h2 className="mt-4 text-2xl font-bold">Select an Employee</h2>
+                            <h2 className="mt-2 text-2xl font-bold">Select an Employee</h2>
                             <p className="text-muted-foreground">Choose an employee from the list to view their details.</p>
                         </div>
                     )
