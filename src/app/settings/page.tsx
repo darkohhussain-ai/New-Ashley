@@ -4,7 +4,7 @@
 import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowLeft, Download, Upload, Save, Palette, Type, ShieldCheck, Image as ImageIcon, LayoutDashboard, RefreshCcw, Play } from 'lucide-react'
+import { ArrowLeft, Download, Upload, Save, Palette, Type, ShieldCheck, Image as ImageIcon, LayoutDashboard, RefreshCcw, Play, Newspaper } from 'lucide-react'
 import useLocalStorage, { getAllDataForExport, importData } from '@/hooks/use-local-storage'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -140,6 +140,7 @@ export default function SettingsPage() {
   const defaultLogo = placeHolderImages.placeholderImages.find(p => p.id === 'default-logo')?.imageUrl || "https://picsum.photos/seed/ashley-drp-logo/120/120";
   const [savedLogo, setSavedLogo] = useLocalStorage('app-logo', defaultLogo);
   const [savedLogoSize, setSavedLogoSize] = useLocalStorage('app-logo-size', 80);
+  const [savedDashboardBanner, setSavedDashboardBanner] = useLocalStorage('dashboard-banner', 'https://picsum.photos/seed/banner/1200/300');
   
   const [savedCardSize, setSavedCardSize] = useLocalStorage('dashboard-card-size', 192);
   const [savedIconSize, setSavedIconSize] = useLocalStorage('dashboard-icon-size', 64);
@@ -151,6 +152,7 @@ export default function SettingsPage() {
   const [darkColors, setDarkColors] = useState(savedDarkColors);
   const [logoSrc, setLogoSrc] = useState(savedLogo);
   const [logoSize, setLogoSize] = useState(savedLogoSize);
+  const [dashboardBanner, setDashboardBanner] = useState(savedDashboardBanner);
   const [cardSize, setCardSize] = useState(savedCardSize);
   const [iconSize, setIconSize] = useState(savedIconSize);
   
@@ -211,6 +213,7 @@ export default function SettingsPage() {
     setDarkColors(savedDarkColors);
     setLogoSrc(savedLogo);
     setLogoSize(savedLogoSize);
+    setDashboardBanner(savedDashboardBanner);
     setCardSize(savedCardSize);
     setIconSize(savedIconSize);
 
@@ -268,15 +271,15 @@ export default function SettingsPage() {
     }
   };
   
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, setter: (value: string) => void, toastTitle: string) => {
     const file = e.target.files?.[0]
     if (file) {
       const reader = new FileReader()
       reader.onload = (loadEvent) => {
         const result = loadEvent.target?.result
         if (typeof result === 'string') {
-          setLogoSrc(result)
-          toast({ title: 'Logo updated!', description: 'Click "Save Changes" to apply.' })
+          setter(result)
+          toast({ title: toastTitle, description: 'Click "Save Changes" to apply.' })
         }
       }
       reader.readAsDataURL(file)
@@ -290,6 +293,7 @@ export default function SettingsPage() {
     setSavedDarkColors(darkColors);
     setSavedLogo(logoSrc);
     setSavedLogoSize(logoSize);
+    setSavedDashboardBanner(dashboardBanner);
     setSavedCardSize(cardSize);
     setSavedIconSize(iconSize);
     toast({ title: 'Settings saved!', description: 'Your appearance settings have been updated.' });
@@ -302,6 +306,7 @@ export default function SettingsPage() {
     setDarkColors(defaultDarkColors);
     setLogoSrc(defaultLogo);
     setLogoSize(80);
+    setDashboardBanner('https://picsum.photos/seed/banner/1200/300');
     setCardSize(192);
     setIconSize(64);
     
@@ -312,6 +317,7 @@ export default function SettingsPage() {
     setSavedDarkColors(defaultDarkColors);
     setSavedLogo(defaultLogo);
     setSavedLogoSize(80);
+    setSavedDashboardBanner('https://picsum.photos/seed/banner/1200/300');
     setSavedCardSize(192);
     setSavedIconSize(64);
     
@@ -445,7 +451,7 @@ export default function SettingsPage() {
             <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg"><ImageIcon /> Branding</CardTitle>
-                <CardDescription>Manage your application's logo.</CardDescription>
+                <CardDescription>Manage your application's logo and banner.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className='flex flex-col items-center justify-center gap-4'>
@@ -464,7 +470,11 @@ export default function SettingsPage() {
                 </div>
                 <div>
                 <Label htmlFor="logo-upload">Upload New Logo</Label>
-                <Input id="logo-upload" type="file" accept="image/*" className="mt-2" onChange={handleLogoUpload} />
+                <Input id="logo-upload" type="file" accept="image/*" className="mt-2" onChange={(e) => handleImageUpload(e, setLogoSrc, "Logo updated!")} />
+                </div>
+                 <div>
+                <Label htmlFor="banner-upload">Upload Dashboard Banner</Label>
+                <Input id="banner-upload" type="file" accept="image/*" className="mt-2" onChange={(e) => handleImageUpload(e, setDashboardBanner, "Banner updated!")} />
                 </div>
             </CardContent>
             </Card>

@@ -13,14 +13,12 @@ export default function Dashboard() {
   const [date, setDate] = useState<Date | null>(null);
 
   // Load settings from localStorage
-  const [savedLogoSrc] = useLocalStorage('app-logo', "https://picsum.photos/seed/1/300/100");
-  const [savedLogoSize] = useLocalStorage('app-logo-size', 80);
+  const [savedDashboardBanner] = useLocalStorage('dashboard-banner', 'https://picsum.photos/seed/banner/1200/300');
   const [savedCardSize] = useLocalStorage('dashboard-card-size', 192);
   const [savedIconSize] = useLocalStorage('dashboard-icon-size', 64);
 
   // State for rendering, initialized to defaults to match server render
-  const [logoSrc, setLogoSrc] = useState("https://picsum.photos/seed/1/300/100");
-  const [logoSize, setLogoSize] = useState(80);
+  const [dashboardBanner, setDashboardBanner] = useState('https://picsum.photos/seed/banner/1200/300');
   const [cardSize, setCardSize] = useState(192);
   const [iconSize, setIconSize] = useState(64);
   
@@ -30,8 +28,7 @@ export default function Dashboard() {
     // This effect runs only on the client, after the component has mounted.
     setIsMounted(true);
     
-    setLogoSrc(savedLogoSrc);
-    setLogoSize(savedLogoSize);
+    setDashboardBanner(savedDashboardBanner);
     setCardSize(savedCardSize);
     setIconSize(savedIconSize);
 
@@ -39,7 +36,7 @@ export default function Dashboard() {
     setDate(new Date());
     const timer = setInterval(() => setDate(new Date()), 1000);
     return () => clearInterval(timer);
-  }, [savedLogoSrc, savedLogoSize, savedCardSize, savedIconSize]);
+  }, [savedDashboardBanner, savedCardSize, savedIconSize]);
 
   const menuItems = [
     { title: "Employees", icon: Users, href: "/employees", color: "bg-pink-500" },
@@ -74,7 +71,9 @@ export default function Dashboard() {
                 </div>
             </div>
             <div className="flex items-center justify-center w-1/3">
-              <Image src={logoSrc} alt="App Logo" width={logoSize * 3} height={logoSize} className="object-contain" data-ai-hint="logo" />
+              <div className="relative w-full max-w-[240px] aspect-[3/1]">
+                 <Image src={dashboardBanner} alt="App Banner" fill className="object-contain" data-ai-hint="banner" />
+              </div>
             </div>
             <div className="flex items-center justify-end gap-6 w-1/3">
               <Bell className="w-6 h-6 text-muted-foreground hover:text-primary cursor-pointer" />
