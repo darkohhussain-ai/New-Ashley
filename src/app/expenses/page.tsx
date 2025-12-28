@@ -51,7 +51,7 @@ export default function ExpensesPage() {
 
   const chartRef = useRef<HTMLDivElement>(null);
   const pdfHeaderRef = useRef<HTMLDivElement>(null);
-  const defaultLogo = "https://i.ibb.co/68RvM01/ashley-logo.png";
+  const defaultLogo = "https://picsum.photos/seed/1/300/100";
   const [logoSrc] = useLocalStorage('app-logo', defaultLogo);
 
 

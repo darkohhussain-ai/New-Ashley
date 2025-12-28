@@ -1,5 +1,6 @@
 
 "use client"
+
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Users, Box, Settings as SettingsIcon, CreditCard, Bell, ChevronDown, Calendar, Clock, PackagePlus, Star, CheckSquare } from "lucide-react"
@@ -12,13 +13,13 @@ export default function Dashboard() {
   const [date, setDate] = useState<Date | null>(null);
 
   // Load settings from localStorage
-  const [savedLogoSrc] = useLocalStorage('app-logo', "https://i.ibb.co/wJm3Sg7/ashley-logo-new.png");
+  const [savedLogoSrc] = useLocalStorage('app-logo', "https://picsum.photos/seed/1/300/100");
   const [savedLogoSize] = useLocalStorage('app-logo-size', 80);
   const [savedCardSize] = useLocalStorage('dashboard-card-size', 192);
   const [savedIconSize] = useLocalStorage('dashboard-icon-size', 64);
 
   // State for rendering, initialized to defaults to match server render
-  const [logoSrc, setLogoSrc] = useState("https://i.ibb.co/wJm3Sg7/ashley-logo-new.png");
+  const [logoSrc, setLogoSrc] = useState("https://picsum.photos/seed/1/300/100");
   const [logoSize, setLogoSize] = useState(80);
   const [cardSize, setCardSize] = useState(192);
   const [iconSize, setIconSize] = useState(64);

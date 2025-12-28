@@ -129,7 +129,7 @@ export default function FileDetailPage() {
   const [filterAshleyFloor, setFilterAshleyFloor] = useState('All');
   const [filterAshleyArea, setFilterAshleyArea] = useState('All');
 
-  const defaultLogo = "https://i.ibb.co/68RvM01/ashley-logo.png";
+  const defaultLogo = "https://picsum.photos/seed/1/300/100";
   const [logoSrc] = useLocalStorage('app-logo', defaultLogo);
   
   const updateFileInputRef = useRef<HTMLInputElement>(null);

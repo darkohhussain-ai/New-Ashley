@@ -45,7 +45,7 @@ export default function CreateTransferPage() {
   const [lastTransferItems, setLastTransferItems] = useState<ItemForTransfer[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   
-  const defaultLogo = "https://i.ibb.co/68RvM01/ashley-logo.png";
+  const defaultLogo = "https://picsum.photos/seed/1/300/100";
   const [logoSrc] = useLocalStorage('app-logo', defaultLogo);
   const pdfCardRef = useRef<HTMLDivElement>(null);
   

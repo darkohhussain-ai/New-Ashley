@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useRef } from 'react';
@@ -38,7 +39,7 @@ const formatCurrency = (amount: number) => {
 export default function OvertimePage() {
   const { toast } = useToast();
   const { employees, overtime: allOvertimeRecords, setOvertime: setAllOvertimeRecords } = useAppContext();
-  const defaultLogo = "https://i.ibb.co/68RvM01/ashley-logo.png";
+  const defaultLogo = "https://picsum.photos/seed/1/300/100";
   const [logoSrc] = useLocalStorage('app-logo', defaultLogo);
 
   const [view, setView] = useState<'daily' | 'monthly'>('daily');
