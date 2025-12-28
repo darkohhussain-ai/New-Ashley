@@ -38,7 +38,7 @@ export function EmployeePdfCard({ employee, logoSrc }: EmployeePdfCardProps) {
           </Avatar>
           <div className="text-center">
             <h2 className="text-lg font-bold text-gray-900">{employee.name}</h2>
-            <p className="text-sm text-gray-500">{employee.jobTitle || 'Employee'}</p>
+            <p className="text-sm text-gray-500">{employee.role || 'Employee'}</p>
           </div>
            <div className="mt-4 text-xs text-left w-full space-y-2">
                 <p className="flex items-center gap-2 truncate"><Mail className="w-3 h-3 shrink-0"/>{employee.email || 'N/A'}</p>
@@ -57,7 +57,7 @@ export function EmployeePdfCard({ employee, logoSrc }: EmployeePdfCardProps) {
                 }}
              ></div>
             <div className="text-white z-10">
-                <h1 className="font-bold text-xl">{employee.role || 'EMPLOYEE'}</h1>
+                <h1 className="font-bold text-xl uppercase">{employee.role || 'EMPLOYEE'}</h1>
             </div>
             <div className="relative w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-md z-10">
                 <div className="w-12 h-12 relative">

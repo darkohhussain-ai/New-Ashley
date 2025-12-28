@@ -67,7 +67,6 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
     const [name, setName] = useState('');
     const [uniqueId, setUniqueId] = useState('');
     const [role, setRole] = useState<Employee['role']>();
-    const [jobTitle, setJobTitle] = useState('');
     const [employmentStartDate, setEmploymentStartDate] = useState<Date | undefined>(undefined);
     const [dateOfBirth, setDateOfBirth] = useState<Date | undefined>(undefined);
     const [email, setEmail] = useState('');
@@ -86,7 +85,6 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
             setName(employee.name);
             setUniqueId(employee.employeeId || '');
             setRole(employee.role);
-            setJobTitle(employee.jobTitle || '');
             setEmploymentStartDate(safeDate(employee.employmentStartDate) || undefined);
             setDateOfBirth(safeDate(employee.dateOfBirth) || undefined);
             setEmail(employee.email || '');
@@ -147,7 +145,6 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
             name,
             employeeId: uniqueId,
             role,
-            jobTitle,
             employmentStartDate: employmentStartDate ? employmentStartDate.toISOString() : undefined,
             dateOfBirth: dateOfBirth ? dateOfBirth.toISOString() : undefined,
             email,
@@ -257,7 +254,6 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                                                 </SelectContent>
                                             </Select>
                                         </div>
-                                        <Input value={jobTitle} onChange={e => setJobTitle(e.target.value)} placeholder="Job Title" />
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <Popover>
                                                 <PopoverTrigger asChild>
@@ -284,7 +280,6 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                                         <CardTitle className="text-3xl md:text-4xl font-bold">{employee.name}</CardTitle>
                                         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-2">
                                             {employee.role && <CardDescription className="text-lg md:text-xl flex items-center gap-2"><Shield className="w-5 h-5"/>{employee.role}</CardDescription>}
-                                            {employee.jobTitle && <CardDescription className="text-lg md:text-xl flex items-center gap-2"><Briefcase className="w-5 h-5"/>{employee.jobTitle}</CardDescription>}
                                         </div>
                                         <div className="mt-4 space-y-2 text-muted-foreground">
                                             {employee.employeeId && <p className="flex items-center gap-2 font-mono">ID: {employee.employeeId}</p>}
@@ -405,7 +400,6 @@ function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean,
     const [name, setName] = useState("");
     const [uniqueId, setUniqueId] = useState("");
     const [role, setRole] = useState<Employee['role']>();
-    const [jobTitle, setJobTitle] = useState("");
     const [employmentStartDate, setEmploymentStartDate] = useState<Date | undefined>();
     const [dateOfBirth, setDateOfBirth] = useState<Date | undefined>();
     const [email, setEmail] = useState("");
@@ -414,7 +408,7 @@ function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean,
     const [notes, setNotes] = useState("");
 
     const resetForm = () => {
-        setName(""); setUniqueId(""); setRole(undefined); setJobTitle(""); setEmploymentStartDate(undefined); setDateOfBirth(undefined);
+        setName(""); setUniqueId(""); setRole(undefined); setEmploymentStartDate(undefined); setDateOfBirth(undefined);
         setEmail(""); setPhone(""); setPhotoUrl(undefined); setNotes("");
         onOpenChange(false);
     };
@@ -436,7 +430,6 @@ function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean,
           employeeId: uniqueId || undefined,
           role: role,
           photoUrl: photoUrl || `https://picsum.photos/seed/${name.replace(/\s/g, '-')}/400`,
-          jobTitle: jobTitle || undefined,
           email: email || undefined,
           phone: phone || undefined,
           notes: notes || undefined,
@@ -479,7 +472,6 @@ function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean,
                             </Select>
                         </div>
                     </div>
-                    <div className="space-y-2"><Label htmlFor="jobTitle">Job Title (Optional)</Label><Input id="jobTitle" value={jobTitle} onChange={e => setJobTitle(e.target.value)} placeholder="e.g. Graphic Designer" /></div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2"><Label>Email (Optional)</Label><div className="relative"><Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/><Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="employee@example.com" className="pl-10" /></div></div>
                         <div className="space-y-2"><Label>Phone (Optional)</Label><div className="relative"><Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/><Input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="0000-000-000" className="pl-10"/></div></div>
@@ -524,8 +516,8 @@ export default function EmployeesPage() {
     
     // Custom sort: warehouse employees (not 'Marketing') first, then alphabetically
     return filtered.sort((a, b) => {
-        const isAWarehouse = a.jobTitle !== 'Marketing';
-        const isBWarehouse = b.jobTitle !== 'Marketing';
+        const isAWarehouse = a.role !== 'Marketing';
+        const isBWarehouse = b.role !== 'Marketing';
 
         if (isAWarehouse && !isBWarehouse) {
             return -1; // a comes first
@@ -582,7 +574,7 @@ export default function EmployeesPage() {
                                     <div>
                                         <p className="font-semibold">{emp.name}</p>
                                         <p className={cn("text-xs", selectedEmployeeId === emp.id ? "text-primary-foreground/80" : "text-muted-foreground")}>
-                                            {emp.jobTitle || 'No Title'}
+                                            {emp.role || 'No Role'}
                                         </p>
                                     </div>
                                 </button>

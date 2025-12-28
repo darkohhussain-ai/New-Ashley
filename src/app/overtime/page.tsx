@@ -57,7 +57,7 @@ export default function OvertimePage() {
 
   const warehouseEmployees = useMemo(() => {
     if (!employees) return [];
-    return employees.filter(e => e.jobTitle !== 'Marketing');
+    return employees.filter(e => e.role !== 'Marketing');
   }, [employees]);
 
   const overtimeRecords = useMemo(() => {

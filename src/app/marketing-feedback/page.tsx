@@ -50,7 +50,7 @@ function AddMarketingEmployeeDialog({ open, onOpenChange, addEmployee }: { open:
 
         const employeeData: Omit<Employee, 'id'> = { 
           name: name.trim(),
-          jobTitle: 'Marketing',
+          role: 'Marketing',
         };
         
         addEmployee(employeeData);
@@ -169,7 +169,7 @@ export default function MarketingFeedbackPage() {
 
 
     const marketingEmployees = useMemo(() => {
-        return employees.filter(e => e.jobTitle === 'Marketing');
+        return employees.filter(e => e.role === 'Marketing');
     }, [employees]);
     
     useEffect(() => {
