@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useState, useMemo, useRef } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Plus, Trash2, Calendar as CalendarIcon, Clock, User, Edit, Save, X, FileDown } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Calendar as CalendarIcon, Clock, User, Edit, Save, X, FileDown, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -23,6 +22,7 @@ import { ReportPdfHeader } from '@/components/reports/report-pdf-header';
 import useLocalStorage from '@/hooks/use-local-storage';
 import { useAppContext } from '@/context/app-provider';
 import type { Employee, Overtime } from '@/lib/types';
+import * as XLSX from 'xlsx';
 
 
 const OVERTIME_RATE = 5000; // Default: 5,000 IQD per hour
@@ -54,6 +54,7 @@ export default function OvertimePage() {
   const [editingRecord, setEditingRecord] = useState<Overtime | null>(null);
   
   const pdfHeaderRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const overtimeRecords = useMemo(() => {
     if (!allOvertimeRecords || !selectedDate) return [];
@@ -131,6 +132,65 @@ export default function OvertimePage() {
   const handleDelete = (record: Overtime) => {
     setAllOvertimeRecords(allOvertimeRecords.filter(rec => rec.id !== record.id));
     toast({ title: 'Record Deleted', description: 'The overtime record has been removed.' });
+  };
+  
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !selectedDate) return;
+
+    setIsSaving(true);
+    try {
+        const data = await file.arrayBuffer();
+        const workbook = XLSX.read(data);
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const json = XLSX.utils.sheet_to_json(worksheet) as any[];
+
+        const newRecords: Overtime[] = [];
+        let skippedCount = 0;
+
+        json.forEach(row => {
+            const employeeName = row['Employee Name'] || row['Employee'] || row['Name'];
+            const employee = sortedEmployees.find(e => e.name.toLowerCase() === String(employeeName).toLowerCase());
+            const recordHours = row['Hours'] || row['hours'];
+
+            if (employee && recordHours) {
+                newRecords.push({
+                    id: crypto.randomUUID(),
+                    employeeId: employee.id,
+                    date: selectedDate.toISOString(),
+                    hours: parseFloat(recordHours),
+                    rate: OVERTIME_RATE,
+                    totalAmount: parseFloat(recordHours) * OVERTIME_RATE,
+                    notes: row['Notes'] || row['notes'] || '',
+                });
+            } else {
+                skippedCount++;
+            }
+        });
+
+        if (newRecords.length > 0) {
+            setAllOvertimeRecords(prev => [...prev, ...newRecords]);
+            toast({
+                title: "Import Successful",
+                description: `${newRecords.length} records added. ${skippedCount > 0 ? `${skippedCount} rows were skipped due to missing data or invalid employee names.` : ''}`,
+            });
+        } else {
+            toast({
+                variant: 'destructive',
+                title: "Import Failed",
+                description: "No valid records could be imported. Please check the file format and employee names.",
+            });
+        }
+
+    } catch (error) {
+        console.error("File upload error:", error);
+        toast({ variant: 'destructive', title: "Error", description: "Could not process the uploaded file." });
+    } finally {
+        setIsSaving(false);
+        // Reset file input
+        if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   };
 
   const { totalHours, totalAmount, monthlyReportData } = useMemo(() => {
@@ -217,6 +277,7 @@ export default function OvertimePage() {
 
   return (
     <>
+    <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".xlsx, .xls" />
     <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
       {selectedDate && (
          <div ref={pdfHeaderRef} style={{ width: '700px', background: 'white', color: 'black' }}>
@@ -308,9 +369,12 @@ export default function OvertimePage() {
                         Overtime rate: {formatCurrency(OVERTIME_RATE)} / hour
                     </p>
                     </CardContent>
-                    <CardFooter>
+                    <CardFooter className="flex-col items-stretch gap-4">
                     <Button type="submit" className="w-full" disabled={isSaving}>
                         <Plus className="mr-2 h-4 w-4" /> Add Record
+                    </Button>
+                    <Button type="button" variant="outline" className="w-full" onClick={() => fileInputRef.current?.click()} disabled={isSaving}>
+                        <Upload className="mr-2 h-4 w-4" /> Upload Excel File
                     </Button>
                     </CardFooter>
                 </form>
