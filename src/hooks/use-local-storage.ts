@@ -23,7 +23,7 @@ const toIdbKey = (key: string) => `${idbKeyPrefix}${key}`;
 const fromIdbKey = (key: string) => key.substring(idbKeyPrefix.length);
 
 
-function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T) => void] {
+function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((val: T) => T)) => void] {
   const [storedValue, setStoredValue] = useState<T>(initialValue);
 
   // Effect to load initial value from either localStorage or IndexedDB
@@ -53,11 +53,12 @@ function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T) => voi
     } else {
         setStoredValue(initialValue);
     }
-  }, [key, initialValue]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
 
   const setValue = useCallback((value: T | ((val: T) => T)) => {
     try {
-      const valueToStore = value instanceof Function ? value(storedValue) : value;
+      const valueToStore = value instanceof Function ? produce(storedValue, value) : value;
 
       if (isLargeValue(valueToStore)) {
         // Store in IndexedDB and put a pointer in localStorage
