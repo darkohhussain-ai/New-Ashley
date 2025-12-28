@@ -13,10 +13,9 @@ export default function Dashboard() {
   const [date, setDate] = useState<Date | null>(null);
 
   // Load settings from localStorage
+  const [savedBannerHeight] = useLocalStorage('dashboard-banner-height', 150);
   const [savedDashboardBanner] = useLocalStorage('dashboard-banner', 'https://picsum.photos/seed/banner/1200/300');
-  const [savedCardSize] = useLocalStorage('dashboard-card-size', 192);
-  const [savedIconSize] = useLocalStorage('dashboard-icon-size', 64);
-  const [savedLogo, setSavedLogo] = useLocalStorage('app-logo', "https://picsum.photos/seed/ashley-logo/300/100");
+  const [savedLogo] = useLocalStorage('app-logo', "https://picsum.photos/seed/ashley-logo/300/100");
   
   const [isMounted, setIsMounted] = useState(false);
 
@@ -63,9 +62,11 @@ export default function Dashboard() {
                 </div>
             </div>
             <div className="flex items-center justify-center w-1/3">
-              <div className="relative w-full max-w-[240px] aspect-[3/1]">
-                 <Image src={savedLogo} alt="App Logo" fill className="object-contain" data-ai-hint="logo" />
-              </div>
+              {savedLogo && (
+                <div className="relative w-full max-w-[240px] aspect-[3/1]">
+                    <Image src={savedLogo} alt="App Logo" fill className="object-contain" data-ai-hint="logo" />
+                </div>
+              )}
             </div>
             <div className="flex items-center justify-end gap-6 w-1/3">
               <Bell className="w-6 h-6 text-muted-foreground hover:text-primary cursor-pointer" />
@@ -79,7 +80,7 @@ export default function Dashboard() {
             </div>
           </div>
            {savedDashboardBanner && (
-             <div className="relative w-full mx-auto my-4 max-w-6xl aspect-[4/1] rounded-lg overflow-hidden">
+             <div className="relative w-full mx-auto my-4 max-w-6xl rounded-lg overflow-hidden" style={{height: `${savedBannerHeight}px`}}>
                 <Image src={savedDashboardBanner} alt="Dashboard Banner" fill className="object-cover" data-ai-hint="banner abstract" />
              </div>
            )}
@@ -95,8 +96,6 @@ export default function Dashboard() {
             <DashboardCard 
                 key={item.title} 
                 {...item} 
-                cardSize={isMounted ? savedCardSize : 192}
-                iconSize={isMounted ? savedIconSize : 64}
             />
           ))}
         </div>

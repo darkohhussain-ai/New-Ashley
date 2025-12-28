@@ -136,13 +136,9 @@ export default function SettingsPage() {
   const [savedLightColors, setSavedLightColors] = useLocalStorage<ThemeColors>('light-theme-colors', defaultLightColors);
   const [savedDarkColors, setSavedDarkColors] = useLocalStorage<ThemeColors>('dark-theme-colors', defaultDarkColors);
   
-  const defaultLogo = "https://picsum.photos/seed/ashley-logo/300/100";
-  const [savedLogo, setSavedLogo] = useLocalStorage('app-logo', defaultLogo);
-  const [savedLogoSize, setSavedLogoSize] = useLocalStorage('app-logo-size', 80);
-  const [savedDashboardBanner, setSavedDashboardBanner] = useLocalStorage('dashboard-banner', 'https://picsum.photos/seed/banner/1200/300');
-  
-  const [savedCardSize, setSavedCardSize] = useLocalStorage('dashboard-card-size', 192);
-  const [savedIconSize, setSavedIconSize] = useLocalStorage('dashboard-icon-size', 64);
+  const [savedLogo, setSavedLogo] = useLocalStorage<string | null>('app-logo', null);
+  const [savedDashboardBanner, setSavedDashboardBanner] = useLocalStorage<string | null>('dashboard-banner', null);
+  const [savedBannerHeight, setSavedBannerHeight] = useLocalStorage('dashboard-banner-height', 150);
 
 
   const [font, setFont] = useState(savedFont);
@@ -150,10 +146,8 @@ export default function SettingsPage() {
   const [lightColors, setLightColors] = useState(savedLightColors);
   const [darkColors, setDarkColors] = useState(savedDarkColors);
   const [logoSrc, setLogoSrc] = useState(savedLogo);
-  const [logoSize, setLogoSize] = useState(savedLogoSize);
   const [dashboardBanner, setDashboardBanner] = useState(savedDashboardBanner);
-  const [cardSize, setCardSize] = useState(savedCardSize);
-  const [iconSize, setIconSize] = useState(savedIconSize);
+  const [bannerHeight, setBannerHeight] = useState(savedBannerHeight);
   
   const [importFile, setImportFile] = useState<File | null>(null);
 
@@ -211,11 +205,8 @@ export default function SettingsPage() {
     setLightColors(savedLightColors);
     setDarkColors(savedDarkColors);
     setLogoSrc(savedLogo);
-    setLogoSize(savedLogoSize);
     setDashboardBanner(savedDashboardBanner);
-    setCardSize(savedCardSize);
-    setIconSize(savedIconSize);
-
+    setBannerHeight(savedBannerHeight);
     
     applyFont(savedFont, savedCustomFont);
 
@@ -240,10 +231,9 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if(!mounted) return;
-    setSavedCardSize(cardSize);
-    setSavedIconSize(iconSize);
+    setSavedBannerHeight(bannerHeight);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cardSize, iconSize]);
+  }, [bannerHeight]);
   
   const handleFontChange = (fontName: string) => {
     setFont(fontName)
@@ -270,7 +260,7 @@ export default function SettingsPage() {
     }
   };
   
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, setter: (value: string) => void, toastTitle: string) => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, setter: (value: string | null) => void, toastTitle: string) => {
     const file = e.target.files?.[0]
     if (file) {
       const reader = new FileReader()
@@ -291,10 +281,8 @@ export default function SettingsPage() {
     setSavedLightColors(lightColors);
     setSavedDarkColors(darkColors);
     setSavedLogo(logoSrc);
-    setSavedLogoSize(logoSize);
     setSavedDashboardBanner(dashboardBanner);
-    setSavedCardSize(cardSize);
-    setSavedIconSize(iconSize);
+    setSavedBannerHeight(bannerHeight);
     toast({ title: 'Settings saved!', description: 'Your appearance settings have been updated.' });
   }
 
@@ -303,22 +291,18 @@ export default function SettingsPage() {
     setCustomFont(null);
     setLightColors(defaultLightColors);
     setDarkColors(defaultDarkColors);
-    setLogoSrc(defaultLogo);
-    setLogoSize(80);
-    setDashboardBanner('https://picsum.photos/seed/banner/1200/300');
-    setCardSize(192);
-    setIconSize(64);
+    setLogoSrc(null);
+    setDashboardBanner(null);
+    setBannerHeight(150);
     
     // Save defaults immediately
     setSavedFont('Inter');
     setSavedCustomFont(null);
     setSavedLightColors(defaultLightColors);
     setSavedDarkColors(defaultDarkColors);
-    setSavedLogo(defaultLogo);
-    setSavedLogoSize(80);
-    setSavedDashboardBanner('https://picsum.photos/seed/banner/1200/300');
-    setSavedCardSize(192);
-    setSavedIconSize(64);
+    setSavedLogo(null);
+    setSavedDashboardBanner(null);
+    setSavedBannerHeight(150);
     
     toast({ title: 'Settings Reset', description: 'All appearance settings have been reset to their default values.' });
   }
@@ -454,17 +438,12 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className='flex flex-col items-center justify-center gap-4'>
-                    <Image src={logoSrc} alt="Current App Logo" width={logoSize} height={logoSize} className="rounded-md object-contain aspect-[3/1] shadow-md bg-muted/20 p-2" style={{width: `${logoSize*1.5}px`, height: `${logoSize}px`}} />
-                    <div className="w-full space-y-2">
-                    <Label htmlFor="logo-size">Company Logo Size: {logoSize}px</Label>
-                    <Slider
-                        id="logo-size"
-                        min={20}
-                        max={120}
-                        step={1}
-                        value={[logoSize]}
-                        onValueChange={(value) => setLogoSize(value[0])}
-                    />
+                    <div className="w-full h-24 border rounded-md flex items-center justify-center bg-muted/30">
+                        {logoSrc ? (
+                            <Image src={logoSrc} alt="Current App Logo" width={120} height={40} className="object-contain" />
+                        ): (
+                            <span className='text-sm text-muted-foreground'>Company Logo Preview</span>
+                        )}
                     </div>
                 </div>
                 <div>
@@ -480,30 +459,19 @@ export default function SettingsPage() {
             <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg"><LayoutDashboard /> Dashboard</CardTitle>
-                <CardDescription>Customize dashboard card appearance.</CardDescription>
+                <CardDescription>Customize dashboard appearance.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
                 <div className="space-y-2">
-                <Label htmlFor="card-size">Card Size: {cardSize}px</Label>
-                <Slider
-                    id="card-size"
-                    min={120}
-                    max={280}
-                    step={4}
-                    value={[cardSize]}
-                    onValueChange={(value) => setCardSize(value[0])}
-                />
-                </div>
-                <div className="space-y-2">
-                <Label htmlFor="icon-size">Icon Size: {iconSize}px</Label>
-                <Slider
-                    id="icon-size"
-                    min={32}
-                    max={96}
-                    step={4}
-                    value={[iconSize]}
-                    onValueChange={(value) => setIconSize(value[0])}
-                />
+                    <Label htmlFor="banner-height">Banner Height: {bannerHeight}px</Label>
+                    <Slider
+                        id="banner-height"
+                        min={80}
+                        max={300}
+                        step={10}
+                        value={[bannerHeight]}
+                        onValueChange={(value) => setBannerHeight(value[0])}
+                    />
                 </div>
             </CardContent>
             </Card>

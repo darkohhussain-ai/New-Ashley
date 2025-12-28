@@ -11,25 +11,21 @@ type DashboardCardProps = {
   icon: LucideIcon
   href: string
   color: string
-  cardSize: number
-  iconSize: number
 }
 
-export function DashboardCard({ title, icon: Icon, href, color, cardSize, iconSize }: DashboardCardProps) {
+export function DashboardCard({ title, icon: Icon, href, color }: DashboardCardProps) {
   return (
     <Link href={href} className="group block">
       <Card 
         className={cn(
-          "bg-card transition-all duration-300 transform hover:-translate-y-1 shadow-lg hover:shadow-2xl text-white",
+          "bg-card transition-all duration-300 transform hover:-translate-y-1 shadow-lg hover:shadow-2xl text-white h-48",
           color
         )}
-        style={{ height: `${cardSize}px`}}
       >
         <CardContent className="flex flex-col items-center justify-center p-6 text-center h-full">
           <div className="p-4 bg-white/20 rounded-full mb-4">
             <Icon 
-              className="text-white transition-transform duration-300 group-hover:scale-110"
-              style={{ width: `${iconSize}px`, height: `${iconSize}px` }}
+              className="text-white transition-transform duration-300 group-hover:scale-110 w-10 h-10"
             />
           </div>
           <h3 className="text-lg font-semibold text-white">{title}</h3>
