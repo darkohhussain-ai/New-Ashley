@@ -46,7 +46,7 @@ const safeDate = (dateValue: string | undefined): Date | null => {
   return isNaN(parsed.getTime()) ? null : parsed;
 };
 
-const employeeRoles = ["Manager", "IT", "Employee Supervisor", "Transport Supervisor", "Employee", "Marketing"];
+const employeeRoles = ["Super Manager", "Manager", "IT", "Employee Supervisor", "Transport Supervisor", "Employee", "Marketing"];
 
 
 function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, onDeselect: () => void }) {
@@ -698,7 +698,3 @@ export default function EmployeesPage() {
     </div>
   )
 }
-
-    
-
-    
