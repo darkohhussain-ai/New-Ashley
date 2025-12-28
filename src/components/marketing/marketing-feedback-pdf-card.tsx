@@ -8,7 +8,7 @@ import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 type ChartData = { name: string; value: number; fill: string }[];
 
 type MarketingFeedbackPdfCardProps = {
-  logoSrc: string;
+  logoSrc: string | null;
   totalEvaluations: number;
   overallScoreDistribution: ChartData;
 };
@@ -70,3 +70,5 @@ export function MarketingFeedbackPdfCard({ logoSrc, totalEvaluations, overallSco
     </div>
   );
 };
+
+    

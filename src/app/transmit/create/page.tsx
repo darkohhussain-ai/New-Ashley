@@ -123,14 +123,6 @@ export default function CreateTransferPage() {
     if (!pdfCardRef.current || !lastTransfer || !lastTransferItems) return;
     
     const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
-    if (customFontBase64) {
-      const fontName = "CustomFont";
-      const fontStyle = "normal";
-      const fontBase64 = customFontBase64.split(',')[1];
-      pdf.addFileToVFS(`${fontName}.ttf`, fontBase64);
-      pdf.addFont(`${fontName}.ttf`, fontName, fontStyle);
-      pdf.setFont(fontName);
-    }
     
     const canvas = await html2canvas(pdfCardRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
     const imgData = canvas.toDataURL('image/png');
@@ -339,3 +331,5 @@ export default function CreateTransferPage() {
     </>
   );
 }
+
+    

@@ -17,7 +17,7 @@ export function EmployeeReportPdfHeader({ employee, logoSrc }: EmployeeReportPdf
   const safeDate = (dateValue: string | undefined): Date | null => {
     if (!dateValue) return null;
     const parsed = parseISO(dateValue);
-    return isNaN(parsed.getTime()) ? null : parsed;
+    return isNaN(parsed.getTime()) ? null : parsed.getTime();
   }
   
   const safeJoinedDate = safeDate(employee.employmentStartDate);
@@ -64,3 +64,5 @@ export function EmployeeReportPdfHeader({ employee, logoSrc }: EmployeeReportPdf
     </div>
   );
 };
+
+    

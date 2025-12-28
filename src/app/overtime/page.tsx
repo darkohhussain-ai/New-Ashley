@@ -207,7 +207,7 @@ export default function OvertimePage() {
       footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' },
       didParseCell: function (data: any) {
         if (customFontBase64) {
-          data.cell.styles.font = "CustomFont";
+            data.cell.styles.font = "CustomFont";
         }
       }
     };
@@ -484,3 +484,5 @@ export default function OvertimePage() {
     </>
   );
 }
+
+    

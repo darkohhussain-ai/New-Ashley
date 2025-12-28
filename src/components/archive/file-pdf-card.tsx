@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -14,7 +15,7 @@ type ChartData = { name: string, value: number, fill: string }[];
 type FilePdfCardProps = {
   file: ExcelFile;
   employee: Employee;
-  logoSrc: string;
+  logoSrc: string | null;
   statusData: ChartData;
   conditionData: ChartData;
 };
@@ -75,7 +76,7 @@ export function FilePdfCard({ file, employee, logoSrc, statusData, conditionData
   const safeDate = (dateValue: string | undefined): Date | null => {
     if (!dateValue) return null;
     const parsed = parseISO(dateValue);
-    return isNaN(parsed.getTime()) ? null : parsed;
+    return isNaN(parsed.getTime()) ? null : parsed.getTime();
   }
   
   const safeFileDate = safeDate(file.date);
@@ -129,3 +130,5 @@ export function FilePdfCard({ file, employee, logoSrc, statusData, conditionData
     </div>
   );
 };
+
+    

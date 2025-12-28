@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Calendar, Truck } from "lucide-react";
@@ -8,7 +9,7 @@ import type { Transfer } from "@/lib/types";
 
 type TransferPdfCardProps = {
   transfer: Transfer;
-  logoSrc: string;
+  logoSrc: string | null;
   totalItems: number;
 };
 
@@ -55,3 +56,5 @@ export function TransferPdfCard({ transfer, logoSrc, totalItems }: TransferPdfCa
     </div>
   );
 };
+
+    
