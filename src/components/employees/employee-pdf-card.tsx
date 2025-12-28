@@ -2,14 +2,14 @@
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Mail, Phone, Cake, Calendar, ShieldCheck } from "lucide-react";
+import { User, Mail, Phone, Cake, Calendar, ShieldCheck, Briefcase } from "lucide-react";
 import { format, parseISO } from 'date-fns';
 import Image from 'next/image';
 import type { Employee } from "@/lib/types";
 
 type EmployeePdfCardProps = {
   employee: Employee;
-  logoSrc: string;
+  logoSrc: string | null;
 };
 
 export function EmployeePdfCard({ employee, logoSrc }: EmployeePdfCardProps) {
@@ -57,7 +57,7 @@ export function EmployeePdfCard({ employee, logoSrc }: EmployeePdfCardProps) {
                 }}
              ></div>
             <div className="text-white z-10">
-                <h1 className="font-bold text-xl">EMPLOYEE</h1>
+                <h1 className="font-bold text-xl">{employee.role || 'EMPLOYEE'}</h1>
             </div>
             <div className="relative w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-md z-10">
                 <div className="w-12 h-12 relative">
@@ -74,7 +74,7 @@ export function EmployeePdfCard({ employee, logoSrc }: EmployeePdfCardProps) {
           <div className="relative bg-white p-4 flex-grow flex flex-col">
               {/* Details Grid */}
               <div className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm mt-4">
-                  <div><p className="text-gray-500 text-xs">ID No</p><p className="font-semibold">{employee.id.substring(0, 7).toUpperCase()}</p></div>
+                  <div><p className="text-gray-500 text-xs">ID No</p><p className="font-semibold">{employee.employeeId || 'N/A'}</p></div>
                   <div><p className="text-gray-500 text-xs">Joined Date</p><p className="font-semibold">{formattedJoinedDate}</p></div>
                   <div><p className="text-gray-500 text-xs">D.O.B</p><p className="font-semibold">{formattedDob}</p></div>
                   <div><p className="text-gray-500 text-xs">Expire Date</p><p className="font-semibold">N/A</p></div>

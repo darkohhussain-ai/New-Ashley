@@ -3,9 +3,12 @@
 
 
 
+
 export type Employee = {
   id: string;
   name: string;
+  employeeId?: string; // New field for unique ID
+  role?: 'Manager' | 'IT' | 'Employee Supervisor' | 'Transport Supervisor' | 'Employee'; // New field for role
   jobTitle?: string;
   employmentStartDate?: string;
   dateOfBirth?: string;

@@ -12,7 +12,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { format, parseISO } from "date-fns"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ArrowLeft, Plus, User, Calendar as CalendarIcon, Edit, Trash2, Save, X, Upload, Download, Mail, Phone, Cake, Briefcase, Search, Building, DollarSign, Clock, Gift, Banknote } from 'lucide-react'
+import { ArrowLeft, Plus, User, Calendar as CalendarIcon, Edit, Trash2, Save, X, Upload, Download, Mail, Phone, Cake, Briefcase, Search, Building, DollarSign, Clock, Gift, Banknote, Shield } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
@@ -26,6 +26,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { useAppContext } from "@/context/app-provider"
 import type { Employee, Expense, Overtime, Bonus, CashWithdrawal } from "@/lib/types"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 
 const formatCurrency = (amount: number) => {
@@ -41,6 +42,9 @@ const safeDate = (dateValue: string | undefined): Date | null => {
   const parsed = parseISO(dateValue);
   return isNaN(parsed.getTime()) ? null : parsed;
 };
+
+const employeeRoles = ["Manager", "IT", "Employee Supervisor", "Transport Supervisor", "Employee"];
+
 
 function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, onDeselect: () => void }) {
     const { toast } = useToast();
@@ -61,6 +65,8 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
 
     const [isEditing, setIsEditing] = useState(false);
     const [name, setName] = useState('');
+    const [uniqueId, setUniqueId] = useState('');
+    const [role, setRole] = useState<Employee['role']>();
     const [jobTitle, setJobTitle] = useState('');
     const [employmentStartDate, setEmploymentStartDate] = useState<Date | undefined>(undefined);
     const [dateOfBirth, setDateOfBirth] = useState<Date | undefined>(undefined);
@@ -78,6 +84,8 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
     useEffect(() => {
         if (employee) {
             setName(employee.name);
+            setUniqueId(employee.employeeId || '');
+            setRole(employee.role);
             setJobTitle(employee.jobTitle || '');
             setEmploymentStartDate(safeDate(employee.employmentStartDate) || undefined);
             setDateOfBirth(safeDate(employee.dateOfBirth) || undefined);
@@ -137,6 +145,8 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
         
         const updatedData: Partial<Employee> = {
             name,
+            employeeId: uniqueId,
+            role,
             jobTitle,
             employmentStartDate: employmentStartDate ? employmentStartDate.toISOString() : undefined,
             dateOfBirth: dateOfBirth ? dateOfBirth.toISOString() : undefined,
@@ -164,14 +174,13 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
         const canvas = await html2canvas(pdfCardRef.current, { scale: 3, useCORS: true, backgroundColor: null });
         const imgData = canvas.toDataURL('image/png');
         
-        // Use the actual canvas dimensions for the PDF
         const pdf = new jsPDF({ 
-            orientation: canvas.width > canvas.height ? 'landscape' : 'portrait', 
+            orientation: 'landscape',
             unit: 'px', 
-            format: [canvas.width, canvas.height] 
+            format: [600, 360]
         });
         
-        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+        pdf.addImage(imgData, 'PNG', 0, 0, 600, 360);
         pdf.save(`${employee.name.replace(/ /g, '_')}_card.pdf`);
     };
 
@@ -239,6 +248,15 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                                 {isEditing ? (
                                     <div className='space-y-4'>
                                         <Input className="text-2xl font-bold h-12" value={name} onChange={e => setName(e.target.value)} placeholder="Employee Name" />
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <Input value={uniqueId} onChange={e => setUniqueId(e.target.value)} placeholder="Employee ID Number" />
+                                            <Select value={role} onValueChange={(v: Employee['role']) => setRole(v)}>
+                                                <SelectTrigger><SelectValue placeholder="Select a role" /></SelectTrigger>
+                                                <SelectContent>
+                                                    {employeeRoles.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
                                         <Input value={jobTitle} onChange={e => setJobTitle(e.target.value)} placeholder="Job Title" />
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <Popover>
@@ -264,8 +282,12 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                                 ) : (
                                     <>
                                         <CardTitle className="text-3xl md:text-4xl font-bold">{employee.name}</CardTitle>
-                                        <CardDescription className="text-lg md:text-xl mt-2 flex items-center gap-2"><Briefcase className="w-5 h-5"/>{employee.jobTitle || 'No title'}</CardDescription>
+                                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-2">
+                                            {employee.role && <CardDescription className="text-lg md:text-xl flex items-center gap-2"><Shield className="w-5 h-5"/>{employee.role}</CardDescription>}
+                                            {employee.jobTitle && <CardDescription className="text-lg md:text-xl flex items-center gap-2"><Briefcase className="w-5 h-5"/>{employee.jobTitle}</CardDescription>}
+                                        </div>
                                         <div className="mt-4 space-y-2 text-muted-foreground">
+                                            {employee.employeeId && <p className="flex items-center gap-2 font-mono">ID: {employee.employeeId}</p>}
                                             {safeEmploymentStartDate && <p className="flex items-center gap-2"><CalendarIcon className="w-4 h-4"/> Started on {format(safeEmploymentStartDate, 'MMMM d, yyyy')}</p>}
                                             {safeDateOfBirth && <p className="flex items-center gap-2"><Cake className="w-4 h-4"/> Born on {format(safeDateOfBirth, 'MMMM d, yyyy')}</p>}
                                         </div>
@@ -381,6 +403,8 @@ function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean,
     const { toast } = useToast();
     
     const [name, setName] = useState("");
+    const [uniqueId, setUniqueId] = useState("");
+    const [role, setRole] = useState<Employee['role']>();
     const [jobTitle, setJobTitle] = useState("");
     const [employmentStartDate, setEmploymentStartDate] = useState<Date | undefined>();
     const [dateOfBirth, setDateOfBirth] = useState<Date | undefined>();
@@ -390,7 +414,7 @@ function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean,
     const [notes, setNotes] = useState("");
 
     const resetForm = () => {
-        setName(""); setJobTitle(""); setEmploymentStartDate(undefined); setDateOfBirth(undefined);
+        setName(""); setUniqueId(""); setRole(undefined); setJobTitle(""); setEmploymentStartDate(undefined); setDateOfBirth(undefined);
         setEmail(""); setPhone(""); setPhotoUrl(undefined); setNotes("");
         onOpenChange(false);
     };
@@ -409,6 +433,8 @@ function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean,
 
         const employeeData: Omit<Employee, 'id'> = { 
           name,
+          employeeId: uniqueId || undefined,
+          role: role,
           photoUrl: photoUrl || `https://picsum.photos/seed/${name.replace(/\s/g, '-')}/400`,
           jobTitle: jobTitle || undefined,
           email: email || undefined,
@@ -434,14 +460,25 @@ function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean,
     
     return (
         <Dialog open={open} onOpenChange={(isOpen) => { onOpenChange(isOpen); if (!isOpen) resetForm(); }}>
-            <DialogContent className="sm:max-w-[480px]">
+            <DialogContent className="sm:max-w-lg">
                 <DialogHeader><DialogTitle>Add New Employee</DialogTitle></DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4 pt-4">
+                <form onSubmit={handleSubmit} className="space-y-4 pt-4 max-h-[80vh] overflow-y-auto p-1 pr-4">
                     <div className="flex flex-col items-center gap-4">
                         <Avatar className="w-24 h-24"><AvatarImage src={photoUrl} /><AvatarFallback><User className="w-12 h-12" /></AvatarFallback></Avatar>
                         <Input id="photo" type="file" onChange={handlePhotoUpload} accept="image/*" />
                     </div>
                     <div className="space-y-2"><Label htmlFor="name">Name</Label><Input id="name" value={name} onChange={e => setName(e.target.value)} required placeholder="e.g. John Doe" /></div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2"><Label htmlFor="employeeId">Employee ID (Optional)</Label><Input id="employeeId" value={uniqueId} onChange={e => setUniqueId(e.target.value)} placeholder="e.g. 10234" /></div>
+                        <div className="space-y-2"><Label htmlFor="role">Role (Optional)</Label>
+                            <Select onValueChange={(v: Employee['role']) => setRole(v)} value={role}>
+                                <SelectTrigger id="role"><SelectValue placeholder="Select a role" /></SelectTrigger>
+                                <SelectContent>
+                                    {employeeRoles.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
                     <div className="space-y-2"><Label htmlFor="jobTitle">Job Title (Optional)</Label><Input id="jobTitle" value={jobTitle} onChange={e => setJobTitle(e.target.value)} placeholder="e.g. Graphic Designer" /></div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2"><Label>Email (Optional)</Label><div className="relative"><Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/><Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="employee@example.com" className="pl-10" /></div></div>
@@ -452,7 +489,7 @@ function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean,
                         <div className="space-y-2"><Label>Date of Birth (Optional)</Label><Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!dateOfBirth && "text-muted-foreground")}><Cake className="mr-2 h-4 w-4" />{dateOfBirth ? format(dateOfBirth, "PPP") : <span>Pick a date</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={dateOfBirth} onSelect={setDateOfBirth} captionLayout="dropdown-nav" fromYear={1950} toYear={new Date().getFullYear()} initialFocus/></PopoverContent></Popover></div>
                     </div>
                     <div className="space-y-2"><Label htmlFor="notes">Notes (Optional)</Label><Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. Specializes in frontend development." /></div>
-                    <DialogFooter><DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose><Button type="submit">Add Employee</Button></DialogFooter>
+                    <DialogFooter className="pt-4"><DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose><Button type="submit">Add Employee</Button></DialogFooter>
                 </form>
             </DialogContent>
         </Dialog>
