@@ -18,13 +18,13 @@ const isLargeValue = (value: any): boolean => {
 };
 
 const idbKeyPrefix = 'idb_';
-const isIdbKey = (key: string) => key.startsWith(idbKeyPrefix);
+const isIdbKey = (key: string) => typeof key === 'string' && key.startsWith(idbKeyPrefix);
 const toIdbKey = (key: string) => `${idbKeyPrefix}${key}`;
 const fromIdbKey = (key: string) => key.substring(idbKeyPrefix.length);
 
 
 function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((val: T) => T)) => void] {
-  const [storedValue, setStoredValue] = useState<T>(initialValue);
+  const [storedValue, setStoredValue] = useState<T>(() => initialValue);
 
   // Effect to load initial value from either localStorage or IndexedDB
   useEffect(() => {
@@ -72,8 +72,13 @@ function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((val
       } else {
         // Store directly in localStorage
         const existingItem = window.localStorage.getItem(key);
-        if(existingItem && isIdbKey(JSON.parse(existingItem))) {
-            del(fromIdbKey(JSON.parse(existingItem))).catch(err => console.error("Could not clean up old IDB key:", err));
+        if(existingItem) {
+            try {
+              const parsedItem = JSON.parse(existingItem);
+              if (isIdbKey(parsedItem)) {
+                  del(fromIdbKey(parsedItem)).catch(err => console.error("Could not clean up old IDB key:", err));
+              }
+            } catch {}
         }
         window.localStorage.setItem(key, JSON.stringify(valueToStore));
         setStoredValue(valueToStore);
@@ -160,7 +165,7 @@ export const importData = async (data: Record<string, any>) => {
             if (existingRaw) {
                 try {
                     const parsed = JSON.parse(existingRaw);
-                    if (typeof parsed === 'string' && isIdbKey(parsed)) {
+                    if (isIdbKey(parsed)) {
                         existingValue = await get(fromIdbKey(parsed));
                     } else {
                         existingValue = parsed;
