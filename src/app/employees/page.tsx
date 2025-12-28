@@ -28,7 +28,7 @@ import { Badge } from "@/components/ui/badge"
 import { useAppContext } from "@/context/app-provider"
 import type { Employee, Expense, Overtime, Bonus, CashWithdrawal } from "@/lib/types"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ReportPdfHeader } from "@/components/reports/report-pdf-header"
+import { EmployeeReportPdfHeader } from "@/components/employees/employee-report-pdf-header"
 import { Separator } from "@/components/ui/separator"
 
 
@@ -187,23 +187,29 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
 
     const handleDownloadReport = async () => {
         if (!reportPdfRef.current || !employee) return;
-
+        
         const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
         
-        // 1. Add Header
-        const headerCanvas = await html2canvas(reportPdfRef.current, { scale: 2, useCORS: true, backgroundColor: null });
+        // 1. Add Header from the new component
+        const headerCanvas = await html2canvas(reportPdfRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
         const headerImgData = headerCanvas.toDataURL('image/png');
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const headerRatio = headerCanvas.width / headerCanvas.height;
-        const finalHeaderWidth = pdfWidth - 28;
+        const finalHeaderWidth = pdfWidth; // Use full width
         const finalHeaderHeight = finalHeaderWidth / headerRatio;
-        pdf.addImage(headerImgData, 'PNG', 14, 14, finalHeaderWidth, finalHeaderHeight);
+        pdf.addImage(headerImgData, 'PNG', 0, 0, finalHeaderWidth, finalHeaderHeight);
 
-        let startY = finalHeaderHeight + 30;
+        let startY = finalHeaderHeight + 20;
 
         // 2. Add Tables for each financial section
         const addSection = (title: string, data: any[], columns: string[], bodyMapper: (item: any) => any[], total: number) => {
             if (data.length === 0) return;
+            // Check if there is enough space, add new page if not
+            if (startY + (data.length * 15) + 40 > pdf.internal.pageSize.getHeight()) {
+                pdf.addPage();
+                startY = 20;
+            }
+
             pdf.setFontSize(14);
             pdf.text(title, 14, startY);
             startY += 10;
@@ -245,9 +251,8 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
             <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
                 <div ref={cardPdfRef}><EmployeePdfCard employee={employee} logoSrc={logoSrc} /></div>
                 <div ref={reportPdfRef} style={{ width: '700px', background: 'white', color: 'black' }}>
-                    <ReportPdfHeader
-                        title={`${employee.name}'s Report`}
-                        subtitle={`As of ${format(new Date(), 'PPP')}`}
+                    <EmployeeReportPdfHeader
+                        employee={employee}
                         logoSrc={logoSrc}
                     />
                 </div>
@@ -671,5 +676,3 @@ export default function EmployeesPage() {
     </div>
   )
 }
-
-    
