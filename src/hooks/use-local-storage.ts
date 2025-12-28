@@ -173,13 +173,25 @@ export const importData = async (data: Record<string, any>) => {
             // If both new and existing values are arrays, merge them.
             if (Array.isArray(existingValue) && Array.isArray(newValue)) {
                 valueToStore = mergeArray(existingValue, newValue);
+            } else if (typeof newValue === 'string' && !isIdbKey(newValue)) {
+                try {
+                    // If the new value is a string that can be parsed, we probably want to store it as an object
+                    // but if not, store as string.
+                    valueToStore = JSON.parse(newValue);
+                } catch {
+                    valueToStore = newValue;
+                }
             }
 
             if (isLargeValue(valueToStore)) {
                 await set(key, valueToStore);
                 localStorage.setItem(key, JSON.stringify(toIdbKey(key)));
             } else {
-                localStorage.setItem(key, JSON.stringify(valueToStore));
+                 if (typeof valueToStore === 'string') {
+                    localStorage.setItem(key, valueToStore);
+                } else {
+                    localStorage.setItem(key, JSON.stringify(valueToStore));
+                }
             }
         }
     }
