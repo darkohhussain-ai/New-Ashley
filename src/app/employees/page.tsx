@@ -571,21 +571,30 @@ export default function EmployeesPage() {
 
   const { warehouseEmployees, marketingEmployees } = useMemo(() => {
     if (!employees) return { warehouseEmployees: [], marketingEmployees: [] };
-    
-    const filtered = employees.filter(emp => 
-        emp.name.toLowerCase().includes(searchQuery.toLowerCase())
+
+    const filtered = employees.filter(emp =>
+        emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        emp.employeeId?.toLowerCase().includes(searchQuery.toLowerCase())
     );
-    
+
+    const sortById = (a: Employee, b: Employee) => {
+        const idA = parseInt(a.employeeId || '0');
+        const idB = parseInt(b.employeeId || '0');
+        if (idA !== idB) return idA - idB;
+        return a.name.localeCompare(b.name); // Fallback to name if IDs are same or not present
+    };
+
     const warehouse = filtered
-      .filter(e => e.role !== 'Marketing')
-      .sort((a,b) => a.name.localeCompare(b.name));
-      
+        .filter(e => e.role !== 'Marketing')
+        .sort(sortById);
+
     const marketing = filtered
-      .filter(e => e.role === 'Marketing')
-      .sort((a,b) => a.name.localeCompare(b.name));
+        .filter(e => e.role === 'Marketing')
+        .sort(sortById);
 
     return { warehouseEmployees: warehouse, marketingEmployees: marketing };
-  }, [employees, searchQuery]);
+}, [employees, searchQuery]);
+
 
   useEffect(() => {
     const allSorted = [...warehouseEmployees, ...marketingEmployees];
@@ -612,7 +621,7 @@ export default function EmployeesPage() {
             <div>
                 <p className="font-semibold">{emp.name}</p>
                 <p className={cn("text-xs", selectedEmployeeId === emp.id ? "text-primary-foreground/80" : "text-muted-foreground")}>
-                    {emp.role || 'No Role'}
+                    {emp.employeeId ? `ID: ${emp.employeeId}` : (emp.role || 'No Role')}
                 </p>
             </div>
         </button>
@@ -637,7 +646,7 @@ export default function EmployeesPage() {
                 <div className="p-4 space-y-4 border-b">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input placeholder="Search employees..." className="pl-10" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                        <Input placeholder="Search name or ID..." className="pl-10" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
                     </div>
                      <Button onClick={() => setAddDialogOpen(true)} className="w-full"><Plus className="mr-2 h-4 w-4" /> Add Employee</Button>
                 </div>
