@@ -188,26 +188,26 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
     const handleDownloadReport = async () => {
         if (!reportPdfRef.current || !employee) return;
 
-        const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
+        const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
         
         // 1. Add Header
         const headerCanvas = await html2canvas(reportPdfRef.current, { scale: 2, useCORS: true, backgroundColor: null });
         const headerImgData = headerCanvas.toDataURL('image/png');
-        const pdfWidth = doc.internal.pageSize.getWidth();
+        const pdfWidth = pdf.internal.pageSize.getWidth();
         const headerRatio = headerCanvas.width / headerCanvas.height;
         const finalHeaderWidth = pdfWidth - 28;
         const finalHeaderHeight = finalHeaderWidth / headerRatio;
-        doc.addImage(headerImgData, 'PNG', 14, 14, finalHeaderWidth, finalHeaderHeight);
+        pdf.addImage(headerImgData, 'PNG', 14, 14, finalHeaderWidth, finalHeaderHeight);
 
         let startY = finalHeaderHeight + 30;
 
         // 2. Add Tables for each financial section
         const addSection = (title: string, data: any[], columns: string[], bodyMapper: (item: any) => any[], total: number) => {
             if (data.length === 0) return;
-            doc.setFontSize(14);
-            doc.text(title, 14, startY);
+            pdf.setFontSize(14);
+            pdf.text(title, 14, startY);
             startY += 10;
-            autoTable(doc, {
+            autoTable(pdf, {
                 startY,
                 head: [columns],
                 body: data.map(bodyMapper),
@@ -216,7 +216,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                 headStyles: { fillColor: [40, 40, 40] },
                 footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' }
             });
-            startY = (doc as any).lastAutoTable.finalY + 20;
+            startY = (pdf as any).lastAutoTable.finalY + 20;
         }
 
         addSection('Expenses', sortedExpenses, ['Date', 'Notes', 'Amount'], (e) => [format(parseISO(e.date), 'PP'), e.notes || '', formatCurrency(e.amount)], totalExpenses);
@@ -671,3 +671,5 @@ export default function EmployeesPage() {
     </div>
   )
 }
+
+    
