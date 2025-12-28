@@ -51,7 +51,7 @@ export default function ExpensesPage() {
 
   const chartRef = useRef<HTMLDivElement>(null);
   const pdfHeaderRef = useRef<HTMLDivElement>(null);
-  const defaultLogo = "https://picsum.photos/seed/1/300/100";
+  const defaultLogo = "https://picsum.photos/seed/ashley-logo/300/100";
   const [logoSrc] = useLocalStorage('app-logo', defaultLogo);
 
 
@@ -62,10 +62,15 @@ export default function ExpensesPage() {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [notes, setNotes] = useState<string>('');
   
-  const sortedEmployees = useMemo(() => {
+  const warehouseEmployees = useMemo(() => {
     if (!employees) return [];
-    return [...employees].sort((a, b) => a.name.localeCompare(b.name));
+    return employees.filter(e => e.jobTitle !== 'Marketing');
   }, [employees]);
+
+  const sortedEmployees = useMemo(() => {
+    if (!warehouseEmployees) return [];
+    return [...warehouseEmployees].sort((a, b) => a.name.localeCompare(b.name));
+  }, [warehouseEmployees]);
 
   if(employees && expenses && isLoading) {
       setIsLoading(false);

@@ -39,7 +39,7 @@ const formatCurrency = (amount: number) => {
 export default function OvertimePage() {
   const { toast } = useToast();
   const { employees, overtime: allOvertimeRecords, setOvertime: setAllOvertimeRecords } = useAppContext();
-  const defaultLogo = "https://picsum.photos/seed/1/300/100";
+  const defaultLogo = "https://picsum.photos/seed/ashley-logo/300/100";
   const [logoSrc] = useLocalStorage('app-logo', defaultLogo);
 
   const [view, setView] = useState<'daily' | 'monthly'>('daily');
@@ -57,6 +57,11 @@ export default function OvertimePage() {
   const pdfHeaderRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const warehouseEmployees = useMemo(() => {
+    if (!employees) return [];
+    return employees.filter(e => e.jobTitle !== 'Marketing');
+  }, [employees]);
+
   const overtimeRecords = useMemo(() => {
     if (!allOvertimeRecords || !selectedDate) return [];
     const start = view === 'daily' ? startOfDay(selectedDate) : startOfMonth(selectedDate);
@@ -69,9 +74,9 @@ export default function OvertimePage() {
 
 
   const sortedEmployees = useMemo(() => {
-    if (!employees) return [];
-    return [...employees].sort((a, b) => a.name.localeCompare(b.name));
-  }, [employees]);
+    if (!warehouseEmployees) return [];
+    return [...warehouseEmployees].sort((a, b) => a.name.localeCompare(b.name));
+  }, [warehouseEmployees]);
 
   const getEmployeeName = (id: string) => employees?.find(e => e.id === id)?.name || '...';
   
