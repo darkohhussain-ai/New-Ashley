@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Star, Loader2, ChevronsRight, Plus, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -160,7 +160,7 @@ export default function MarketingFeedbackPage() {
         return employees.filter(e => e.jobTitle === 'Marketing');
     }, [employees]);
     
-    useState(() => {
+    useEffect(() => {
         if(employees && marketingFeedbacks && evaluationQuestions) {
             setIsLoading(false);
         }
@@ -411,5 +411,7 @@ export default function MarketingFeedbackPage() {
         </div>
     );
 }
+
+    
 
     
