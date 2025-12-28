@@ -12,6 +12,7 @@ import { useAppContext } from '@/context/app-provider';
 import { RealityCheck } from '@/lib/types';
 import type { RealityCheckResponse } from '@/lib/types';
 import { formatISO } from 'date-fns';
+import { Label } from '@/components/ui/label';
 
 export default function RealityCheckPage() {
   const { toast } = useToast();
