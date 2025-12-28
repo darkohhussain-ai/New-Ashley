@@ -163,7 +163,14 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
         if (!pdfCardRef.current || !employee) return;
         const canvas = await html2canvas(pdfCardRef.current, { scale: 3, useCORS: true, backgroundColor: null });
         const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: [canvas.width, canvas.height] });
+        
+        // Use the actual canvas dimensions for the PDF
+        const pdf = new jsPDF({ 
+            orientation: canvas.width > canvas.height ? 'landscape' : 'portrait', 
+            unit: 'px', 
+            format: [canvas.width, canvas.height] 
+        });
+        
         pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
         pdf.save(`${employee.name.replace(/ /g, '_')}_card.pdf`);
     };
