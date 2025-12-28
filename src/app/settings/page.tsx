@@ -199,24 +199,28 @@ export default function SettingsPage() {
   // Apply saved settings on initial mount
   useEffect(() => {
     setMounted(true)
-    
-    setFont(savedFont);
-    setCustomFont(savedCustomFont);
-    setLightColors(savedLightColors);
-    setDarkColors(savedDarkColors);
-    setLogoSrc(savedLogo);
-    setDashboardBanner(savedDashboardBanner);
-    setBannerHeight(savedBannerHeight);
-    
-    applyFont(savedFont, savedCustomFont);
+  }, []);
 
-    if (document.documentElement.classList.contains('dark')) {
-      applyColors(savedDarkColors);
-    } else {
-      applyColors(savedLightColors);
+  useEffect(() => {
+    if (mounted) {
+      setFont(savedFont);
+      setCustomFont(savedCustomFont);
+      setLightColors(savedLightColors);
+      setDarkColors(savedDarkColors);
+      setLogoSrc(savedLogo);
+      setDashboardBanner(savedDashboardBanner);
+      setBannerHeight(savedBannerHeight);
+    
+      applyFont(savedFont, savedCustomFont);
+
+      if (document.documentElement.classList.contains('dark')) {
+        applyColors(savedDarkColors);
+      } else {
+        applyColors(savedLightColors);
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [mounted, savedFont, savedCustomFont, savedLightColors, savedDarkColors, savedLogo, savedDashboardBanner, savedBannerHeight])
   
   // Apply live preview changes
   useEffect(() => {
