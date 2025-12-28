@@ -3,7 +3,7 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Send, Sparkles, Loader2, Check } from 'lucide-react';
+import { ArrowLeft, Save, Check, ListChecks } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -12,62 +12,48 @@ import { useAppContext } from '@/context/app-provider';
 import { RealityCheck } from '@/lib/types';
 import type { RealityCheckResponse } from '@/lib/types';
 import { formatISO } from 'date-fns';
-import { realityCheck } from '@/ai/flows/reality-check-flow';
 
 export default function RealityCheckPage() {
   const { toast } = useToast();
   const { realityChecks, setRealityChecks } = useAppContext();
 
   const [question, setQuestion] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [generatedAnswers, setGeneratedAnswers] = useState<RealityCheckResponse | null>(null);
+  const [answers, setAnswers] = useState<RealityCheckResponse>({ answer1: '', answer2: '', answer3: '' });
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
 
   const totalFeedbackCount = useMemo(() => realityChecks.length, [realityChecks]);
 
-  const handleGenerateAnswers = async () => {
-    if (!question.trim()) {
-      toast({ variant: 'destructive', title: 'Question is empty', description: 'Please enter a question to generate answers.' });
-      return;
-    }
-    setIsLoading(true);
-    setGeneratedAnswers(null);
-    setSelectedAnswer(null);
-
-    // Simulate an offline response
-    setTimeout(() => {
-      setGeneratedAnswers({
-        answer1: "This is the first placeholder answer, focusing on a direct approach.",
-        answer2: "This is a second, alternative perspective on the question provided.",
-        answer3: "This is a third, more creative or abstract response to the user's query."
-      });
-      setIsLoading(false);
-    }, 1500);
-  };
-  
   const handleSaveFeedback = () => {
-      if (!question || !generatedAnswers || !selectedAnswer) {
-          toast({ variant: 'destructive', title: 'Cannot save feedback', description: 'Please select a preferred answer first.' });
-          return;
-      }
-      
-      const newFeedback: RealityCheck = {
-          id: crypto.randomUUID(),
-          question: question,
-          answer1: generatedAnswers.answer1,
-          answer2: generatedAnswers.answer2,
-          answer3: generatedAnswers.answer3,
-          chosenAnswer: selectedAnswer,
-          createdAt: formatISO(new Date()),
-      };
-      
-      setRealityChecks([...realityChecks, newFeedback]);
-      toast({ title: 'Feedback saved!', description: 'Thank you for helping improve the AI.' });
-      
-      // Reset state
-      setQuestion('');
-      setGeneratedAnswers(null);
-      setSelectedAnswer(null);
+    if (!question.trim()) {
+        toast({ variant: 'destructive', title: 'Cannot save', description: 'Please enter a question.' });
+        return;
+    }
+    if (!answers.answer1.trim() || !answers.answer2.trim() || !answers.answer3.trim()) {
+        toast({ variant: 'destructive', title: 'Cannot save', description: 'Please provide all three answers.' });
+        return;
+    }
+    if (!selectedAnswer) {
+        toast({ variant: 'destructive', title: 'Cannot save feedback', description: 'Please select a preferred answer first.' });
+        return;
+    }
+
+    const newFeedback: RealityCheck = {
+      id: crypto.randomUUID(),
+      question: question,
+      answer1: answers.answer1,
+      answer2: answers.answer2,
+      answer3: answers.answer3,
+      chosenAnswer: selectedAnswer,
+      createdAt: formatISO(new Date()),
+    };
+
+    setRealityChecks([...realityChecks, newFeedback]);
+    toast({ title: 'Feedback saved!', description: 'Your reality check entry has been recorded.' });
+
+    // Reset state
+    setQuestion('');
+    setAnswers({ answer1: '', answer2: '', answer3: '' });
+    setSelectedAnswer(null);
   };
   
 
@@ -86,65 +72,74 @@ export default function RealityCheckPage() {
         <div className="lg:col-span-2 space-y-8">
             <Card>
                 <CardHeader>
-                    <CardTitle>Ask a Question</CardTitle>
-                    <CardDescription>Enter a question to test the AI's understanding and get multiple perspectives.</CardDescription>
+                    <CardTitle>Create a Reality Check</CardTitle>
+                    <CardDescription>Enter a question, provide three possible answers, and then choose the best one.</CardDescription>
                 </CardHeader>
-                <CardContent>
-                    <div className="space-y-4">
+                <CardContent className="space-y-6">
+                    <div className="space-y-2">
+                        <Label htmlFor="question" className="text-base font-semibold">Question</Label>
                         <Textarea
+                            id="question"
                             value={question}
                             onChange={(e) => setQuestion(e.target.value)}
                             placeholder="Type your question here..."
                             className="min-h-[100px] text-base"
-                            disabled={isLoading}
                         />
-                        <Button onClick={handleGenerateAnswers} disabled={isLoading} className="w-full">
-                            {isLoading ? <Loader2 className="animate-spin mr-2"/> : <Send className="mr-2"/>}
-                            Generate Answers
-                        </Button>
+                    </div>
+                    
+                    <div className="space-y-4">
+                         <div className="space-y-2">
+                            <Label htmlFor="answer1" className="font-semibold">Answer 1</Label>
+                            <Textarea
+                                id="answer1"
+                                value={answers.answer1}
+                                onChange={(e) => setAnswers(prev => ({...prev, answer1: e.target.value}))}
+                                placeholder="Enter the first possible answer..."
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="answer2" className="font-semibold">Answer 2</Label>
+                            <Textarea
+                                id="answer2"
+                                value={answers.answer2}
+                                onChange={(e) => setAnswers(prev => ({...prev, answer2: e.target.value}))}
+                                placeholder="Enter the second possible answer..."
+                            />
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="answer3" className="font-semibold">Answer 3</Label>
+                            <Textarea
+                                id="answer3"
+                                value={answers.answer3}
+                                onChange={(e) => setAnswers(prev => ({...prev, answer3: e.target.value}))}
+                                placeholder="Enter the third possible answer..."
+                            />
+                        </div>
                     </div>
                 </CardContent>
             </Card>
 
-            {isLoading && (
-                 <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-primary">
-                            <Sparkles className="animate-pulse" /> Generating...
-                        </CardTitle>
-                        <CardDescription>The AI is thinking. Please wait a moment.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        {[...Array(3)].map((_, i) => (
-                             <div key={i} className="p-4 border rounded-lg bg-muted/50 animate-pulse h-20"></div>
-                        ))}
-                    </CardContent>
-                </Card>
-            )}
-
-            {generatedAnswers && (
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Choose the Best Answer</CardTitle>
-                        <CardDescription>Review the generated answers and select the one that is most accurate or helpful.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        {[generatedAnswers.answer1, generatedAnswers.answer2, generatedAnswers.answer3].map((answer, index) => (
-                            <div 
-                                key={index} 
-                                className={`p-4 border rounded-lg cursor-pointer transition-all ${selectedAnswer === answer ? 'ring-2 ring-primary border-primary' : 'hover:border-primary/50'}`}
-                                onClick={() => setSelectedAnswer(answer)}
-                            >
-                                <p className="font-semibold mb-2">Answer {index + 1}</p>
-                                <p className="text-muted-foreground">{answer}</p>
-                            </div>
-                        ))}
-                        <Button onClick={handleSaveFeedback} disabled={!selectedAnswer} className="w-full">
-                            <Check className="mr-2"/> Save Feedback
-                        </Button>
-                    </CardContent>
-                </Card>
-            )}
+            <Card>
+                <CardHeader>
+                    <CardTitle>Choose the Best Answer</CardTitle>
+                    <CardDescription>Review your answers and select the one that is most accurate or helpful.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {[answers.answer1, answers.answer2, answers.answer3].map((answer, index) => (
+                        <div 
+                            key={index} 
+                            className={`p-4 border rounded-lg cursor-pointer transition-all ${selectedAnswer === answer ? 'ring-2 ring-primary border-primary' : 'hover:border-primary/50'}`}
+                            onClick={() => answer.trim() && setSelectedAnswer(answer)}
+                        >
+                            <p className="font-semibold mb-2">Answer {index + 1}</p>
+                            <p className="text-muted-foreground">{answer || "..."}</p>
+                        </div>
+                    ))}
+                    <Button onClick={handleSaveFeedback} disabled={!selectedAnswer} className="w-full">
+                        <Save className="mr-2"/> Save Feedback
+                    </Button>
+                </CardContent>
+            </Card>
 
         </div>
         <div className="lg:col-span-1">
