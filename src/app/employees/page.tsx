@@ -58,6 +58,8 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
         bonuses,
         withdrawals,
     } = useAppContext();
+    const [customFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
+
 
     const employee = useMemo(() => employees.find(e => e.id === employeeId), [employees, employeeId]);
     const employeeExpenses = useMemo(() => expenses.filter(e => e.employeeId === employeeId), [expenses, employeeId]);
@@ -170,16 +172,29 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
         onDeselect();
     }
 
-    const handlePrintCard = async () => {
-        if (!cardPdfRef.current || !employee) return;
-        const canvas = await html2canvas(cardPdfRef.current, { scale: 3, useCORS: true, backgroundColor: null });
-        const imgData = canvas.toDataURL('image/png');
-        
+    const setupPdf = async () => {
         const pdf = new jsPDF({ 
             orientation: 'landscape',
             unit: 'px', 
             format: [600, 360]
         });
+
+        if (customFontBase64) {
+            const fontName = "CustomFont";
+            const fontStyle = "normal";
+            const fontBase64 = customFontBase64.split(',')[1];
+            pdf.addFileToVFS(`${fontName}.ttf`, fontBase64);
+            pdf.addFont(`${fontName}.ttf`, fontName, fontStyle);
+            pdf.setFont(fontName);
+        }
+        return pdf;
+    }
+
+    const handlePrintCard = async () => {
+        if (!cardPdfRef.current || !employee) return;
+        const pdf = await setupPdf();
+        const canvas = await html2canvas(cardPdfRef.current, { scale: 3, useCORS: true, backgroundColor: null });
+        const imgData = canvas.toDataURL('image/png');
         
         pdf.addImage(imgData, 'PNG', 0, 0, 600, 360);
         pdf.save(`${employee.name.replace(/ /g, '_')}_card.pdf`);
@@ -189,6 +204,15 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
         if (!reportPdfRef.current || !employee) return;
         
         const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
+
+        if (customFontBase64) {
+            const fontName = "CustomFont";
+            const fontStyle = "normal";
+            const fontBase64 = customFontBase64.split(',')[1];
+            pdf.addFileToVFS(`${fontName}.ttf`, fontBase64);
+            pdf.addFont(`${fontName}.ttf`, fontName, fontStyle);
+            pdf.setFont(fontName);
+        }
         
         // 1. Add Header from the new component
         const headerCanvas = await html2canvas(reportPdfRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
@@ -220,7 +244,12 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                 foot: [['Total', '', formatCurrency(total)]],
                 theme: 'striped',
                 headStyles: { fillColor: [40, 40, 40] },
-                footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' }
+                footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' },
+                didParseCell: function (data) {
+                    if (customFontBase64) {
+                        data.cell.styles.font = "CustomFont";
+                    }
+                }
             });
             startY = (pdf as any).lastAutoTable.finalY + 20;
         }

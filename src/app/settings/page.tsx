@@ -26,10 +26,10 @@ const lato = Lato({ weight: ['400', '700'], subsets: ['latin'], variable: '--fon
 
 
 const availableFonts = [
-  { name: 'Inter', family: "var(--font-inter)" },
-  { name: 'Roboto', family: "var(--font-roboto)" },
-  { name: 'Open Sans', family: "var(--font-open-sans)" },
-  { name: 'Lato', family: "var(--font-lato)" },
+  { name: 'Inter', family: "Inter, sans-serif" },
+  { name: 'Roboto', family: "Roboto, sans-serif" },
+  { name: 'Open Sans', family: "Open Sans, sans-serif" },
+  { name: 'Lato', family: "Lato, sans-serif" },
 ]
 
 type ThemeColors = {
@@ -131,7 +131,7 @@ export default function SettingsPage() {
   const [mounted, setMounted] = useState(false)
   
   const [savedFont, setSavedFont] = useLocalStorage('app-font', 'Inter')
-  const [savedCustomFont, setSavedCustomFont] = useLocalStorage<string | null>('custom-font', null)
+  const [savedCustomFont, setSavedCustomFont] = useLocalStorage<string | null>('custom-font-base64', null)
   
   const [savedLightColors, setSavedLightColors] = useLocalStorage<ThemeColors>('light-theme-colors', defaultLightColors);
   const [savedDarkColors, setSavedDarkColors] = useLocalStorage<ThemeColors>('dark-theme-colors', defaultDarkColors);
@@ -191,7 +191,7 @@ export default function SettingsPage() {
       applyCustomFont(null); // Remove custom font if not selected
       const selectedFont = availableFonts.find(f => f.name === fontName)
       if(selectedFont) {
-          document.body.style.setProperty('--font-body', selectedFont.family)
+          document.body.style.setProperty('font-family', selectedFont.family)
       }
     }
   }
@@ -517,7 +517,7 @@ export default function SettingsPage() {
             <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Type /> Typography</CardTitle>
-                <CardDescription>Manage the font used in the application.</CardDescription>
+                <CardDescription>Manage the font used in the application and for PDF exports.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
                 <div className="flex items-center justify-between">
@@ -537,7 +537,7 @@ export default function SettingsPage() {
                 <div>
                     <Label htmlFor="font-upload" className="text-sm font-medium">Upload Custom Font</Label>
                     <Input id="font-upload" type="file" accept=".ttf,.otf,.woff,.woff2" className="mt-2" onChange={handleCustomFontUpload} />
-                    <p className="text-xs text-muted-foreground mt-2">Upload a .ttf, .otf, .woff, or .woff2 file.</p>
+                    <p className="text-xs text-muted-foreground mt-2">Upload a .ttf, .otf, .woff, or .woff2 file. This font will be used for PDF generation.</p>
                 </div>
             </CardContent>
             </Card>
