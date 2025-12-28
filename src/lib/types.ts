@@ -1,5 +1,6 @@
 
 
+
 export type Employee = {
   id: string;
   name: string;
@@ -108,7 +109,7 @@ export type NewItem = Omit<Item, 'id' | 'fileId' | 'storageStatus' | 'modelCondi
   locationId: string;
 };
 
-export type EvaluationResponse = {
+export type MarketingFeedback = {
     id: string;
     employeeId: string;
     totalScore: number;

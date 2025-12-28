@@ -42,11 +42,10 @@ export default function Dashboard() {
 
   const menuItems = [
     { title: "Employees", icon: Users, href: "/employees", color: "bg-pink-500" },
-    { title: "Marketing Evaluation", icon: Star, href: "/marketing-evaluation", color: "bg-cyan-500" },
+    { title: "Marketing Feedback", icon: Star, href: "/marketing-feedback", color: "bg-cyan-500" },
     { title: "Ashley Expenses", icon: CreditCard, href: "/ashley-expenses", color: "bg-blue-500" },
     { title: "Placement & Storage", icon: Box, href: "/items", color: "bg-green-500" },
     { title: "Transmit Cargo", icon: PackagePlus, href: "/transmit", color: "bg-yellow-500" },
-    { title: "Reality Check", icon: CheckSquare, href: "/reality-check", color: "bg-indigo-500" },
     { title: "Settings", icon: SettingsIcon, href: "/settings", color: "bg-purple-500" },
   ]
 

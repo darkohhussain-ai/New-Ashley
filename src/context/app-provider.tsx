@@ -15,7 +15,7 @@ import {
     SoldItemReceipt,
     Transfer,
     ItemForTransfer,
-    EvaluationResponse,
+    MarketingFeedback,
     RealityCheck
 } from '@/lib/types';
 import { initialData as initialDataObject } from './initial-data';
@@ -46,8 +46,8 @@ interface AppState {
     setTransfers: (transfers: Transfer[]) => void;
     transferItems: ItemForTransfer[];
     setTransferItems: (items: ItemForTransfer[]) => void;
-    evaluations: EvaluationResponse[];
-    setEvaluations: (evaluations: EvaluationResponse[]) => void;
+    marketingFeedbacks: MarketingFeedback[];
+    setMarketingFeedbacks: (feedbacks: MarketingFeedback[]) => void;
     realityChecks: RealityCheck[];
     setRealityChecks: (checks: RealityCheck[]) => void;
 }
@@ -67,7 +67,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const [receipts, setReceipts] = useLocalStorage<SoldItemReceipt[]>('sold_item_receipts', initialData.receipts);
     const [transfers, setTransfers] = useLocalStorage<Transfer[]>('transfers', initialData.transfers);
     const [transferItems, setTransferItems] = useLocalStorage<ItemForTransfer[]>('transfer_items', initialData.transferItems);
-    const [evaluations, setEvaluations] = useLocalStorage<EvaluationResponse[]>('marketing-evaluations', initialData.evaluations);
+    const [marketingFeedbacks, setMarketingFeedbacks] = useLocalStorage<MarketingFeedback[]>('marketing-feedbacks', initialData.marketingFeedbacks);
     const [realityChecks, setRealityChecks] = useLocalStorage<RealityCheck[]>('reality_checks', initialData.realityChecks);
 
     const value = {
@@ -82,7 +82,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         receipts, setReceipts,
         transfers, setTransfers,
         transferItems, setTransferItems,
-        evaluations, setEvaluations,
+        marketingFeedbacks, setMarketingFeedbacks,
         realityChecks, setRealityChecks,
     };
 

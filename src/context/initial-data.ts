@@ -1,5 +1,5 @@
 
-import { Employee, ExcelFile, Item, StorageLocation, Expense, Overtime, Bonus, CashWithdrawal, SoldItemReceipt, Transfer, ItemForTransfer, EvaluationResponse, RealityCheck } from '@/lib/types';
+import { Employee, ExcelFile, Item, StorageLocation, Expense, Overtime, Bonus, CashWithdrawal, SoldItemReceipt, Transfer, ItemForTransfer, MarketingFeedback, RealityCheck } from '@/lib/types';
 
 export const initialData: {
     employees: Employee[],
@@ -13,7 +13,7 @@ export const initialData: {
     receipts: SoldItemReceipt[],
     transfers: Transfer[],
     transferItems: ItemForTransfer[],
-    evaluations: EvaluationResponse[],
+    marketingFeedbacks: MarketingFeedback[],
     realityChecks: RealityCheck[],
 } = {
     employees: [],
@@ -27,6 +27,6 @@ export const initialData: {
     receipts: [],
     transfers: [],
     transferItems: [],
-    evaluations: [],
+    marketingFeedbacks: [],
     realityChecks: [],
 };
