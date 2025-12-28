@@ -1,9 +1,9 @@
 
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Star, Loader2, ChevronsRight, Plus, Settings, LayoutDashboard, FileText } from 'lucide-react';
+import { ArrowLeft, Star, Loader2, ChevronsRight, Plus, Settings, LayoutDashboard, FileText, FileDown, FileSpreadsheet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -14,11 +14,17 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAppContext } from '@/context/app-provider';
 import type { Employee, MarketingFeedback, EvaluationQuestion, AnswerOption } from '@/lib/types';
-import { formatISO } from 'date-fns';
+import { format, formatISO, parseISO } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
+import { MarketingFeedbackPdfCard } from '@/components/marketing/marketing-feedback-pdf-card';
+import useLocalStorage from '@/hooks/use-local-storage';
+import html2canvas from 'html2canvas';
 
 
 function AddMarketingEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean, onOpenChange: (open: boolean) => void, addEmployee: (employee: Omit<Employee, 'id'>) => void }) {
@@ -149,6 +155,8 @@ export default function MarketingFeedbackPage() {
         marketingFeedbacks, setMarketingFeedbacks,
         evaluationQuestions
     } = useAppContext();
+    const defaultLogo = "https://i.ibb.co/68RvM01/ashley-logo.png";
+    const [logoSrc] = useLocalStorage('app-logo', defaultLogo);
 
     const [selectedEmployee, setSelectedEmployee] = useState<string>('');
     const [responses, setResponses] = useState<Record<string, number>>({});
@@ -156,6 +164,9 @@ export default function MarketingFeedbackPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isAddDialogOpen, setAddDialogOpen] = useState(false);
     const [isManageQuestionsOpen, setManageQuestionsOpen] = useState(false);
+    
+    const pdfCardRef = useRef<HTMLDivElement>(null);
+
 
     const marketingEmployees = useMemo(() => {
         return employees.filter(e => e.jobTitle === 'Marketing');
@@ -263,9 +274,10 @@ export default function MarketingFeedbackPage() {
         const counts = { 'Excellent': 0, 'Good': 0, 'Needs Improvement': 0 };
         marketingFeedbacks.forEach(feedback => {
             feedback.responses.forEach(res => {
-                if (res.answer === 3) counts['Excellent']++;
-                else if (res.answer === 2) counts['Good']++;
-                else if (res.answer === 1) counts['Needs Improvement']++;
+                const answerLabel = evaluationQuestions.flatMap(q => q.answers).find(a => a.value === res.answer)?.label;
+                if (answerLabel === 'Excellent') counts['Excellent']++;
+                else if (answerLabel === 'Good') counts['Good']++;
+                else if (answerLabel === 'Needs Improvement') counts['Needs Improvement']++;
             });
         });
         return [
@@ -273,11 +285,109 @@ export default function MarketingFeedbackPage() {
             { name: 'Good', value: counts['Good'], fill: 'hsl(var(--chart-4))' },
             { name: 'Needs Improvement', value: counts['Needs Improvement'], fill: 'hsl(var(--chart-1))' },
         ].filter(d => d.value > 0);
-    }, [marketingFeedbacks]);
+    }, [marketingFeedbacks, evaluationQuestions]);
+
+    const handleDownloadPdf = async () => {
+        if (!pdfCardRef.current || !marketingFeedbacks.length) {
+            toast({ title: "No Data", description: "There is no data to export."});
+            return;
+        }
+        
+        const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
+        const canvas = await html2canvas(pdfCardRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
+        const imgData = canvas.toDataURL('image/png');
+        const pdfWidth = doc.internal.pageSize.getWidth();
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
+        const ratio = imgWidth / imgHeight;
+        const finalImgWidth = pdfWidth - 28;
+        const finalImgHeight = finalImgWidth / ratio;
+        
+        doc.addImage(imgData, 'PNG', 14, 14, finalImgWidth, finalImgHeight);
+        let currentY = finalImgHeight + 30;
+
+        if (evaluationSummary.length > 0) {
+            doc.setFontSize(14);
+            doc.text('Employee Rankings (Latest Score)', 14, currentY);
+            currentY += 10;
+            autoTable(doc, {
+                startY: currentY,
+                head: [['Rank', 'Employee', 'Score']],
+                body: evaluationSummary.map((item, index) => [index + 1, item.name, item.score]),
+            });
+            currentY = (doc as any).lastAutoTable.finalY + 20;
+        }
+
+        if (answerRanking.length > 0) {
+            doc.setFontSize(14);
+            doc.text('Question Average Scores', 14, currentY);
+            currentY += 10;
+            autoTable(doc, {
+                startY: currentY,
+                head: [['Question', 'Average Score']],
+                body: answerRanking.map(item => [item.text, item.avgScore.toFixed(2)]),
+            });
+        }
+        
+        doc.save(`Marketing_Feedback_Report_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+    };
+
+    const handleDownloadExcel = () => {
+        if (!marketingFeedbacks.length) {
+             toast({ title: "No Data", description: "There is no data to export."});
+            return;
+        }
+        const wb = XLSX.utils.book_new();
+
+        // Sheet 1: Employee Rankings
+        const rankingsData = evaluationSummary.map((item, index) => ({
+            Rank: index + 1,
+            Employee: item.name,
+            'Latest Score': item.score,
+        }));
+        const rankingsWs = XLSX.utils.json_to_sheet(rankingsData);
+        XLSX.utils.book_append_sheet(wb, rankingsWs, 'Employee Rankings');
+
+        // Sheet 2: Question Rankings
+        const questionsData = answerRanking.map(item => ({
+            Question: item.text,
+            'Average Score': item.avgScore.toFixed(2),
+        }));
+        const questionsWs = XLSX.utils.json_to_sheet(questionsData);
+        XLSX.utils.book_append_sheet(wb, questionsWs, 'Question Averages');
+
+        // Sheet 3: Raw Data
+        const rawData = marketingFeedbacks.map(fb => {
+            const employee = employees.find(e => e.id === fb.employeeId);
+            const base = {
+                Date: format(parseISO(fb.date), 'yyyy-MM-dd'),
+                Employee: employee?.name || 'Unknown',
+                'Total Score': fb.totalScore,
+            };
+            fb.responses.forEach(res => {
+                const question = evaluationQuestions.find(q => q.id === res.questionId);
+                (base as any)[question?.text || res.questionId] = res.answer;
+            });
+            return base;
+        });
+        const rawDataWs = XLSX.utils.json_to_sheet(rawData);
+        XLSX.utils.book_append_sheet(wb, rawDataWs, 'Raw Feedback Data');
+
+        XLSX.writeFile(wb, `Marketing_Feedback_Export_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+    };
 
 
     return (
         <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
+             <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+                <div ref={pdfCardRef} style={{ width: '700px', background: 'white', color: 'black' }}>
+                    <MarketingFeedbackPdfCard
+                        logoSrc={logoSrc}
+                        totalEvaluations={marketingFeedbacks.length}
+                        overallScoreDistribution={overallScoreDistribution}
+                    />
+                </div>
+            </div>
             <AddMarketingEmployeeDialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen} addEmployee={addMarketingEmployee} />
             <ManageQuestionsDialog open={isManageQuestionsOpen} onOpenChange={setManageQuestionsOpen} />
             <header className="flex items-center justify-between gap-4 mb-8">
@@ -304,6 +414,10 @@ export default function MarketingFeedbackPage() {
                 </TabsList>
 
                 <TabsContent value="dashboard">
+                    <div className="flex justify-end mb-4 gap-2">
+                        <Button variant="outline" onClick={handleDownloadPdf}><FileDown className="mr-2 h-4 w-4"/> PDF</Button>
+                        <Button variant="outline" onClick={handleDownloadExcel}><FileSpreadsheet className="mr-2 h-4 w-4"/> Excel</Button>
+                    </div>
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                          <div className="lg:col-span-1 space-y-8">
                              <Card>
