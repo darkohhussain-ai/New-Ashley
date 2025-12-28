@@ -69,7 +69,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
     const [photoUrl, setPhotoUrl] = useState('');
     const [notes, setNotes] = useState('');
     
-    const defaultLogo = "https://images.unsplash.com/photo-1748326650737-33500fdfda30?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGxvZ298ZW58MHx8fHwxNzY2MzgxMzI1fDA&ixlib=rb-4.1.0&q=80&w=1080";
+    const defaultLogo = "https://picsum.photos/seed/ashley-logo/300/100";
     const [logoSrc] = useLocalStorage('app-logo', defaultLogo);
     
     const pdfCardRef = useRef<HTMLDivElement>(null);
@@ -484,7 +484,22 @@ export default function EmployeesPage() {
   const sortedAndFilteredEmployees = useMemo(() => {
     if (!employees) return [];
     const filtered = employees.filter(emp => emp.name.toLowerCase().includes(searchQuery.toLowerCase()));
-    return filtered.sort((a, b) => a.name.localeCompare(b.name));
+    
+    // Custom sort: warehouse employees (not 'Marketing') first, then alphabetically
+    return filtered.sort((a, b) => {
+        const isAWarehouse = a.jobTitle !== 'Marketing';
+        const isBWarehouse = b.jobTitle !== 'Marketing';
+
+        if (isAWarehouse && !isBWarehouse) {
+            return -1; // a comes first
+        }
+        if (!isAWarehouse && isBWarehouse) {
+            return 1; // b comes first
+        }
+        
+        // If both are same type, sort by name
+        return a.name.localeCompare(b.name);
+    });
   }, [employees, searchQuery]);
 
   useEffect(() => {
@@ -563,3 +578,5 @@ export default function EmployeesPage() {
     </div>
   )
 }
+
+    
