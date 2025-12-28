@@ -451,7 +451,7 @@ export default function SettingsPage() {
                     </div>
                      <div className="w-full h-24 border rounded-md flex items-center justify-center bg-muted/30 relative overflow-hidden">
                         {dashboardBanner ? (
-                            <Image src={dashboardBanner} alt="Current Dashboard Banner" layout="fill" className="object-cover" />
+                            <Image src={dashboardBanner} alt="Current Dashboard Banner" fill={true} className="object-cover" />
                         ): (
                             <span className='text-sm text-muted-foreground'>Dashboard Banner Preview</span>
                         )}

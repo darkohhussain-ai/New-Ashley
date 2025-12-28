@@ -3,11 +3,12 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { Users, Box, Settings as SettingsIcon, CreditCard, Bell, ChevronDown, Calendar, Clock, PackagePlus, Star, CheckSquare } from "lucide-react"
+import { Users, Box, Settings as SettingsIcon, CreditCard, Bell, ChevronDown, Calendar, Clock, PackagePlus, Star, CheckSquare, RefreshCcw } from "lucide-react"
 import { DashboardCard } from "@/components/dashboard/dashboard-card"
 import useLocalStorage from "@/hooks/use-local-storage"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { format } from 'date-fns';
+import { Button } from "@/components/ui/button"
 
 export default function Dashboard() {
   const [date, setDate] = useState<Date | null>(null);
@@ -28,6 +29,10 @@ export default function Dashboard() {
     const timer = setInterval(() => setDate(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  const handleRefresh = () => {
+    window.location.reload();
+  };
 
   const menuItems = [
     { title: "Employees", icon: Users, href: "/employees", color: "bg-pink-500" },
@@ -68,7 +73,10 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
-            <div className="flex items-center justify-end gap-6 w-1/3">
+            <div className="flex items-center justify-end gap-4 w-1/3">
+              <Button variant="ghost" size="icon" onClick={handleRefresh} aria-label="Refresh page">
+                <RefreshCcw className="w-5 h-5 text-muted-foreground hover:text-primary" />
+              </Button>
               <Bell className="w-6 h-6 text-muted-foreground hover:text-primary cursor-pointer" />
               <div className="flex items-center gap-2 cursor-pointer">
                 <Avatar className="w-10 h-10">
