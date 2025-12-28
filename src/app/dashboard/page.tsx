@@ -16,11 +16,7 @@ export default function Dashboard() {
   const [savedDashboardBanner] = useLocalStorage('dashboard-banner', 'https://picsum.photos/seed/banner/1200/300');
   const [savedCardSize] = useLocalStorage('dashboard-card-size', 192);
   const [savedIconSize] = useLocalStorage('dashboard-icon-size', 64);
-
-  // State for rendering, initialized to defaults to match server render
-  const [dashboardBanner, setDashboardBanner] = useState('https://picsum.photos/seed/banner/1200/300');
-  const [cardSize, setCardSize] = useState(192);
-  const [iconSize, setIconSize] = useState(64);
+  const [savedLogo, setSavedLogo] = useLocalStorage('app-logo', "https://picsum.photos/seed/ashley-logo/300/100");
   
   const [isMounted, setIsMounted] = useState(false);
 
@@ -28,15 +24,11 @@ export default function Dashboard() {
     // This effect runs only on the client, after the component has mounted.
     setIsMounted(true);
     
-    setDashboardBanner(savedDashboardBanner);
-    setCardSize(savedCardSize);
-    setIconSize(savedIconSize);
-
     // Set the initial date only on the client
     setDate(new Date());
     const timer = setInterval(() => setDate(new Date()), 1000);
     return () => clearInterval(timer);
-  }, [savedDashboardBanner, savedCardSize, savedIconSize]);
+  }, []);
 
   const menuItems = [
     { title: "Employees", icon: Users, href: "/employees", color: "bg-pink-500" },
@@ -57,7 +49,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="bg-card border-b sticky top-0 z-10">
+      <header className="bg-card border-b top-0 z-10">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-20">
             <div className="hidden md:flex items-center gap-4 text-sm text-muted-foreground w-1/3">
@@ -72,7 +64,7 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center justify-center w-1/3">
               <div className="relative w-full max-w-[240px] aspect-[3/1]">
-                 <Image src={dashboardBanner} alt="App Banner" fill className="object-contain" data-ai-hint="banner" />
+                 <Image src={savedLogo} alt="App Logo" fill className="object-contain" data-ai-hint="logo" />
               </div>
             </div>
             <div className="flex items-center justify-end gap-6 w-1/3">
@@ -86,6 +78,11 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
+           {savedDashboardBanner && (
+             <div className="relative w-full mx-auto my-4 max-w-6xl aspect-[4/1] rounded-lg overflow-hidden">
+                <Image src={savedDashboardBanner} alt="Dashboard Banner" fill className="object-cover" data-ai-hint="banner abstract" />
+             </div>
+           )}
         </div>
       </header>
       <main className="container mx-auto p-4 md:p-8">
@@ -98,8 +95,8 @@ export default function Dashboard() {
             <DashboardCard 
                 key={item.title} 
                 {...item} 
-                cardSize={cardSize}
-                iconSize={iconSize}
+                cardSize={isMounted ? savedCardSize : 192}
+                iconSize={isMounted ? savedIconSize : 64}
             />
           ))}
         </div>

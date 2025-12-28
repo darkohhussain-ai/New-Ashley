@@ -4,7 +4,7 @@
 import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowLeft, Download, Upload, Save, Palette, Type, ShieldCheck, Image as ImageIcon, LayoutDashboard, RefreshCcw, Play, Newspaper } from 'lucide-react'
+import { ArrowLeft, Download, Upload, Save, Palette, Type, ShieldCheck, Image as ImageIcon, LayoutDashboard, RefreshCcw, Play, Newspaper, Building } from 'lucide-react'
 import useLocalStorage, { getAllDataForExport, importData } from '@/hooks/use-local-storage'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -15,7 +15,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import placeHolderImages from '@/lib/placeholder-images.json'
 import { Slider } from '@/components/ui/slider'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { Inter, Roboto, Open_Sans, Lato } from 'next/font/google';
@@ -137,7 +136,7 @@ export default function SettingsPage() {
   const [savedLightColors, setSavedLightColors] = useLocalStorage<ThemeColors>('light-theme-colors', defaultLightColors);
   const [savedDarkColors, setSavedDarkColors] = useLocalStorage<ThemeColors>('dark-theme-colors', defaultDarkColors);
   
-  const defaultLogo = placeHolderImages.placeholderImages.find(p => p.id === 'default-logo')?.imageUrl || "https://picsum.photos/seed/ashley-drp-logo/120/120";
+  const defaultLogo = "https://picsum.photos/seed/ashley-logo/300/100";
   const [savedLogo, setSavedLogo] = useLocalStorage('app-logo', defaultLogo);
   const [savedLogoSize, setSavedLogoSize] = useLocalStorage('app-logo-size', 80);
   const [savedDashboardBanner, setSavedDashboardBanner] = useLocalStorage('dashboard-banner', 'https://picsum.photos/seed/banner/1200/300');
@@ -450,18 +449,18 @@ export default function SettingsPage() {
             </Card>
             <Card>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg"><ImageIcon /> Branding</CardTitle>
-                <CardDescription>Manage your application's logo and banner.</CardDescription>
+                <CardTitle className="flex items-center gap-2 text-lg"><Building /> Branding</CardTitle>
+                <CardDescription>Manage your company's logo and banner.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className='flex flex-col items-center justify-center gap-4'>
-                    <Image src={logoSrc} alt="Current App Logo" width={logoSize} height={logoSize} className="rounded-full object-cover aspect-square shadow-md" style={{width: `${logoSize}px`, height: `${logoSize}px`}} />
+                    <Image src={logoSrc} alt="Current App Logo" width={logoSize} height={logoSize} className="rounded-md object-contain aspect-[3/1] shadow-md bg-muted/20 p-2" style={{width: `${logoSize*1.5}px`, height: `${logoSize}px`}} />
                     <div className="w-full space-y-2">
-                    <Label htmlFor="logo-size">Logo Size: {logoSize}px</Label>
+                    <Label htmlFor="logo-size">Company Logo Size: {logoSize}px</Label>
                     <Slider
                         id="logo-size"
-                        min={40}
-                        max={240}
+                        min={20}
+                        max={120}
                         step={1}
                         value={[logoSize]}
                         onValueChange={(value) => setLogoSize(value[0])}

@@ -62,7 +62,7 @@ export function EmployeePdfCard({ employee, logoSrc }: EmployeePdfCardProps) {
             <div className="relative w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-md z-10">
                 <div className="w-12 h-12 relative">
                     {logoSrc ? (
-                        <Image src={logoSrc} alt="Company Logo" layout="fill" className="object-contain" />
+                        <Image src={logoSrc} alt="Company Logo" fill className="object-contain" />
                     ) : (
                         <span className='text-xs text-center text-gray-500'>Logo</span>
                     )}
