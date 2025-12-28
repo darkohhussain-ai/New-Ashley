@@ -3,14 +3,14 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Star, Loader2, ChevronsRight, Plus, Settings } from 'lucide-react';
+import { ArrowLeft, Star, Loader2, ChevronsRight, Plus, Settings, LayoutDashboard, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useToast } from '@/hooks/use-toast';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAppContext } from '@/context/app-provider';
 import type { Employee, MarketingFeedback, EvaluationQuestion, AnswerOption } from '@/lib/types';
@@ -18,6 +18,7 @@ import { formatISO } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 
 function AddMarketingEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean, onOpenChange: (open: boolean) => void, addEmployee: (employee: Omit<Employee, 'id'>) => void }) {
@@ -257,6 +258,24 @@ export default function MarketingFeedbackPage() {
         })).sort((a,b) => b.avgScore - a.avgScore);
     }, [marketingFeedbacks, evaluationQuestions]);
 
+    const overallScoreDistribution = useMemo(() => {
+        if (!marketingFeedbacks.length) return [];
+        const counts = { 'Excellent': 0, 'Good': 0, 'Needs Improvement': 0 };
+        marketingFeedbacks.forEach(feedback => {
+            feedback.responses.forEach(res => {
+                if (res.answer === 3) counts['Excellent']++;
+                else if (res.answer === 2) counts['Good']++;
+                else if (res.answer === 1) counts['Needs Improvement']++;
+            });
+        });
+        return [
+            { name: 'Excellent', value: counts['Excellent'], fill: 'hsl(var(--chart-2))' },
+            { name: 'Good', value: counts['Good'], fill: 'hsl(var(--chart-4))' },
+            { name: 'Needs Improvement', value: counts['Needs Improvement'], fill: 'hsl(var(--chart-1))' },
+        ].filter(d => d.value > 0);
+    }, [marketingFeedbacks]);
+
+
     return (
         <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
             <AddMarketingEmployeeDialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen} addEmployee={addMarketingEmployee} />
@@ -277,141 +296,190 @@ export default function MarketingFeedbackPage() {
                     </Button>
                 </div>
             </header>
+            
+            <Tabs defaultValue="dashboard">
+                <TabsList className="mb-6">
+                    <TabsTrigger value="dashboard"><LayoutDashboard className="mr-2" />Dashboard</TabsTrigger>
+                    <TabsTrigger value="form"><FileText className="mr-2" />Feedback Form</TabsTrigger>
+                </TabsList>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Feedback Form</CardTitle>
-                            <CardDescription>Select an employee and answer the questions below.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                            <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
-                                <SelectTrigger className="w-full">
-                                    <SelectValue placeholder="Select an employee to evaluate..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {isLoading ? (
-                                        <SelectItem value="loading" disabled>Loading employees...</SelectItem>
-                                    ) : (
-                                        marketingEmployees?.map(emp => (
-                                            <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>
-                                        ))
-                                    )}
-                                </SelectContent>
-                            </Select>
-
-                            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-4">
-                                {evaluationQuestions.map((q, index) => (
-                                    <div key={q.id} className="p-4 border rounded-lg">
-                                        <p className="font-medium mb-3">{index + 1}. {q.text}</p>
-                                        <RadioGroup onValueChange={(value) => handleResponseChange(q.id, value)} value={String(responses[q.id] || '')}>
-                                            <div className="flex flex-wrap gap-4">
-                                                {q.answers.sort((a,b) => b.value - a.value).map(opt => (
-                                                    <div key={opt.value} className="flex items-center space-x-2">
-                                                        <RadioGroupItem value={String(opt.value)} id={`${q.id}-${opt.value}`} />
-                                                        <Label htmlFor={`${q.id}-${opt.value}`}>{opt.label}</Label>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </RadioGroup>
-                                    </div>
-                                ))}
-                            </div>
-                             <Button onClick={handleSubmit} disabled={isSubmitting} className="w-full">
-                                {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <ChevronsRight className="mr-2"/>}
-                                Submit Feedback
-                            </Button>
-                        </CardContent>
-                    </Card>
-                </div>
-                <div className="lg:col-span-1 space-y-8">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Employee Rankings</CardTitle>
-                             <CardDescription>Based on latest feedback scores.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                           {isLoading ? <Loader2 className="animate-spin" /> : (
-                               <Table>
-                                   <TableHeader>
-                                       <TableRow>
-                                           <TableHead>Rank</TableHead>
-                                           <TableHead>Employee</TableHead>
-                                           <TableHead className="text-right">Score</TableHead>
-                                       </TableRow>
-                                   </TableHeader>
-                                   <TableBody>
-                                        {evaluationSummary.map((item, index) => (
-                                            <TableRow key={item.employeeId}>
-                                                <TableCell className="font-bold">{index + 1}</TableCell>
-                                                <TableCell>{item.name}</TableCell>
-                                                <TableCell className="text-right font-medium">{item.score}</TableCell>
-                                            </TableRow>
-                                        ))}
-                                   </TableBody>
-                               </Table>
-                           )}
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Question Rankings</CardTitle>
-                            <CardDescription>Highest and lowest scoring questions across all employees.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                           {isLoading ? <Loader2 className="animate-spin" /> : (
-                               <Table>
-                                   <TableHeader>
-                                       <TableRow>
-                                           <TableHead>Question</TableHead>
-                                           <TableHead className="text-right">Avg. Score</TableHead>
-                                       </TableRow>
-                                   </TableHeader>
-                                   <TableBody>
-                                        {answerRanking.map((item) => (
-                                            <TableRow key={item.id}>
-                                                <TableCell className="text-sm">{item.text}</TableCell>
-                                                <TableCell className="text-right font-medium">{item.avgScore.toFixed(2)}</TableCell>
-                                            </TableRow>
-                                        ))}
-                                   </TableBody>
-                               </Table>
-                           )}
-                        </CardContent>
-                    </Card>
-
-                    {selectedEmployee && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>
-                                    {marketingEmployees?.find(e => e.id === selectedEmployee)?.name}'s Chart
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                {individualChartData.length > 0 ? (
+                <TabsContent value="dashboard">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                         <div className="lg:col-span-1 space-y-8">
+                             <Card>
+                                <CardHeader>
+                                    <CardTitle>Total Evaluations</CardTitle>
+                                    <CardDescription>Total number of feedback forms submitted.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-5xl font-bold">{marketingFeedbacks.length}</p>
+                                </CardContent>
+                            </Card>
+                             <Card>
+                                <CardHeader>
+                                    <CardTitle>Overall Score Distribution</CardTitle>
+                                    <CardDescription>Breakdown of all answers given.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                   {overallScoreDistribution.length > 0 ? (
+                                        <ResponsiveContainer width="100%" height={200}>
+                                            <PieChart>
+                                                <Tooltip />
+                                                <Pie data={overallScoreDistribution} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80}>
+                                                    {overallScoreDistribution.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
+                                                </Pie>
+                                                <Legend />
+                                            </PieChart>
+                                        </ResponsiveContainer>
+                                   ) : <p className='text-muted-foreground text-center p-4'>No data available.</p>}
+                                </CardContent>
+                            </Card>
+                         </div>
+                         <div className="lg:col-span-2 space-y-8">
+                             <Card>
+                                <CardHeader>
+                                    <CardTitle>Top 5 Employees</CardTitle>
+                                    <CardDescription>Based on latest feedback scores.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
                                     <ResponsiveContainer width="100%" height={300}>
-                                        <BarChart data={individualChartData} layout="vertical" margin={{ left: 80 }}>
-                                            <CartesianGrid strokeDasharray="3 3" />
-                                            <XAxis type="number" domain={[0, 3]} ticks={[1, 2, 3]} />
-                                            <YAxis type="category" dataKey="name" width={100} fontSize={12} />
+                                        <BarChart data={evaluationSummary.slice(0, 5)} layout="vertical" margin={{ left: 20, right: 20 }}>
+                                            <CartesianGrid strokeDasharray="3 3" horizontal={false}/>
+                                            <XAxis type="number" />
+                                            <YAxis dataKey="name" type="category" width={80} />
                                             <Tooltip />
-                                            <Bar dataKey="score" fill="hsl(var(--primary))" />
+                                            <Bar dataKey="score" name="Score" fill="hsl(var(--primary))" />
                                         </BarChart>
                                     </ResponsiveContainer>
-                                ) : (
-                                    <p className="text-muted-foreground text-center">No feedback data to display.</p>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Lowest 5 Scoring Questions</CardTitle>
+                                    <CardDescription>Areas with the most room for improvement across all employees.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <ResponsiveContainer width="100%" height={300}>
+                                        <BarChart data={answerRanking.slice(-5).reverse()} layout="vertical" margin={{ left: 20, right: 20 }}>
+                                            <CartesianGrid strokeDasharray="3 3" horizontal={false}/>
+                                            <XAxis type="number" domain={[0,3]}/>
+                                            <YAxis dataKey="text" type="category" width={100} fontSize={12} />
+                                            <Tooltip formatter={(value) => (value as number).toFixed(2)} />
+                                            <Bar dataKey="avgScore" name="Average Score" fill="hsl(var(--chart-1))" />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </CardContent>
+                            </Card>
+                         </div>
+                    </div>
+                </TabsContent>
+                
+                <TabsContent value="form">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div className="lg:col-span-2">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Feedback Form</CardTitle>
+                                    <CardDescription>Select an employee and answer the questions below.</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-6">
+                                    <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
+                                        <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Select an employee to evaluate..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {isLoading ? (
+                                                <SelectItem value="loading" disabled>Loading employees...</SelectItem>
+                                            ) : (
+                                                marketingEmployees?.map(emp => (
+                                                    <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>
+                                                ))
+                                            )}
+                                        </SelectContent>
+                                    </Select>
+
+                                    <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-4">
+                                        {evaluationQuestions.map((q, index) => (
+                                            <div key={q.id} className="p-4 border rounded-lg">
+                                                <p className="font-medium mb-3">{index + 1}. {q.text}</p>
+                                                <RadioGroup onValueChange={(value) => handleResponseChange(q.id, value)} value={String(responses[q.id] || '')}>
+                                                    <div className="flex flex-wrap gap-4">
+                                                        {q.answers.sort((a,b) => b.value - a.value).map(opt => (
+                                                            <div key={opt.value} className="flex items-center space-x-2">
+                                                                <RadioGroupItem value={String(opt.value)} id={`${q.id}-${opt.value}`} />
+                                                                <Label htmlFor={`${q.id}-${opt.value}`}>{opt.label}</Label>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </RadioGroup>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <Button onClick={handleSubmit} disabled={isSubmitting} className="w-full">
+                                        {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <ChevronsRight className="mr-2"/>}
+                                        Submit Feedback
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        </div>
+                        <div className="lg:col-span-1 space-y-8">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Employee Rankings</CardTitle>
+                                    <CardDescription>Based on latest feedback scores.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                {isLoading ? <Loader2 className="animate-spin" /> : (
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Rank</TableHead>
+                                                <TableHead>Employee</TableHead>
+                                                <TableHead className="text-right">Score</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                                {evaluationSummary.map((item, index) => (
+                                                    <TableRow key={item.employeeId}>
+                                                        <TableCell className="font-bold">{index + 1}</TableCell>
+                                                        <TableCell>{item.name}</TableCell>
+                                                        <TableCell className="text-right font-medium">{item.score}</TableCell>
+                                                    </TableRow>
+                                                ))}
+                                        </TableBody>
+                                    </Table>
                                 )}
-                            </CardContent>
-                        </Card>
-                    )}
-                </div>
-            </div>
+                                </CardContent>
+                            </Card>
+
+                            {selectedEmployee && (
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>
+                                            {marketingEmployees?.find(e => e.id === selectedEmployee)?.name}'s Latest Scores
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        {individualChartData.length > 0 ? (
+                                            <ResponsiveContainer width="100%" height={300}>
+                                                <BarChart data={individualChartData} layout="vertical" margin={{ left: 20, right: 20 }}>
+                                                    <CartesianGrid strokeDasharray="3 3" horizontal={false}/>
+                                                    <XAxis type="number" domain={[0, 3]} ticks={[1, 2, 3]} />
+                                                    <YAxis type="category" dataKey="name" width={100} fontSize={12} />
+                                                    <Tooltip />
+                                                    <Bar dataKey="score" name="Score" fill="hsl(var(--primary))" />
+                                                </BarChart>
+                                            </ResponsiveContainer>
+                                        ) : (
+                                            <p className="text-muted-foreground text-center">No feedback data to display.</p>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            )}
+                        </div>
+                    </div>
+                </TabsContent>
+            </Tabs>
         </div>
     );
 }
-
-    
-
-    

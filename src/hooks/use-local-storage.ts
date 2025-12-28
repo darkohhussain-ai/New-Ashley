@@ -1,7 +1,8 @@
 
 "use client"
 import { useState, useEffect, useCallback } from 'react';
-import { get, set, keys } from 'idb-keyval';
+import { get, set, keys, del } from 'idb-keyval';
+import { produce } from 'immer';
 
 // Simple heuristic to decide if a value is "large" and should go to IndexedDB
 const isLargeValue = (value: any): boolean => {
@@ -71,8 +72,7 @@ function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T) => voi
         // Store directly in localStorage
         const existingItem = window.localStorage.getItem(key);
         if(existingItem && isIdbKey(JSON.parse(existingItem))) {
-            // If there was a large value before, we should clean up IndexedDB
-            // This case is rare but good to handle. For now, we'll just overwrite.
+            del(fromIdbKey(JSON.parse(existingItem))).catch(err => console.error("Could not clean up old IDB key:", err));
         }
         window.localStorage.setItem(key, JSON.stringify(valueToStore));
         setStoredValue(valueToStore);
@@ -121,24 +121,65 @@ export const getAllDataForExport = async (): Promise<Record<string, any>> => {
     return data;
 };
 
-export const importData = async (data: Record<string, any>) => {
-    // Clear existing data first to prevent merge issues
-    localStorage.clear();
-    const idbKeys = await keys();
-    for (const key of idbKeys) {
-        // await del(key); // `del` is not imported, let's just overwrite
-    }
+// Merges a new item into an existing array, updating it if it exists or adding it if it doesn't.
+const mergeItem = <T extends { id: string }>(existingArray: T[], newItem: T): T[] => {
+    return produce(existingArray, draft => {
+        const index = draft.findIndex(item => item.id === newItem.id);
+        if (index !== -1) {
+            draft[index] = { ...draft[index], ...newItem }; // Merge properties
+        } else {
+            draft.push(newItem);
+        }
+    });
+};
 
+// Merges an array of new items into an existing array.
+const mergeArray = <T extends { id: string }>(existingArray: T[] = [], newItems: T[] = []): T[] => {
+    if (!Array.isArray(existingArray) || !Array.isArray(newItems)) return existingArray;
+    return produce(existingArray, draft => {
+        newItems.forEach(newItem => {
+            const index = draft.findIndex(item => item.id === newItem.id);
+            if (index !== -1) {
+                draft[index] = { ...draft[index], ...newItem };
+            } else {
+                draft.push(newItem);
+            }
+        });
+    });
+};
+
+export const importData = async (data: Record<string, any>) => {
+    // This function now merges data instead of overwriting.
     for (const key in data) {
         if (Object.prototype.hasOwnProperty.call(data, key)) {
-            const value = data[key];
-            if (isLargeValue(value)) {
-                // Store in IndexedDB and put pointer in localStorage
-                await set(key, value);
+            const newValue = data[key];
+            const existingRaw = localStorage.getItem(key);
+            let existingValue: any;
+
+            if (existingRaw) {
+                try {
+                    const parsed = JSON.parse(existingRaw);
+                    if (typeof parsed === 'string' && isIdbKey(parsed)) {
+                        existingValue = await get(fromIdbKey(parsed));
+                    } else {
+                        existingValue = parsed;
+                    }
+                } catch {
+                    existingValue = existingRaw;
+                }
+            }
+
+            let valueToStore = newValue;
+            // If both new and existing values are arrays, merge them.
+            if (Array.isArray(existingValue) && Array.isArray(newValue)) {
+                valueToStore = mergeArray(existingValue, newValue);
+            }
+
+            if (isLargeValue(valueToStore)) {
+                await set(key, valueToStore);
                 localStorage.setItem(key, JSON.stringify(toIdbKey(key)));
             } else {
-                // Store directly in localStorage
-                localStorage.setItem(key, JSON.stringify(value));
+                localStorage.setItem(key, JSON.stringify(valueToStore));
             }
         }
     }
