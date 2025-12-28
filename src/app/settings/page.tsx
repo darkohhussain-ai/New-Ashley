@@ -445,6 +445,13 @@ export default function SettingsPage() {
                             <span className='text-sm text-muted-foreground'>Company Logo Preview</span>
                         )}
                     </div>
+                     <div className="w-full h-24 border rounded-md flex items-center justify-center bg-muted/30 relative overflow-hidden">
+                        {dashboardBanner ? (
+                            <Image src={dashboardBanner} alt="Current Dashboard Banner" layout="fill" className="object-cover" />
+                        ): (
+                            <span className='text-sm text-muted-foreground'>Dashboard Banner Preview</span>
+                        )}
+                    </div>
                 </div>
                 <div>
                 <Label htmlFor="logo-upload">Upload New Logo</Label>
