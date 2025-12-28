@@ -53,6 +53,7 @@ export default function ExpensesPage() {
   const pdfHeaderRef = useRef<HTMLDivElement>(null);
   const defaultLogo = "https://picsum.photos/seed/ashley-logo/300/100";
   const [logoSrc] = useLocalStorage('app-logo', defaultLogo);
+  const [customFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
 
 
   // Form state
@@ -64,7 +65,7 @@ export default function ExpensesPage() {
   
   const warehouseEmployees = useMemo(() => {
     if (!employees) return [];
-    return employees.filter(e => e.jobTitle !== 'Marketing');
+    return employees.filter(e => e.role !== 'Marketing');
   }, [employees]);
 
   const sortedEmployees = useMemo(() => {
@@ -162,6 +163,15 @@ export default function ExpensesPage() {
     if (!pdfHeaderRef.current) return;
     
     const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
+    if (customFontBase64) {
+        const fontName = "CustomFont";
+        const fontStyle = "normal";
+        const fontBase64 = customFontBase64.split(',')[1];
+        doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
+        doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
+        doc.setFont(fontName);
+    }
+    
     const headerCanvas = await html2canvas(pdfHeaderRef.current, { scale: 2, backgroundColor: null });
     const headerImgData = headerCanvas.toDataURL('image/png');
     const pdfWidth = doc.internal.pageSize.getWidth();
@@ -204,7 +214,12 @@ export default function ExpensesPage() {
         foot: [['Grand Total', '', '', formatCurrency(grandTotal)]],
         theme: 'grid',
         headStyles: { fillColor: [22, 163, 74] },
-        footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' }
+        footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' },
+        didParseCell: function (data) {
+            if (customFontBase64) {
+                data.cell.styles.font = "CustomFont";
+            }
+        }
     });
 
     doc.save(`employee-expenses-report-${format(new Date(), 'yyyy-MM-dd')}.pdf`);

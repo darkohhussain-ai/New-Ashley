@@ -43,6 +43,8 @@ export default function PdfViewPage() {
 
   const defaultLogo = "https://picsum.photos/seed/1/300/100";
   const [logoSrc] = useLocalStorage('app-logo', defaultLogo);
+  const [customFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
+
 
   const file = useMemo(() => excelFiles.find(f => f.id === fileId), [excelFiles, fileId]);
   const fileItems = useMemo(() => items.filter(i => i.fileId === fileId), [items, fileId]);
@@ -93,9 +95,18 @@ export default function PdfViewPage() {
   const handleDownloadPdf = async () => {
     if (!file || !fileItems || !pdfCardRef.current) return;
     
+    const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
+    if (customFontBase64) {
+      const fontName = "CustomFont";
+      const fontStyle = "normal";
+      const fontBase64 = customFontBase64.split(',')[1];
+      pdf.addFileToVFS(`${fontName}.ttf`, fontBase64);
+      pdf.addFont(`${fontName}.ttf`, fontName, fontStyle);
+      pdf.setFont(fontName);
+    }
+
     const canvas = await html2canvas(pdfCardRef.current, { scale: 2, useCORS: true, backgroundColor: null });
     const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const imgWidth = canvas.width;
     const imgHeight = canvas.height;
@@ -120,6 +131,11 @@ export default function PdfViewPage() {
       theme: 'grid',
       styles: { fontSize: 8, cellPadding: 2 },
       headStyles: { fillColor: [22, 163, 74], textColor: 255, fontStyle: 'bold' },
+      didParseCell: function (data) {
+        if (customFontBase64) {
+            data.cell.styles.font = "CustomFont";
+        }
+      }
     });
     
     pdf.save(`${file.storageName}.pdf`);

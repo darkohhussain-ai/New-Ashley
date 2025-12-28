@@ -131,6 +131,8 @@ export default function FileDetailPage() {
 
   const defaultLogo = "https://picsum.photos/seed/1/300/100";
   const [logoSrc] = useLocalStorage('app-logo', defaultLogo);
+  const [customFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
+
   
   const updateFileInputRef = useRef<HTMLInputElement>(null);
   const pdfCardRef = useRef<HTMLDivElement>(null);
@@ -445,6 +447,16 @@ export default function FileDetailPage() {
   const handleDownloadPdf = async () => {
     if (!file || !sortedItems || !pdfCardRef.current) return;
     
+    const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
+    if (customFontBase64) {
+      const fontName = "CustomFont";
+      const fontStyle = "normal";
+      const fontBase64 = customFontBase64.split(',')[1];
+      pdf.addFileToVFS(`${fontName}.ttf`, fontBase64);
+      pdf.addFont(`${fontName}.ttf`, fontName, fontStyle);
+      pdf.setFont(fontName);
+    }
+    
     const canvas = await html2canvas(pdfCardRef.current, {
         scale: 2, 
         useCORS: true,
@@ -452,7 +464,6 @@ export default function FileDetailPage() {
     });
     
     const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const imgWidth = canvas.width;
     const imgHeight = canvas.height;
@@ -484,6 +495,11 @@ export default function FileDetailPage() {
           textColor: 255,
           fontStyle: 'bold',
       },
+      didParseCell: function (data) {
+        if (customFontBase64) {
+            data.cell.styles.font = "CustomFont";
+        }
+      }
     });
     
     pdf.save(`${file.storageName}.pdf`);

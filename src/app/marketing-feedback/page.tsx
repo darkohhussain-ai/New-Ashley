@@ -157,6 +157,8 @@ export default function MarketingFeedbackPage() {
     } = useAppContext();
     const defaultLogo = "https://picsum.photos/seed/1/300/100";
     const [logoSrc] = useLocalStorage('app-logo', defaultLogo);
+    const [customFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
+
 
     const [selectedEmployee, setSelectedEmployee] = useState<string>('');
     const [responses, setResponses] = useState<Record<string, number>>({});
@@ -294,6 +296,15 @@ export default function MarketingFeedbackPage() {
         }
         
         const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
+        if (customFontBase64) {
+          const fontName = "CustomFont";
+          const fontStyle = "normal";
+          const fontBase64 = customFontBase64.split(',')[1];
+          doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
+          doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
+          doc.setFont(fontName);
+        }
+
         const canvas = await html2canvas(pdfCardRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
         const imgData = canvas.toDataURL('image/png');
         const pdfWidth = doc.internal.pageSize.getWidth();
@@ -306,11 +317,23 @@ export default function MarketingFeedbackPage() {
         doc.addImage(imgData, 'PNG', 14, 14, finalImgWidth, finalImgHeight);
         let currentY = finalImgHeight + 30;
 
+        const autoTableConfig = {
+          startY: currentY,
+          theme: 'grid',
+          headStyles: { fillColor: [22, 163, 74] },
+          didParseCell: function (data: any) {
+            if (customFontBase64) {
+              data.cell.styles.font = "CustomFont";
+            }
+          }
+        };
+
         if (evaluationSummary.length > 0) {
             doc.setFontSize(14);
             doc.text('Employee Rankings (Latest Score)', 14, currentY);
             currentY += 10;
             autoTable(doc, {
+                ...autoTableConfig,
                 startY: currentY,
                 head: [['Rank', 'Employee', 'Score']],
                 body: evaluationSummary.map((item, index) => [index + 1, item.name, item.score]),
@@ -323,6 +346,7 @@ export default function MarketingFeedbackPage() {
             doc.text('Question Average Scores', 14, currentY);
             currentY += 10;
             autoTable(doc, {
+                ...autoTableConfig,
                 startY: currentY,
                 head: [['Question', 'Average Score']],
                 body: answerRanking.map(item => [item.text, item.avgScore.toFixed(2)]),

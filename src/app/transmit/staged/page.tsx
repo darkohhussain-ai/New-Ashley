@@ -12,6 +12,7 @@ import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import { useAppContext } from '@/context/app-provider';
 import { ItemForTransfer } from '@/lib/types';
+import useLocalStorage from '@/hooks/use-local-storage';
 
 
 const destinations = ["Erbil", "Baghdad", "Diwan", "Dohuk"];
@@ -19,6 +20,8 @@ const destinations = ["Erbil", "Baghdad", "Diwan", "Dohuk"];
 export default function StagedItemsPage() {
   const { transferItems } = useAppContext();
   const [selectedDestination, setSelectedDestination] = useState<string | null>(null);
+  const [customFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
+
 
   const isLoadingItems = !transferItems;
   const stagedItems = useMemo(() => transferItems.filter(item => !item.transferId), [transferItems]);
@@ -34,7 +37,15 @@ export default function StagedItemsPage() {
   const handleDownloadPdf = () => {
     if (!itemsForSelectedDestination || itemsForSelectedDestination.length === 0 || !selectedDestination) return;
     const doc = new jsPDF();
-    
+    if (customFontBase64) {
+      const fontName = "CustomFont";
+      const fontStyle = "normal";
+      const fontBase64 = customFontBase64.split(',')[1];
+      doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
+      doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
+      doc.setFont(fontName);
+    }
+
     doc.setFontSize(18);
     doc.text(`Staged Items for ${selectedDestination}`, 14, 22);
     doc.setFontSize(11);
@@ -45,6 +56,11 @@ export default function StagedItemsPage() {
         startY: 40,
         head: [['Model', 'Quantity', 'Notes']],
         body: itemsForSelectedDestination.map(item => [item.model, item.quantity, item.notes || '']),
+        didParseCell: function (data) {
+          if (customFontBase64) {
+              data.cell.styles.font = "CustomFont";
+          }
+        }
     });
 
     doc.save(`staged-items-${selectedDestination}-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
