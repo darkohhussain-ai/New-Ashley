@@ -1,6 +1,12 @@
 
 import { Employee, ExcelFile, Item, StorageLocation, Expense, Overtime, Bonus, CashWithdrawal, SoldItemReceipt, Transfer, ItemForTransfer, MarketingFeedback, EvaluationQuestion, AnswerOption } from '@/lib/types';
 
+const defaultAnswers: [AnswerOption, AnswerOption, AnswerOption] = [
+    { label: 'Excellent', value: 3 },
+    { label: 'Good', value: 2 },
+    { label: 'Needs Improvement', value: 1 },
+];
+
 export const initialData: {
     employees: Employee[],
     excelFiles: ExcelFile[],
@@ -15,7 +21,6 @@ export const initialData: {
     transferItems: ItemForTransfer[],
     marketingFeedbacks: MarketingFeedback[],
     evaluationQuestions: EvaluationQuestion[],
-    answerOptions: AnswerOption[],
 } = {
     employees: [],
     excelFiles: [],
@@ -30,28 +35,25 @@ export const initialData: {
     transferItems: [],
     marketingFeedbacks: [],
     evaluationQuestions: [
-        { id: 'q1', text: 'Commitment to work' },
-        { id: 'q2', text: 'Adherence to working hours' },
-        { id: 'q3', text: 'Acceptance of responsibility' },
-        { id: 'q4', text: 'Initiative and offering suggestions' },
-        { id: 'q5', text: 'Relationship with colleagues' },
-        { id: 'q6', text: 'Appearance and personal hygiene' },
-        { id: 'q7', text: 'Speed of completion' },
-        { id: 'q8', text: 'Work accuracy' },
-        { id: 'q9', text: 'Learning speed' },
-        { id: 'q10', text: 'Problem-solving ability' },
-        { id: 'q11', text: 'Commitment to management directives' },
-        { id: 'q12', text: 'Ability to work under pressure' },
-        { id: 'q13', text: 'Trustworthiness' },
-        { id: 'q14', text: 'Customer service' },
-        { id: 'q15', text: 'Teamwork spirit' },
-        { id: 'q16', text: 'Continuous development' },
-        { id: 'q17', text: 'Marketing Skills' },
-        { id: 'q18', text: 'Sales Performance' },
+        { id: 'q1', text: 'Commitment to work', answers: defaultAnswers },
+        { id: 'q2', text: 'Adherence to working hours', answers: defaultAnswers },
+        { id: 'q3', text: 'Acceptance of responsibility', answers: defaultAnswers },
+        { id: 'q4', text: 'Initiative and offering suggestions', answers: defaultAnswers },
+        { id: 'q5', text: 'Relationship with colleagues', answers: defaultAnswers },
+        { id: 'q6', text: 'Appearance and personal hygiene', answers: defaultAnswers },
+        { id: 'q7', text: 'Speed of completion', answers: defaultAnswers },
+        { id: 'q8', text: 'Work accuracy', answers: defaultAnswers },
+        { id: 'q9', text: 'Learning speed', answers: defaultAnswers },
+        { id: 'q10', text: 'Problem-solving ability', answers: defaultAnswers },
+        { id: 'q11', text: 'Commitment to management directives', answers: defaultAnswers },
+        { id: 'q12', text: 'Ability to work under pressure', answers: defaultAnswers },
+        { id: 'q13', text: 'Trustworthiness', answers: defaultAnswers },
+        { id: 'q14', text: 'Customer service', answers: defaultAnswers },
+        { id: 'q15', text: 'Teamwork spirit', answers: defaultAnswers },
+        { id: 'q16', text: 'Continuous development', answers: defaultAnswers },
+        { id: 'q17', text: 'Marketing Skills', answers: defaultAnswers },
+        { id: 'q18', text: 'Sales Performance', answers: defaultAnswers },
     ],
-    answerOptions: [
-        { label: 'Excellent', value: 3 },
-        { label: 'Good', value: 2 },
-        { label: 'Needs Improvement', value: 1 },
-    ]
 };
+
+    

@@ -2,6 +2,7 @@
 
 
 
+
 export type Employee = {
   id: string;
   name: string;
@@ -118,12 +119,15 @@ export type MarketingFeedback = {
     responses: { questionId: string; answer: number }[];
 };
 
-export type EvaluationQuestion = {
-    id: string;
-    text: string;
-};
-
 export type AnswerOption = {
     label: string;
     value: number;
 };
+
+export type EvaluationQuestion = {
+    id: string;
+    text: string;
+    answers: [AnswerOption, AnswerOption, AnswerOption];
+};
+
+    

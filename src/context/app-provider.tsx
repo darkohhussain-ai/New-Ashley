@@ -16,8 +16,7 @@ import {
     Transfer,
     ItemForTransfer,
     MarketingFeedback,
-    EvaluationQuestion,
-    AnswerOption
+    EvaluationQuestion
 } from '@/lib/types';
 import { initialData as initialDataObject } from './initial-data';
 
@@ -51,8 +50,6 @@ interface AppState {
     setMarketingFeedbacks: (feedbacks: MarketingFeedback[]) => void;
     evaluationQuestions: EvaluationQuestion[];
     setEvaluationQuestions: (questions: EvaluationQuestion[]) => void;
-    answerOptions: AnswerOption[];
-    setAnswerOptions: (options: AnswerOption[]) => void;
 }
 
 const AppContext = createContext<AppState | undefined>(undefined);
@@ -72,9 +69,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const [transferItems, setTransferItems] = useLocalStorage<ItemForTransfer[]>('transfer_items', initialData.transferItems);
     const [marketingFeedbacks, setMarketingFeedbacks] = useLocalStorage<MarketingFeedback[]>('marketing-feedbacks', initialData.marketingFeedbacks);
     const [evaluationQuestions, setEvaluationQuestions] = useLocalStorage<EvaluationQuestion[]>('evaluation_questions', initialData.evaluationQuestions);
-    const [answerOptions, setAnswerOptions] = useLocalStorage<AnswerOption[]>('answer_options', initialData.answerOptions);
 
-    const value = {
+    const value: AppState = {
         employees, setEmployees,
         excelFiles, setExcelFiles,
         items, setItems,
@@ -88,7 +84,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         transferItems, setTransferItems,
         marketingFeedbacks, setMarketingFeedbacks,
         evaluationQuestions, setEvaluationQuestions,
-        answerOptions, setAnswerOptions,
     };
 
     return (
@@ -105,3 +100,5 @@ export function useAppContext() {
     }
     return context;
 }
+
+    

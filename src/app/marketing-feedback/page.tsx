@@ -71,62 +71,66 @@ function AddMarketingEmployeeDialog({ open, onOpenChange, addEmployee }: { open:
 }
 
 function ManageQuestionsDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void }) {
-    const { evaluationQuestions, setEvaluationQuestions, answerOptions, setAnswerOptions } = useAppContext();
+    const { evaluationQuestions, setEvaluationQuestions } = useAppContext();
     const { toast } = useToast();
-    const [localQuestions, setLocalQuestions] = useState(evaluationQuestions);
-    const [localAnswers, setLocalAnswers] = useState(answerOptions);
+    const [localQuestions, setLocalQuestions] = useState<EvaluationQuestion[]>([]);
 
-    const handleQuestionChange = (id: string, text: string) => {
-        setLocalQuestions(current => current.map(q => q.id === id ? {...q, text} : q));
+    useEffect(() => {
+        if (open) {
+            setLocalQuestions(JSON.parse(JSON.stringify(evaluationQuestions)));
+        }
+    }, [open, evaluationQuestions]);
+
+    const handleQuestionTextChange = (id: string, text: string) => {
+        setLocalQuestions(current => current.map(q => q.id === id ? { ...q, text } : q));
     };
-    
-    const handleAnswerChange = (value: number, label: string) => {
-        setLocalAnswers(current => current.map(a => a.value === value ? {...a, label} : a));
-    }
+
+    const handleAnswerChange = (questionId: string, answerValue: number, newLabel: string) => {
+        setLocalQuestions(current =>
+            current.map(q => {
+                if (q.id === questionId) {
+                    return {
+                        ...q,
+                        answers: q.answers.map(ans =>
+                            ans.value === answerValue ? { ...ans, label: newLabel } : ans
+                        ) as [AnswerOption, AnswerOption, AnswerOption]
+                    };
+                }
+                return q;
+            })
+        );
+    };
 
     const handleSaveChanges = () => {
         setEvaluationQuestions(localQuestions);
-        setAnswerOptions(localAnswers);
         toast({ title: "Saved!", description: "Questions and answers have been updated." });
         onOpenChange(false);
     };
-    
-    // Ensure state is fresh when dialog opens
-    useState(() => {
-        if(open) {
-            setLocalQuestions(evaluationQuestions);
-            setLocalAnswers(answerOptions);
-        }
-    }, [open, evaluationQuestions, answerOptions]);
-
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-2xl">
+            <DialogContent className="max-w-3xl">
                 <DialogHeader>
                     <DialogTitle>Manage Questions & Answers</DialogTitle>
+                    <CardDescription>Edit the question text and the custom answers for each.</CardDescription>
                 </DialogHeader>
-                <div className="space-y-6 max-h-[70vh] overflow-y-auto p-1">
-                    <div className="space-y-4">
-                        <h3 className="font-semibold text-lg">Answer Options</h3>
-                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            {localAnswers.sort((a,b) => b.value - a.value).map(opt => (
-                                <div key={opt.value} className="space-y-2">
-                                    <Label>Answer for Score {opt.value}</Label>
-                                    <Input value={opt.label} onChange={(e) => handleAnswerChange(opt.value, e.target.value)} />
-                                </div>
-                            ))}
-                         </div>
-                    </div>
-                     <div className="space-y-4">
-                        <h3 className="font-semibold text-lg">Evaluation Questions</h3>
-                        {localQuestions.map((q, index) => (
-                            <div key={q.id} className="space-y-2">
-                                <Label>Question {index + 1}</Label>
-                                <Textarea value={q.text} onChange={(e) => handleQuestionChange(q.id, e.target.value)} />
+                <div className="space-y-6 max-h-[70vh] overflow-y-auto p-1 pr-4">
+                    {localQuestions.map((q, index) => (
+                        <div key={q.id} className="p-4 border rounded-lg space-y-4">
+                            <div className="space-y-2">
+                                <Label className="font-semibold">Question {index + 1}</Label>
+                                <Textarea value={q.text} onChange={(e) => handleQuestionTextChange(q.id, e.target.value)} />
                             </div>
-                        ))}
-                     </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                {q.answers.sort((a, b) => b.value - a.value).map(opt => (
+                                    <div key={opt.value} className="space-y-2">
+                                        <Label>Answer for Score {opt.value}</Label>
+                                        <Input value={opt.label} onChange={(e) => handleAnswerChange(q.id, opt.value, e.target.value)} />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
                 </div>
                 <DialogFooter>
                     <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
@@ -142,8 +146,7 @@ export default function MarketingFeedbackPage() {
     const { 
         employees, setEmployees, 
         marketingFeedbacks, setMarketingFeedbacks,
-        evaluationQuestions,
-        answerOptions
+        evaluationQuestions
     } = useAppContext();
 
     const [selectedEmployee, setSelectedEmployee] = useState<string>('');
@@ -157,12 +160,11 @@ export default function MarketingFeedbackPage() {
         return employees.filter(e => e.jobTitle === 'Marketing');
     }, [employees]);
     
-    // Updated to check all necessary data
     useState(() => {
-        if(employees && marketingFeedbacks && evaluationQuestions && answerOptions) {
+        if(employees && marketingFeedbacks && evaluationQuestions) {
             setIsLoading(false);
         }
-    }, [employees, marketingFeedbacks, evaluationQuestions, answerOptions]);
+    }, [employees, marketingFeedbacks, evaluationQuestions]);
 
     const addMarketingEmployee = (employeeData: Omit<Employee, 'id'>) => {
         const newEmployee: Employee = {
@@ -212,7 +214,6 @@ export default function MarketingFeedbackPage() {
             if (empEvals.length === 0) {
                 return { employeeId: emp.id, name: emp.name, score: 0 };
             }
-            // Use the most recent evaluation for simplicity
             const latestEval = empEvals.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
             return { employeeId: emp.id, name: emp.name, score: latestEval.totalScore };
         });
@@ -255,8 +256,6 @@ export default function MarketingFeedbackPage() {
             avgScore: data.count > 0 ? data.total / data.count : 0,
         })).sort((a,b) => b.avgScore - a.avgScore);
     }, [marketingFeedbacks, evaluationQuestions]);
-
-    const sortedAnswerOptions = [...answerOptions].sort((a, b) => b.value - a.value);
 
     return (
         <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
@@ -308,7 +307,7 @@ export default function MarketingFeedbackPage() {
                                         <p className="font-medium mb-3">{index + 1}. {q.text}</p>
                                         <RadioGroup onValueChange={(value) => handleResponseChange(q.id, value)} value={String(responses[q.id] || '')}>
                                             <div className="flex flex-wrap gap-4">
-                                                {sortedAnswerOptions.map(opt => (
+                                                {q.answers.sort((a,b) => b.value - a.value).map(opt => (
                                                     <div key={opt.value} className="flex items-center space-x-2">
                                                         <RadioGroupItem value={String(opt.value)} id={`${q.id}-${opt.value}`} />
                                                         <Label htmlFor={`${q.id}-${opt.value}`}>{opt.label}</Label>
@@ -412,3 +411,5 @@ export default function MarketingFeedbackPage() {
         </div>
     );
 }
+
+    
