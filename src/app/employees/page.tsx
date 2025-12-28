@@ -577,20 +577,30 @@ export default function EmployeesPage() {
         emp.employeeId?.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const sortById = (a: Employee, b: Employee) => {
-        const idA = parseInt(a.employeeId || '0');
-        const idB = parseInt(b.employeeId || '0');
-        if (idA !== idB) return idA - idB;
-        return a.name.localeCompare(b.name); // Fallback to name if IDs are same or not present
+    const sortEmployees = (a: Employee, b: Employee) => {
+        // Employee with ID '01' always comes first
+        if (a.employeeId === '01') return -1;
+        if (b.employeeId === '01') return 1;
+
+        // Then sort by employee ID numerically
+        const idA = a.employeeId ? parseInt(a.employeeId, 10) : Infinity;
+        const idB = b.employeeId ? parseInt(b.employeeId, 10) : Infinity;
+
+        if (idA !== idB) {
+            return idA - idB;
+        }
+
+        // Fallback to alphabetical sorting by name
+        return a.name.localeCompare(b.name);
     };
 
     const warehouse = filtered
         .filter(e => e.role !== 'Marketing')
-        .sort(sortById);
+        .sort(sortEmployees);
 
     const marketing = filtered
         .filter(e => e.role === 'Marketing')
-        .sort(sortById);
+        .sort((a,b) => a.name.localeCompare(b.name));
 
     return { warehouseEmployees: warehouse, marketingEmployees: marketing };
 }, [employees, searchQuery]);
@@ -620,8 +630,11 @@ export default function EmployeesPage() {
             <Avatar className="w-10 h-10"><AvatarImage src={emp.photoUrl} /><AvatarFallback>{emp.name.charAt(0)}</AvatarFallback></Avatar>
             <div>
                 <p className="font-semibold">{emp.name}</p>
-                <p className={cn("text-xs", selectedEmployeeId === emp.id ? "text-primary-foreground/80" : "text-muted-foreground")}>
-                    {emp.employeeId ? `ID: ${emp.employeeId}` : (emp.role || 'No Role')}
+                <p className={cn("text-xs flex items-center gap-1.5", selectedEmployeeId === emp.id ? "text-primary-foreground/80" : "text-muted-foreground")}>
+                   {emp.employeeId && <span className='font-mono'>ID: {emp.employeeId}</span>}
+                   {emp.employeeId && emp.role && <span>&middot;</span>}
+                   {emp.role && <span>{emp.role}</span>}
+                   {!emp.employeeId && !emp.role && <span>No Role</span>}
                 </p>
             </div>
         </button>
@@ -685,5 +698,7 @@ export default function EmployeesPage() {
     </div>
   )
 }
+
+    
 
     
