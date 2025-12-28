@@ -72,9 +72,8 @@ export default function Dashboard() {
                     <span>{date ? format(date, 'h:mm:ss a') : '...'}</span>
                 </div>
             </div>
-            <div className="flex items-center justify-center gap-4 w-1/3">
-              <Image src={logoSrc} alt="App Logo" width={logoSize} height={logoSize} className="object-contain" data-ai-hint="logo" />
-              <h1 className="text-xl font-bold">Ashley HR</h1>
+            <div className="flex items-center justify-center w-1/3">
+              <Image src={logoSrc} alt="App Logo" width={logoSize * 3} height={logoSize} className="object-contain" data-ai-hint="logo" />
             </div>
             <div className="flex items-center justify-end gap-6 w-1/3">
               <Bell className="w-6 h-6 text-muted-foreground hover:text-primary cursor-pointer" />
