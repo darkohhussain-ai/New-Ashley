@@ -5,11 +5,12 @@
 
 
 
+
 export type Employee = {
   id: string;
   name: string;
   employeeId?: string; // New field for unique ID
-  role?: 'Manager' | 'IT' | 'Employee Supervisor' | 'Transport Supervisor' | 'Employee'; // New field for role
+  role?: 'Manager' | 'IT' | 'Employee Supervisor' | 'Transport Supervisor' | 'Employee' | 'Marketing'; // New field for role
   employmentStartDate?: string;
   dateOfBirth?: string;
   email?: string;
@@ -132,5 +133,3 @@ export type EvaluationQuestion = {
     text: string;
     answers: [AnswerOption, AnswerOption, AnswerOption];
 };
-
-    

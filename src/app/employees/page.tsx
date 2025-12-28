@@ -43,7 +43,7 @@ const safeDate = (dateValue: string | undefined): Date | null => {
   return isNaN(parsed.getTime()) ? null : parsed;
 };
 
-const employeeRoles = ["Manager", "IT", "Employee Supervisor", "Transport Supervisor", "Employee"];
+const employeeRoles = ["Manager", "IT", "Employee Supervisor", "Transport Supervisor", "Employee", "Marketing"];
 
 
 function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, onDeselect: () => void }) {
@@ -512,21 +512,23 @@ export default function EmployeesPage() {
 
   const sortedAndFilteredEmployees = useMemo(() => {
     if (!employees) return [];
-    const filtered = employees.filter(emp => emp.name.toLowerCase().includes(searchQuery.toLowerCase()));
     
-    // Custom sort: warehouse employees (not 'Marketing') first, then alphabetically
+    const filtered = employees.filter(emp => 
+        emp.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    
     return filtered.sort((a, b) => {
-        const isAWarehouse = a.role !== 'Marketing';
-        const isBWarehouse = b.role !== 'Marketing';
+        const aIsMarketing = a.role === 'Marketing';
+        const bIsMarketing = b.role === 'Marketing';
 
-        if (isAWarehouse && !isBWarehouse) {
-            return -1; // a comes first
+        if (!aIsMarketing && bIsMarketing) {
+            return -1; // Warehouse employees come first
         }
-        if (!isAWarehouse && isBWarehouse) {
-            return 1; // b comes first
+        if (aIsMarketing && !bIsMarketing) {
+            return 1; // Marketing employees come after
         }
         
-        // If both are same type, sort by name
+        // If both are same type (both warehouse or both marketing), sort by name
         return a.name.localeCompare(b.name);
     });
   }, [employees, searchQuery]);
@@ -607,5 +609,3 @@ export default function EmployeesPage() {
     </div>
   )
 }
-
-    
