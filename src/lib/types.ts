@@ -1,6 +1,7 @@
 
 
 
+
 export type Employee = {
   id: string;
   name: string;
@@ -117,18 +118,12 @@ export type MarketingFeedback = {
     responses: { questionId: string; answer: number }[];
 };
 
-export type RealityCheck = {
+export type EvaluationQuestion = {
     id: string;
-    question: string;
-    answer1: string;
-    answer2: string;
-    answer3: string;
-    chosenAnswer: string;
-    createdAt: string;
-}
+    text: string;
+};
 
-export type RealityCheckResponse = {
-    answer1: string;
-    answer2: string;
-    answer3: string;
-}
+export type AnswerOption = {
+    label: string;
+    value: number;
+};

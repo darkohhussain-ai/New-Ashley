@@ -16,7 +16,8 @@ import {
     Transfer,
     ItemForTransfer,
     MarketingFeedback,
-    RealityCheck
+    EvaluationQuestion,
+    AnswerOption
 } from '@/lib/types';
 import { initialData as initialDataObject } from './initial-data';
 
@@ -48,8 +49,10 @@ interface AppState {
     setTransferItems: (items: ItemForTransfer[]) => void;
     marketingFeedbacks: MarketingFeedback[];
     setMarketingFeedbacks: (feedbacks: MarketingFeedback[]) => void;
-    realityChecks: RealityCheck[];
-    setRealityChecks: (checks: RealityCheck[]) => void;
+    evaluationQuestions: EvaluationQuestion[];
+    setEvaluationQuestions: (questions: EvaluationQuestion[]) => void;
+    answerOptions: AnswerOption[];
+    setAnswerOptions: (options: AnswerOption[]) => void;
 }
 
 const AppContext = createContext<AppState | undefined>(undefined);
@@ -68,7 +71,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const [transfers, setTransfers] = useLocalStorage<Transfer[]>('transfers', initialData.transfers);
     const [transferItems, setTransferItems] = useLocalStorage<ItemForTransfer[]>('transfer_items', initialData.transferItems);
     const [marketingFeedbacks, setMarketingFeedbacks] = useLocalStorage<MarketingFeedback[]>('marketing-feedbacks', initialData.marketingFeedbacks);
-    const [realityChecks, setRealityChecks] = useLocalStorage<RealityCheck[]>('reality_checks', initialData.realityChecks);
+    const [evaluationQuestions, setEvaluationQuestions] = useLocalStorage<EvaluationQuestion[]>('evaluation_questions', initialData.evaluationQuestions);
+    const [answerOptions, setAnswerOptions] = useLocalStorage<AnswerOption[]>('answer_options', initialData.answerOptions);
 
     const value = {
         employees, setEmployees,
@@ -83,7 +87,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         transfers, setTransfers,
         transferItems, setTransferItems,
         marketingFeedbacks, setMarketingFeedbacks,
-        realityChecks, setRealityChecks,
+        evaluationQuestions, setEvaluationQuestions,
+        answerOptions, setAnswerOptions,
     };
 
     return (

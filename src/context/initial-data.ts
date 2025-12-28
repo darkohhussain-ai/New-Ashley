@@ -1,5 +1,5 @@
 
-import { Employee, ExcelFile, Item, StorageLocation, Expense, Overtime, Bonus, CashWithdrawal, SoldItemReceipt, Transfer, ItemForTransfer, MarketingFeedback, RealityCheck } from '@/lib/types';
+import { Employee, ExcelFile, Item, StorageLocation, Expense, Overtime, Bonus, CashWithdrawal, SoldItemReceipt, Transfer, ItemForTransfer, MarketingFeedback, EvaluationQuestion, AnswerOption } from '@/lib/types';
 
 export const initialData: {
     employees: Employee[],
@@ -14,7 +14,8 @@ export const initialData: {
     transfers: Transfer[],
     transferItems: ItemForTransfer[],
     marketingFeedbacks: MarketingFeedback[],
-    realityChecks: RealityCheck[],
+    evaluationQuestions: EvaluationQuestion[],
+    answerOptions: AnswerOption[],
 } = {
     employees: [],
     excelFiles: [],
@@ -28,5 +29,29 @@ export const initialData: {
     transfers: [],
     transferItems: [],
     marketingFeedbacks: [],
-    realityChecks: [],
+    evaluationQuestions: [
+        { id: 'q1', text: 'Commitment to work' },
+        { id: 'q2', text: 'Adherence to working hours' },
+        { id: 'q3', text: 'Acceptance of responsibility' },
+        { id: 'q4', text: 'Initiative and offering suggestions' },
+        { id: 'q5', text: 'Relationship with colleagues' },
+        { id: 'q6', text: 'Appearance and personal hygiene' },
+        { id: 'q7', text: 'Speed of completion' },
+        { id: 'q8', text: 'Work accuracy' },
+        { id: 'q9', text: 'Learning speed' },
+        { id: 'q10', text: 'Problem-solving ability' },
+        { id: 'q11', text: 'Commitment to management directives' },
+        { id: 'q12', text: 'Ability to work under pressure' },
+        { id: 'q13', text: 'Trustworthiness' },
+        { id: 'q14', text: 'Customer service' },
+        { id: 'q15', text: 'Teamwork spirit' },
+        { id: 'q16', text: 'Continuous development' },
+        { id: 'q17', text: 'Marketing Skills' },
+        { id: 'q18', text: 'Sales Performance' },
+    ],
+    answerOptions: [
+        { label: 'Excellent', value: 3 },
+        { label: 'Good', value: 2 },
+        { label: 'Needs Improvement', value: 1 },
+    ]
 };

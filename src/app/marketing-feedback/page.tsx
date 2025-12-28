@@ -3,7 +3,7 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Star, Loader2, ChevronsRight, Plus } from 'lucide-react';
+import { ArrowLeft, Star, Loader2, ChevronsRight, Plus, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -13,36 +13,12 @@ import { useToast } from '@/hooks/use-toast';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAppContext } from '@/context/app-provider';
-import type { Employee, MarketingFeedback } from '@/lib/types';
+import type { Employee, MarketingFeedback, EvaluationQuestion, AnswerOption } from '@/lib/types';
 import { formatISO } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 
-const questions = [
-    { id: 'q1', text: 'Commitment to work' },
-    { id: 'q2', text: 'Adherence to working hours' },
-    { id: 'q3', text: 'Acceptance of responsibility' },
-    { id: 'q4', text: 'Initiative and offering suggestions' },
-    { id: 'q5', text: 'Relationship with colleagues' },
-    { id: 'q6', text: 'Appearance and personal hygiene' },
-    { id: 'q7', text: 'Speed of completion' },
-    { id: 'q8', text: 'Work accuracy' },
-    { id: 'q9', text: 'Learning speed' },
-    { id: 'q10', text: 'Problem-solving ability' },
-    { id: 'q11', text: 'Commitment to management directives' },
-    { id: 'q12', text: 'Ability to work under pressure' },
-    { id: 'q13', text: 'Trustworthiness' },
-    { id: 'q14', text: 'Customer service' },
-    { id: 'q15', text: 'Teamwork spirit' },
-    { id: 'q16', text: 'Continuous development' },
-    { id: 'q17', text: 'Marketing Skills' },
-    { id: 'q18', text: 'Sales Performance' },
-];
-const answerOptions = [
-    { label: 'Excellent', value: 3 },
-    { label: 'Good', value: 2 },
-    { label: 'Needs Improvement', value: 1 },
-];
 
 function AddMarketingEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean, onOpenChange: (open: boolean) => void, addEmployee: (employee: Omit<Employee, 'id'>) => void }) {
     const { toast } = useToast();
@@ -94,25 +70,99 @@ function AddMarketingEmployeeDialog({ open, onOpenChange, addEmployee }: { open:
     )
 }
 
+function ManageQuestionsDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void }) {
+    const { evaluationQuestions, setEvaluationQuestions, answerOptions, setAnswerOptions } = useAppContext();
+    const { toast } = useToast();
+    const [localQuestions, setLocalQuestions] = useState(evaluationQuestions);
+    const [localAnswers, setLocalAnswers] = useState(answerOptions);
+
+    const handleQuestionChange = (id: string, text: string) => {
+        setLocalQuestions(current => current.map(q => q.id === id ? {...q, text} : q));
+    };
+    
+    const handleAnswerChange = (value: number, label: string) => {
+        setLocalAnswers(current => current.map(a => a.value === value ? {...a, label} : a));
+    }
+
+    const handleSaveChanges = () => {
+        setEvaluationQuestions(localQuestions);
+        setAnswerOptions(localAnswers);
+        toast({ title: "Saved!", description: "Questions and answers have been updated." });
+        onOpenChange(false);
+    };
+    
+    // Ensure state is fresh when dialog opens
+    useState(() => {
+        if(open) {
+            setLocalQuestions(evaluationQuestions);
+            setLocalAnswers(answerOptions);
+        }
+    }, [open, evaluationQuestions, answerOptions]);
+
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle>Manage Questions & Answers</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-6 max-h-[70vh] overflow-y-auto p-1">
+                    <div className="space-y-4">
+                        <h3 className="font-semibold text-lg">Answer Options</h3>
+                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            {localAnswers.sort((a,b) => b.value - a.value).map(opt => (
+                                <div key={opt.value} className="space-y-2">
+                                    <Label>Answer for Score {opt.value}</Label>
+                                    <Input value={opt.label} onChange={(e) => handleAnswerChange(opt.value, e.target.value)} />
+                                </div>
+                            ))}
+                         </div>
+                    </div>
+                     <div className="space-y-4">
+                        <h3 className="font-semibold text-lg">Evaluation Questions</h3>
+                        {localQuestions.map((q, index) => (
+                            <div key={q.id} className="space-y-2">
+                                <Label>Question {index + 1}</Label>
+                                <Textarea value={q.text} onChange={(e) => handleQuestionChange(q.id, e.target.value)} />
+                            </div>
+                        ))}
+                     </div>
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
+                    <Button onClick={handleSaveChanges}>Save Changes</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
 export default function MarketingFeedbackPage() {
     const { toast } = useToast();
-    const { employees, setEmployees, marketingFeedbacks, setMarketingFeedbacks } = useAppContext();
+    const { 
+        employees, setEmployees, 
+        marketingFeedbacks, setMarketingFeedbacks,
+        evaluationQuestions,
+        answerOptions
+    } = useAppContext();
 
     const [selectedEmployee, setSelectedEmployee] = useState<string>('');
     const [responses, setResponses] = useState<Record<string, number>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [isAddDialogOpen, setAddDialogOpen] = useState(false);
+    const [isManageQuestionsOpen, setManageQuestionsOpen] = useState(false);
 
     const marketingEmployees = useMemo(() => {
         return employees.filter(e => e.jobTitle === 'Marketing');
     }, [employees]);
     
+    // Updated to check all necessary data
     useState(() => {
-        if(employees && marketingFeedbacks) {
+        if(employees && marketingFeedbacks && evaluationQuestions && answerOptions) {
             setIsLoading(false);
         }
-    }, [employees, marketingFeedbacks]);
+    }, [employees, marketingFeedbacks, evaluationQuestions, answerOptions]);
 
     const addMarketingEmployee = (employeeData: Omit<Employee, 'id'>) => {
         const newEmployee: Employee = {
@@ -131,7 +181,7 @@ export default function MarketingFeedbackPage() {
             toast({ variant: 'destructive', title: 'Error', description: 'Please select an employee.' });
             return;
         }
-        if (Object.keys(responses).length !== questions.length) {
+        if (Object.keys(responses).length !== evaluationQuestions.length) {
             toast({ variant: 'destructive', title: 'Error', description: 'Please answer all questions.' });
             return;
         }
@@ -171,7 +221,7 @@ export default function MarketingFeedbackPage() {
     }, [marketingFeedbacks, marketingEmployees]);
     
     const individualChartData = useMemo(() => {
-        if (!selectedEmployee || !marketingFeedbacks) return [];
+        if (!selectedEmployee || !marketingFeedbacks || !evaluationQuestions) return [];
         
         const latestEval = marketingFeedbacks
             .filter(e => e.employeeId === selectedEmployee)
@@ -180,15 +230,15 @@ export default function MarketingFeedbackPage() {
         if (!latestEval) return [];
 
         return latestEval.responses.map(res => {
-            const questionText = questions.find(q => q.id === res.questionId)?.text || 'Unknown';
+            const questionText = evaluationQuestions.find(q => q.id === res.questionId)?.text || 'Unknown';
             return { name: questionText, score: res.answer };
         });
-    }, [selectedEmployee, marketingFeedbacks]);
+    }, [selectedEmployee, marketingFeedbacks, evaluationQuestions]);
 
     const answerRanking = useMemo(() => {
-        if (!marketingFeedbacks || marketingFeedbacks.length === 0) return [];
+        if (!marketingFeedbacks || marketingFeedbacks.length === 0 || !evaluationQuestions) return [];
         const questionScores: Record<string, { total: number; count: number; avg: number }> = {};
-        questions.forEach(q => (questionScores[q.id] = { total: 0, count: 0, avg: 0 }));
+        evaluationQuestions.forEach(q => (questionScores[q.id] = { total: 0, count: 0, avg: 0 }));
 
         marketingFeedbacks.forEach(ev => {
             ev.responses.forEach(res => {
@@ -201,14 +251,17 @@ export default function MarketingFeedbackPage() {
         
         return Object.entries(questionScores).map(([id, data]) => ({
             id,
-            text: questions.find(q => q.id === id)?.text || 'Unknown',
+            text: evaluationQuestions.find(q => q.id === id)?.text || 'Unknown',
             avgScore: data.count > 0 ? data.total / data.count : 0,
         })).sort((a,b) => b.avgScore - a.avgScore);
-    }, [marketingFeedbacks]);
+    }, [marketingFeedbacks, evaluationQuestions]);
+
+    const sortedAnswerOptions = [...answerOptions].sort((a, b) => b.value - a.value);
 
     return (
         <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
             <AddMarketingEmployeeDialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen} addEmployee={addMarketingEmployee} />
+            <ManageQuestionsDialog open={isManageQuestionsOpen} onOpenChange={setManageQuestionsOpen} />
             <header className="flex items-center justify-between gap-4 mb-8">
                 <div className='flex items-center gap-4'>
                     <Button variant="outline" size="icon" asChild>
@@ -216,9 +269,14 @@ export default function MarketingFeedbackPage() {
                     </Button>
                     <h1 className="text-2xl md:text-3xl font-bold">Marketing Feedback</h1>
                 </div>
-                <Button onClick={() => setAddDialogOpen(true)}>
-                    <Plus className="mr-2 h-4 w-4" /> Add Marketing Employee
-                </Button>
+                <div className='flex items-center gap-2'>
+                    <Button variant="outline" onClick={() => setManageQuestionsOpen(true)}>
+                        <Settings className="mr-2 h-4 w-4" /> Manage Questions
+                    </Button>
+                    <Button onClick={() => setAddDialogOpen(true)}>
+                        <Plus className="mr-2 h-4 w-4" /> Add Employee
+                    </Button>
+                </div>
             </header>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -245,12 +303,12 @@ export default function MarketingFeedbackPage() {
                             </Select>
 
                             <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-4">
-                                {questions.map((q, index) => (
+                                {evaluationQuestions.map((q, index) => (
                                     <div key={q.id} className="p-4 border rounded-lg">
                                         <p className="font-medium mb-3">{index + 1}. {q.text}</p>
                                         <RadioGroup onValueChange={(value) => handleResponseChange(q.id, value)} value={String(responses[q.id] || '')}>
                                             <div className="flex flex-wrap gap-4">
-                                                {answerOptions.map(opt => (
+                                                {sortedAnswerOptions.map(opt => (
                                                     <div key={opt.value} className="flex items-center space-x-2">
                                                         <RadioGroupItem value={String(opt.value)} id={`${q.id}-${opt.value}`} />
                                                         <Label htmlFor={`${q.id}-${opt.value}`}>{opt.label}</Label>
