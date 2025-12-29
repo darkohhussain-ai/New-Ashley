@@ -15,7 +15,7 @@ export default function Dashboard() {
 
   // Load settings from localStorage
   const [savedBannerHeight] = useLocalStorage('dashboard-banner-height', 150);
-  const [savedDashboardBanner] = useLocalStorage('dashboard-banner', 'https://picsum.photos/seed/banner/1200/300');
+  const [savedDashboardBanner] = useLocalStorage('dashboard-banner', 'https://i.ibb.co/6Wp2t1Y/image.png');
   const [savedLogo] = useLocalStorage('app-logo', "https://picsum.photos/seed/ashley-logo/300/100");
   
   const [isMounted, setIsMounted] = useState(false);
@@ -89,7 +89,7 @@ export default function Dashboard() {
           </div>
            {savedDashboardBanner && (
              <div className="relative w-full mx-auto my-4 max-w-6xl rounded-lg overflow-hidden" style={{height: `${savedBannerHeight}px`}}>
-                <Image src={savedDashboardBanner} alt="Dashboard Banner" fill className="object-cover" data-ai-hint="banner abstract" />
+                <Image src={savedDashboardBanner} alt="Dashboard Banner" fill className="object-contain" data-ai-hint="banner abstract" />
              </div>
            )}
         </div>
