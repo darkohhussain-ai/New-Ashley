@@ -27,6 +27,50 @@ import useLocalStorage from '@/hooks/use-local-storage';
 import html2canvas from 'html2canvas';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
+// New component for rendering a single question's PDF content
+const QuestionPdfRenderer = ({ questionData, customFontBase64 }: { questionData: any, customFontBase64: string | null }) => {
+    return (
+        <div className="p-4 bg-white" style={{ width: '700px', fontFamily: customFontBase64 ? 'CustomFont' : 'sans-serif' }}>
+            <h3 className="text-lg font-bold mb-4">{questionData.questionText}</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="md:col-span-1 flex items-center justify-center">
+                    {questionData.chartData.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={200}>
+                            <PieChart>
+                                <Tooltip formatter={(value, name) => [`${value} responses`, name]} />
+                                <Pie data={questionData.chartData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={40} outerRadius={60} paddingAngle={5}>
+                                    {questionData.chartData.map((entry: any) => <Cell key={`cell-${entry.name}`} fill={entry.fill} />)}
+                                </Pie>
+                                <Legend />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    ) : <p className="text-muted-foreground">No data</p>}
+                </div>
+                <div className="md:col-span-2">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Rank</TableHead>
+                                <TableHead>Employee</TableHead>
+                                <TableHead className="text-right">Score</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {questionData.scores.map((s: any, rankIndex: number) => (
+                                <TableRow key={s.name}>
+                                    <TableCell className="font-medium">{rankIndex + 1}</TableCell>
+                                    <TableCell>{s.name}</TableCell>
+                                    <TableCell className="text-right">{s.score}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 
 function AddMarketingEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean, onOpenChange: (open: boolean) => void, addEmployee: (employee: Omit<Employee, 'id'>) => void }) {
     const { toast } = useToast();
@@ -169,7 +213,8 @@ export default function MarketingFeedbackPage() {
     const [isManageQuestionsOpen, setManageQuestionsOpen] = useState(false);
     
     const pdfCardRef = useRef<HTMLDivElement>(null);
-
+    const [pdfQuestionRenderData, setPdfQuestionRenderData] = useState<any>(null);
+    const pdfQuestionRef = useRef<HTMLDivElement>(null);
 
     const marketingEmployees = useMemo(() => {
         return employees.filter(e => e.role === 'Marketing');
@@ -310,78 +355,57 @@ export default function MarketingFeedbackPage() {
     }, [marketingFeedbacks, evaluationQuestions]);
 
     const handleDownloadPdf = async () => {
-        if (!pdfCardRef.current || !marketingFeedbacks.length) {
-            toast({ title: "No Data", description: "There is no data to export."});
+        if (!marketingFeedbacks.length) {
+            toast({ title: "No Data", description: "There is no data to export." });
             return;
         }
-        
+
         const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
         if (customFontBase64) {
-          const fontName = "CustomFont";
-          const fontStyle = "normal";
-          const fontBase64 = customFontBase64.split(',')[1];
-          doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
-          doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
-          doc.setFont(fontName);
+            const fontName = "CustomFont";
+            const fontStyle = "normal";
+            const fontBase64 = customFontBase64.split(',')[1];
+            doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
+            doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
+            doc.setFont(fontName);
         }
 
-        const canvas = await html2canvas(pdfCardRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
-        const imgData = canvas.toDataURL('image/png');
-        const pdfWidth = doc.internal.pageSize.getWidth();
-        const imgWidth = canvas.width;
-        const imgHeight = canvas.height;
-        const ratio = imgWidth / imgHeight;
-        const finalImgWidth = pdfWidth - 28;
-        const finalImgHeight = finalImgWidth / ratio;
+        // 1. Add Header Page
+        if (pdfCardRef.current) {
+            const headerCanvas = await html2canvas(pdfCardRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
+            const headerImgData = headerCanvas.toDataURL('image/png');
+            const pdfWidth = doc.internal.pageSize.getWidth();
+            const headerRatio = headerCanvas.width / headerCanvas.height;
+            const finalHeaderWidth = pdfWidth - 28;
+            const finalHeaderHeight = finalHeaderWidth / headerRatio;
+            doc.addImage(headerImgData, 'PNG', 14, 14, finalHeaderWidth, finalHeaderHeight);
+        }
         
-        doc.addImage(imgData, 'PNG', 14, 14, finalImgWidth, finalImgHeight);
-        let currentY = finalImgHeight + 30;
-
-        const autoTableConfig = {
-          startY: currentY,
-          theme: 'grid',
-          headStyles: { fillColor: [22, 163, 74] },
-          didParseCell: function (data: any) {
-            if (customFontBase64) {
-              data.cell.styles.font = "CustomFont";
-            }
-          }
-        };
-
-        if (evaluationSummary.length > 0) {
-            doc.setFontSize(14);
-            doc.text('Employee Rankings (Latest Score)', 14, currentY);
-            currentY += 10;
-            autoTable(doc, {
-                ...autoTableConfig,
-                startY: currentY,
-                head: [['Rank', 'Employee', 'Score']],
-                body: evaluationSummary.map((item, index) => [index + 1, item.name, item.score]),
-            });
-            currentY = (doc as any).lastAutoTable.finalY + 20;
-        }
-
+        // 2. Add Per-Question Pages
         if (perQuestionRankings && perQuestionRankings.length > 0) {
-            perQuestionRankings.forEach(q => {
-                 if (currentY > doc.internal.pageSize.getHeight() - 100) {
-                    doc.addPage();
-                    currentY = 20;
-                 }
-                 doc.setFontSize(14);
-                 doc.text(q.questionText, 14, currentY);
-                 currentY += 10;
-                 autoTable(doc, {
-                    ...autoTableConfig,
-                    startY: currentY,
-                    head: [['Employee', 'Score']],
-                    body: q.scores.map(item => [item.name, item.score]),
-                 });
-                 currentY = (doc as any).lastAutoTable.finalY + 20;
-            });
+            for (const q of perQuestionRankings) {
+                doc.addPage();
+                // Temporarily render the component to capture it
+                setPdfQuestionRenderData(q);
+                // Allow state to update and component to render
+                await new Promise(resolve => setTimeout(resolve, 100));
+
+                if (pdfQuestionRef.current) {
+                    const questionCanvas = await html2canvas(pdfQuestionRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
+                    const questionImgData = questionCanvas.toDataURL('image/png');
+                    const pdfWidth = doc.internal.pageSize.getWidth();
+                    const questionRatio = questionCanvas.width / questionCanvas.height;
+                    const finalQuestionWidth = pdfWidth - 28;
+                    const finalQuestionHeight = finalQuestionWidth / questionRatio;
+                    doc.addImage(questionImgData, 'PNG', 14, 14, finalQuestionWidth, finalQuestionHeight);
+                }
+            }
+            setPdfQuestionRenderData(null); // Clean up
         }
-        
+
         doc.save(`Marketing_Feedback_Report_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
     };
+
 
     const handleDownloadExcel = () => {
         if (!marketingFeedbacks.length) {
@@ -436,12 +460,20 @@ export default function MarketingFeedbackPage() {
     return (
         <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
              <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-                <div ref={pdfCardRef} style={{ width: '700px', background: 'white', color: 'black' }}>
+                <div ref={pdfCardRef}>
                     <MarketingFeedbackPdfCard
                         logoSrc={logoSrc}
                         totalEvaluations={marketingFeedbacks.length}
                         overallScoreDistribution={overallScoreDistribution}
                     />
+                </div>
+                <div ref={pdfQuestionRef}>
+                    {pdfQuestionRenderData && (
+                        <QuestionPdfRenderer
+                            questionData={pdfQuestionRenderData}
+                            customFontBase64={customFontBase64}
+                        />
+                    )}
                 </div>
             </div>
             <AddMarketingEmployeeDialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen} addEmployee={addMarketingEmployee} />
@@ -690,7 +722,3 @@ export default function MarketingFeedbackPage() {
         </div>
     );
 }
-
-    
-
-    
