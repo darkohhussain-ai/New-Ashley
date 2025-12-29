@@ -236,18 +236,14 @@ export default function MarketingFeedbackPage() {
     
         return evaluationQuestions.map(question => {
             const employeeScores = marketingEmployees.map(employee => {
-                const latestEval = marketingFeedbacks
-                    .filter(fb => fb.employeeId === employee.id)
-                    .sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime())[0];
-    
-                if (!latestEval) {
-                    return { name: employee.name, score: 0 };
-                }
-    
-                const response = latestEval.responses.find(r => r.questionId === question.id);
-                const score = response ? response.answer : 0;
+                const allEvalsForEmployee = marketingFeedbacks.filter(fb => fb.employeeId === employee.id);
                 
-                return { name: employee.name, score: score };
+                const totalScoreForQuestion = allEvalsForEmployee.reduce((sum, currentEval) => {
+                    const response = currentEval.responses.find(r => r.questionId === question.id);
+                    return sum + (response ? response.answer : 0);
+                }, 0);
+
+                return { name: employee.name, score: totalScoreForQuestion };
             });
 
             return {
@@ -463,7 +459,7 @@ export default function MarketingFeedbackPage() {
                          <Card>
                             <CardHeader>
                                 <CardTitle>Per-Question Employee Rankings</CardTitle>
-                                <CardDescription>See how employees rank on each specific question based on their latest evaluation.</CardDescription>
+                                <CardDescription>See how employees rank on each specific question based on the sum of their scores.</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <Accordion type="single" collapsible className="w-full">
@@ -477,7 +473,7 @@ export default function MarketingFeedbackPage() {
                                                             <TableRow>
                                                                 <TableHead>Rank</TableHead>
                                                                 <TableHead>Employee</TableHead>
-                                                                <TableHead className="text-right">Score</TableHead>
+                                                                <TableHead className="text-right">Total Score</TableHead>
                                                             </TableRow>
                                                         </TableHeader>
                                                         <TableBody>
