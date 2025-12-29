@@ -10,7 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useToast } from '@/hooks/use-toast';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAppContext } from '@/context/app-provider';
 import type { Employee, MarketingFeedback, EvaluationQuestion, AnswerOption } from '@/lib/types';
@@ -25,6 +24,7 @@ import * as XLSX from 'xlsx';
 import { MarketingFeedbackPdfCard } from '@/components/marketing/marketing-feedback-pdf-card';
 import useLocalStorage from '@/hooks/use-local-storage';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import html2canvas from 'html2canvas';
 
 
 function AddMarketingEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean, onOpenChange: (open: boolean) => void, addEmployee: (employee: Omit<Employee, 'id'>) => void }) {
@@ -234,21 +234,6 @@ export default function MarketingFeedbackPage() {
         return summary.sort((a, b) => b.score - a.score);
     }, [marketingFeedbacks, marketingEmployees]);
     
-    const individualChartData = useMemo(() => {
-        if (!selectedEmployee || !marketingFeedbacks || !evaluationQuestions) return [];
-        
-        const latestEval = marketingFeedbacks
-            .filter(e => e.employeeId === selectedEmployee)
-            .sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
-
-        if (!latestEval) return [];
-
-        return latestEval.responses.map(res => {
-            const questionText = evaluationQuestions.find(q => q.id === res.questionId)?.text || 'Unknown';
-            return { name: questionText, score: res.answer };
-        });
-    }, [selectedEmployee, marketingFeedbacks, evaluationQuestions]);
-
     const perQuestionRankings = useMemo(() => {
         if (!marketingFeedbacks.length || !marketingEmployees.length || !evaluationQuestions.length) return [];
     
@@ -604,19 +589,7 @@ export default function MarketingFeedbackPage() {
                                         </CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        {individualChartData.length > 0 ? (
-                                            <ResponsiveContainer width="100%" height={300}>
-                                                <BarChart data={individualChartData} layout="vertical" margin={{ left: 20, right: 20 }}>
-                                                    <CartesianGrid strokeDasharray="3 3" horizontal={false}/>
-                                                    <XAxis type="number" domain={[0, 3]} ticks={[1, 2, 3]} />
-                                                    <YAxis type="category" dataKey="name" width={100} fontSize={12} />
-                                                    <Tooltip />
-                                                    <Bar dataKey="score" name="Score" fill="hsl(var(--primary))" />
-                                                </BarChart>
-                                            </ResponsiveContainer>
-                                        ) : (
-                                            <p className="text-muted-foreground text-center">No feedback data to display.</p>
-                                        )}
+                                        <p className="text-muted-foreground text-center">No feedback data to display.</p>
                                     </CardContent>
                                 </Card>
                             )}
@@ -627,3 +600,5 @@ export default function MarketingFeedbackPage() {
         </div>
     );
 }
+
+    
