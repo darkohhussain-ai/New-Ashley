@@ -224,11 +224,8 @@ export default function MarketingFeedbackPage() {
         
         const summary = marketingEmployees.map(emp => {
             const empEvals = marketingFeedbacks.filter(e => e.employeeId === emp.id);
-            if (empEvals.length === 0) {
-                return { employeeId: emp.id, name: emp.name, score: 0 };
-            }
-            const latestEval = empEvals.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
-            return { employeeId: emp.id, name: emp.name, score: latestEval.totalScore };
+            const totalScore = empEvals.reduce((sum, currentEval) => sum + currentEval.totalScore, 0);
+            return { employeeId: emp.id, name: emp.name, score: totalScore };
         });
 
         return summary.sort((a, b) => b.score - a.score);
@@ -298,7 +295,7 @@ export default function MarketingFeedbackPage() {
 
             autoTable(doc, {
                 startY: startY,
-                head: [['Rank', 'Employee', 'Latest Score']],
+                head: [['Rank', 'Employee', 'Total Score']],
                 body: evaluationSummary.map((item, index) => [index + 1, item.name, item.score]),
                 theme: 'striped',
                 headStyles: { fillColor: [40, 40, 40] },
@@ -353,7 +350,7 @@ export default function MarketingFeedbackPage() {
         const rankingsData = evaluationSummary.map((item, index) => ({
             Rank: index + 1,
             Employee: item.name,
-            'Latest Score': item.score,
+            'Total Score': item.score,
         }));
         const rankingsWs = XLSX.utils.json_to_sheet(rankingsData);
         XLSX.utils.book_append_sheet(wb, rankingsWs, 'Employee Rankings');
@@ -446,12 +443,12 @@ export default function MarketingFeedbackPage() {
                             <Card className="lg:col-span-2">
                                 <CardHeader>
                                     <CardTitle>Overall Employee Rankings</CardTitle>
-                                    <CardDescription>Based on latest total feedback scores.</CardDescription>
+                                    <CardDescription>Based on the summation of all feedback scores.</CardDescription>
                                 </CardHeader>
                                 <CardContent className="max-h-[250px] overflow-y-auto">
                                 {isLoading ? <Loader2 className="animate-spin" /> : (
                                     <Table>
-                                        <TableHeader><TableRow><TableHead>Rank</TableHead><TableHead>Employee</TableHead><TableHead className="text-right">Score</TableHead></TableRow></TableHeader>
+                                        <TableHeader><TableRow><TableHead>Rank</TableHead><TableHead>Employee</TableHead><TableHead className="text-right">Total Score</TableHead></TableRow></TableHeader>
                                         <TableBody>
                                             {evaluationSummary.map((item, index) => (
                                                 <TableRow key={item.employeeId}><TableCell className="font-bold">{index + 1}</TableCell><TableCell>{item.name}</TableCell><TableCell className="text-right font-medium">{item.score}</TableCell></TableRow>
@@ -555,7 +552,7 @@ export default function MarketingFeedbackPage() {
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Overall Employee Rankings</CardTitle>
-                                    <CardDescription>Based on latest total feedback scores.</CardDescription>
+                                    <CardDescription>Based on the summation of all feedback scores.</CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                 {isLoading ? <Loader2 className="animate-spin" /> : (
@@ -564,7 +561,7 @@ export default function MarketingFeedbackPage() {
                                             <TableRow>
                                                 <TableHead>Rank</TableHead>
                                                 <TableHead>Employee</TableHead>
-                                                <TableHead className="text-right">Score</TableHead>
+                                                <TableHead className="text-right">Total Score</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
