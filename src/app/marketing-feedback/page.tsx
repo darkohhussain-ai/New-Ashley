@@ -253,25 +253,40 @@ export default function MarketingFeedbackPage() {
 
     const perQuestionRankings = useMemo(() => {
         if (!marketingFeedbacks.length || !marketingEmployees.length || !evaluationQuestions.length) return [];
-
+    
         return evaluationQuestions.map(question => {
+            let excellent = 0, good = 0, needsImprovement = 0;
+            
             const employeeScores = marketingEmployees.map(employee => {
                 const latestEval = marketingFeedbacks
                     .filter(fb => fb.employeeId === employee.id)
                     .sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime())[0];
-
+    
                 if (!latestEval) {
                     return { name: employee.name, score: 0 };
                 }
-
+    
                 const response = latestEval.responses.find(r => r.questionId === question.id);
-                return { name: employee.name, score: response ? response.answer : 0 };
+                const score = response ? response.answer : 0;
+                
+                if(score === 3) excellent++;
+                else if (score === 2) good++;
+                else if (score === 1) needsImprovement++;
+
+                return { name: employee.name, score: score };
             });
+            
+            const chartData = [
+                { name: 'Excellent', value: excellent, fill: 'hsl(var(--chart-2))' },
+                { name: 'Good', value: good, fill: 'hsl(var(--chart-4))' },
+                { name: 'Needs Improvement', value: needsImprovement, fill: 'hsl(var(--chart-1))' },
+            ].filter(d => d.value > 0);
 
             return {
                 questionId: question.id,
                 questionText: question.text,
-                scores: employeeScores.sort((a, b) => b.score - a.score)
+                scores: employeeScores.sort((a, b) => b.score - a.score),
+                chartData: chartData,
             };
         });
     }, [marketingFeedbacks, marketingEmployees, evaluationQuestions]);
@@ -473,13 +488,15 @@ export default function MarketingFeedbackPage() {
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Overall Score Distribution</CardTitle>
-                                    <CardDescription>Breakdown of all answers given.</CardDescription>
+                                    <CardDescription>Breakdown of all answers given across all questions.</CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                    {overallScoreDistribution.length > 0 ? (
                                         <ResponsiveContainer width="100%" height={200}>
                                             <PieChart>
-                                                <Tooltip />
+                                                <Tooltip 
+                                                    formatter={(value, name) => [`${value} responses`, name]}
+                                                />
                                                 <Pie data={overallScoreDistribution} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80}>
                                                     {overallScoreDistribution.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
                                                 </Pie>
@@ -494,7 +511,7 @@ export default function MarketingFeedbackPage() {
                                     <CardTitle>Overall Employee Rankings</CardTitle>
                                     <CardDescription>Based on latest total feedback scores.</CardDescription>
                                 </CardHeader>
-                                <CardContent>
+                                <CardContent className="max-h-[250px] overflow-y-auto">
                                 {isLoading ? <Loader2 className="animate-spin" /> : (
                                     <Table>
                                         <TableHeader><TableRow><TableHead>Rank</TableHead><TableHead>Employee</TableHead><TableHead className="text-right">Score</TableHead></TableRow></TableHeader>
@@ -520,24 +537,41 @@ export default function MarketingFeedbackPage() {
                                         <AccordionItem value={`item-${index}`} key={q.questionId}>
                                             <AccordionTrigger>{q.questionText}</AccordionTrigger>
                                             <AccordionContent>
-                                                <Table>
-                                                    <TableHeader>
-                                                        <TableRow>
-                                                            <TableHead>Rank</TableHead>
-                                                            <TableHead>Employee</TableHead>
-                                                            <TableHead className="text-right">Score</TableHead>
-                                                        </TableRow>
-                                                    </TableHeader>
-                                                    <TableBody>
-                                                        {q.scores.map((s, rankIndex) => (
-                                                            <TableRow key={s.name}>
-                                                                <TableCell className="font-medium">{rankIndex + 1}</TableCell>
-                                                                <TableCell>{s.name}</TableCell>
-                                                                <TableCell className="text-right">{s.score}</TableCell>
-                                                            </TableRow>
-                                                        ))}
-                                                    </TableBody>
-                                                </Table>
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                    <div className="md:col-span-1 flex items-center justify-center">
+                                                        {q.chartData.length > 0 ? (
+                                                            <ResponsiveContainer width="100%" height={200}>
+                                                                <PieChart>
+                                                                    <Tooltip formatter={(value, name) => [`${value} responses`, name]} />
+                                                                    <Pie data={q.chartData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={40} outerRadius={60} paddingAngle={5}>
+                                                                        {q.chartData.map((entry) => <Cell key={`cell-${entry.name}`} fill={entry.fill} />)}
+                                                                    </Pie>
+                                                                    <Legend />
+                                                                </PieChart>
+                                                            </ResponsiveContainer>
+                                                        ) : <p className="text-muted-foreground">No data</p>}
+                                                    </div>
+                                                    <div className="md:col-span-2">
+                                                        <Table>
+                                                            <TableHeader>
+                                                                <TableRow>
+                                                                    <TableHead>Rank</TableHead>
+                                                                    <TableHead>Employee</TableHead>
+                                                                    <TableHead className="text-right">Score</TableHead>
+                                                                </TableRow>
+                                                            </TableHeader>
+                                                            <TableBody>
+                                                                {q.scores.map((s, rankIndex) => (
+                                                                    <TableRow key={s.name}>
+                                                                        <TableCell className="font-medium">{rankIndex + 1}</TableCell>
+                                                                        <TableCell>{s.name}</TableCell>
+                                                                        <TableCell className="text-right">{s.score}</TableCell>
+                                                                    </TableRow>
+                                                                ))}
+                                                            </TableBody>
+                                                        </Table>
+                                                    </div>
+                                                </div>
                                             </AccordionContent>
                                         </AccordionItem>
                                     ))}
@@ -656,5 +690,7 @@ export default function MarketingFeedbackPage() {
         </div>
     );
 }
+
+    
 
     
