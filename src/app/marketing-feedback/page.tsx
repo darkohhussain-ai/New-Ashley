@@ -381,28 +381,28 @@ export default function MarketingFeedbackPage() {
             doc.addImage(headerImgData, 'PNG', 14, 14, finalHeaderWidth, finalHeaderHeight);
         }
         
-        // 2. Add Per-Question Pages
-        if (perQuestionRankings && perQuestionRankings.length > 0) {
-            for (const q of perQuestionRankings) {
-                doc.addPage();
-                // Temporarily render the component to capture it
-                setPdfQuestionRenderData(q);
-                // Allow state to update and component to render
-                await new Promise(resolve => setTimeout(resolve, 100));
+        let startY = 160; // Start table after the header
 
-                if (pdfQuestionRef.current) {
-                    const questionCanvas = await html2canvas(pdfQuestionRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
-                    const questionImgData = questionCanvas.toDataURL('image/png');
-                    const pdfWidth = doc.internal.pageSize.getWidth();
-                    const questionRatio = questionCanvas.width / questionCanvas.height;
-                    const finalQuestionWidth = pdfWidth - 28;
-                    const finalQuestionHeight = finalQuestionWidth / questionRatio;
-                    doc.addImage(questionImgData, 'PNG', 14, 14, finalQuestionWidth, finalQuestionHeight);
+        // 2. Add Overall Employee Rankings table
+        if (evaluationSummary.length > 0) {
+            doc.setFontSize(14);
+            doc.text("Overall Employee Rankings", 14, startY);
+            startY += 15;
+
+            autoTable(doc, {
+                startY: startY,
+                head: [['Rank', 'Employee', 'Latest Score']],
+                body: evaluationSummary.map((item, index) => [index + 1, item.name, item.score]),
+                theme: 'striped',
+                headStyles: { fillColor: [40, 40, 40] },
+                didParseCell: function (data) {
+                    if (customFontBase64) {
+                        data.cell.styles.font = "CustomFont";
+                    }
                 }
-            }
-            setPdfQuestionRenderData(null); // Clean up
+            });
         }
-
+        
         doc.save(`Marketing_Feedback_Report_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
     };
 
