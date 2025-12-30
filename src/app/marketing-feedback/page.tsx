@@ -25,7 +25,6 @@ import { MarketingFeedbackPdfCard } from '@/components/marketing/marketing-feedb
 import useLocalStorage from '@/hooks/use-local-storage';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import html2canvas from 'html2canvas';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { cn } from '@/lib/utils';
 
 
@@ -170,7 +169,6 @@ export default function MarketingFeedbackPage() {
     const [isManageQuestionsOpen, setManageQuestionsOpen] = useState(false);
     
     const pdfCardRef = useRef<HTMLDivElement>(null);
-    const chartCardRef = useRef<HTMLDivElement>(null);
 
     const marketingEmployees = useMemo(() => {
         return employees.filter(e => e.role === 'Marketing');
@@ -299,33 +297,24 @@ export default function MarketingFeedbackPage() {
                 body: evaluationSummary.map((item, index) => [index + 1, item.name, item.score]),
                 theme: 'striped',
                 headStyles: { fillColor: [40, 40, 40] },
-                didParseCell: (data) => { if (customFontBase64) data.cell.styles.font = "CustomFont"; }
+                didDrawCell: (data) => {
+                    if (data.section === 'body') {
+                        if (data.row.index === 0) { // 1st place
+                            doc.setFillColor(255, 251, 204); // bg-yellow-100
+                        } else if (data.row.index === 1) { // 2nd place
+                            doc.setFillColor(229, 231, 235); // bg-gray-200
+                        } else if (data.row.index === 2) { // 3rd place
+                            doc.setFillColor(255, 237, 213); // bg-orange-200
+                        }
+                    }
+                },
+                didParseCell: (data) => { 
+                    if (customFontBase64) data.cell.styles.font = "CustomFont"; 
+                }
             });
         }
         
-        let lastY = (doc as any).lastAutoTable.finalY || 30;
-
-        // 3. Add Chart on the same page
-        if (chartCardRef.current) {
-            const chartCanvas = await html2canvas(chartCardRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
-            const chartImgData = chartCanvas.toDataURL('image/png');
-            const pdfWidth = doc.internal.pageSize.getWidth();
-            const chartRatio = chartCanvas.width / chartCanvas.height;
-            const finalChartWidth = pdfWidth - 28;
-            const finalChartHeight = finalChartWidth / chartRatio;
-
-            if (lastY + finalChartHeight + 20 > doc.internal.pageSize.getHeight()) {
-                doc.addPage();
-                lastY = 22;
-            } else {
-                lastY += 20;
-            }
-
-            doc.addImage(chartImgData, 'PNG', 14, lastY, finalChartWidth, finalChartHeight);
-        }
-
-
-        // 4. Subsequent Pages: Per-Question Rankings
+        // 3. Subsequent Pages: Per-Question Rankings
         if (perQuestionRankings && perQuestionRankings.length > 0) {
             perQuestionRankings.forEach((q) => {
                 doc.addPage();
@@ -446,54 +435,28 @@ export default function MarketingFeedbackPage() {
                         <Button variant="outline" onClick={handleDownloadExcel}><FileSpreadsheet className="mr-2 h-4 w-4"/> Excel</Button>
                     </div>
                     <div className="space-y-8">
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                             <div className="lg:col-span-1 space-y-8">
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle>Overall Employee Rankings</CardTitle>
-                                        <CardDescription>Based on the sum of all feedback scores. Max Score per evaluation: {maxScore}</CardDescription>
-                                    </CardHeader>
-                                    <CardContent className="max-h-[300px] overflow-y-auto">
-                                    {isLoading ? <Loader2 className="animate-spin" /> : (
-                                        <Table>
-                                            <TableHeader><TableRow><TableHead>Rank</TableHead><TableHead>Employee</TableHead><TableHead className="text-right">Total Score</TableHead></TableRow></TableHeader>
-                                            <TableBody>
-                                                {evaluationSummary.map((item, index) => (
-                                                    <TableRow key={item.employeeId} className={cn(getRowClass(index))}>
-                                                        <TableCell className="font-bold">{index + 1}</TableCell>
-                                                        <TableCell>{item.name}</TableCell>
-                                                        <TableCell className="text-right font-medium">{item.score}</TableCell>
-                                                    </TableRow>
-                                                ))}
-                                            </TableBody>
-                                        </Table>
-                                    )}
-                                    </CardContent>
-                                </Card>
-                            </div>
-                            <Card className="lg:col-span-2" ref={chartCardRef}>
-                                <CardHeader>
-                                    <CardTitle>Employee Performance Chart</CardTitle>
-                                    <CardDescription>Ranking from strongest to weakest based on total score.</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <ResponsiveContainer width="100%" height={300}>
-                                        <BarChart data={evaluationSummary} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                                            <CartesianGrid strokeDasharray="3 3" />
-                                            <XAxis type="number" />
-                                            <YAxis dataKey="name" type="category" width={80} tick={{ fontSize: 12 }} />
-                                            <Tooltip
-                                                contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}
-                                                labelStyle={{ color: 'hsl(var(--foreground))' }}
-                                            />
-                                            <Legend />
-                                            <Bar dataKey="score" name="Total Score" fill="hsl(var(--primary))" />
-                                        </BarChart>
-                                    </ResponsiveContainer>
-                                </CardContent>
-                            </Card>
-                        </div>
-
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Overall Employee Rankings</CardTitle>
+                                <CardDescription>Based on the sum of all feedback scores. Max Score per evaluation: {maxScore}</CardDescription>
+                            </CardHeader>
+                            <CardContent className="max-h-[300px] overflow-y-auto">
+                            {isLoading ? <Loader2 className="animate-spin" /> : (
+                                <Table>
+                                    <TableHeader><TableRow><TableHead>Rank</TableHead><TableHead>Employee</TableHead><TableHead className="text-right">Total Score</TableHead></TableRow></TableHeader>
+                                    <TableBody>
+                                        {evaluationSummary.map((item, index) => (
+                                            <TableRow key={item.employeeId} className={cn(getRowClass(index))}>
+                                                <TableCell className="font-bold">{index + 1}</TableCell>
+                                                <TableCell>{item.name}</TableCell>
+                                                <TableCell className="text-right font-medium">{item.score}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            )}
+                            </CardContent>
+                        </Card>
                          <Card>
                             <CardHeader>
                                 <CardTitle>Per-Question Employee Rankings</CardTitle>
@@ -631,4 +594,3 @@ export default function MarketingFeedbackPage() {
         </div>
     );
 }
-
