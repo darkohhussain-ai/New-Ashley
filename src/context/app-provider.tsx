@@ -9,6 +9,7 @@ import {
     Item, 
     StorageLocation, 
     Expense, 
+    ExpenseReport,
     Overtime,
     Bonus,
     CashWithdrawal,
@@ -34,6 +35,8 @@ interface AppState {
     setLocations: (locations: StorageLocation[]) => void;
     expenses: Expense[];
     setExpenses: (expenses: Expense[]) => void;
+    expenseReports: ExpenseReport[];
+    setExpenseReports: (reports: ExpenseReport[]) => void;
     overtime: Overtime[];
     setOvertime: (overtime: Overtime[]) => void;
     bonuses: Bonus[];
@@ -61,6 +64,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const [items, setItems] = useLocalStorage<Item[]>('items', initialData.items);
     const [locations, setLocations] = useLocalStorage<StorageLocation[]>('storage_locations', initialData.locations);
     const [expenses, setExpenses] = useLocalStorage<Expense[]>('expenses', initialData.expenses);
+    const [expenseReports, setExpenseReports] = useLocalStorage<ExpenseReport[]>('expense_reports', initialData.expenseReports);
     const [overtime, setOvertime] = useLocalStorage<Overtime[]>('overtime', initialData.overtime);
     const [bonuses, setBonuses] = useLocalStorage<Bonus[]>('bonuses', initialData.bonuses);
     const [withdrawals, setWithdrawals] = useLocalStorage<CashWithdrawal[]>('cash_withdrawals', initialData.withdrawals);
@@ -76,6 +80,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         items, setItems,
         locations, setLocations,
         expenses, setExpenses,
+        expenseReports, setExpenseReports,
         overtime, setOvertime,
         bonuses, setBonuses,
         withdrawals, setWithdrawals,
@@ -100,5 +105,3 @@ export function useAppContext() {
     }
     return context;
 }
-
-    

@@ -2,17 +2,23 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, CreditCard, Clock, Gift, Banknote, Settings } from 'lucide-react';
+import { ArrowLeft, CreditCard, Clock, Gift, Banknote, Settings, Plus, Archive, FilePlus, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 const menuItems = [
   {
-    title: "Ashley Expenses",
-    icon: CreditCard,
-    href: "/expenses",
+    title: "New Expense Report",
+    icon: FilePlus,
+    href: "/expenses/add",
     color: "bg-blue-500",
+  },
+  {
+    title: "Expense Report Archive",
+    icon: Archive,
+    href: "/expenses/archive",
+    color: "bg-green-500",
   },
   {
     title: "Employee Overtime",
@@ -24,7 +30,7 @@ const menuItems = [
     title: "Loading / Unloading Bonus",
     icon: Gift,
     href: "/bonuses",
-    color: "bg-green-500",
+    color: "bg-yellow-500",
   },
   {
     title: "Cash Withdrawal",
@@ -33,7 +39,7 @@ const menuItems = [
     color: "bg-rose-500",
   },
   {
-    title: "Ashley Expenses Settings",
+    title: "Settings",
     icon: Settings,
     href: "/ashley-expenses-settings",
     color: "bg-gray-500",

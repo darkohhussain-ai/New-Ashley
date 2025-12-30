@@ -1,5 +1,5 @@
 
-import { Employee, ExcelFile, Item, StorageLocation, Expense, Overtime, Bonus, CashWithdrawal, SoldItemReceipt, Transfer, ItemForTransfer, MarketingFeedback, EvaluationQuestion, AnswerOption } from '@/lib/types';
+import { Employee, ExcelFile, Item, StorageLocation, Expense, ExpenseReport, Overtime, Bonus, CashWithdrawal, SoldItemReceipt, Transfer, ItemForTransfer, MarketingFeedback, EvaluationQuestion, AnswerOption } from '@/lib/types';
 
 const defaultAnswers: [AnswerOption, AnswerOption, AnswerOption] = [
     { label: 'Excellent', value: 3 },
@@ -13,6 +13,7 @@ export const initialData: {
     items: Item[],
     locations: StorageLocation[],
     expenses: Expense[],
+    expenseReports: ExpenseReport[],
     overtime: Overtime[],
     bonuses: Bonus[],
     withdrawals: CashWithdrawal[],
@@ -27,6 +28,7 @@ export const initialData: {
     items: [],
     locations: [],
     expenses: [],
+    expenseReports: [],
     overtime: [],
     bonuses: [],
     withdrawals: [],
@@ -55,5 +57,3 @@ export const initialData: {
         { id: 'q18', text: 'Sales Performance', answers: defaultAnswers },
     ],
 };
-
-    

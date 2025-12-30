@@ -24,7 +24,7 @@ export type ExcelFile = {
 };
 
 export type Item = {
-  id: string;
+  id:string;
   fileId: string;
   model: string;
   quantity: number;
@@ -46,8 +46,15 @@ export type Expense = {
   id: string;
   employeeId: string;
   amount: number;
-  date: string;
   notes?: string;
+  expenseReportId: string; // Link to the parent report
+};
+
+export type ExpenseReport = {
+  id: string;
+  reportName: string;
+  reportDate: string;
+  totalAmount: number;
 };
 
 export type Overtime = {
