@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useState, useMemo, useRef } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Plus, Trash2, Calendar as CalendarIcon, DollarSign, User, FileDown } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Calendar as CalendarIcon, DollarSign, User, FileDown, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,7 +12,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -26,17 +25,17 @@ import { ReportPdfHeader } from '@/components/reports/report-pdf-header';
 import useLocalStorage from '@/hooks/use-local-storage';
 import { useAppContext } from '@/context/app-provider';
 import type { Employee, Expense } from '@/lib/types';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 
-// Helper function to format currency
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'IQD',
+    maximumFractionDigits: 0
   }).format(amount);
 };
 
-// Helper to safely convert string to a JS Date
 const safeDate = (dateValue: string | undefined): Date | null => {
   if (!dateValue) return null;
   const parsed = parseISO(dateValue);
@@ -47,8 +46,9 @@ const safeDate = (dateValue: string | undefined): Date | null => {
 export default function ExpensesPage() {
   const { toast } = useToast();
   const { employees, expenses, setExpenses } = useAppContext();
-  const [isLoading, setIsLoading] = useState(true);
-
+  
+  const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
+  
   const chartRef = useRef<HTMLDivElement>(null);
   const pdfHeaderRef = useRef<HTMLDivElement>(null);
   const defaultLogo = "https://picsum.photos/seed/ashley-logo/300/100";
@@ -56,7 +56,6 @@ export default function ExpensesPage() {
   const [customFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
 
 
-  // Form state
   const [open, setOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
   const [amount, setAmount] = useState<string>('');
@@ -73,10 +72,16 @@ export default function ExpensesPage() {
     return [...warehouseEmployees].sort((a, b) => a.name.localeCompare(b.name));
   }, [warehouseEmployees]);
 
-  if(employees && expenses && isLoading) {
-      setIsLoading(false);
-  }
-
+  const expensesForMonth = useMemo(() => {
+      const start = startOfMonth(selectedMonth);
+      const end = endOfMonth(selectedMonth);
+      return expenses.filter(exp => {
+          const expDate = parseISO(exp.date);
+          return isWithinInterval(expDate, {start, end});
+      });
+  }, [expenses, selectedMonth]);
+  
+  const isLoading = !employees || !expenses;
 
   const resetForm = () => {
     setSelectedEmployee('');
@@ -123,12 +128,12 @@ export default function ExpensesPage() {
   }
 
   const { expensesByEmployee, grandTotal, chartData } = useMemo(() => {
-    if (!expenses || !employees) return { expensesByEmployee: new Map(), grandTotal: 0, chartData: [] };
+    if (!expensesForMonth || !employees) return { expensesByEmployee: new Map(), grandTotal: 0, chartData: [] };
 
     const grouped = new Map<string, { employee: Employee; expenses: Expense[]; total: number }>();
     let total = 0;
 
-    for (const expense of expenses) {
+    for (const expense of expensesForMonth) {
       const employee = employees.find(e => e.id === expense.employeeId);
       if (employee) {
         if (!grouped.has(employee.id)) {
@@ -152,12 +157,12 @@ export default function ExpensesPage() {
     const sortedGrouped = new Map([...grouped.entries()].sort((a, b) => a[1].employee.name.localeCompare(b[1].employee.name)));
 
     const chartData = Array.from(sortedGrouped.values()).map(data => ({
-        name: data.employee.name.split(' ')[0], // Use first name for chart label
+        name: data.employee.name.split(' ')[0],
         total: data.total
     })).sort((a,b) => b.total - a.total);
 
     return { expensesByEmployee: sortedGrouped, grandTotal: total, chartData };
-  }, [expenses, employees]);
+  }, [expensesForMonth, employees]);
 
   const handleDownloadReport = async () => {
     if (!pdfHeaderRef.current) return;
@@ -172,7 +177,7 @@ export default function ExpensesPage() {
         doc.setFont(fontName);
     }
     
-    const headerCanvas = await html2canvas(pdfHeaderRef.current, { scale: 2, backgroundColor: null });
+    const headerCanvas = await html2canvas(pdfHeaderRef.current, { scale: 2, backgroundColor: 'white' });
     const headerImgData = headerCanvas.toDataURL('image/png');
     const pdfWidth = doc.internal.pageSize.getWidth();
     const headerRatio = headerCanvas.width / headerCanvas.height;
@@ -217,12 +222,12 @@ export default function ExpensesPage() {
         footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' },
         didParseCell: function (data) {
             if (customFontBase64) {
-                data.cell.styles.font = "CustomFont";
+                (data.cell.styles as any).font = "CustomFont";
             }
         }
     });
 
-    doc.save(`employee-expenses-report-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+    doc.save(`employee-expenses-${format(selectedMonth, 'yyyy-MM')}.pdf`);
   }
 
   return (
@@ -231,8 +236,8 @@ export default function ExpensesPage() {
          <div ref={pdfHeaderRef} style={{ width: '700px', background: 'white', color: 'black' }}>
             <ReportPdfHeader
               title="Employee Expenses Report"
-              subtitle={`As of ${format(new Date(), 'PPP')}`}
-              logoSrc={logoSrc}
+              subtitle={`For ${format(selectedMonth, 'MMMM yyyy')}`}
+              logoSrc={logoSrc ?? ''}
             />
           </div>
     </div>
@@ -249,7 +254,18 @@ export default function ExpensesPage() {
               </Button>
               <h1 className="text-xl font-bold">Ashley Expenses</h1>
             </div>
-            <div className='flex items-center gap-2'>
+             <div className='flex items-center gap-2'>
+                 <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant={"outline"} className={cn("w-48 justify-start text-left font-normal", !selectedMonth && "text-muted-foreground")}>
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {selectedMonth ? format(selectedMonth, "MMMM yyyy") : <span>Pick a month</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="end">
+                    <Calendar mode="single" selected={selectedMonth} onSelect={(date) => date && setSelectedMonth(date)} initialFocus captionLayout="dropdown-buttons" fromYear={2020} toYear={new Date().getFullYear() + 1} />
+                  </PopoverContent>
+                </Popover>
                 <Button onClick={handleDownloadReport} variant="outline" disabled={expensesByEmployee.size === 0}>
                     <FileDown className="mr-2 h-4 w-4"/>
                     Download Report
@@ -287,7 +303,7 @@ export default function ExpensesPage() {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="amount">Amount</Label>
+              <Label htmlFor="amount">Amount (IQD)</Label>
               <div className="relative">
                 <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/>
                 <Input id="amount" type="number" value={amount} onChange={e => setAmount(e.target.value)} required placeholder="0.00" className="pl-8"/>
@@ -310,7 +326,7 @@ export default function ExpensesPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
+              <Label htmlFor="notes">Notes (Optional)</Label>
               <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. Lunch with client" />
             </div>
 
@@ -336,7 +352,7 @@ export default function ExpensesPage() {
             <>
                 <Card className="mb-8">
                     <CardHeader>
-                        <CardTitle>Expenses per Employee</CardTitle>
+                        <CardTitle>Expenses per Employee for {format(selectedMonth, 'MMMM yyyy')}</CardTitle>
                     </CardHeader>
                     <CardContent ref={chartRef} className="bg-background">
                         <ChartContainer config={{}} className="h-[250px] w-full">
@@ -344,7 +360,7 @@ export default function ExpensesPage() {
                                 <BarChart data={chartData} margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                     <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-                                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${formatCurrency(value)}`}/>
+                                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${formatCurrency(value as number)}`}/>
                                     <Tooltip
                                         cursor={{ fill: 'hsla(var(--muted), 0.5)' }}
                                         contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}
@@ -365,7 +381,7 @@ export default function ExpensesPage() {
                                 <div className="flex justify-between items-center">
                                     <CardTitle className="text-xl flex items-center gap-2"><User className="h-5 w-5 text-primary"/>{data.employee.name}</CardTitle>
                                     <div className="text-right">
-                                        <p className="text-sm text-muted-foreground">Employee Total</p>
+                                        <p className="text-sm text-muted-foreground">Employee Total for Month</p>
                                         <p className="text-xl font-bold text-primary">{formatCurrency(data.total)}</p>
                                     </div>
                                 </div>
@@ -379,27 +395,35 @@ export default function ExpensesPage() {
                                             <div>
                                                 <p className="font-semibold">{formatCurrency(expense.amount)}</p>
                                                 <p className="text-sm text-muted-foreground">{formattedDate ? format(formattedDate, 'MMMM d, yyyy') : 'Invalid Date'}</p>
-                                                <p className="text-sm mt-1">{expense.notes}</p>
+                                                {expense.notes && <p className="text-sm mt-1">{expense.notes}</p>}
                                             </div>
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8">
-                                                        <Trash2 className="h-4 w-4"/>
-                                                    </Button>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader>
-                                                        <AlertDialogTitle>Delete Expense?</AlertDialogTitle>
-                                                        <AlertDialogDescription>
-                                                        This will permanently delete this expense record. This action cannot be undone.
-                                                        </AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => handleDelete(expense.id)}>Delete</AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="text-muted-foreground h-8 w-8"><MoreHorizontal className="h-4 w-4"/></Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent>
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                                            <Trash2 className="mr-2 h-4 w-4 text-destructive" />
+                                                            <span className="text-destructive">Delete</span>
+                                                          </DropdownMenuItem>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>Delete Expense?</AlertDialogTitle>
+                                                                <AlertDialogDescription>
+                                                                This will permanently delete this expense record. This action cannot be undone.
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                <AlertDialogAction onClick={() => handleDelete(expense.id)}>Delete</AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
                                         </div>
                                     );
                                 })}
@@ -411,7 +435,7 @@ export default function ExpensesPage() {
                  <Card className="mt-8 bg-card">
                     <CardHeader>
                         <div className="flex justify-between items-center">
-                            <CardTitle>Overall Total</CardTitle>
+                            <CardTitle>Month's Total</CardTitle>
                             <p className="text-2xl font-bold text-primary">{formatCurrency(grandTotal)}</p>
                         </div>
                     </CardHeader>
@@ -421,8 +445,8 @@ export default function ExpensesPage() {
           <Dialog open={open} onOpenChange={setOpen}>
             <div className="text-center py-16 border-2 border-dashed rounded-lg">
               <DollarSign className="mx-auto h-12 w-12 text-muted-foreground" />
-              <h3 className="mt-4 text-lg font-medium">No Expenses Found</h3>
-              <p className="mt-2 text-sm text-muted-foreground">Get started by adding the first expense.</p>
+              <h3 className="mt-4 text-lg font-medium">No Expenses Found for {format(selectedMonth, 'MMMM yyyy')}</h3>
+              <p className="mt-2 text-sm text-muted-foreground">Get started by adding the first expense for this month.</p>
               <div className="mt-6">
                    <DialogTrigger asChild>
                       <Button>
@@ -439,5 +463,3 @@ export default function ExpensesPage() {
     </>
   );
 }
-
-    
