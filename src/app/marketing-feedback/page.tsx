@@ -170,6 +170,7 @@ export default function MarketingFeedbackPage() {
     const [isManageQuestionsOpen, setManageQuestionsOpen] = useState(false);
     
     const pdfCardRef = useRef<HTMLDivElement>(null);
+    const chartCardRef = useRef<HTMLDivElement>(null);
 
     const marketingEmployees = useMemo(() => {
         return employees.filter(e => e.role === 'Marketing');
@@ -276,7 +277,7 @@ export default function MarketingFeedbackPage() {
             doc.setFont(fontName);
         }
 
-        // Page 1: Title page
+        // 1. Add Header Page
         if (pdfCardRef.current) {
             const headerCanvas = await html2canvas(pdfCardRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
             const headerImgData = headerCanvas.toDataURL('image/png');
@@ -286,50 +287,48 @@ export default function MarketingFeedbackPage() {
             const finalHeaderHeight = finalHeaderWidth / headerRatio;
             doc.addImage(headerImgData, 'PNG', 0, 0, finalHeaderWidth, finalHeaderHeight);
         }
-        
-        // Page 2: Overall Rankings
+
+        // 2. Add Overall Rankings Page
         if (evaluationSummary.length > 0) {
             doc.addPage();
             doc.setFontSize(16);
             doc.text("Overall Employee Rankings", 14, 22);
-            doc.setFontSize(11);
-            doc.setTextColor(100);
-            doc.text("Based on the sum of all feedback scores.", 14, 32);
-
             autoTable(doc, {
-                startY: 40,
+                startY: 30,
                 head: [['Rank', 'Employee', 'Total Score']],
                 body: evaluationSummary.map((item, index) => [index + 1, item.name, item.score]),
                 theme: 'striped',
                 headStyles: { fillColor: [40, 40, 40] },
-                didParseCell: function (data) {
-                    if (customFontBase64) {
-                        data.cell.styles.font = "CustomFont";
-                    }
-                }
+                didParseCell: (data) => { if (customFontBase64) data.cell.styles.font = "CustomFont"; }
             });
         }
         
-        // Subsequent Pages: Per-Question Rankings
+        // 3. Add Chart Page
+        if (chartCardRef.current) {
+            doc.addPage();
+            const chartCanvas = await html2canvas(chartCardRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
+            const chartImgData = chartCanvas.toDataURL('image/png');
+            const pdfWidth = doc.internal.pageSize.getWidth();
+            const chartRatio = chartCanvas.width / chartCanvas.height;
+            const finalChartWidth = pdfWidth - 28;
+            const finalChartHeight = finalChartWidth / chartRatio;
+            doc.addImage(chartImgData, 'PNG', 14, 22, finalChartWidth, finalChartHeight);
+        }
+
+
+        // 4. Subsequent Pages: Per-Question Rankings
         if (perQuestionRankings && perQuestionRankings.length > 0) {
-            perQuestionRankings.forEach((q, index) => {
+            perQuestionRankings.forEach((q) => {
                 doc.addPage();
-                let startY = 40;
-
-                doc.setFontSize(14);
-                doc.text(q.questionText, 14, startY - 18);
-
+                doc.setFontSize(16);
+                doc.text(q.questionText, 14, 22);
                 autoTable(doc, {
-                    startY: startY,
+                    startY: 30,
                     head: [['Rank', 'Employee', 'Total Score for Question']],
                     body: q.scores.map((s, rankIndex) => [rankIndex + 1, s.name, s.score]),
                     theme: 'striped',
                     headStyles: { fillColor: [40, 40, 40] },
-                    didParseCell: function (data) {
-                        if (customFontBase64) {
-                            data.cell.styles.font = "CustomFont";
-                        }
-                    }
+                    didParseCell: (data) => { if (customFontBase64) data.cell.styles.font = "CustomFont"; }
                 });
             });
         }
@@ -442,7 +441,7 @@ export default function MarketingFeedbackPage() {
                                 <Card>
                                     <CardHeader>
                                         <CardTitle>Overall Employee Rankings</CardTitle>
-                                        <CardDescription>Based on the summation of all feedback scores. Max Score: {maxScore}</CardDescription>
+                                        <CardDescription>Based on the sum of all feedback scores. Max Score per evaluation: {maxScore}</CardDescription>
                                     </CardHeader>
                                     <CardContent className="max-h-[300px] overflow-y-auto">
                                     {isLoading ? <Loader2 className="animate-spin" /> : (
@@ -462,7 +461,7 @@ export default function MarketingFeedbackPage() {
                                     </CardContent>
                                 </Card>
                             </div>
-                            <Card className="lg:col-span-2">
+                            <Card className="lg:col-span-2" ref={chartCardRef}>
                                 <CardHeader>
                                     <CardTitle>Employee Performance Chart</CardTitle>
                                     <CardDescription>Ranking from strongest to weakest based on total score.</CardDescription>
