@@ -26,9 +26,9 @@ export default function ExpenseArchivePage() {
       <header className="flex items-center justify-between gap-4 mb-8">
         <div className="flex items-center gap-4">
           <Button variant="outline" size="icon" asChild>
-            <Link href="/ashley-expenses"><ArrowLeft /></Link>
+            <Link href="/expenses"><ArrowLeft /></Link>
           </Button>
-          <h1 className="text-2xl md:text-3xl font-bold">Expense Reports</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">Expense Reports Archive</h1>
         </div>
         <Button asChild>
           <Link href="/expenses/add"><Plus className="mr-2" /> Create Report</Link>

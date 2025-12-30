@@ -97,7 +97,7 @@ export default function AddExpenseReportPage() {
       <header className="flex items-center justify-between gap-4 mb-8">
         <div className="flex items-center gap-4">
           <Button variant="outline" size="icon" asChild>
-            <Link href="/expenses/archive"><ArrowLeft /></Link>
+            <Link href="/expenses"><ArrowLeft /></Link>
           </Button>
           <h1 className="text-2xl md:text-3xl font-bold">New Expense Report</h1>
         </div>

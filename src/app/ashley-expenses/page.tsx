@@ -11,14 +11,8 @@ const menuItems = [
   {
     title: "Expense Reports",
     icon: FileText,
-    href: "/expenses/archive",
+    href: "/expenses",
     color: "bg-blue-500",
-  },
-  {
-    title: "Monthly Expense Report",
-    icon: Calendar,
-    href: "/expenses/monthly-report",
-    color: "bg-teal-500",
   },
   {
     title: "Employee Overtime",
