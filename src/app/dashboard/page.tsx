@@ -35,7 +35,7 @@ export default function Dashboard() {
   };
 
   const menuItems = [
-    { title: "Ashley Expenses", icon: CreditCard, href: "/ashley-expenses", color: "bg-blue-500" },
+    { title: "Ashley employees mangment", icon: CreditCard, href: "/ashley-expenses", color: "bg-blue-500" },
     { title: "Transmit Cargo", icon: PackagePlus, href: "/transmit", color: "bg-yellow-500" },
     { title: "Placement & Storage", icon: Box, href: "/items", color: "bg-green-500" },
     { title: "Marketing Feedback", icon: Star, href: "/marketing-feedback", color: "bg-cyan-500" },

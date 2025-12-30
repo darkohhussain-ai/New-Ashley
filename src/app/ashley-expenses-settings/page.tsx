@@ -13,10 +13,10 @@ export default function AshleyExpensesSettingsPage() {
           <Button variant="outline" size="icon" asChild>
             <Link href="/ashley-expenses">
               <ArrowLeft />
-              <span className="sr-only">Back to Ashley Expenses</span>
+              <span className="sr-only">Back to Ashley employees mangment</span>
             </Link>
           </Button>
-          <h1 className="text-xl font-bold">Ashley Expenses Settings</h1>
+          <h1 className="text-xl font-bold">Ashley employees mangment Settings</h1>
         </div>
       </header>
       <main className="container mx-auto p-4 md:p-8">

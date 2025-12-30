@@ -57,7 +57,7 @@ export default function AshleyExpensesDashboard() {
               <span className="sr-only">Back to Dashboard</span>
             </Link>
           </Button>
-          <h1 className="text-xl font-bold">Ashley Employees Expenses</h1>
+          <h1 className="text-xl font-bold">Ashley employees mangment</h1>
         </div>
       </header>
       <main className='container mx-auto p-4 md:p-8'>

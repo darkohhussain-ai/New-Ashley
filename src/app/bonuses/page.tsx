@@ -13,7 +13,7 @@ export default function BonusesPage() {
           <Button variant="outline" size="icon" asChild>
             <Link href="/ashley-expenses">
               <ArrowLeft />
-              <span className="sr-only">Back to Ashley Expenses</span>
+              <span className="sr-only">Back to Ashley employees mangment</span>
             </Link>
           </Button>
           <h1 className="text-xl font-bold">Loading / Unloading Bonus</h1>
