@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, CreditCard, Clock, Gift, Banknote, Settings, Plus, Archive, FilePlus, Eye, FileText } from 'lucide-react';
+import { ArrowLeft, CreditCard, Clock, Gift, Banknote, Settings, Plus, Archive, FilePlus, Eye, FileText, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -13,6 +13,12 @@ const menuItems = [
     icon: FileText,
     href: "/expenses/archive",
     color: "bg-blue-500",
+  },
+  {
+    title: "Monthly Expense Report",
+    icon: Calendar,
+    href: "/expenses/monthly-report",
+    color: "bg-teal-500",
   },
   {
     title: "Employee Overtime",
