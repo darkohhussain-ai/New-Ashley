@@ -289,8 +289,8 @@ export default function MarketingFeedbackPage() {
         }
 
         // 2. Add Overall Rankings Page
+        doc.addPage();
         if (evaluationSummary.length > 0) {
-            doc.addPage();
             doc.setFontSize(16);
             doc.text("Overall Employee Rankings", 14, 22);
             autoTable(doc, {
@@ -303,16 +303,25 @@ export default function MarketingFeedbackPage() {
             });
         }
         
-        // 3. Add Chart Page
+        let lastY = (doc as any).lastAutoTable.finalY || 30;
+
+        // 3. Add Chart on the same page
         if (chartCardRef.current) {
-            doc.addPage();
             const chartCanvas = await html2canvas(chartCardRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
             const chartImgData = chartCanvas.toDataURL('image/png');
             const pdfWidth = doc.internal.pageSize.getWidth();
             const chartRatio = chartCanvas.width / chartCanvas.height;
             const finalChartWidth = pdfWidth - 28;
             const finalChartHeight = finalChartWidth / chartRatio;
-            doc.addImage(chartImgData, 'PNG', 14, 22, finalChartWidth, finalChartHeight);
+
+            if (lastY + finalChartHeight + 20 > doc.internal.pageSize.getHeight()) {
+                doc.addPage();
+                lastY = 22;
+            } else {
+                lastY += 20;
+            }
+
+            doc.addImage(chartImgData, 'PNG', 14, lastY, finalChartWidth, finalChartHeight);
         }
 
 
@@ -402,6 +411,7 @@ export default function MarketingFeedbackPage() {
                     <MarketingFeedbackPdfCard
                         logoSrc={logoSrc}
                         totalEvaluations={marketingFeedbacks.length}
+                        evaluationSummary={evaluationSummary}
                     />
                 </div>
             </div>
@@ -622,4 +632,3 @@ export default function MarketingFeedbackPage() {
     );
 }
 
-    
