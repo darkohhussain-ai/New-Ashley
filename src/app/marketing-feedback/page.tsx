@@ -25,6 +25,8 @@ import { MarketingFeedbackPdfCard } from '@/components/marketing/marketing-feedb
 import useLocalStorage from '@/hooks/use-local-storage';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import html2canvas from 'html2canvas';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { cn } from '@/lib/utils';
 
 
 function AddMarketingEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean, onOpenChange: (open: boolean) => void, addEmployee: (employee: Omit<Employee, 'id'>) => void }) {
@@ -219,6 +221,10 @@ export default function MarketingFeedbackPage() {
         setIsSubmitting(false);
     };
 
+    const maxScore = useMemo(() => {
+        return evaluationQuestions.length * 3;
+    }, [evaluationQuestions]);
+
     const evaluationSummary = useMemo(() => {
         if (!marketingFeedbacks || !marketingEmployees) return [];
         
@@ -304,23 +310,14 @@ export default function MarketingFeedbackPage() {
             });
         }
         
-        let startY = (doc as any).lastAutoTable.finalY + 30 || 40;
-
         // Subsequent Pages: Per-Question Rankings
         if (perQuestionRankings && perQuestionRankings.length > 0) {
             perQuestionRankings.forEach((q, index) => {
-                const tableHeight = (q.scores.length + 1) * 20; // Estimate table height
-                if (index === 0) {
-                     doc.addPage(); // Start on a new page after overall rankings
-                     startY = 40;
-                } else if (startY + tableHeight + 40 > doc.internal.pageSize.getHeight()) {
-                    doc.addPage();
-                    startY = 40;
-                }
+                doc.addPage();
+                let startY = 40;
 
                 doc.setFontSize(14);
-                doc.text(q.questionText, 14, startY);
-                startY += 15;
+                doc.text(q.questionText, 14, startY - 18);
 
                 autoTable(doc, {
                     startY: startY,
@@ -334,13 +331,11 @@ export default function MarketingFeedbackPage() {
                         }
                     }
                 });
-                startY = (doc as any).lastAutoTable.finalY + 30;
             });
         }
         
         doc.save(`Marketing_Feedback_Report_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
     };
-
 
     const handleDownloadExcel = () => {
         if (!marketingFeedbacks.length) {
@@ -391,6 +386,15 @@ export default function MarketingFeedbackPage() {
         XLSX.writeFile(wb, `Marketing_Feedback_Export_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
     };
 
+    const getRowClass = (index: number) => {
+        switch (index) {
+            case 0: return "bg-yellow-100 dark:bg-yellow-900/50 hover:bg-yellow-100/80 dark:hover:bg-yellow-900/60";
+            case 1: return "bg-gray-100 dark:bg-gray-800/50 hover:bg-gray-100/80 dark:hover:bg-gray-800/60";
+            case 2: return "bg-orange-100 dark:bg-orange-900/50 hover:bg-orange-100/80 dark:hover:bg-orange-900/60";
+            default: return "";
+        }
+    };
+
 
     return (
         <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
@@ -434,31 +438,49 @@ export default function MarketingFeedbackPage() {
                     </div>
                     <div className="space-y-8">
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            <Card className="lg:col-span-1">
-                                <CardHeader>
-                                    <CardTitle>Total Evaluations</CardTitle>
-                                    <CardDescription>Total number of feedback forms submitted.</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-5xl font-bold">{marketingFeedbacks.length}</p>
-                                </CardContent>
-                            </Card>
+                             <div className="lg:col-span-1 space-y-8">
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Overall Employee Rankings</CardTitle>
+                                        <CardDescription>Based on the summation of all feedback scores. Max Score: {maxScore}</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="max-h-[300px] overflow-y-auto">
+                                    {isLoading ? <Loader2 className="animate-spin" /> : (
+                                        <Table>
+                                            <TableHeader><TableRow><TableHead>Rank</TableHead><TableHead>Employee</TableHead><TableHead className="text-right">Total Score</TableHead></TableRow></TableHeader>
+                                            <TableBody>
+                                                {evaluationSummary.map((item, index) => (
+                                                    <TableRow key={item.employeeId} className={cn(getRowClass(index))}>
+                                                        <TableCell className="font-bold">{index + 1}</TableCell>
+                                                        <TableCell>{item.name}</TableCell>
+                                                        <TableCell className="text-right font-medium">{item.score}</TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    )}
+                                    </CardContent>
+                                </Card>
+                            </div>
                             <Card className="lg:col-span-2">
                                 <CardHeader>
-                                    <CardTitle>Overall Employee Rankings</CardTitle>
-                                    <CardDescription>Based on the summation of all feedback scores.</CardDescription>
+                                    <CardTitle>Employee Performance Chart</CardTitle>
+                                    <CardDescription>Ranking from strongest to weakest based on total score.</CardDescription>
                                 </CardHeader>
-                                <CardContent className="max-h-[250px] overflow-y-auto">
-                                {isLoading ? <Loader2 className="animate-spin" /> : (
-                                    <Table>
-                                        <TableHeader><TableRow><TableHead>Rank</TableHead><TableHead>Employee</TableHead><TableHead className="text-right">Total Score</TableHead></TableRow></TableHeader>
-                                        <TableBody>
-                                            {evaluationSummary.map((item, index) => (
-                                                <TableRow key={item.employeeId}><TableCell className="font-bold">{index + 1}</TableCell><TableCell>{item.name}</TableCell><TableCell className="text-right font-medium">{item.score}</TableCell></TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                )}
+                                <CardContent>
+                                    <ResponsiveContainer width="100%" height={300}>
+                                        <BarChart data={evaluationSummary} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                                            <CartesianGrid strokeDasharray="3 3" />
+                                            <XAxis type="number" />
+                                            <YAxis dataKey="name" type="category" width={80} tick={{ fontSize: 12 }} />
+                                            <Tooltip
+                                                contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}
+                                                labelStyle={{ color: 'hsl(var(--foreground))' }}
+                                            />
+                                            <Legend />
+                                            <Bar dataKey="score" name="Total Score" fill="hsl(var(--primary))" />
+                                        </BarChart>
+                                    </ResponsiveContainer>
                                 </CardContent>
                             </Card>
                         </div>
@@ -569,7 +591,7 @@ export default function MarketingFeedbackPage() {
                                         </TableHeader>
                                         <TableBody>
                                                 {evaluationSummary.map((item, index) => (
-                                                    <TableRow key={item.employeeId}>
+                                                    <TableRow key={item.employeeId} className={cn(getRowClass(index))}>
                                                         <TableCell className="font-bold">{index + 1}</TableCell>
                                                         <TableCell>{item.name}</TableCell>
                                                         <TableCell className="text-right font-medium">{item.score}</TableCell>
@@ -601,3 +623,4 @@ export default function MarketingFeedbackPage() {
     );
 }
 
+    
