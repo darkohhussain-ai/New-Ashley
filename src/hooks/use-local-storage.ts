@@ -35,7 +35,15 @@ function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((val
     const item = window.localStorage.getItem(key);
     if (item) {
       try {
-        const parsedItem = JSON.parse(item);
+        let parsedItem;
+        // Check if item is a JSON string before parsing
+        if (item.startsWith('{') || item.startsWith('[') || item.startsWith('"')) {
+            parsedItem = JSON.parse(item);
+        } else {
+            // It's likely a raw string that's not valid JSON, like a font name.
+            parsedItem = item;
+        }
+
         if (typeof parsedItem === 'string' && isIdbKey(parsedItem)) {
           // It's a pointer to an IndexedDB value
           get(fromIdbKey(parsedItem)).then(idbValue => {
@@ -80,7 +88,13 @@ function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((val
               }
             } catch {}
         }
-        window.localStorage.setItem(key, JSON.stringify(valueToStore));
+        
+        if (typeof valueToStore === 'string') {
+          window.localStorage.setItem(key, valueToStore);
+        } else {
+          window.localStorage.setItem(key, JSON.stringify(valueToStore));
+        }
+        
         setStoredValue(valueToStore);
       }
     } catch (error) {
