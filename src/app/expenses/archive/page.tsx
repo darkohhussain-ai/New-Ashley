@@ -3,7 +3,7 @@
 
 import { useMemo } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Archive, Calendar as CalendarIcon, DollarSign, Eye } from 'lucide-react';
+import { ArrowLeft, Archive, Calendar as CalendarIcon, DollarSign, Eye, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { format, parseISO } from 'date-fns';
@@ -23,11 +23,16 @@ export default function ExpenseArchivePage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
-      <header className="flex items-center gap-4 mb-8">
-        <Button variant="outline" size="icon" asChild>
-          <Link href="/ashley-expenses"><ArrowLeft /></Link>
+      <header className="flex items-center justify-between gap-4 mb-8">
+        <div className="flex items-center gap-4">
+          <Button variant="outline" size="icon" asChild>
+            <Link href="/ashley-expenses"><ArrowLeft /></Link>
+          </Button>
+          <h1 className="text-2xl md:text-3xl font-bold">Expense Reports</h1>
+        </div>
+        <Button asChild>
+          <Link href="/expenses/add"><Plus className="mr-2" /> Create Report</Link>
         </Button>
-        <h1 className="text-2xl md:text-3xl font-bold">Expense Report Archive</h1>
       </header>
       <main>
         {isLoading ? (
