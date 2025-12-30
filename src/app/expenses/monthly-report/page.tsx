@@ -228,39 +228,67 @@ export default function MonthlyExpenseReportPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Detailed Expenses for {selectedDate ? format(selectedDate, 'MMMM yyyy') : ''}</CardTitle>
+                <CardTitle>Summary for {selectedDate ? format(selectedDate, 'MMMM yyyy') : ''}</CardTitle>
+                 <CardDescription>Each employee is listed once with their total expenses for the month.</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Report</TableHead>
-                        <TableHead>Employee</TableHead>
-                        <TableHead>Notes</TableHead>
-                        <TableHead className="text-right">Amount</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {monthlyData.expenses.map(item => (
-                        <TableRow key={item.id}>
-                          <TableCell>{format(parseISO(expenseReports.find(r=>r.id === item.expenseReportId)!.reportDate), 'PP')}</TableCell>
-                          <TableCell>{getReportName(item.expenseReportId)}</TableCell>
-                          <TableCell>{getEmployeeName(item.employeeId)}</TableCell>
-                          <TableCell className="text-muted-foreground">{item.notes || 'N/A'}</TableCell>
-                          <TableCell className="text-right font-semibold">{formatCurrency(item.amount)}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                    <TableFooter>
-                        <TableRow>
-                            <TableCell colSpan={4} className="text-lg font-bold">Grand Total</TableCell>
-                            <TableCell className="text-right text-lg font-bold text-primary">{formatCurrency(monthlyData.total)}</TableCell>
-                        </TableRow>
-                    </TableFooter>
-                  </Table>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Employee</TableHead>
+                                <TableHead className="text-right">Total Amount</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {monthlyData.summary.map(item => (
+                                <TableRow key={item.employeeId}>
+                                    <TableCell className="font-medium">{item.employeeName}</TableCell>
+                                    <TableCell className="text-right font-semibold">{formatCurrency(item.totalAmount)}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                        <TableFooter>
+                            <TableRow>
+                                <TableCell className="text-lg font-bold">Grand Total</TableCell>
+                                <TableCell className="text-right text-lg font-bold text-primary">{formatCurrency(monthlyData.total)}</TableCell>
+                            </TableRow>
+                        </TableFooter>
+                    </Table>
                 </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>All Transactions</CardTitle>
+                <CardDescription>A detailed list of all individual expense items for the selected month.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                 <div className="overflow-x-auto">
+                    <Table>
+                        <TableHeader>
+                        <TableRow>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Report</TableHead>
+                            <TableHead>Employee</TableHead>
+                            <TableHead>Notes</TableHead>
+                            <TableHead className="text-right">Amount</TableHead>
+                        </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                        {monthlyData.expenses.map(item => (
+                            <TableRow key={item.id}>
+                            <TableCell>{format(parseISO(expenseReports.find(r=>r.id === item.expenseReportId)!.reportDate), 'PP')}</TableCell>
+                            <TableCell>{getReportName(item.expenseReportId)}</TableCell>
+                            <TableCell>{getEmployeeName(item.employeeId)}</TableCell>
+                            <TableCell className="text-muted-foreground">{item.notes || 'N/A'}</TableCell>
+                            <TableCell className="text-right font-semibold">{formatCurrency(item.amount)}</TableCell>
+                            </TableRow>
+                        ))}
+                        </TableBody>
+                    </Table>
+                 </div>
               </CardContent>
             </Card>
           </div>
