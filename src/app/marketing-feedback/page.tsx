@@ -270,27 +270,28 @@ export default function MarketingFeedbackPage() {
             doc.setFont(fontName);
         }
 
-        // 1. Add Header Page
+        // Page 1: Title page
         if (pdfCardRef.current) {
             const headerCanvas = await html2canvas(pdfCardRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
             const headerImgData = headerCanvas.toDataURL('image/png');
             const pdfWidth = doc.internal.pageSize.getWidth();
             const headerRatio = headerCanvas.width / headerCanvas.height;
-            const finalHeaderWidth = pdfWidth - 28;
+            const finalHeaderWidth = pdfWidth;
             const finalHeaderHeight = finalHeaderWidth / headerRatio;
-            doc.addImage(headerImgData, 'PNG', 14, 14, finalHeaderWidth, finalHeaderHeight);
+            doc.addImage(headerImgData, 'PNG', 0, 0, finalHeaderWidth, finalHeaderHeight);
         }
         
-        let startY = 160;
-
-        // 2. Add Overall Employee Rankings table
+        // Page 2: Overall Rankings
         if (evaluationSummary.length > 0) {
-            doc.setFontSize(14);
-            doc.text("Overall Employee Rankings", 14, startY);
-            startY += 15;
+            doc.addPage();
+            doc.setFontSize(16);
+            doc.text("Overall Employee Rankings", 14, 22);
+            doc.setFontSize(11);
+            doc.setTextColor(100);
+            doc.text("Based on the sum of all feedback scores.", 14, 32);
 
             autoTable(doc, {
-                startY: startY,
+                startY: 40,
                 head: [['Rank', 'Employee', 'Total Score']],
                 body: evaluationSummary.map((item, index) => [index + 1, item.name, item.score]),
                 theme: 'striped',
@@ -301,24 +302,30 @@ export default function MarketingFeedbackPage() {
                     }
                 }
             });
-            startY = (doc as any).lastAutoTable.finalY + 20;
         }
+        
+        let startY = (doc as any).lastAutoTable.finalY + 30 || 40;
 
-        // 3. Add Per-Question Rankings
+        // Subsequent Pages: Per-Question Rankings
         if (perQuestionRankings && perQuestionRankings.length > 0) {
-            perQuestionRankings.forEach(q => {
-                 if (startY + (q.scores.length * 20) > doc.internal.pageSize.getHeight()) {
+            perQuestionRankings.forEach((q, index) => {
+                const tableHeight = (q.scores.length + 1) * 20; // Estimate table height
+                if (index === 0) {
+                     doc.addPage(); // Start on a new page after overall rankings
+                     startY = 40;
+                } else if (startY + tableHeight + 40 > doc.internal.pageSize.getHeight()) {
                     doc.addPage();
-                    startY = 20;
+                    startY = 40;
                 }
+
                 doc.setFontSize(14);
                 doc.text(q.questionText, 14, startY);
                 startY += 15;
 
                 autoTable(doc, {
                     startY: startY,
-                    head: [['Rank', 'Employee', 'Score']],
-                    body: q.scores.map((s, index) => [index + 1, s.name, s.score]),
+                    head: [['Rank', 'Employee', 'Total Score for Question']],
+                    body: q.scores.map((s, rankIndex) => [rankIndex + 1, s.name, s.score]),
                     theme: 'striped',
                     headStyles: { fillColor: [40, 40, 40] },
                     didParseCell: function (data) {
@@ -327,7 +334,7 @@ export default function MarketingFeedbackPage() {
                         }
                     }
                 });
-                startY = (doc as any).lastAutoTable.finalY + 20;
+                startY = (doc as any).lastAutoTable.finalY + 30;
             });
         }
         
@@ -388,7 +395,7 @@ export default function MarketingFeedbackPage() {
     return (
         <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
              <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-                <div ref={pdfCardRef}>
+                <div ref={pdfCardRef} style={{ width: '700px' }}>
                     <MarketingFeedbackPdfCard
                         logoSrc={logoSrc}
                         totalEvaluations={marketingFeedbacks.length}
@@ -594,4 +601,3 @@ export default function MarketingFeedbackPage() {
     );
 }
 
-    
