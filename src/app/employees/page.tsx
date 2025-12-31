@@ -26,7 +26,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { useAppContext } from "@/context/app-provider"
-import type { Employee, Expense, Overtime, Bonus, CashWithdrawal } from "@/lib/types"
+import type { Employee, Expense, Overtime, Bonus, CashWithdrawal, AllPdfSettings } from "@/lib/types"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { EmployeeReportPdfHeader } from "@/components/employees/employee-report-pdf-header"
 import { Separator } from "@/components/ui/separator"
@@ -58,7 +58,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
         bonuses,
         withdrawals,
     } = useAppContext();
-    const [customFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
+    const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {} });
 
 
     const employee = useMemo(() => employees.find(e => e.id === employeeId), [employees, employeeId]);
@@ -78,9 +78,6 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
     const [phone, setPhone] = useState('');
     const [photoUrl, setPhotoUrl] = useState('');
     const [notes, setNotes] = useState('');
-    
-    const defaultLogo = "https://picsum.photos/seed/ashley-logo/300/100";
-    const [logoSrc] = useLocalStorage('app-logo', defaultLogo);
     
     const cardPdfRef = useRef<HTMLDivElement>(null);
     const reportPdfRef = useRef<HTMLDivElement>(null);
@@ -178,11 +175,13 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
             unit: 'px', 
             format: [600, 360]
         });
+        
+        const settings = pdfSettings.invoice || {};
 
-        if (customFontBase64) {
+        if (settings.customFont) {
             const fontName = "CustomFont";
             const fontStyle = "normal";
-            const fontBase64 = customFontBase64.split(',')[1];
+            const fontBase64 = settings.customFont.split(',')[1];
             pdf.addFileToVFS(`${fontName}.ttf`, fontBase64);
             pdf.addFont(`${fontName}.ttf`, fontName, fontStyle);
             pdf.setFont(fontName);
@@ -204,11 +203,12 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
         if (!reportPdfRef.current || !employee) return;
         
         const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
+        const settings = pdfSettings.report || {};
 
-        if (customFontBase64) {
+        if (settings.customFont) {
             const fontName = "CustomFont";
             const fontStyle = "normal";
-            const fontBase64 = customFontBase64.split(',')[1];
+            const fontBase64 = settings.customFont.split(',')[1];
             pdf.addFileToVFS(`${fontName}.ttf`, fontBase64);
             pdf.addFont(`${fontName}.ttf`, fontName, fontStyle);
             pdf.setFont(fontName);
@@ -243,10 +243,10 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                 body: data.map(bodyMapper),
                 foot: [['Total', '', formatCurrency(total)]],
                 theme: 'striped',
-                headStyles: { fillColor: [40, 40, 40] },
+                headStyles: { fillColor: settings.themeColor || '#22c55e' },
                 footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' },
                 didParseCell: function (data) {
-                    if (customFontBase64) {
+                    if (settings.customFont) {
                         data.cell.styles.font = "CustomFont";
                     }
                 }
@@ -278,11 +278,11 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
     return (
         <>
             <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-                <div ref={cardPdfRef}><EmployeePdfCard employee={employee} logoSrc={logoSrc} /></div>
+                <div ref={cardPdfRef}><EmployeePdfCard employee={employee} settings={pdfSettings.invoice || {}} /></div>
                 <div ref={reportPdfRef} style={{ width: '700px', background: 'white', color: 'black' }}>
                     <EmployeeReportPdfHeader
                         employee={employee}
-                        logoSrc={logoSrc}
+                        settings={pdfSettings.report || {}}
                     />
                 </div>
             </div>

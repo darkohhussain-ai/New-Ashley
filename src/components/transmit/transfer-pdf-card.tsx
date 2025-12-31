@@ -4,7 +4,7 @@
 import { Calendar, Truck } from "lucide-react";
 import { format, parseISO } from 'date-fns';
 import Image from 'next/image';
-import type { Transfer } from "@/lib/types";
+import type { Transfer, PdfSettings } from "@/lib/types";
 
 
 type TransferPdfCardProps = {
@@ -56,5 +56,3 @@ export function TransferPdfCard({ transfer, logoSrc, totalItems }: TransferPdfCa
     </div>
   );
 };
-
-    

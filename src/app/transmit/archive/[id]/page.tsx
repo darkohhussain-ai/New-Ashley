@@ -16,17 +16,14 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAppContext } from '@/context/app-provider';
-import type { Transfer, ItemForTransfer } from '@/lib/types';
+import type { Transfer, ItemForTransfer, AllPdfSettings } from '@/lib/types';
 
 
 export default function ViewTransferPage() {
   const { id: transferId } = useParams();
   const { transfers, transferItems } = useAppContext();
 
-  const defaultLogo = "https://picsum.photos/seed/1/300/100";
-  const [logoSrc] = useLocalStorage('app-logo', defaultLogo);
-  const [customFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
-
+  const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {} });
   const pdfCardRef = useRef<HTMLDivElement>(null);
   
   const transfer = useMemo(() => transfers.find(t => t.id === transferId), [transfers, transferId]);
@@ -38,10 +35,12 @@ export default function ViewTransferPage() {
     if (!pdfCardRef.current || !transfer || !items) return;
     
     const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
-    if (customFontBase64) {
+    const settings = pdfSettings.invoice || {};
+
+    if (settings.customFont) {
         const fontName = "CustomFont";
         const fontStyle = "normal";
-        const fontBase64 = customFontBase64.split(',')[1];
+        const fontBase64 = settings.customFont.split(',')[1];
         pdf.addFileToVFS(`${fontName}.ttf`, fontBase64);
         pdf.addFont(`${fontName}.ttf`, fontName, fontStyle);
         pdf.setFont(fontName);
@@ -64,9 +63,9 @@ export default function ViewTransferPage() {
       body: items.map(item => [item.model, item.quantity, item.notes || '']),
       theme: 'grid',
       styles: { fontSize: 8, cellPadding: 2 },
-      headStyles: { fillColor: [34, 197, 94], textColor: 255, fontStyle: 'bold' },
+      headStyles: { fillColor: settings.themeColor || '#3b82f6', textColor: 255, fontStyle: 'bold' },
       didParseCell: function (data) {
-        if (customFontBase64) {
+        if (settings.customFont) {
             data.cell.styles.font = "CustomFont";
         }
       }
@@ -87,7 +86,7 @@ export default function ViewTransferPage() {
           <div ref={pdfCardRef} style={{ width: '700px' }}>
               <TransferPdfCard
                   transfer={transfer}
-                  logoSrc={logoSrc}
+                  logoSrc={pdfSettings.invoice?.logo ?? null}
                   totalItems={transfer.itemIds.length}
               />
           </div>

@@ -5,15 +5,15 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, Mail, Phone, Cake, Calendar, ShieldCheck, Briefcase } from "lucide-react";
 import { format, parseISO } from 'date-fns';
 import Image from 'next/image';
-import type { Employee } from "@/lib/types";
+import type { Employee, PdfSettings } from "@/lib/types";
 import { useEffect, useState } from "react";
 
 type EmployeePdfCardProps = {
   employee: Employee;
-  logoSrc: string | null;
+  settings: PdfSettings;
 };
 
-export function EmployeePdfCard({ employee, logoSrc }: EmployeePdfCardProps) {
+export function EmployeePdfCard({ employee, settings }: EmployeePdfCardProps) {
   const [formattedDob, setFormattedDob] = useState('N/A');
   const [formattedJoinedDate, setFormattedJoinedDate] = useState('N/A');
   const [isMounted, setIsMounted] = useState(false);
@@ -40,7 +40,7 @@ export function EmployeePdfCard({ employee, logoSrc }: EmployeePdfCardProps) {
 
 
   return (
-    <div className="bg-white text-gray-800 w-[600px] h-[360px] font-sans rounded-lg shadow-lg overflow-hidden border border-gray-200 flex" style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" }}>
+    <div className="bg-white text-gray-800 w-[600px] h-[360px] font-sans rounded-lg shadow-lg overflow-hidden border border-gray-200 flex" style={{ fontFamily: settings.font === 'CustomFont' ? 'CustomPdfFont' : (settings.font || 'sans-serif') }}>
       {/* Left Section - Photo and Details */}
       <div className="w-1/3 bg-gray-50 flex flex-col items-center justify-center p-4 border-r">
           <Avatar className="w-28 h-28 border-4 border-white shadow-lg rounded-md bg-gray-100 mb-4">
@@ -62,20 +62,24 @@ export function EmployeePdfCard({ employee, logoSrc }: EmployeePdfCardProps) {
       {/* Right Section - Header and Info */}
       <div className="w-2/3 flex flex-col">
           {/* Header Section */}
-          <div className="relative h-24 bg-orange-400 p-4 flex justify-between items-center">
+          <div 
+            className="relative h-24 text-white p-4 flex justify-between items-center"
+            style={{ backgroundColor: settings.themeColor || '#3b82f6' }}
+          >
              <div
                 className="absolute inset-0 opacity-20"
                 style={{
                 backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.4\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
                 }}
              ></div>
-            <div className="text-white z-10">
+            <div className="z-10">
                 <h1 className="font-bold text-xl uppercase">{employee.role || 'EMPLOYEE'}</h1>
+                {settings.headerText && <p className="text-xs opacity-90">{settings.headerText}</p>}
             </div>
             <div className="relative w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-md z-10">
                 <div className="w-12 h-12 relative">
-                    {logoSrc ? (
-                        <Image src={logoSrc} alt="Company Logo" fill className="object-contain" />
+                    {settings.logo ? (
+                        <Image src={settings.logo} alt="Company Logo" fill className="object-contain" />
                     ) : (
                         <span className='text-xs text-center text-gray-500'>Logo</span>
                     )}

@@ -19,7 +19,7 @@ import useLocalStorage from '@/hooks/use-local-storage';
 import { useAppContext } from '@/context/app-provider';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Bar, BarChart as RechartsBarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
-import type { PdfSettings } from '@/lib/types';
+import type { AllPdfSettings } from '@/lib/types';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -32,7 +32,7 @@ const formatCurrency = (amount: number) => {
 export default function MonthlyExpenseReportPage() {
   const { expenses, employees, expenseReports } = useAppContext();
 
-  const [pdfSettings] = useLocalStorage<PdfSettings>('pdf-settings', {});
+  const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {} });
   const pdfHeaderRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<HTMLDivElement>(null);
 
@@ -84,10 +84,12 @@ export default function MonthlyExpenseReportPage() {
     if (!pdfHeaderRef.current || !selectedDate) return;
     
     const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
-    if (pdfSettings.customFont) {
+    const settings = pdfSettings.report || {};
+    
+    if (settings.customFont) {
       const fontName = "CustomFont";
       const fontStyle = "normal";
-      const fontBase64 = pdfSettings.customFont.split(',')[1];
+      const fontBase64 = settings.customFont.split(',')[1];
       doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
       doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
       doc.setFont(fontName);
@@ -136,9 +138,9 @@ export default function MonthlyExpenseReportPage() {
           body: monthlyData.summary.map(item => [item.employeeName, formatCurrency(item.totalAmount)]),
           foot: [['Grand Total', formatCurrency(monthlyData.total)]],
           theme: 'grid',
-          headStyles: { fillColor: pdfSettings.themeColor || '#22c55e' },
+          headStyles: { fillColor: settings.themeColor || '#22c55e' },
           footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
-          didParseCell: (data) => { if (pdfSettings.customFont) { (data.cell.styles as any).font = "CustomFont"; } }
+          didParseCell: (data) => { if (settings.customFont) { (data.cell.styles as any).font = "CustomFont"; } }
         });
         startY = (doc as any).lastAutoTable.finalY + 20;
     }
@@ -164,17 +166,17 @@ export default function MonthlyExpenseReportPage() {
           ]),
           theme: 'striped',
           headStyles: { fillColor: [40, 40, 40] },
-          didParseCell: (data) => { if (pdfSettings.customFont) { (data.cell.styles as any).font = "CustomFont"; } }
+          didParseCell: (data) => { if (settings.customFont) { (data.cell.styles as any).font = "CustomFont"; } }
         });
     }
 
-    if (pdfSettings.footerText) {
+    if (settings.footerText) {
         const pageCount = (doc as any).internal.getNumberOfPages();
         for (let i = 1; i <= pageCount; i++) {
             doc.setPage(i);
             doc.setFontSize(8);
             doc.setTextColor(150);
-            doc.text(pdfSettings.footerText, doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
+            doc.text(settings.footerText, doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
         }
     }
     
@@ -189,9 +191,9 @@ export default function MonthlyExpenseReportPage() {
             <ReportPdfHeader 
                 title="Monthly Expense Report" 
                 subtitle={format(selectedDate, 'MMMM yyyy')} 
-                logoSrc={pdfSettings.logo ?? null}
-                themeColor={pdfSettings.themeColor}
-                headerText={pdfSettings.headerText}
+                logoSrc={pdfSettings.report?.logo ?? null}
+                themeColor={pdfSettings.report?.themeColor}
+                headerText={pdfSettings.report?.headerText}
             />
           </div>
         )}

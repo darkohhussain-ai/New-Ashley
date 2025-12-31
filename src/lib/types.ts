@@ -1,5 +1,4 @@
 
-
 export type Employee = {
   id: string;
   name: string;
@@ -142,4 +141,9 @@ export type PdfSettings = {
     themeColor?: string;
     headerText?: string;
     footerText?: string;
+}
+
+export type AllPdfSettings = {
+    report: PdfSettings;
+    invoice: PdfSettings;
 }

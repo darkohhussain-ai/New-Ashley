@@ -5,26 +5,31 @@ import Image from 'next/image';
 import { format, parseISO } from 'date-fns';
 import { User, Mail, Phone, Calendar as CalendarIcon, ShieldCheck, Briefcase } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import type { Employee } from "@/lib/types";
+import type { Employee, PdfSettings } from "@/lib/types";
 
 type EmployeeReportPdfHeaderProps = {
   employee: Employee;
-  logoSrc: string | null;
+  settings: PdfSettings;
 };
 
-export function EmployeeReportPdfHeader({ employee, logoSrc }: EmployeeReportPdfHeaderProps) {
+export function EmployeeReportPdfHeader({ employee, settings }: EmployeeReportPdfHeaderProps) {
 
   const safeDate = (dateValue: string | undefined): Date | null => {
     if (!dateValue) return null;
     const parsed = parseISO(dateValue);
-    return isNaN(parsed.getTime()) ? null : parsed.getTime();
+    return isNaN(parsed.getTime()) ? null : parsed;
   }
   
   const safeJoinedDate = safeDate(employee.employmentStartDate);
   const formattedJoinedDate = safeJoinedDate ? format(safeJoinedDate, 'MMMM d, yyyy') : 'N/A';
 
   return (
-    <div className="bg-white text-black w-full p-6 font-sans border-b-2 border-gray-200" style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" }}>
+    <div className="bg-white text-black w-full p-6 font-sans border-b-2 border-gray-200" style={{ fontFamily: settings.font === 'CustomFont' ? 'CustomPdfFont' : (settings.font || 'sans-serif') }}>
+       {settings.headerText && (
+        <div className="text-center text-xs text-gray-500 pb-2 border-b mb-4">
+          {settings.headerText}
+        </div>
+      )}
       {/* Main Header */}
       <div className="flex justify-between items-center pb-4">
         <div>
@@ -32,7 +37,7 @@ export function EmployeeReportPdfHeader({ employee, logoSrc }: EmployeeReportPdf
           <p className="text-sm text-gray-500">As of {format(new Date(), 'MMMM d, yyyy')}</p>
         </div>
         <div className="w-20 h-20 flex items-center justify-center">
-          {logoSrc && <Image src={logoSrc} alt="Company Logo" width={80} height={80} className="object-contain" />}
+          {settings.logo && <Image src={settings.logo} alt="Company Logo" width={80} height={80} className="object-contain" />}
         </div>
       </div>
 
@@ -64,5 +69,3 @@ export function EmployeeReportPdfHeader({ employee, logoSrc }: EmployeeReportPdf
     </div>
   );
 };
-
-    

@@ -18,7 +18,7 @@ import { useAppContext } from '@/context/app-provider';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { PdfSettings } from '@/lib/types';
+import { AllPdfSettings } from '@/lib/types';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'IQD', maximumFractionDigits: 0 }).format(amount);
 
@@ -28,7 +28,7 @@ export default function ViewExpenseReportPage() {
   const { toast } = useToast();
   const { expenseReports, setExpenseReports, expenses, setExpenses, employees } = useAppContext();
 
-  const [pdfSettings] = useLocalStorage<PdfSettings>('pdf-settings', {});
+  const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {} });
   const pdfHeaderRef = useRef<HTMLDivElement>(null);
 
   const report = useMemo(() => expenseReports.find(r => r.id === reportId), [expenseReports, reportId]);
@@ -52,10 +52,12 @@ export default function ViewExpenseReportPage() {
     if (!pdfHeaderRef.current || !report || !reportItems) return;
     
     const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
-    if (pdfSettings.customFont) {
+    const settings = pdfSettings.report || {};
+    
+    if (settings.customFont) {
       const fontName = "CustomFont";
       const fontStyle = "normal";
-      const fontBase64 = pdfSettings.customFont.split(',')[1];
+      const fontBase64 = settings.customFont.split(',')[1];
       doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
       doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
       doc.setFont(fontName);
@@ -78,20 +80,20 @@ export default function ViewExpenseReportPage() {
       body: reportItems.map(item => [getEmployeeName(item.employeeId), item.notes || '', formatCurrency(item.amount)]),
       foot: [['Total', '', formatCurrency(report.totalAmount)]],
       theme: 'grid',
-      headStyles: { fillColor: pdfSettings.themeColor || '#22c55e' },
+      headStyles: { fillColor: settings.themeColor || '#22c55e' },
       footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
       didParseCell: (data) => {
-        if (pdfSettings.customFont) { (data.cell.styles as any).font = "CustomFont"; }
+        if (settings.customFont) { (data.cell.styles as any).font = "CustomFont"; }
       }
     });
 
-    if (pdfSettings.footerText) {
+    if (settings.footerText) {
         const pageCount = (doc as any).internal.getNumberOfPages();
         for (let i = 1; i <= pageCount; i++) {
             doc.setPage(i);
             doc.setFontSize(8);
             doc.setTextColor(150);
-            doc.text(pdfSettings.footerText, doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
+            doc.text(settings.footerText, doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
         }
     }
     
@@ -127,9 +129,9 @@ export default function ViewExpenseReportPage() {
           <ReportPdfHeader 
             title={report.reportName} 
             subtitle={`Report Date: ${format(parseISO(report.reportDate), 'PPP')}`} 
-            logoSrc={pdfSettings.logo ?? null} 
-            themeColor={pdfSettings.themeColor}
-            headerText={pdfSettings.headerText}
+            logoSrc={pdfSettings.report?.logo ?? null} 
+            themeColor={pdfSettings.report?.themeColor}
+            headerText={pdfSettings.report?.headerText}
           />
         </div>
       </div>

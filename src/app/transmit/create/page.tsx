@@ -23,7 +23,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAppContext } from '@/context/app-provider';
-import type { Transfer, ItemForTransfer } from '@/lib/types';
+import type { Transfer, ItemForTransfer, AllPdfSettings } from '@/lib/types';
 
 
 const destinations = ["Erbil", "Baghdad", "Diwan", "Dohuk"];
@@ -45,10 +45,7 @@ export default function CreateTransferPage() {
   const [lastTransferItems, setLastTransferItems] = useState<ItemForTransfer[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   
-  const defaultLogo = "https://picsum.photos/seed/1/300/100";
-  const [logoSrc] = useLocalStorage('app-logo', defaultLogo);
-  const [customFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
-
+  const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {} });
   const pdfCardRef = useRef<HTMLDivElement>(null);
   
   const stagedItems = useMemo(() => transferItems.filter(item => !item.transferId), [transferItems]);
@@ -123,10 +120,12 @@ export default function CreateTransferPage() {
     if (!pdfCardRef.current || !lastTransfer || !lastTransferItems) return;
     
     const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
-    if (customFontBase64) {
+    const settings = pdfSettings.invoice || {};
+
+    if (settings.customFont) {
         const fontName = "CustomFont";
         const fontStyle = "normal";
-        const fontBase64 = customFontBase64.split(',')[1];
+        const fontBase64 = settings.customFont.split(',')[1];
         pdf.addFileToVFS(`${fontName}.ttf`, fontBase64);
         pdf.addFont(`${fontName}.ttf`, fontName, fontStyle);
         pdf.setFont(fontName);
@@ -149,9 +148,9 @@ export default function CreateTransferPage() {
       body: lastTransferItems.map(item => [item.model, item.quantity, item.notes || '']),
       theme: 'grid',
       styles: { fontSize: 8, cellPadding: 2 },
-      headStyles: { fillColor: [34, 197, 94], textColor: 255, fontStyle: 'bold' },
+      headStyles: { fillColor: settings.themeColor || '#3b82f6', textColor: 255, fontStyle: 'bold' },
       didParseCell: function (data) {
-        if (customFontBase64) {
+        if (settings.customFont) {
             data.cell.styles.font = "CustomFont";
         }
       }
@@ -172,7 +171,7 @@ export default function CreateTransferPage() {
           <div ref={pdfCardRef} style={{ width: '700px' }}>
               <TransferPdfCard
                   transfer={lastTransfer}
-                  logoSrc={logoSrc}
+                  logoSrc={pdfSettings.invoice?.logo ?? null}
                   totalItems={lastTransfer.itemIds.length}
               />
           </div>
@@ -219,124 +218,124 @@ export default function CreateTransferPage() {
                                     <Calendar className="mr-2 h-4 w-4" />
                                     {transferDate ? format(transferDate, 'PPP') : <span>Pick a date</span>}
                                 </Button>
-                            </PopoverTrigger>
+                            PopoverTrigger>
                             <PopoverContent className="w-auto p-0"><CalendarComponent mode="single" selected={transferDate} onSelect={setTransferDate} initialFocus /></PopoverContent>
                         </Popover>
                     </div>
-                </CardContent>
+                CardContent>
                 <CardContent>
                      <Button onClick={handleCreateTransfer} disabled={isSaving || Object.keys(selectedItems).filter(k => selectedItems[k]).length === 0} className="w-full">
                         {isSaving ? <Loader2 className="animate-spin mr-2"/> : <Truck className="mr-2" />}
-                        Create Transfer & Generate Report
-                    </Button>
-                </CardContent>
-            </Card>
-        </div>
-        <div className="lg:col-span-2">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Items Ready for Transfer ({filteredItems.length})</CardTitle>
-                    <CardDescription>Select items to include in this shipment. List is filtered by destination.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                     <div className="overflow-x-auto">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="w-[50px]">
-                                        <Checkbox 
+                        Create Transfer &amp; Generate Report
+                    Button>
+                CardContent>
+            Card>
+        div>
+        div className="lg:col-span-2">
+            Card>
+                CardHeader>
+                    CardTitle>Items Ready for Transfer ({filteredItems.length})CardTitle>
+                    CardDescription>Select items to include in this shipment. List is filtered by destination.CardDescription>
+                CardHeader>
+                CardContent>
+                     div className="overflow-x-auto">
+                        Table>
+                            TableHeader>
+                                TableRow>
+                                    TableHead className="w-[50px]">
+                                        Checkbox 
                                           checked={isAllSelected}
                                           onCheckedChange={(checked) => handleSelectAll(Boolean(checked))}
                                           aria-label="Select all"
                                           disabled={!destinationCity}
-                                        />
-                                    </TableHead>
-                                    <TableHead>Model</TableHead>
-                                    <TableHead>Quantity</TableHead>
-                                    <TableHead>Destination</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
+                                        /&gt;
+                                    TableHead>
+                                    TableHead>ModelTableHead>
+                                    TableHead>QuantityTableHead>
+                                    TableHead>DestinationTableHead>
+                                TableRow>
+                            TableHeader>
+                            TableBody>
                                 {isLoadingItems ? (
                                   [...Array(5)].map((_, i) => (
-                                    <TableRow key={i}><TableCell colSpan={4} className="h-12 text-center"><Loader2 className="mx-auto animate-spin" /></TableCell></TableRow>
+                                    TableRow key={i}&gt;TableCell colSpan={4} className="h-12 text-center">Loader2 className="mx-auto animate-spin" /TableCell&gt;/TableRow>
                                   ))
                                 ) : filteredItems.length > 0 ? filteredItems.map((item) => (
-                                    <TableRow key={item.id} data-state={selectedItems[item.id] && "selected"}>
-                                        <TableCell>
-                                          <Checkbox
+                                    TableRow key={item.id} data-state={selectedItems[item.id] &amp;&amp; "selected"}>
+                                        TableCell>
+                                          Checkbox
                                               checked={selectedItems[item.id] || false}
                                               onCheckedChange={(checked) => {
                                                   setSelectedItems(prev => ({...prev, [item.id]: !!checked}))
                                               }}
                                               aria-label={`Select ${item.model}`}
-                                          />
-                                        </TableCell>
-                                        <TableCell className="font-medium">{item.model}</TableCell>
-                                        <TableCell>{item.quantity}</TableCell>
-                                        <TableCell className="text-muted-foreground">{item.destination}</TableCell>
-                                    </TableRow>
+                                          /&gt;
+                                        TableCell>
+                                        TableCell className="font-medium">{item.model}TableCell>
+                                        TableCell>{item.quantity}TableCell>
+                                        TableCell className="text-muted-foreground">{item.destination}TableCell>
+                                    TableRow>
                                 )) : (
-                                    <TableRow>
-                                        <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">
+                                    TableRow>
+                                        TableCell colSpan={4} className="text-center h-24 text-muted-foreground">
                                             {destinationCity ? 'No items for this destination.' : 'Please select a destination city to see items.'}
-                                        </TableCell>
-                                    </TableRow>
+                                        TableCell>
+                                    TableRow>
                                 )}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
-      </div>
+                            TableBody>
+                        Table>
+                    div>
+                CardContent>
+            Card>
+        div>
+      div>
       
-      {lastTransfer && (
-         <AlertDialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-            <AlertDialogContent className="max-w-2xl">
-                <AlertDialogHeader>
-                    <AlertDialogTitle>Transfer Slip Created!</AlertDialogTitle>
-                    <AlertDialogDescription>
+      {lastTransfer &amp;&amp; (
+         AlertDialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+            AlertDialogContent className="max-w-2xl">
+                AlertDialogHeader>
+                    AlertDialogTitle>Transfer Slip Created!AlertDialogTitle>
+                    AlertDialogDescription>
                         The transfer slip for "{lastTransfer.cargoName}" has been successfully created.
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <div className="max-h-[60vh] overflow-y-auto p-1">
-                   <h3 className="text-lg font-semibold mb-2">Transfer Summary</h3>
-                   <div className="grid grid-cols-2 gap-4 text-sm mb-4">
-                        <p className="flex gap-2"><Truck className="w-4 h-4 text-primary"/> <strong>Destination:</strong> {lastTransfer.destinationCity}</p>
-                        <p className="flex gap-2"><Calendar className="w-4 h-4 text-primary"/> <strong>Date:</strong> {format(parseISO(lastTransfer.transferDate), 'PPP')}</p>
-                        <p className="flex gap-2"><User className="w-4 h-4 text-primary"/> <strong>Driver:</strong> {lastTransfer.driverName}</p>
-                        <p className="flex gap-2"><Warehouse className="w-4 h-4 text-primary"/> <strong>Manager:</strong> {lastTransfer.warehouseManagerName}</p>
-                   </div>
-                   <h3 className="text-lg font-semibold mb-2">Transferred Items ({lastTransfer.itemIds.length})</h3>
-                   <div className="border rounded-md">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Model</TableHead>
-                                    <TableHead>Quantity</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
+                    AlertDialogDescription>
+                AlertDialogHeader>
+                div className="max-h-[60vh] overflow-y-auto p-1">
+                   h3 className="text-lg font-semibold mb-2">Transfer Summaryh3>
+                   div className="grid grid-cols-2 gap-4 text-sm mb-4">
+                        p className="flex gap-2"Truck className="w-4 h-4 text-primary"/> strong>Destination:strong> {lastTransfer.destinationCity}p>
+                        p className="flex gap-2"Calendar className="w-4 h-4 text-primary"/> strong>Date:strong> {format(parseISO(lastTransfer.transferDate), 'PPP')}p>
+                        p className="flex gap-2"User className="w-4 h-4 text-primary"/> strong>Driver:strong> {lastTransfer.driverName}p>
+                        p className="flex gap-2"Warehouse className="w-4 h-4 text-primary"/> strong>Manager:strong> {lastTransfer.warehouseManagerName}p>
+                   div>
+                   h3 className="text-lg font-semibold mb-2">Transferred Items ({lastTransfer.itemIds.length})h3>
+                   div className="border rounded-md">
+                        Table>
+                            TableHeader>
+                                TableRow>
+                                    TableHead>ModelTableHead>
+                                    TableHead>QuantityTableHead>
+                                TableRow>
+                            TableHeader>
+                            TableBody>
                                {lastTransferItems.map(item => (
-                                   <TableRow key={item.id}>
-                                       <TableCell>{item.model}</TableCell>
-                                       <TableCell>{item.quantity}</TableCell>
-                                   </TableRow>
+                                   TableRow key={item.id}>
+                                       TableCell>{item.model}TableCell>
+                                       TableCell>{item.quantity}TableCell>
+                                   TableRow>
                                ))}
-                            </TableBody>
-                        </Table>
-                   </div>
-                </div>
-                <AlertDialogFooter>
-                    <Button variant="outline" onClick={() => setIsModalOpen(false)}>Close</Button>
-                    <Button onClick={handleDownloadPdf}><FileDown className="mr-2"/> Download PDF</Button>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-         </AlertDialog>
+                            TableBody>
+                        Table>
+                   div>
+                div>
+                AlertDialogFooter>
+                    Button variant="outline" onClick={() => setIsModalOpen(false)}>CloseButton>
+                    Button onClick={handleDownloadPdf}FileDown className="mr-2"/> Download PDFButton>
+                AlertDialogFooter>
+            AlertDialogContent>
+         AlertDialog>
       )}
-    </div>
-    </>
+    div>
+    >
   );
 }
 
