@@ -69,8 +69,10 @@ export type Overtime = {
 export type Bonus = {
   id: string;
   employeeId: string;
-  amount: number;
   date: string;
+  loadCount: number;
+  rate: number;
+  totalAmount: number;
   notes?: string;
 };
 
