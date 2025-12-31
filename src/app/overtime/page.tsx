@@ -1,8 +1,9 @@
 
 'use client';
 
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Plus, Trash2, Calendar as CalendarIcon, Clock, User, Edit, Save, X, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,6 +38,9 @@ const formatCurrency = (amount: number) => {
 
 export default function OvertimePage() {
   const { toast } = useToast();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
   const { employees, overtime: allOvertimeRecords, setOvertime: setAllOvertimeRecords } = useAppContext();
   const defaultLogo = "https://picsum.photos/seed/ashley-logo/300/100";
   const [logoSrc] = useLocalStorage('app-logo', defaultLogo);
@@ -44,7 +48,19 @@ export default function OvertimePage() {
 
 
   const [view, setView] = useState<'daily' | 'monthly'>('daily');
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+
+  const getInitialDate = () => {
+    const dateParam = searchParams.get('date');
+    if (dateParam) {
+      const parsedDate = parseISO(dateParam);
+      if (!isNaN(parsedDate.getTime())) {
+        return parsedDate;
+      }
+    }
+    return new Date();
+  };
+  
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(getInitialDate());
   
   // Form state
   const [selectedEmployee, setSelectedEmployee] = useState('');
@@ -56,6 +72,17 @@ export default function OvertimePage() {
   const [editingRecord, setEditingRecord] = useState<Overtime | null>(null);
   
   const pdfHeaderRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const dateParam = searchParams.get('date');
+    if (dateParam) {
+      setView('daily'); // Force daily view if navigated from archive
+      const parsedDate = parseISO(dateParam);
+      if (!isNaN(parsedDate.getTime())) {
+        setSelectedDate(parsedDate);
+      }
+    }
+  }, [searchParams]);
 
   const warehouseEmployees = useMemo(() => {
     if (!employees) return [];
@@ -69,7 +96,7 @@ export default function OvertimePage() {
     return allOvertimeRecords.filter(record => {
         const recordDate = parseISO(record.date);
         return isWithinInterval(recordDate, { start, end });
-    });
+    }).sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
   }, [allOvertimeRecords, selectedDate, view]);
 
 
@@ -182,8 +209,8 @@ export default function OvertimePage() {
         const fontName = "CustomFont";
         const fontStyle = "normal";
         const fontBase64 = customFontBase64.split(',')[1];
-        doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
-        doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
+        doc.addFileToVFS(\`\${fontName}.ttf\`, fontBase64);
+        doc.addFont(\`\${fontName}.ttf\`, fontName, fontStyle);
         doc.setFont(fontName);
     }
     
@@ -224,7 +251,7 @@ export default function OvertimePage() {
             ]),
             foot: [['Grand Total', totalHours.toFixed(2), '', formatCurrency(totalAmount)]],
         });
-        doc.save(`overtime-report-${format(selectedDate, 'yyyy-MM-dd')}.pdf`);
+        doc.save(\`overtime-report-\${format(selectedDate, 'yyyy-MM-dd')}.pdf\`);
     } else { // monthly
         autoTable(doc, {
             ...autoTableConfig,
@@ -232,7 +259,7 @@ export default function OvertimePage() {
             body: monthlyReportData.map(item => [item.employeeName, item.totalHours.toFixed(2), formatCurrency(item.totalAmount)]),
             foot: [['Grand Total', totalHours.toFixed(2), formatCurrency(totalAmount)]],
         });
-        doc.save(`overtime-report-${format(selectedDate, 'yyyy-MM')}.pdf`);
+        doc.save(\`overtime-report-\${format(selectedDate, 'yyyy-MM')}.pdf\`);
     }
   };
 
@@ -278,7 +305,7 @@ export default function OvertimePage() {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="end">
-                <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} initialFocus 
+                <Calendar mode="single" selected={selectedDate} onSelect={(date) => { setSelectedDate(date); if (dateParam) router.push('/overtime'); }} initialFocus 
                     captionLayout={view === 'monthly' ? "dropdown-buttons" : "dropdown-nav"}
                     fromYear={2020} toYear={2040}
                 />

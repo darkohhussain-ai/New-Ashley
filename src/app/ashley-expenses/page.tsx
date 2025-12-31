@@ -21,6 +21,12 @@ const menuItems = [
     color: "bg-orange-500",
   },
   {
+    title: "Overtime Archive",
+    icon: Archive,
+    href: "/overtime/archive",
+    color: "bg-teal-500",
+  },
+  {
     title: "Loading / Unloading Bonus",
     icon: Gift,
     href: "/bonuses",
