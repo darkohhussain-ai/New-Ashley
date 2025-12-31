@@ -28,8 +28,15 @@ const formatCurrency = (amount: number) => {
     style: 'currency',
     currency: 'IQD',
     maximumFractionDigits: 0,
+  }).format(amount).replace('IQD', '').trim();
+};
+
+const formatCurrencyForPdf = (amount: number) => {
+  return new Intl.NumberFormat('en-US', {
+    maximumFractionDigits: 0,
   }).format(amount);
 };
+
 
 export default function CashWithdrawalPage() {
   const { toast } = useToast();
@@ -160,8 +167,8 @@ export default function CashWithdrawalPage() {
     autoTable(doc, {
         startY: finalImgHeight + 10,
         head: [['Employee', 'Notes', 'Amount']],
-        body: dailyWithdrawals.map(item => [getEmployeeName(item.employeeId), item.notes || 'N/A', formatCurrency(item.amount)]),
-        foot: [['Total', '', formatCurrency(totalAmount)]],
+        body: dailyWithdrawals.map(item => [getEmployeeName(item.employeeId), item.notes || 'N/A', formatCurrencyForPdf(item.amount)]),
+        foot: [['Total', '', formatCurrencyForPdf(totalAmount)]],
         theme: 'striped',
         headStyles: { fillColor: settings.themeColor || '#22c55e' },
         footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' },
@@ -298,7 +305,7 @@ export default function CashWithdrawalPage() {
                             </div>
                             )}
                             <div className='flex flex-col items-end'>
-                                <p className="font-semibold text-primary">{formatCurrency(record.amount)}</p>
+                                <p className="font-semibold text-primary">{formatCurrency(record.amount)} IQD</p>
                                 {editingRecord?.id === record.id ? (
                                     <div className="flex gap-1 mt-2">
                                         <Button size="icon" className="h-8 w-8" onClick={handleUpdateRecord} disabled={isSaving}><Save className="h-4 w-4"/></Button>
@@ -341,7 +348,7 @@ export default function CashWithdrawalPage() {
                 {dailyWithdrawals && dailyWithdrawals.length > 0 && (
                     <CardFooter className="flex justify-between font-bold bg-muted/50 py-4 rounded-b-lg">
                         <span>Total</span>
-                        <p className="text-primary">{formatCurrency(totalAmount)}</p>
+                        <p className="text-primary">{formatCurrency(totalAmount)} IQD</p>
                     </CardFooter>
                 )}
                 </Card>
