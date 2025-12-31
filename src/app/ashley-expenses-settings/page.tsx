@@ -16,7 +16,7 @@ export default function AshleyExpensesSettingsPage() {
               <span className="sr-only">Back to Ashley employees mangment</span>
             </Link>
           </Button>
-          <h1 className="text-xl font-bold">Ashley employees mangment Settings</h1>
+          <h1 className="text-xl font-bold">Ashley Employees Management Settings</h1>
         </div>
       </header>
       <main className="container mx-auto p-4 md:p-8">
