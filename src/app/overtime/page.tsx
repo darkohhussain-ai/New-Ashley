@@ -48,9 +48,9 @@ export default function OvertimePage() {
 
 
   const [view, setView] = useState<'daily' | 'monthly'>('daily');
+  const dateParam = searchParams.get('date');
 
   const getInitialDate = () => {
-    const dateParam = searchParams.get('date');
     if (dateParam) {
       const parsedDate = parseISO(dateParam);
       if (!isNaN(parsedDate.getTime())) {
@@ -74,7 +74,6 @@ export default function OvertimePage() {
   const pdfHeaderRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const dateParam = searchParams.get('date');
     if (dateParam) {
       setView('daily'); // Force daily view if navigated from archive
       const parsedDate = parseISO(dateParam);
@@ -82,7 +81,7 @@ export default function OvertimePage() {
         setSelectedDate(parsedDate);
       }
     }
-  }, [searchParams]);
+  }, [dateParam]);
 
   const warehouseEmployees = useMemo(() => {
     if (!employees) return [];
@@ -209,8 +208,8 @@ export default function OvertimePage() {
         const fontName = "CustomFont";
         const fontStyle = "normal";
         const fontBase64 = customFontBase64.split(',')[1];
-        doc.addFileToVFS(\`\${fontName}.ttf\`, fontBase64);
-        doc.addFont(\`\${fontName}.ttf\`, fontName, fontStyle);
+        doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
+        doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
         doc.setFont(fontName);
     }
     
@@ -229,9 +228,9 @@ export default function OvertimePage() {
 
     const autoTableConfig = {
       startY: startY,
-      theme: 'grid',
+      theme: 'grid' as const,
       headStyles: { fillColor: [22, 163, 74] },
-      footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' },
+      footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' as const },
       didParseCell: function (data: any) {
         if (customFontBase64) {
             data.cell.styles.font = "CustomFont";
@@ -251,7 +250,7 @@ export default function OvertimePage() {
             ]),
             foot: [['Grand Total', totalHours.toFixed(2), '', formatCurrency(totalAmount)]],
         });
-        doc.save(\`overtime-report-\${format(selectedDate, 'yyyy-MM-dd')}.pdf\`);
+        doc.save(`overtime-report-${format(selectedDate, 'yyyy-MM-dd')}.pdf`);
     } else { // monthly
         autoTable(doc, {
             ...autoTableConfig,
@@ -259,7 +258,7 @@ export default function OvertimePage() {
             body: monthlyReportData.map(item => [item.employeeName, item.totalHours.toFixed(2), formatCurrency(item.totalAmount)]),
             foot: [['Grand Total', totalHours.toFixed(2), formatCurrency(totalAmount)]],
         });
-        doc.save(\`overtime-report-\${format(selectedDate, 'yyyy-MM')}.pdf\`);
+        doc.save(`overtime-report-${format(selectedDate, 'yyyy-MM')}.pdf`);
     }
   };
 
