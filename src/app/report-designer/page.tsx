@@ -332,7 +332,7 @@ export default function ReportDesignerPage() {
                         <CardDescription>A scaled-down A4 preview of your {activeTab} design.</CardDescription>
                     </CardHeader>
                     <CardContent className='bg-gray-100 dark:bg-gray-800/50 p-4 rounded-b-lg flex justify-center items-start'>
-                        <div className="w-[595px] h-[842px] bg-white shadow-lg transform scale-[0.6] -translate-y-[160px] origin-top overflow-hidden">
+                        <div className="w-[595px] h-[842px] bg-white shadow-lg transform scale-[0.6] -translate-y-[160px] origin-top overflow-hidden flex flex-col">
                            {activeTab === 'report' && (
                                 <>
                                     <ReportPdfHeader
@@ -372,16 +372,12 @@ export default function ReportDesignerPage() {
                            )}
                            {activeTab === 'invoice' && (
                                 <div className='flex justify-center items-center h-full'>
-                                   <div className='transform scale-[0.8]'>
-                                        <TransferPdfCard transfer={mockTransfer} totalItems={mockTransfer.itemIds.length} logoSrc={currentSettings.logo} />
-                                   </div>
+                                   <TransferPdfCard transfer={mockTransfer} totalItems={mockTransfer.itemIds.length} logoSrc={currentSettings.logo} />
                                </div>
                            )}
                            {activeTab === 'card' && (
                                <div className='flex justify-center items-center h-full'>
-                                   <div className='transform scale-[0.9]'>
-                                        <EmployeePdfCard employee={mockEmployee} settings={currentSettings}/>
-                                   </div>
+                                    <EmployeePdfCard employee={mockEmployee} settings={currentSettings}/>
                                </div>
                            )}
                         </div>
