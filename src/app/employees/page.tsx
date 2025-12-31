@@ -58,7 +58,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
         bonuses,
         withdrawals,
     } = useAppContext();
-    const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {} });
+    const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {}, card: {} });
 
 
     const employee = useMemo(() => employees.find(e => e.id === employeeId), [employees, employeeId]);
@@ -176,7 +176,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
             format: [600, 360]
         });
         
-        const settings = pdfSettings.invoice || {};
+        const settings = pdfSettings.card || {};
 
         if (settings.customFont) {
             const fontName = "CustomFont";
@@ -278,7 +278,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
     return (
         <>
             <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-                <div ref={cardPdfRef}><EmployeePdfCard employee={employee} settings={pdfSettings.invoice || {}} /></div>
+                <div ref={cardPdfRef}><EmployeePdfCard employee={employee} settings={pdfSettings.card || {}} /></div>
                 <div ref={reportPdfRef} style={{ width: '700px', background: 'white', color: 'black' }}>
                     <EmployeeReportPdfHeader
                         employee={employee}

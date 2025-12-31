@@ -146,4 +146,5 @@ export type PdfSettings = {
 export type AllPdfSettings = {
     report: PdfSettings;
     invoice: PdfSettings;
+    card: PdfSettings;
 }

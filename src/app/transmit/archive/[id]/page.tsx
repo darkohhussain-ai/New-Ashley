@@ -23,7 +23,7 @@ export default function ViewTransferPage() {
   const { id: transferId } = useParams();
   const { transfers, transferItems } = useAppContext();
 
-  const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {} });
+  const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {}, card: {} });
   const pdfCardRef = useRef<HTMLDivElement>(null);
   
   const transfer = useMemo(() => transfers.find(t => t.id === transferId), [transfers, transferId]);
@@ -161,5 +161,3 @@ export default function ViewTransferPage() {
     </>
   );
 }
-
-    

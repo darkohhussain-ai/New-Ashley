@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, Save, Palette, RefreshCcw, FileText, Receipt, Type } from 'lucide-react';
+import { ArrowLeft, Save, Palette, RefreshCcw, FileText, Receipt, Type, User, CreditCard } from 'lucide-react';
 import useLocalStorage from '@/hooks/use-local-storage';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -15,9 +15,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { ReportPdfHeader } from '@/components/reports/report-pdf-header';
 import { Textarea } from '@/components/ui/textarea';
-import type { PdfSettings, AllPdfSettings, Employee } from '@/lib/types';
+import type { PdfSettings, AllPdfSettings, Employee, Transfer } from '@/lib/types';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { EmployeePdfCard } from '@/components/employees/employee-pdf-card';
+import { TransferPdfCard } from '@/components/transmit/transfer-pdf-card';
+import { formatISO } from 'date-fns';
 
 
 const availableFonts = [
@@ -45,12 +47,23 @@ const defaultInvoiceSettings: PdfSettings = {
     footerText: 'Thank you for your business.'
 };
 
-const defaultSettings: AllPdfSettings = {
-    report: defaultReportSettings,
-    invoice: defaultInvoiceSettings
+const defaultCardSettings: PdfSettings = {
+    logo: null,
+    font: 'Inter',
+    customFont: null,
+    themeColor: '#8b5cf6', // Violet
+    headerText: 'Employee ID',
+    footerText: 'Official Company ID'
 };
 
-// Mock employee for preview
+
+const defaultSettings: AllPdfSettings = {
+    report: defaultReportSettings,
+    invoice: defaultInvoiceSettings,
+    card: defaultCardSettings,
+};
+
+// Mock data for previews
 const mockEmployee: Employee = {
     id: 'preview-123',
     name: 'John Doe',
@@ -61,7 +74,17 @@ const mockEmployee: Employee = {
     phone: '555-1234',
     employmentStartDate: '2022-01-15T00:00:00.000Z',
     dateOfBirth: '1985-05-20T00:00:00.000Z'
-}
+};
+
+const mockTransfer: Transfer = {
+    id: 'transfer-prev-123',
+    transferDate: formatISO(new Date()),
+    cargoName: "Preview Cargo to Erbil",
+    destinationCity: "Erbil",
+    driverName: "Driver Name",
+    warehouseManagerName: "Manager Name",
+    itemIds: ['item1', 'item2', 'item3']
+};
 
 
 export default function ReportDesignerPage() {
@@ -71,7 +94,7 @@ export default function ReportDesignerPage() {
   const [savedPdfSettings, setSavedPdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', defaultSettings);
 
   const [settings, setSettings] = useState(savedPdfSettings);
-  const [activeTab, setActiveTab] = useState<'report' | 'invoice'>('report');
+  const [activeTab, setActiveTab] = useState<'report' | 'invoice' | 'card'>('report');
 
   const applyCustomFont = (fontDataUrl: string | null) => {
     const styleId = 'custom-pdf-font-style';
@@ -101,7 +124,8 @@ export default function ReportDesignerPage() {
     if (mounted) {
       const updatedSettings = {
           report: savedPdfSettings.report || defaultReportSettings,
-          invoice: savedPdfSettings.invoice || defaultInvoiceSettings
+          invoice: savedPdfSettings.invoice || defaultInvoiceSettings,
+          card: savedPdfSettings.card || defaultCardSettings,
       };
       setSettings(updatedSettings);
       applyCustomFont(updatedSettings[activeTab].customFont || null);
@@ -210,7 +234,7 @@ export default function ReportDesignerPage() {
                     <AlertDialogHeader>
                         <AlertDialogTitle>Reset all design settings?</AlertDialogTitle>
                         <AlertDialogDescription>
-                        This will reset both the Report and Invoice templates to their original defaults. This action cannot be undone.
+                        This will reset the Report, Invoice, and Card templates to their original defaults. This action cannot be undone.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -234,10 +258,11 @@ export default function ReportDesignerPage() {
                         <CardDescription>Select which PDF type you want to customize.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'report' | 'invoice')} className="w-full">
-                            <TabsList className="grid w-full grid-cols-2">
-                                <TabsTrigger value="report"><FileText className="mr-2"/>Reports & Lists</TabsTrigger>
-                                <TabsTrigger value="invoice"><Receipt className="mr-2"/>Invoices & Slips</TabsTrigger>
+                        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'report' | 'invoice' | 'card')} className="w-full">
+                            <TabsList className="grid w-full grid-cols-3">
+                                <TabsTrigger value="report"><FileText className="mr-2"/>Report</TabsTrigger>
+                                <TabsTrigger value="invoice"><Receipt className="mr-2"/>Invoice</TabsTrigger>
+                                <TabsTrigger value="card"><CreditCard className="mr-2"/>ID Card</TabsTrigger>
                             </TabsList>
                         </Tabs>
                     </CardContent>
@@ -304,11 +329,11 @@ export default function ReportDesignerPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Live Preview</CardTitle>
-                        <CardDescription>A scaled-down preview of your {activeTab === 'report' ? 'report' : 'invoice'} design.</CardDescription>
+                        <CardDescription>A scaled-down A4 preview of your {activeTab} design.</CardDescription>
                     </CardHeader>
-                    <CardContent className='bg-gray-100 p-4 rounded-b-lg flex justify-center items-start'>
-                        <div className="w-[595px] h-[842px] bg-white shadow-lg transform scale-[0.6] -translate-y-[160px] origin-top">
-                           {activeTab === 'report' ? (
+                    <CardContent className='bg-gray-100 dark:bg-gray-800/50 p-4 rounded-b-lg flex justify-center items-start'>
+                        <div className="w-[595px] h-[842px] bg-white shadow-lg transform scale-[0.6] -translate-y-[160px] origin-top overflow-hidden">
+                           {activeTab === 'report' && (
                                 <>
                                     <ReportPdfHeader
                                         title="Example Report Title"
@@ -344,7 +369,15 @@ export default function ReportDesignerPage() {
                                         </div>
                                     )}
                                 </>
-                           ) : (
+                           )}
+                           {activeTab === 'invoice' && (
+                                <div className='flex justify-center items-center h-full'>
+                                   <div className='transform scale-[0.8]'>
+                                        <TransferPdfCard transfer={mockTransfer} totalItems={mockTransfer.itemIds.length} logoSrc={currentSettings.logo} />
+                                   </div>
+                               </div>
+                           )}
+                           {activeTab === 'card' && (
                                <div className='flex justify-center items-center h-full'>
                                    <div className='transform scale-[0.9]'>
                                         <EmployeePdfCard employee={mockEmployee} settings={currentSettings}/>

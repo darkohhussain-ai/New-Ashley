@@ -45,7 +45,7 @@ export default function CreateTransferPage() {
   const [lastTransferItems, setLastTransferItems] = useState<ItemForTransfer[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   
-  const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {} });
+  const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {}, card: {} });
   const pdfCardRef = useRef<HTMLDivElement>(null);
   
   const stagedItems = useMemo(() => transferItems.filter(item => !item.transferId), [transferItems]);
@@ -218,125 +218,123 @@ export default function CreateTransferPage() {
                                     <Calendar className="mr-2 h-4 w-4" />
                                     {transferDate ? format(transferDate, 'PPP') : <span>Pick a date</span>}
                                 </Button>
-                            PopoverTrigger>
+                            </PopoverTrigger>
                             <PopoverContent className="w-auto p-0"><CalendarComponent mode="single" selected={transferDate} onSelect={setTransferDate} initialFocus /></PopoverContent>
                         </Popover>
                     </div>
-                CardContent>
+                </CardContent>
                 <CardContent>
                      <Button onClick={handleCreateTransfer} disabled={isSaving || Object.keys(selectedItems).filter(k => selectedItems[k]).length === 0} className="w-full">
                         {isSaving ? <Loader2 className="animate-spin mr-2"/> : <Truck className="mr-2" />}
                         Create Transfer &amp; Generate Report
-                    Button>
-                CardContent>
-            Card>
-        div>
-        div className="lg:col-span-2">
-            Card>
-                CardHeader>
-                    CardTitle>Items Ready for Transfer ({filteredItems.length})CardTitle>
-                    CardDescription>Select items to include in this shipment. List is filtered by destination.CardDescription>
-                CardHeader>
-                CardContent>
-                     div className="overflow-x-auto">
-                        Table>
-                            TableHeader>
-                                TableRow>
-                                    TableHead className="w-[50px]">
-                                        Checkbox 
+                    </Button>
+                </CardContent>
+            </Card>
+        </div>
+        <div className="lg:col-span-2">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Items Ready for Transfer ({filteredItems.length})</CardTitle>
+                    <CardDescription>Select items to include in this shipment. List is filtered by destination.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                     <div className="overflow-x-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="w-[50px]">
+                                        <Checkbox 
                                           checked={isAllSelected}
                                           onCheckedChange={(checked) => handleSelectAll(Boolean(checked))}
                                           aria-label="Select all"
                                           disabled={!destinationCity}
-                                        /&gt;
-                                    TableHead>
-                                    TableHead>ModelTableHead>
-                                    TableHead>QuantityTableHead>
-                                    TableHead>DestinationTableHead>
-                                TableRow>
-                            TableHeader>
-                            TableBody>
+                                        />
+                                    </TableHead>
+                                    <TableHead>Model</TableHead>
+                                    <TableHead>Quantity</TableHead>
+                                    <TableHead>Destination</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
                                 {isLoadingItems ? (
                                   [...Array(5)].map((_, i) => (
-                                    TableRow key={i}&gt;TableCell colSpan={4} className="h-12 text-center">Loader2 className="mx-auto animate-spin" /TableCell&gt;/TableRow>
+                                    <TableRow key={i}><TableCell colSpan={4} className="h-12 text-center"><Loader2 className="mx-auto animate-spin" /></TableCell></TableRow>
                                   ))
                                 ) : filteredItems.length > 0 ? filteredItems.map((item) => (
-                                    TableRow key={item.id} data-state={selectedItems[item.id] &amp;&amp; "selected"}>
-                                        TableCell>
-                                          Checkbox
+                                    <TableRow key={item.id} data-state={selectedItems[item.id] && "selected"}>
+                                        <TableCell>
+                                          <Checkbox
                                               checked={selectedItems[item.id] || false}
                                               onCheckedChange={(checked) => {
                                                   setSelectedItems(prev => ({...prev, [item.id]: !!checked}))
                                               }}
                                               aria-label={`Select ${item.model}`}
-                                          /&gt;
-                                        TableCell>
-                                        TableCell className="font-medium">{item.model}TableCell>
-                                        TableCell>{item.quantity}TableCell>
-                                        TableCell className="text-muted-foreground">{item.destination}TableCell>
-                                    TableRow>
+                                          />
+                                        </TableCell>
+                                        <TableCell className="font-medium">{item.model}</TableCell>
+                                        <TableCell>{item.quantity}</TableCell>
+                                        <TableCell className="text-muted-foreground">{item.destination}</TableCell>
+                                    </TableRow>
                                 )) : (
-                                    TableRow>
-                                        TableCell colSpan={4} className="text-center h-24 text-muted-foreground">
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">
                                             {destinationCity ? 'No items for this destination.' : 'Please select a destination city to see items.'}
-                                        TableCell>
-                                    TableRow>
+                                        </TableCell>
+                                    </TableRow>
                                 )}
-                            TableBody>
-                        Table>
-                    div>
-                CardContent>
-            Card>
-        div>
-      div>
+                            </TableBody>
+                        </Table>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+      </div>
       
-      {lastTransfer &amp;&amp; (
-         AlertDialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-            AlertDialogContent className="max-w-2xl">
-                AlertDialogHeader>
-                    AlertDialogTitle>Transfer Slip Created!AlertDialogTitle>
-                    AlertDialogDescription>
+      {lastTransfer && (
+         <AlertDialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+            <AlertDialogContent className="max-w-2xl">
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Transfer Slip Created!</AlertDialogTitle>
+                    <AlertDialogDescription>
                         The transfer slip for "{lastTransfer.cargoName}" has been successfully created.
-                    AlertDialogDescription>
-                AlertDialogHeader>
-                div className="max-h-[60vh] overflow-y-auto p-1">
-                   h3 className="text-lg font-semibold mb-2">Transfer Summaryh3>
-                   div className="grid grid-cols-2 gap-4 text-sm mb-4">
-                        p className="flex gap-2"Truck className="w-4 h-4 text-primary"/> strong>Destination:strong> {lastTransfer.destinationCity}p>
-                        p className="flex gap-2"Calendar className="w-4 h-4 text-primary"/> strong>Date:strong> {format(parseISO(lastTransfer.transferDate), 'PPP')}p>
-                        p className="flex gap-2"User className="w-4 h-4 text-primary"/> strong>Driver:strong> {lastTransfer.driverName}p>
-                        p className="flex gap-2"Warehouse className="w-4 h-4 text-primary"/> strong>Manager:strong> {lastTransfer.warehouseManagerName}p>
-                   div>
-                   h3 className="text-lg font-semibold mb-2">Transferred Items ({lastTransfer.itemIds.length})h3>
-                   div className="border rounded-md">
-                        Table>
-                            TableHeader>
-                                TableRow>
-                                    TableHead>ModelTableHead>
-                                    TableHead>QuantityTableHead>
-                                TableRow>
-                            TableHeader>
-                            TableBody>
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <div className="max-h-[60vh] overflow-y-auto p-1">
+                   <h3 className="text-lg font-semibold mb-2">Transfer Summary</h3>
+                   <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+                        <p className="flex gap-2"><Truck className="w-4 h-4 text-primary"/> <strong>Destination:</strong> {lastTransfer.destinationCity}</p>
+                        <p className="flex gap-2"><Calendar className="w-4 h-4 text-primary"/> <strong>Date:</strong> {format(parseISO(lastTransfer.transferDate), 'PPP')}</p>
+                        <p className="flex gap-2"><User className="w-4 h-4 text-primary"/> <strong>Driver:</strong> {lastTransfer.driverName}</p>
+                        <p className="flex gap-2"><Warehouse className="w-4 h-4 text-primary"/> <strong>Manager:</strong> {lastTransfer.warehouseManagerName}</p>
+                   </div>
+                   <h3 className="text-lg font-semibold mb-2">Transferred Items ({lastTransfer.itemIds.length})</h3>
+                   <div className="border rounded-md">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Model</TableHead>
+                                    <TableHead>Quantity</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
                                {lastTransferItems.map(item => (
-                                   TableRow key={item.id}>
-                                       TableCell>{item.model}TableCell>
-                                       TableCell>{item.quantity}TableCell>
-                                   TableRow>
+                                   <TableRow key={item.id}>
+                                       <TableCell>{item.model}</TableCell>
+                                       <TableCell>{item.quantity}</TableCell>
+                                   </TableRow>
                                ))}
-                            TableBody>
-                        Table>
-                   div>
-                div>
-                AlertDialogFooter>
-                    Button variant="outline" onClick={() => setIsModalOpen(false)}>CloseButton>
-                    Button onClick={handleDownloadPdf}FileDown className="mr-2"/> Download PDFButton>
-                AlertDialogFooter>
-            AlertDialogContent>
-         AlertDialog>
+                            </TableBody>
+                        </Table>
+                   </div>
+                </div>
+                <AlertDialogFooter>
+                    <Button variant="outline" onClick={() => setIsModalOpen(false)}>Close</Button>
+                    <Button onClick={handleDownloadPdf}><FileDown className="mr-2"/> Download PDF</Button>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+         </AlertDialog>
       )}
-    div>
-    >
+    </div>
+    </>
   );
 }
-
-    
