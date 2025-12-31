@@ -12,18 +12,14 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { format, startOfDay, endOfDay, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
+import { format, startOfDay, endOfDay, isWithinInterval, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import html2canvas from 'html2canvas';
 import { ReportPdfHeader } from '@/components/reports/report-pdf-header';
 import useLocalStorage from '@/hooks/use-local-storage';
 import { useAppContext } from '@/context/app-provider';
-import type { Employee, Overtime } from '@/lib/types';
+import type { Overtime } from '@/lib/types';
 
 
 const OVERTIME_RATE = 5000; // Default: 5,000 IQD per hour
@@ -47,7 +43,6 @@ export default function OvertimePage() {
   const [customFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
 
 
-  const [view, setView] = useState<'daily' | 'monthly'>('daily');
   const dateParam = searchParams.get('date');
 
   const getInitialDate = () => {
@@ -73,15 +68,6 @@ export default function OvertimePage() {
   
   const pdfHeaderRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (dateParam) {
-      setView('daily'); // Force daily view if navigated from archive
-      const parsedDate = parseISO(dateParam);
-      if (!isNaN(parsedDate.getTime())) {
-        setSelectedDate(parsedDate);
-      }
-    }
-  }, [dateParam]);
 
   const warehouseEmployees = useMemo(() => {
     if (!employees) return [];
@@ -90,13 +76,13 @@ export default function OvertimePage() {
 
   const overtimeRecords = useMemo(() => {
     if (!allOvertimeRecords || !selectedDate) return [];
-    const start = view === 'daily' ? startOfDay(selectedDate) : startOfMonth(selectedDate);
-    const end = view === 'daily' ? endOfDay(selectedDate) : endOfMonth(selectedDate);
+    const start = startOfDay(selectedDate);
+    const end = endOfDay(selectedDate);
     return allOvertimeRecords.filter(record => {
         const recordDate = parseISO(record.date);
         return isWithinInterval(recordDate, { start, end });
     }).sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
-  }, [allOvertimeRecords, selectedDate, view]);
+  }, [allOvertimeRecords, selectedDate]);
 
 
   const sortedEmployees = useMemo(() => {
@@ -166,101 +152,16 @@ export default function OvertimePage() {
     toast({ title: 'Record Deleted', description: 'The overtime record has been removed.' });
   };
   
-  const { totalHours, totalAmount, monthlyReportData } = useMemo(() => {
-    if (!overtimeRecords || !employees) return { totalHours: 0, totalAmount: 0, monthlyReportData: [] };
+  const { totalHours, totalAmount } = useMemo(() => {
+    if (!overtimeRecords) return { totalHours: 0, totalAmount: 0 };
+    return overtimeRecords.reduce(
+        (acc, record) => {
+            acc.totalHours += record.hours;
+            acc.totalAmount += record.totalAmount;
+            return acc;
+        }, { totalHours: 0, totalAmount: 0 });
+  }, [overtimeRecords]);
 
-    if (view === 'daily') {
-        const { totalHours, totalAmount } = overtimeRecords.reduce(
-            (acc, record) => {
-                acc.totalHours += record.hours;
-                acc.totalAmount += record.totalAmount;
-                return acc;
-            }, { totalHours: 0, totalAmount: 0 });
-        return { totalHours, totalAmount, monthlyReportData: [] };
-    } else { // Monthly view
-        const employeeTotals = new Map<string, { totalHours: number, totalAmount: number }>();
-        overtimeRecords.forEach(record => {
-            const current = employeeTotals.get(record.employeeId) || { totalHours: 0, totalAmount: 0 };
-            current.totalHours += record.hours;
-            current.totalAmount += record.totalAmount;
-            employeeTotals.set(record.employeeId, current);
-        });
-
-        const reportData = Array.from(employeeTotals.entries()).map(([employeeId, totals]) => ({
-            employeeId,
-            employeeName: getEmployeeName(employeeId),
-            ...totals
-        })).sort((a,b) => a.employeeName.localeCompare(b.employeeName));
-
-        const grandTotalHours = reportData.reduce((sum, item) => sum + item.totalHours, 0);
-        const grandTotalAmount = reportData.reduce((sum, item) => sum + item.totalAmount, 0);
-
-        return { totalHours: grandTotalHours, totalAmount: grandTotalAmount, monthlyReportData: reportData };
-    }
-  }, [overtimeRecords, view, employees]);
-
- const handleDownloadPdf = async () => {
-    if (!selectedDate || !pdfHeaderRef.current) return;
-    
-    const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
-    
-    if (customFontBase64) {
-        const fontName = "CustomFont";
-        const fontStyle = "normal";
-        const fontBase64 = customFontBase64.split(',')[1];
-        doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
-        doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
-        doc.setFont(fontName);
-    }
-    
-    const canvas = await html2canvas(pdfHeaderRef.current, { scale: 2, useCORS: true, backgroundColor: null });
-    const imgData = canvas.toDataURL('image/png');
-    const pdfWidth = doc.internal.pageSize.getWidth();
-    const imgWidth = canvas.width;
-    const imgHeight = canvas.height;
-    const ratio = imgWidth / imgHeight;
-    const finalImgWidth = pdfWidth - 28;
-    const finalImgHeight = finalImgWidth / ratio;
-    
-    doc.addImage(imgData, 'PNG', 14, 14, finalImgWidth, finalImgHeight);
-    
-    const startY = finalImgHeight + 30;
-
-    const autoTableConfig = {
-      startY: startY,
-      theme: 'grid' as const,
-      headStyles: { fillColor: [22, 163, 74] },
-      footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' as const },
-      didParseCell: function (data: any) {
-        if (customFontBase64) {
-            data.cell.styles.font = "CustomFont";
-        }
-      }
-    };
-
-    if (view === 'daily') {
-        autoTable(doc, {
-            ...autoTableConfig,
-            head: [['Employee', 'Hours', 'Notes', 'Amount']],
-            body: (overtimeRecords || []).map(item => [
-                getEmployeeName(item.employeeId), 
-                item.hours.toFixed(2), 
-                item.notes || '',
-                formatCurrency(item.totalAmount)
-            ]),
-            foot: [['Grand Total', totalHours.toFixed(2), '', formatCurrency(totalAmount)]],
-        });
-        doc.save(`overtime-report-${format(selectedDate, 'yyyy-MM-dd')}.pdf`);
-    } else { // monthly
-        autoTable(doc, {
-            ...autoTableConfig,
-            head: [['Employee', 'Total Hours', 'Total Amount']],
-            body: monthlyReportData.map(item => [item.employeeName, item.totalHours.toFixed(2), formatCurrency(item.totalAmount)]),
-            foot: [['Grand Total', totalHours.toFixed(2), formatCurrency(totalAmount)]],
-        });
-        doc.save(`overtime-report-${format(selectedDate, 'yyyy-MM')}.pdf`);
-    }
-  };
 
   const isLoading = !employees || !allOvertimeRecords;
 
@@ -271,7 +172,7 @@ export default function OvertimePage() {
          <div ref={pdfHeaderRef} style={{ width: '700px', background: 'white', color: 'black' }}>
             <ReportPdfHeader
               title="Overtime Report"
-              subtitle={view === 'daily' ? format(selectedDate, 'PPP') : format(selectedDate, 'MMMM yyyy')}
+              subtitle={format(selectedDate, 'PPP')}
               logoSrc={logoSrc}
             />
           </div>
@@ -282,41 +183,28 @@ export default function OvertimePage() {
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button variant="outline" size="icon" asChild>
-              <Link href="/ashley-expenses">
+              <Link href="/overtime/archive">
                 <ArrowLeft />
               </Link>
             </Button>
             <h1 className="text-xl font-bold">Employee Overtime</h1>
           </div>
-          <div className='flex items-center gap-2'>
-             <Select value={view} onValueChange={(v: 'daily' | 'monthly') => setView(v)}>
-                <SelectTrigger className='w-32'><SelectValue/></SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="daily">Daily</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                </SelectContent>
-             </Select>
-            <Popover>
+          <Popover>
               <PopoverTrigger asChild>
                 <Button variant={"outline"} className={cn("w-48 justify-start text-left font-normal", !selectedDate && "text-muted-foreground")}>
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {selectedDate ? format(selectedDate, view === 'daily' ? "PPP" : "MMMM yyyy") : <span>Pick a date</span>}
+                  {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="end">
-                <Calendar mode="single" selected={selectedDate} onSelect={(date) => { setSelectedDate(date); if (dateParam) router.push('/overtime'); }} initialFocus 
-                    captionLayout={view === 'monthly' ? "dropdown-buttons" : "dropdown-nav"}
-                    fromYear={2020} toYear={2040}
-                />
+                <Calendar mode="single" selected={selectedDate} onSelect={(date) => { setSelectedDate(date); if (dateParam) router.push('/overtime'); }} initialFocus captionLayout="dropdown-nav" fromYear={2020} toYear={2040} />
               </PopoverContent>
             </Popover>
-          </div>
         </div>
       </header>
 
       <main className="container mx-auto p-4 md:p-8">
-        {view === 'daily' ? (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1">
                 <Card>
                 <CardHeader>
@@ -372,9 +260,6 @@ export default function OvertimePage() {
                     <div>
                         <CardTitle>Overtime Records for {selectedDate ? format(selectedDate, 'MMMM d, yyyy') : '...'}</CardTitle>
                     </div>
-                    <Button onClick={handleDownloadPdf} disabled={(overtimeRecords?.length || 0) === 0} variant="outline" size="sm">
-                        <FileDown className="mr-2 h-4 w-4" /> Download PDF
-                    </Button>
                 </CardHeader>
                 <CardContent>
                     <div className="divide-y">
@@ -458,53 +343,6 @@ export default function OvertimePage() {
                 </Card>
             </div>
             </div>
-        ) : (
-            <Card>
-                <CardHeader className='flex-row items-center justify-between'>
-                    <div>
-                        <CardTitle>Monthly Report: {selectedDate ? format(selectedDate, 'MMMM yyyy') : '...'}</CardTitle>
-                        <CardDescription>Summary of overtime hours and costs for all employees.</CardDescription>
-                    </div>
-                    <Button onClick={handleDownloadPdf} disabled={monthlyReportData.length === 0}>
-                        <FileDown className="mr-2 h-4 w-4"/>
-                        Download PDF
-                    </Button>
-                </CardHeader>
-                <CardContent>
-                    {isLoading ? (
-                        <div className="p-8 text-center text-muted-foreground">Loading records...</div>
-                    ) : monthlyReportData.length > 0 ? (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Employee</TableHead>
-                                    <TableHead className='text-right'>Total Hours</TableHead>
-                                    <TableHead className='text-right'>Total Amount</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {monthlyReportData.map(item => (
-                                    <TableRow key={item.employeeId}>
-                                        <TableCell className='font-medium'>{item.employeeName}</TableCell>
-                                        <TableCell className='text-right'>{item.totalHours.toFixed(2)}</TableCell>
-                                        <TableCell className='text-right font-semibold text-primary'>{formatCurrency(item.totalAmount)}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                            <TableFooter>
-                                <TableRow>
-                                    <TableCell className="font-bold">Grand Total</TableCell>
-                                    <TableCell className="text-right font-bold">{totalHours.toFixed(2)}</TableCell>
-                                    <TableCell className="text-right font-bold text-primary">{formatCurrency(totalAmount)}</TableCell>
-                                </TableRow>
-                            </TableFooter>
-                        </Table>
-                    ) : (
-                        <div className="py-8 text-center text-muted-foreground">No overtime records for this month.</div>
-                    )}
-                </CardContent>
-            </Card>
-        )}
       </main>
     </div>
     </>

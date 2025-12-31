@@ -1,9 +1,9 @@
 
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Archive, Calendar as CalendarIcon, Clock, Eye, Loader2 } from 'lucide-react';
+import { ArrowLeft, Archive, Calendar as CalendarIcon, Clock, Eye, Loader2, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { format, parseISO } from 'date-fns';
@@ -49,8 +49,11 @@ export default function OvertimeArchivePage() {
           <Button variant="outline" size="icon" asChild>
             <Link href="/ashley-expenses"><ArrowLeft /></Link>
           </Button>
-          <h1 className="text-2xl md:text-3xl font-bold">Overtime Archive</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">Employee Overtime</h1>
         </div>
+         <Button asChild>
+            <Link href="/overtime"><Plus className="mr-2"/> Add Overtime</Link>
+        </Button>
       </header>
       <main>
         {isLoading ? (
