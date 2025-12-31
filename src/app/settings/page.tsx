@@ -11,26 +11,11 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { useTheme } from '@/components/shared/theme-provider'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Slider } from '@/components/ui/slider'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
-import { Inter, Roboto, Open_Sans, Lato } from 'next/font/google';
-
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
-const roboto = Roboto({ weight: ['400', '700'], subsets: ['latin'], variable: '--font-roboto' });
-const openSans = Open_Sans({ subsets: ['latin'], variable: '--font-open-sans' });
-const lato = Lato({ weight: ['400', '700'], subsets: ['latin'], variable: '--font-lato' });
-
-
-const availableFonts = [
-  { name: 'Inter', family: "Inter, sans-serif" },
-  { name: 'Roboto', family: "Roboto, sans-serif" },
-  { name: 'Open Sans', family: "Open Sans, sans-serif" },
-  { name: 'Lato', family: "Lato, sans-serif" },
-]
 
 type ThemeColors = {
   background: string;
@@ -130,22 +115,15 @@ export default function SettingsPage() {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   
-  const [savedFont, setSavedFont] = useLocalStorage('app-font', 'Inter')
-  const [savedCustomFont, setSavedCustomFont] = useLocalStorage<string | null>('custom-font-base64', null)
-  
   const [savedLightColors, setSavedLightColors] = useLocalStorage<ThemeColors>('light-theme-colors', defaultLightColors);
   const [savedDarkColors, setSavedDarkColors] = useLocalStorage<ThemeColors>('dark-theme-colors', defaultDarkColors);
   
-  const [savedLogo, setSavedLogo] = useLocalStorage<string | null>('app-logo', null);
   const [savedDashboardBanner, setSavedDashboardBanner] = useLocalStorage<string | null>('dashboard-banner', null);
   const [savedBannerHeight, setSavedBannerHeight] = useLocalStorage('dashboard-banner-height', 150);
 
 
-  const [font, setFont] = useState(savedFont);
-  const [customFont, setCustomFont] = useState(savedCustomFont);
   const [lightColors, setLightColors] = useState(savedLightColors);
   const [darkColors, setDarkColors] = useState(savedDarkColors);
-  const [logoSrc, setLogoSrc] = useState(savedLogo);
   const [dashboardBanner, setDashboardBanner] = useState(savedDashboardBanner);
   const [bannerHeight, setBannerHeight] = useState(savedBannerHeight);
   
@@ -163,39 +141,6 @@ export default function SettingsPage() {
     });
   };
   
-  const applyCustomFont = (fontDataUrl: string | null) => {
-    const styleId = 'custom-font-style';
-    let styleElement = document.getElementById(styleId) as HTMLStyleElement;
-    if (!styleElement) {
-        styleElement = document.createElement('style');
-        styleElement.id = styleId;
-        document.head.appendChild(styleElement);
-    }
-    if(fontDataUrl) {
-      styleElement.innerHTML = `
-        @font-face {
-          font-family: 'CustomFont';
-          src: url(${fontDataUrl});
-        }
-      `;
-    } else {
-      styleElement.innerHTML = '';
-    }
-  }
-
-  const applyFont = (fontName: string, customFontData: string | null) => {
-    if (fontName === 'CustomFont' && customFontData) {
-      applyCustomFont(customFontData);
-      document.body.style.fontFamily = "'CustomFont', sans-serif";
-    } else {
-      applyCustomFont(null); // Remove custom font if not selected
-      const selectedFont = availableFonts.find(f => f.name === fontName)
-      if(selectedFont) {
-          document.body.style.setProperty('font-family', selectedFont.family)
-      }
-    }
-  }
-
   // Apply saved settings on initial mount
   useEffect(() => {
     setMounted(true)
@@ -203,16 +148,11 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (mounted) {
-      setFont(savedFont);
-      setCustomFont(savedCustomFont);
       setLightColors(savedLightColors);
       setDarkColors(savedDarkColors);
-      setLogoSrc(savedLogo);
       setDashboardBanner(savedDashboardBanner);
       setBannerHeight(savedBannerHeight);
     
-      applyFont(savedFont, savedCustomFont);
-
       if (document.documentElement.classList.contains('dark')) {
         applyColors(savedDarkColors);
       } else {
@@ -220,7 +160,7 @@ export default function SettingsPage() {
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mounted, savedFont, savedCustomFont, savedLightColors, savedDarkColors, savedLogo, savedDashboardBanner, savedBannerHeight])
+  }, [mounted, savedLightColors, savedDarkColors, savedDashboardBanner, savedBannerHeight])
   
   // Apply live preview changes
   useEffect(() => {
@@ -230,39 +170,13 @@ export default function SettingsPage() {
     } else {
       applyColors(lightColors);
     }
-    applyFont(font, customFont);
-  }, [font, customFont, lightColors, darkColors, theme, mounted])
+  }, [lightColors, darkColors, theme, mounted])
 
   useEffect(() => {
     if(!mounted) return;
     setSavedBannerHeight(bannerHeight);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bannerHeight]);
-  
-  const handleFontChange = (fontName: string) => {
-    setFont(fontName)
-  }
-  
-  const handleCustomFontUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const validExtensions = ['.ttf', '.otf', '.woff', '.woff2'];
-      const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
-      
-      if (!validExtensions.includes(fileExtension)) {
-        toast({ variant: 'destructive', title: 'Invalid File Type', description: 'Please upload a .ttf, .otf, .woff, or .woff2 file.' });
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const result = event.target?.result as string;
-        setCustomFont(result);
-        setFont('CustomFont');
-        toast({ title: 'Custom font selected!', description: 'Click "Save Changes" to apply.' });
-      };
-      reader.readAsDataURL(file);
-    }
-  };
   
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, setter: (value: string | null) => void, toastTitle: string) => {
     const file = e.target.files?.[0]
@@ -280,31 +194,22 @@ export default function SettingsPage() {
   }
 
   const handleSaveChanges = () => {
-    setSavedFont(font);
-    setSavedCustomFont(customFont);
     setSavedLightColors(lightColors);
     setSavedDarkColors(darkColors);
-    setSavedLogo(logoSrc);
     setSavedDashboardBanner(dashboardBanner);
     setSavedBannerHeight(bannerHeight);
     toast({ title: 'Settings saved!', description: 'Your appearance settings have been updated.' });
   }
 
   const handleResetToDefault = () => {
-    setFont('Inter');
-    setCustomFont(null);
     setLightColors(defaultLightColors);
     setDarkColors(defaultDarkColors);
-    setLogoSrc(null);
     setDashboardBanner(null);
     setBannerHeight(150);
     
     // Save defaults immediately
-    setSavedFont('Inter');
-    setSavedCustomFont(null);
     setSavedLightColors(defaultLightColors);
     setSavedDarkColors(defaultDarkColors);
-    setSavedLogo(null);
     setSavedDashboardBanner(null);
     setSavedBannerHeight(150);
     
@@ -437,42 +342,21 @@ export default function SettingsPage() {
             </Card>
             <Card>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg"><Building /> Branding</CardTitle>
-                <CardDescription>Manage your company's logo and banner.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <div className='flex flex-col items-center justify-center gap-4'>
-                    <div className="w-full h-24 border rounded-md flex items-center justify-center bg-muted/30">
-                        {logoSrc ? (
-                            <Image src={logoSrc} alt="Current App Logo" width={120} height={40} className="object-contain" />
-                        ): (
-                            <span className='text-sm text-muted-foreground'>Company Logo Preview</span>
-                        )}
-                    </div>
-                     <div className="w-full h-24 border rounded-md flex items-center justify-center bg-muted/30 relative overflow-hidden">
-                        {dashboardBanner ? (
-                            <Image src={dashboardBanner} alt="Current Dashboard Banner" fill={true} className="object-cover" />
-                        ): (
-                            <span className='text-sm text-muted-foreground'>Dashboard Banner Preview</span>
-                        )}
-                    </div>
-                </div>
-                <div>
-                <Label htmlFor="logo-upload">Upload New Logo</Label>
-                <Input id="logo-upload" type="file" accept="image/*" className="mt-2" onChange={(e) => handleImageUpload(e, setLogoSrc, "Logo updated!")} />
-                </div>
-                 <div>
-                <Label htmlFor="banner-upload">Upload Dashboard Banner</Label>
-                <Input id="banner-upload" type="file" accept="image/*" className="mt-2" onChange={(e) => handleImageUpload(e, setDashboardBanner, "Banner updated!")} />
-                </div>
-            </CardContent>
-            </Card>
-            <Card>
-            <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg"><LayoutDashboard /> Dashboard</CardTitle>
                 <CardDescription>Customize dashboard appearance.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+                 <div className="w-full h-24 border rounded-md flex items-center justify-center bg-muted/30 relative overflow-hidden">
+                    {dashboardBanner ? (
+                        <Image src={dashboardBanner} alt="Current Dashboard Banner" fill={true} className="object-cover" />
+                    ): (
+                        <span className='text-sm text-muted-foreground'>Dashboard Banner Preview</span>
+                    )}
+                </div>
+                 <div>
+                    <Label htmlFor="banner-upload">Upload Dashboard Banner</Label>
+                    <Input id="banner-upload" type="file" accept="image/*" className="mt-2" onChange={(e) => handleImageUpload(e, setDashboardBanner, "Banner updated!")} />
+                </div>
                 <div className="space-y-2">
                     <Label htmlFor="banner-height">Banner Height: {bannerHeight}px</Label>
                     <Slider
@@ -486,7 +370,7 @@ export default function SettingsPage() {
                 </div>
             </CardContent>
             </Card>
-            <Card className="lg:col-span-2">
+            <Card className="lg:col-span-2 xl:col-span-1">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Palette/> Color Palette</CardTitle>
                 <CardDescription>Adjust colors for light and dark themes. Changes are previewed live.</CardDescription>
@@ -512,33 +396,6 @@ export default function SettingsPage() {
                         <ColorPicker label="Card" value={darkColors.card} onChange={(c) => setDarkColors(p => ({...p, card: c}))} />
                     </TabsContent>
                 </Tabs>
-            </CardContent>
-            </Card>
-            <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Type /> Typography</CardTitle>
-                <CardDescription>Manage the font used in the application and for PDF exports.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-                <div className="flex items-center justify-between">
-                    <Label htmlFor="font-select">Font Family</Label>
-                    <Select value={font} onValueChange={handleFontChange}>
-                        <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Select a font" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {availableFonts.map(f => (
-                                <SelectItem key={f.name} value={f.name}>{f.name}</SelectItem>
-                            ))}
-                            {customFont && <SelectItem value="CustomFont">Custom Font</SelectItem>}
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div>
-                    <Label htmlFor="font-upload" className="text-sm font-medium">Upload Custom Font</Label>
-                    <Input id="font-upload" type="file" accept=".ttf,.otf,.woff,.woff2" className="mt-2" onChange={handleCustomFontUpload} />
-                    <p className="text-xs text-muted-foreground mt-2">Upload a .ttf, .otf, .woff, or .woff2 file. This font will be used for PDF generation.</p>
-                </div>
             </CardContent>
             </Card>
         </div>

@@ -19,6 +19,7 @@ import useLocalStorage from '@/hooks/use-local-storage';
 import { useAppContext } from '@/context/app-provider';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Bar, BarChart as RechartsBarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
+import type { PdfSettings } from '@/lib/types';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -31,9 +32,7 @@ const formatCurrency = (amount: number) => {
 export default function MonthlyExpenseReportPage() {
   const { expenses, employees, expenseReports } = useAppContext();
 
-  const defaultLogo = "https://picsum.photos/seed/ashley-logo/300/100";
-  const [logoSrc] = useLocalStorage('app-logo', defaultLogo);
-  const [customFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
+  const [pdfSettings] = useLocalStorage<PdfSettings>('pdf-settings', {});
   const pdfHeaderRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<HTMLDivElement>(null);
 
@@ -85,10 +84,10 @@ export default function MonthlyExpenseReportPage() {
     if (!pdfHeaderRef.current || !selectedDate) return;
     
     const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
-    if (customFontBase64) {
+    if (pdfSettings.customFont) {
       const fontName = "CustomFont";
       const fontStyle = "normal";
-      const fontBase64 = customFontBase64.split(',')[1];
+      const fontBase64 = pdfSettings.customFont.split(',')[1];
       doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
       doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
       doc.setFont(fontName);
@@ -99,11 +98,11 @@ export default function MonthlyExpenseReportPage() {
     const headerImgData = headerCanvas.toDataURL('image/png');
     const pdfWidth = doc.internal.pageSize.getWidth();
     const headerRatio = headerCanvas.width / headerCanvas.height;
-    const finalHeaderWidth = pdfWidth - 28;
+    const finalHeaderWidth = pdfWidth;
     const finalHeaderHeight = finalHeaderWidth / headerRatio;
-    doc.addImage(headerImgData, 'PNG', 14, 14, finalHeaderWidth, finalHeaderHeight);
+    doc.addImage(headerImgData, 'PNG', 0, 0, finalHeaderWidth, finalHeaderHeight);
 
-    let startY = finalHeaderHeight + 30;
+    let startY = finalHeaderHeight + 10;
 
     // Chart
     if (chartRef.current) {
@@ -137,9 +136,9 @@ export default function MonthlyExpenseReportPage() {
           body: monthlyData.summary.map(item => [item.employeeName, formatCurrency(item.totalAmount)]),
           foot: [['Grand Total', formatCurrency(monthlyData.total)]],
           theme: 'grid',
-          headStyles: { fillColor: [22, 163, 74] },
+          headStyles: { fillColor: pdfSettings.themeColor || '#22c55e' },
           footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
-          didParseCell: (data) => { if (customFontBase64) { (data.cell.styles as any).font = "CustomFont"; } }
+          didParseCell: (data) => { if (pdfSettings.customFont) { (data.cell.styles as any).font = "CustomFont"; } }
         });
         startY = (doc as any).lastAutoTable.finalY + 20;
     }
@@ -165,10 +164,19 @@ export default function MonthlyExpenseReportPage() {
           ]),
           theme: 'striped',
           headStyles: { fillColor: [40, 40, 40] },
-          didParseCell: (data) => { if (customFontBase64) { (data.cell.styles as any).font = "CustomFont"; } }
+          didParseCell: (data) => { if (pdfSettings.customFont) { (data.cell.styles as any).font = "CustomFont"; } }
         });
     }
 
+    if (pdfSettings.footerText) {
+        const pageCount = (doc as any).internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.setTextColor(150);
+            doc.text(pdfSettings.footerText, doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
+        }
+    }
     
     doc.save(`monthly-expense-report-${format(selectedDate, 'yyyy-MM')}.pdf`);
   };
@@ -178,7 +186,13 @@ export default function MonthlyExpenseReportPage() {
       <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
         {selectedDate && (
           <div ref={pdfHeaderRef} style={{ width: '700px', background: 'white', color: 'black' }}>
-            <ReportPdfHeader title="Monthly Expense Report" subtitle={format(selectedDate, 'MMMM yyyy')} logoSrc={logoSrc ?? ''} />
+            <ReportPdfHeader 
+                title="Monthly Expense Report" 
+                subtitle={format(selectedDate, 'MMMM yyyy')} 
+                logoSrc={pdfSettings.logo ?? null}
+                themeColor={pdfSettings.themeColor}
+                headerText={pdfSettings.headerText}
+            />
           </div>
         )}
       </div>

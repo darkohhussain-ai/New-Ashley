@@ -6,19 +6,32 @@ import Image from 'next/image';
 type ReportPdfHeaderProps = {
   title: string;
   subtitle: string;
-  logoSrc: string;
+  logoSrc: string | null;
+  themeColor?: string;
+  headerText?: string;
 };
 
-export function ReportPdfHeader({ title, subtitle, logoSrc }: ReportPdfHeaderProps) {
+export function ReportPdfHeader({ title, subtitle, logoSrc, themeColor, headerText }: ReportPdfHeaderProps) {
   return (
-    <div className="bg-white text-black w-full p-4 font-sans border-b-2 border-gray-200" style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" }}>
-      <div className="flex justify-between items-start pb-4">
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold text-gray-800">{title}</h1>
-          <p className="text-lg font-semibold text-gray-600">{subtitle}</p>
+    <div className="bg-white text-black w-full p-4 font-sans" style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" }}>
+      {/* Custom Header Text */}
+      {headerText && (
+        <div className="text-center text-xs text-gray-500 pb-2">
+          {headerText}
         </div>
-        <div className="w-[80px] h-[80px] flex items-center justify-center">
-          {logoSrc && <Image src={logoSrc} alt="Company Logo" width={60} height={60} className="object-contain" />}
+      )}
+
+      {/* Main Header */}
+      <div 
+        className="flex justify-between items-center p-4 rounded-t-lg text-white"
+        style={{ backgroundColor: themeColor || '#22c55e' }}
+      >
+        <div className="flex-1">
+          <h1 className="text-xl font-bold">{title}</h1>
+          <p className="text-sm opacity-90">{subtitle}</p>
+        </div>
+        <div className="w-16 h-16 flex items-center justify-center bg-white/20 rounded-full p-1">
+          {logoSrc && <Image src={logoSrc} alt="Company Logo" width={56} height={56} className="object-contain rounded-full" />}
         </div>
       </div>
     </div>

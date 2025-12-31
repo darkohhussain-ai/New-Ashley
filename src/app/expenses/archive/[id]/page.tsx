@@ -18,6 +18,7 @@ import { useAppContext } from '@/context/app-provider';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { PdfSettings } from '@/lib/types';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'IQD', maximumFractionDigits: 0 }).format(amount);
 
@@ -27,9 +28,7 @@ export default function ViewExpenseReportPage() {
   const { toast } = useToast();
   const { expenseReports, setExpenseReports, expenses, setExpenses, employees } = useAppContext();
 
-  const defaultLogo = "https://picsum.photos/seed/ashley-logo/300/100";
-  const [logoSrc] = useLocalStorage('app-logo', defaultLogo);
-  const [customFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
+  const [pdfSettings] = useLocalStorage<PdfSettings>('pdf-settings', {});
   const pdfHeaderRef = useRef<HTMLDivElement>(null);
 
   const report = useMemo(() => expenseReports.find(r => r.id === reportId), [expenseReports, reportId]);
@@ -53,10 +52,10 @@ export default function ViewExpenseReportPage() {
     if (!pdfHeaderRef.current || !report || !reportItems) return;
     
     const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
-    if (customFontBase64) {
+    if (pdfSettings.customFont) {
       const fontName = "CustomFont";
       const fontStyle = "normal";
-      const fontBase64 = customFontBase64.split(',')[1];
+      const fontBase64 = pdfSettings.customFont.split(',')[1];
       doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
       doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
       doc.setFont(fontName);
@@ -68,23 +67,33 @@ export default function ViewExpenseReportPage() {
     const imgWidth = canvas.width;
     const imgHeight = canvas.height;
     const ratio = imgWidth / imgHeight;
-    const finalImgWidth = pdfWidth - 28;
+    const finalImgWidth = pdfWidth;
     const finalImgHeight = finalImgWidth / ratio;
     
-    doc.addImage(imgData, 'PNG', 14, 14, finalImgWidth, finalImgHeight);
+    doc.addImage(imgData, 'PNG', 0, 0, finalImgWidth, finalImgHeight);
     
     autoTable(doc, {
-      startY: finalImgHeight + 30,
+      startY: finalImgHeight + 10,
       head: [['Employee', 'Notes', 'Amount']],
       body: reportItems.map(item => [getEmployeeName(item.employeeId), item.notes || '', formatCurrency(item.amount)]),
       foot: [['Total', '', formatCurrency(report.totalAmount)]],
       theme: 'grid',
-      headStyles: { fillColor: [22, 163, 74] },
+      headStyles: { fillColor: pdfSettings.themeColor || '#22c55e' },
       footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
       didParseCell: (data) => {
-        if (customFontBase64) { (data.cell.styles as any).font = "CustomFont"; }
+        if (pdfSettings.customFont) { (data.cell.styles as any).font = "CustomFont"; }
       }
     });
+
+    if (pdfSettings.footerText) {
+        const pageCount = (doc as any).internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.setTextColor(150);
+            doc.text(pdfSettings.footerText, doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
+        }
+    }
     
     doc.save(`${report.reportName}.pdf`);
   };
@@ -115,7 +124,13 @@ export default function ViewExpenseReportPage() {
     <>
       <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
         <div ref={pdfHeaderRef} style={{ width: '700px', background: 'white', color: 'black' }}>
-          <ReportPdfHeader title={report.reportName} subtitle={`Report Date: ${format(parseISO(report.reportDate), 'PPP')}`} logoSrc={logoSrc ?? ''} />
+          <ReportPdfHeader 
+            title={report.reportName} 
+            subtitle={`Report Date: ${format(parseISO(report.reportDate), 'PPP')}`} 
+            logoSrc={pdfSettings.logo ?? null} 
+            themeColor={pdfSettings.themeColor}
+            headerText={pdfSettings.headerText}
+          />
         </div>
       </div>
       <div className="min-h-screen bg-background text-foreground p-4 md:p-8">

@@ -134,3 +134,12 @@ export type EvaluationQuestion = {
     text: string;
     answers: [AnswerOption, AnswerOption, AnswerOption];
 };
+
+export type PdfSettings = {
+    logo?: string | null;
+    font?: string;
+    customFont?: string | null;
+    themeColor?: string;
+    headerText?: string;
+    footerText?: string;
+}

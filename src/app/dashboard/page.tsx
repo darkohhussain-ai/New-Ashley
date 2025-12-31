@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { Users, Box, Settings as SettingsIcon, CreditCard, Bell, ChevronDown, Calendar, Clock, PackagePlus, Star, CheckSquare, RefreshCcw } from "lucide-react"
+import { Users, Box, Settings as SettingsIcon, CreditCard, Bell, ChevronDown, Calendar, Clock, PackagePlus, Star, CheckSquare, RefreshCcw, Newspaper } from "lucide-react"
 import { DashboardCard } from "@/components/dashboard/dashboard-card"
 import useLocalStorage from "@/hooks/use-local-storage"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -39,6 +39,7 @@ export default function Dashboard() {
     { title: "Transmit Cargo", icon: PackagePlus, href: "/transmit", color: "bg-yellow-500" },
     { title: "Placement & Storage", icon: Box, href: "/items", color: "bg-green-500" },
     { title: "Marketing Feedback", icon: Star, href: "/marketing-feedback", color: "bg-cyan-500" },
+    { title: "Report Designer", icon: Newspaper, href: "/report-designer", color: "bg-indigo-500" },
     { title: "Settings", icon: SettingsIcon, href: "/settings", color: "bg-purple-500" },
     { title: "Employees", icon: Users, href: "/employees", color: "bg-pink-500" },
   ]
