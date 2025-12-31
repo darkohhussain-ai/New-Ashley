@@ -171,8 +171,8 @@ export default function AddBonusPage() {
         const fontName = "CustomFont";
         const fontStyle = "normal";
         const fontBase64 = settings.customFont.split(',')[1];
-        doc.addFileToVFS(\`\${fontName}.ttf\`, fontBase64);
-        doc.addFont(\`\${fontName}.ttf\`, fontName, fontStyle);
+        doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
+        doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
         doc.setFont(fontName);
     }
 
@@ -196,7 +196,7 @@ export default function AddBonusPage() {
         didParseCell: (data) => { if (settings.customFont) { (data.cell.styles as any).font = "CustomFont"; } }
     });
     
-    doc.save(\`bonus-report-\${format(selectedDate, 'yyyy-MM-dd')}.pdf\`);
+    doc.save(`bonus-report-${format(selectedDate, 'yyyy-MM-dd')}.pdf`);
   };
 
   return (

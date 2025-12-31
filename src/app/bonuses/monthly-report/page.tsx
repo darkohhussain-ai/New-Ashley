@@ -80,8 +80,8 @@ export default function MonthlyBonusReportPage() {
         const fontName = "CustomFont";
         const fontStyle = "normal";
         const fontBase64 = settings.customFont.split(',')[1];
-        doc.addFileToVFS(\`\${fontName}.ttf\`, fontBase64);
-        doc.addFont(\`\${fontName}.ttf\`, fontName, fontStyle);
+        doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
+        doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
         doc.setFont(fontName);
     }
     
@@ -140,7 +140,7 @@ export default function MonthlyBonusReportPage() {
         }
     }
     
-    doc.save(\`monthly-bonus-report-\${format(selectedDate, 'yyyy-MM')}.pdf\`);
+    doc.save(`monthly-bonus-report-${format(selectedDate, 'yyyy-MM')}.pdf`);
   };
 
   return (
