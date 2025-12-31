@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, Save, Palette, RefreshCcw, FileText, Receipt } from 'lucide-react';
+import { ArrowLeft, Save, Palette, RefreshCcw, FileText, Receipt, Type } from 'lucide-react';
 import useLocalStorage from '@/hooks/use-local-storage';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -15,8 +15,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { ReportPdfHeader } from '@/components/reports/report-pdf-header';
 import { Textarea } from '@/components/ui/textarea';
-import type { PdfSettings, AllPdfSettings } from '@/lib/types';
+import type { PdfSettings, AllPdfSettings, Employee } from '@/lib/types';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { EmployeePdfCard } from '@/components/employees/employee-pdf-card';
 
 
 const availableFonts = [
@@ -40,7 +41,7 @@ const defaultInvoiceSettings: PdfSettings = {
     font: 'Inter',
     customFont: null,
     themeColor: '#3b82f6', // Blue
-    headerText: '',
+    headerText: 'Ashley DRP',
     footerText: 'Thank you for your business.'
 };
 
@@ -48,6 +49,20 @@ const defaultSettings: AllPdfSettings = {
     report: defaultReportSettings,
     invoice: defaultInvoiceSettings
 };
+
+// Mock employee for preview
+const mockEmployee: Employee = {
+    id: 'preview-123',
+    name: 'John Doe',
+    employeeId: 'EMP-007',
+    role: 'Manager',
+    photoUrl: 'https://picsum.photos/seed/johndoe/400',
+    email: 'john.doe@example.com',
+    phone: '555-1234',
+    employmentStartDate: '2022-01-15T00:00:00.000Z',
+    dateOfBirth: '1985-05-20T00:00:00.000Z'
+}
+
 
 export default function ReportDesignerPage() {
   const { toast } = useToast();
@@ -84,7 +99,6 @@ export default function ReportDesignerPage() {
 
   useEffect(() => {
     if (mounted) {
-      // Ensure saved settings have both keys
       const updatedSettings = {
           report: savedPdfSettings.report || defaultReportSettings,
           invoice: savedPdfSettings.invoice || defaultInvoiceSettings
@@ -143,14 +157,14 @@ export default function ReportDesignerPage() {
 
   const handleSaveChanges = () => {
     setSavedPdfSettings(settings);
-    toast({ title: 'Settings saved!', description: 'Your PDF report settings have been updated.' });
+    toast({ title: 'Settings saved!', description: 'Your PDF design templates have been updated.' });
   };
 
   const handleResetToDefault = () => {
     setSettings(defaultSettings);
     applyCustomFont(null);
     setSavedPdfSettings(defaultSettings);
-    toast({ title: 'Settings Reset', description: 'All PDF report settings have been reset to their defaults.' });
+    toast({ title: 'Settings Reset', description: 'All PDF design settings have been reset to their defaults.' });
   };
 
   if (!mounted) {
@@ -171,6 +185,12 @@ export default function ReportDesignerPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <style>{`
+        @font-face {
+          font-family: 'CustomPdfFont';
+          src: ${currentSettings?.customFont ? `url(${currentSettings.customFont})` : 'none'};
+        }
+      `}</style>
       <header className="bg-card border-b p-4">
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -179,9 +199,28 @@ export default function ReportDesignerPage() {
             </Button>
             <h1 className="text-xl font-bold">Report Designer</h1>
           </div>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-4">
+             <AlertDialog>
+                <AlertDialogTrigger asChild>
+                    <Button variant="outline">
+                        <RefreshCcw className="mr-2 h-4 w-4" /> Reset All
+                    </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Reset all design settings?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                        This will reset both the Report and Invoice templates to their original defaults. This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleResetToDefault}>Reset Settings</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
             <Button onClick={handleSaveChanges}>
-              <Save className="mr-2 h-4 w-4" /> Save All Changes
+              <Save className="mr-2 h-4 w-4" /> Save Changes
             </Button>
           </div>
         </div>
@@ -206,37 +245,28 @@ export default function ReportDesignerPage() {
 
                  <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-lg"><FileText /> Report Content</CardTitle>
-                        <CardDescription>Manage your company's logo and header/footer text.</CardDescription>
+                        <CardTitle className="flex items-center gap-2 text-lg"><FileText /> Content</CardTitle>
+                        <CardDescription>Manage your company's logo and header/footer text for this template.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className='flex flex-col items-center justify-center gap-4'>
-                            <div className="w-full h-24 border rounded-md flex items-center justify-center bg-muted/30">
-                                {currentSettings.logo ? (
-                                    <Image src={currentSettings.logo} alt="Current App Logo" width={120} height={60} className="object-contain" />
-                                ): (
-                                    <span className='text-sm text-muted-foreground'>Report Logo Preview</span>
-                                )}
-                            </div>
-                        </div>
                         <div>
-                        <Label htmlFor="logo-upload">Upload Logo for {activeTab === 'report' ? 'Reports' : 'Invoices'}</Label>
-                        <Input id="logo-upload" type="file" accept="image/*" className="mt-2" onChange={handleImageUpload} />
+                            <Label htmlFor="logo-upload">Company Logo</Label>
+                            <Input id="logo-upload" type="file" accept="image/*" className="mt-2" onChange={handleImageUpload} />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="header-text">Header Text (Optional)</Label>
-                          <Input id="header-text" value={currentSettings.headerText} onChange={(e) => handleSettingChange('headerText', e.target.value)} placeholder="e.g. Confidential Internal Document"/>
+                          <Input id="header-text" value={currentSettings.headerText} onChange={(e) => handleSettingChange('headerText', e.target.value)} placeholder="e.g. Confidential Document"/>
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="footer-text">Footer Text (Optional)</Label>
-                          <Textarea id="footer-text" value={currentSettings.footerText} onChange={(e) => handleSettingChange('footerText', e.target.value)} placeholder="e.g. Generated by Ashley DRP System"/>
+                          <Textarea id="footer-text" value={currentSettings.footerText} onChange={(e) => handleSettingChange('footerText', e.target.value)} placeholder="e.g. Generated by Ashley DRP"/>
                         </div>
                     </CardContent>
                 </Card>
                  <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-lg"><Palette /> Report Styling</CardTitle>
-                        <CardDescription>Customize fonts and colors for your PDF reports.</CardDescription>
+                        <CardTitle className="flex items-center gap-2 text-lg"><Palette /> Styling</CardTitle>
+                        <CardDescription>Customize fonts and colors for this template.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="flex items-center justify-between">
@@ -250,8 +280,8 @@ export default function ReportDesignerPage() {
                           />
                         </div>
                         <div className="flex items-center justify-between">
-                            <Label htmlFor="font-select">PDF Font</Label>
-                            <Select value={currentSettings.font} onValueChange={(v) => handleSettingChange('font', v)}>
+                            <Label htmlFor="font-select">Font</Label>
+                            <Select value={currentSettings.font} onValueChange={(v) => { handleSettingChange('font', v); if (v !== 'CustomFont') applyCustomFont(null); }}>
                                 <SelectTrigger className="w-[180px]">
                                     <SelectValue placeholder="Select a font" />
                                 </SelectTrigger>
@@ -264,58 +294,63 @@ export default function ReportDesignerPage() {
                             </Select>
                         </div>
                         <div>
-                            <Label htmlFor="font-upload" className="text-sm font-medium">Upload Custom Font</Label>
+                            <Label htmlFor="font-upload" className="text-sm font-medium">Upload Custom Font (.ttf, .woff)</Label>
                             <Input id="font-upload" type="file" accept=".ttf,.otf,.woff,.woff2" className="mt-2" onChange={handleCustomFontUpload} />
-                            <p className="text-xs text-muted-foreground mt-2">Used for PDF generation. This is a global setting.</p>
                         </div>
                     </CardContent>
                 </Card>
-
-                 <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                        <Button variant="outline" className="w-full">
-                            <RefreshCcw className="mr-2 h-4 w-4" /> Reset All to Default
-                        </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>Reset PDF settings?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                            This will reset all PDF report and invoice settings to their original defaults. This action cannot be undone.
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleResetToDefault}>Reset Settings</AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
             </div>
             <div className="lg:col-span-2">
                 <Card>
                     <CardHeader>
                         <CardTitle>Live Preview</CardTitle>
-                        <CardDescription>This is a preview of how your PDF report header will look.</CardDescription>
+                        <CardDescription>A scaled-down preview of your {activeTab === 'report' ? 'report' : 'invoice'} design.</CardDescription>
                     </CardHeader>
-                    <CardContent className='bg-gray-100 p-4 rounded-b-lg'>
-                        <div className="shadow-lg rounded-lg overflow-hidden">
-                           <ReportPdfHeader
-                                title="Example Report Title"
-                                subtitle="This is an example subtitle"
-                                logoSrc={currentSettings.logo ?? null}
-                                themeColor={currentSettings.themeColor}
-                                headerText={currentSettings.headerText}
-                            />
-                            <div className="bg-white p-4">
-                                <p className="text-sm text-gray-600" style={{fontFamily: currentSettings.font === 'CustomFont' ? 'CustomPdfFont' : availableFonts.find(f => f.name === currentSettings.font)?.family}}>
-                                    This is body text to preview your selected font. The quick brown fox jumps over the lazy dog. 1234567890.
-                                </p>
-                            </div>
-                             {currentSettings.footerText && (
-                                <div className="bg-white p-4 border-t text-center text-xs text-gray-500">
-                                    {currentSettings.footerText}
-                                </div>
-                            )}
+                    <CardContent className='bg-gray-100 p-4 rounded-b-lg flex justify-center items-start'>
+                        <div className="w-[595px] h-[842px] bg-white shadow-lg transform scale-[0.6] -translate-y-[160px] origin-top">
+                           {activeTab === 'report' ? (
+                                <>
+                                    <ReportPdfHeader
+                                        title="Example Report Title"
+                                        subtitle="This is an example subtitle"
+                                        logoSrc={currentSettings.logo ?? null}
+                                        themeColor={currentSettings.themeColor}
+                                        headerText={currentSettings.headerText}
+                                    />
+                                    <div className="p-6" style={{fontFamily: currentSettings.font === 'CustomFont' ? 'CustomPdfFont' : availableFonts.find(f => f.name === currentSettings.font)?.family}}>
+                                        <h2 className="text-lg font-bold mb-2 text-gray-800">Sample Section</h2>
+                                        <p className="text-sm text-gray-600 mb-4">
+                                            This is sample body text to preview your selected font. The quick brown fox jumps over the lazy dog. 1234567890.
+                                            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+                                        </p>
+                                        <table className="w-full text-left text-sm">
+                                            <thead>
+                                            <tr style={{backgroundColor: currentSettings.themeColor}} className="text-white">
+                                                <th className="p-2">Item</th>
+                                                <th className="p-2">Description</th>
+                                                <th className="p-2 text-right">Amount</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            <tr className='border-b'><td className="p-2">Sample A</td><td className="p-2">First item description</td><td className="p-2 text-right">1,500</td></tr>
+                                            <tr className='border-b bg-gray-50'><td className="p-2">Sample B</td><td className="p-2">Second item description</td><td className="p-2 text-right">2,000</td></tr>
+                                            <tr className='border-b'><td className="p-2">Sample C</td><td className="p-2">Third item description</td><td className="p-2 text-right">800</td></tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {currentSettings.footerText && (
+                                        <div className="absolute bottom-4 left-0 right-0 p-4 border-t text-center text-xs text-gray-500">
+                                            {currentSettings.footerText}
+                                        </div>
+                                    )}
+                                </>
+                           ) : (
+                               <div className='flex justify-center items-center h-full'>
+                                   <div className='transform scale-[0.9]'>
+                                        <EmployeePdfCard employee={mockEmployee} settings={currentSettings}/>
+                                   </div>
+                               </div>
+                           )}
                         </div>
                     </CardContent>
                 </Card>
