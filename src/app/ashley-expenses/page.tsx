@@ -17,7 +17,7 @@ const menuItems = [
   {
     title: "Employee Overtime",
     icon: Clock,
-    href: "/overtime/archive",
+    href: "/overtime",
     color: "bg-orange-500",
   },
   {

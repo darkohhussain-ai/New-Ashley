@@ -47,12 +47,12 @@ export default function OvertimeArchivePage() {
       <header className="flex items-center justify-between gap-4 mb-8">
         <div className="flex items-center gap-4">
           <Button variant="outline" size="icon" asChild>
-            <Link href="/ashley-expenses"><ArrowLeft /></Link>
+            <Link href="/overtime"><ArrowLeft /></Link>
           </Button>
-          <h1 className="text-2xl md:text-3xl font-bold">Employee Overtime</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">Overtime Archive</h1>
         </div>
          <Button asChild>
-            <Link href="/overtime"><Plus className="mr-2"/> Add Overtime</Link>
+            <Link href="/overtime/add"><Plus className="mr-2"/> Add Overtime</Link>
         </Button>
       </header>
       <main>
@@ -74,7 +74,7 @@ export default function OvertimeArchivePage() {
                 </CardContent>
                 <CardContent>
                   <Button asChild className="w-full">
-                    <Link href={`/overtime?date=${date}`}><Eye className="mr-2"/>View Details</Link>
+                    <Link href={`/overtime/add?date=${date}`}><Eye className="mr-2"/>View & Edit Details</Link>
                   </Button>
                 </CardContent>
               </Card>
@@ -85,7 +85,7 @@ export default function OvertimeArchivePage() {
             <Archive className="mx-auto h-12 w-12 text-muted-foreground" />
             <h3 className="mt-4 text-lg font-medium">No Overtime Records Found</h3>
             <p className="mt-2 text-sm text-muted-foreground">Add your first overtime record to see the archive here.</p>
-             <Button asChild className="mt-4"><Link href="/overtime">Add Overtime</Link></Button>
+             <Button asChild className="mt-4"><Link href="/overtime/add">Add Overtime</Link></Button>
           </div>
         )}
       </main>
