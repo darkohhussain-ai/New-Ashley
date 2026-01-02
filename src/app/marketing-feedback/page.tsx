@@ -3,7 +3,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Star, Loader2, ChevronsRight, Plus, Settings, LayoutDashboard, FileText, FileDown, FileSpreadsheet } from 'lucide-react';
+import { ArrowLeft, Star, Loader2, ChevronsRight, Plus, Settings, LayoutDashboard, FileText, FileDown, FileSpreadsheet, Trash2, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -26,6 +26,7 @@ import useLocalStorage from '@/hooks/use-local-storage';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import html2canvas from 'html2canvas';
 import { cn } from '@/lib/utils';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter } from '@/components/ui/alert-dialog';
 
 
 function AddMarketingEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean, onOpenChange: (open: boolean) => void, addEmployee: (employee: Omit<Employee, 'id'>) => void }) {
@@ -149,6 +150,84 @@ function ManageQuestionsDialog({ open, onOpenChange }: { open: boolean, onOpenCh
     )
 }
 
+function EditSubmissionDialog({ feedback, onOpenChange, open }: { feedback: MarketingFeedback | null, open: boolean, onOpenChange: (open: boolean) => void }) {
+    const { toast } = useToast();
+    const { evaluationQuestions, marketingFeedbacks, setMarketingFeedbacks } = useAppContext();
+    const [isSaving, setIsSaving] = useState(false);
+    const [localResponses, setLocalResponses] = useState<Record<string, number>>({});
+
+    useEffect(() => {
+        if (feedback) {
+            const initialResponses = feedback.responses.reduce((acc, res) => {
+                acc[res.questionId] = res.answer;
+                return acc;
+            }, {} as Record<string, number>);
+            setLocalResponses(initialResponses);
+        }
+    }, [feedback]);
+
+    const handleLocalResponseChange = (questionId: string, value: string) => {
+        setLocalResponses(prev => ({ ...prev, [questionId]: parseInt(value) }));
+    };
+
+    const handleSave = () => {
+        if (!feedback) return;
+
+        setIsSaving(true);
+        const newTotalScore = Object.values(localResponses).reduce((sum, val) => sum + val, 0);
+
+        const updatedFeedback: MarketingFeedback = {
+            ...feedback,
+            totalScore: newTotalScore,
+            responses: Object.entries(localResponses).map(([questionId, answer]) => ({ questionId, answer }))
+        };
+        
+        setMarketingFeedbacks(current => current.map(fb => fb.id === updatedFeedback.id ? updatedFeedback : fb));
+        toast({ title: "Success!", description: "The feedback submission has been updated." });
+        setIsSaving(false);
+        onOpenChange(false);
+    };
+
+    if (!feedback) return null;
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle>Edit Feedback Submission</DialogTitle>
+                    <CardDescription>
+                        Editing submission from {format(parseISO(feedback.date), 'PPP')}
+                    </CardDescription>
+                </DialogHeader>
+                <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-4 pt-4">
+                    {evaluationQuestions.map((q, index) => (
+                        <div key={q.id} className="p-4 border rounded-lg">
+                            <p className="font-medium mb-3">{index + 1}. {q.text}</p>
+                            <RadioGroup onValueChange={(value) => handleLocalResponseChange(q.id, value)} value={String(localResponses[q.id] || '')}>
+                                <div className="flex flex-wrap gap-4">
+                                    {q.answers.sort((a,b) => b.value - a.value).map(opt => (
+                                        <div key={opt.value} className="flex items-center space-x-2">
+                                            <RadioGroupItem value={String(opt.value)} id={`edit-${q.id}-${opt.value}`} />
+                                            <Label htmlFor={`edit-${q.id}-${opt.value}`}>{opt.label}</Label>
+                                        </div>
+                                    ))}
+                                </div>
+                            </RadioGroup>
+                        </div>
+                    ))}
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild><Button variant="secondary">Cancel</Button></DialogClose>
+                    <Button onClick={handleSave} disabled={isSaving}>
+                        {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Save Changes
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 export default function MarketingFeedbackPage() {
     const { toast } = useToast();
     const { 
@@ -167,11 +246,13 @@ export default function MarketingFeedbackPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isAddDialogOpen, setAddDialogOpen] = useState(false);
     const [isManageQuestionsOpen, setManageQuestionsOpen] = useState(false);
+    const [editingFeedback, setEditingFeedback] = useState<MarketingFeedback | null>(null);
+
     
     const pdfCardRef = useRef<HTMLDivElement>(null);
 
     const marketingEmployees = useMemo(() => {
-        return employees.filter(e => e.role === 'Marketing');
+        return employees.filter(e => e.role === 'Marketing').sort((a,b) => a.name.localeCompare(b.name));
     }, [employees]);
     
     useEffect(() => {
@@ -179,6 +260,20 @@ export default function MarketingFeedbackPage() {
             setIsLoading(false);
         }
     }, [employees, marketingFeedbacks, evaluationQuestions]);
+    
+    useEffect(() => {
+      // If there are employees but none is selected, select the first one.
+      if (marketingEmployees.length > 0 && !selectedEmployee) {
+        setSelectedEmployee(marketingEmployees[0].id);
+      }
+    }, [marketingEmployees, selectedEmployee])
+
+    const employeeSubmissions = useMemo(() => {
+      if (!selectedEmployee) return [];
+      return marketingFeedbacks
+        .filter(fb => fb.employeeId === selectedEmployee)
+        .sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime())
+    }, [marketingFeedbacks, selectedEmployee])
 
     const addMarketingEmployee = (employeeData: Omit<Employee, 'id'>) => {
         const newEmployee: Employee = {
@@ -190,6 +285,11 @@ export default function MarketingFeedbackPage() {
 
     const handleResponseChange = (questionId: string, value: string) => {
         setResponses(prev => ({ ...prev, [questionId]: parseInt(value) }));
+    };
+
+    const handleDeleteSubmission = (feedbackId: string) => {
+        setMarketingFeedbacks(current => current.filter(fb => fb.id !== feedbackId));
+        toast({ title: 'Deleted', description: 'The feedback submission has been removed.' });
     };
     
     const handleSubmit = async () => {
@@ -215,7 +315,7 @@ export default function MarketingFeedbackPage() {
 
         setMarketingFeedbacks([...marketingFeedbacks, feedbackData]);
         toast({ title: 'Success', description: 'Feedback submitted successfully.' });
-        setSelectedEmployee('');
+        // Don't reset selected employee
         setResponses({});
         setIsSubmitting(false);
     };
@@ -275,7 +375,6 @@ export default function MarketingFeedbackPage() {
             doc.setFont(fontName);
         }
 
-        // 1. Add Header Page
         if (pdfCardRef.current) {
             const headerCanvas = await html2canvas(pdfCardRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
             const headerImgData = headerCanvas.toDataURL('image/png');
@@ -286,7 +385,6 @@ export default function MarketingFeedbackPage() {
             doc.addImage(headerImgData, 'PNG', 0, 0, finalHeaderWidth, finalHeaderHeight);
         }
 
-        // 2. Add Overall Rankings Page
         doc.addPage();
         if (evaluationSummary.length > 0) {
             doc.setFontSize(16);
@@ -299,29 +397,22 @@ export default function MarketingFeedbackPage() {
                 headStyles: { fillColor: [40, 40, 40] },
                 didDrawCell: (data) => {
                     if (data.section === 'body') {
-                        if (data.row.index === 0) { // 1st place
-                            doc.setFillColor(255, 251, 204); // bg-yellow-100
-                        } else if (data.row.index === 1) { // 2nd place
-                            doc.setFillColor(229, 231, 235); // bg-gray-200
-                        } else if (data.row.index === 2) { // 3rd place
-                            doc.setFillColor(255, 237, 213); // bg-orange-200
-                        }
+                        if (data.row.index === 0) { doc.setFillColor(255, 251, 204); }
+                        else if (data.row.index === 1) { doc.setFillColor(229, 231, 235); }
+                        else if (data.row.index === 2) { doc.setFillColor(255, 237, 213); }
                     }
                 },
-                didParseCell: (data) => { 
-                    if (customFontBase64) data.cell.styles.font = "CustomFont"; 
-                }
+                didParseCell: (data) => { if (customFontBase64) data.cell.styles.font = "CustomFont"; }
             });
         }
         
-        // 3. Subsequent Pages: Per-Question Rankings
         if (perQuestionRankings && perQuestionRankings.length > 0) {
             perQuestionRankings.forEach((q) => {
                 doc.addPage();
                 doc.setFontSize(16);
-                doc.text(q.questionText, 14, 22);
+                doc.text(q.questionText, 14, 22, { maxWidth: doc.internal.pageSize.getWidth() - 28 });
                 autoTable(doc, {
-                    startY: 30,
+                    startY: (doc as any).lastAutoTable.finalY ? (doc as any).lastAutoTable.finalY + 30 : 30,
                     head: [['Rank', 'Employee', 'Total Score for Question']],
                     body: q.scores.map((s, rankIndex) => [rankIndex + 1, s.name, s.score]),
                     theme: 'striped',
@@ -341,7 +432,6 @@ export default function MarketingFeedbackPage() {
         }
         const wb = XLSX.utils.book_new();
 
-        // Sheet 1: Employee Rankings
         const rankingsData = evaluationSummary.map((item, index) => ({
             Rank: index + 1,
             Employee: item.name,
@@ -350,7 +440,6 @@ export default function MarketingFeedbackPage() {
         const rankingsWs = XLSX.utils.json_to_sheet(rankingsData);
         XLSX.utils.book_append_sheet(wb, rankingsWs, 'Employee Rankings');
 
-        // Sheet 2: Per Question Rankings
         if (perQuestionRankings && perQuestionRankings.length > 0) {
             const questionRankingsData = perQuestionRankings.flatMap(q => 
                 q.scores.map(s => ({
@@ -363,17 +452,16 @@ export default function MarketingFeedbackPage() {
             XLSX.utils.book_append_sheet(wb, questionsWs, 'Per Question Rankings');
         }
 
-        // Sheet 3: Raw Data
         const rawData = marketingFeedbacks.map(fb => {
             const employee = employees.find(e => e.id === fb.employeeId);
-            const base = {
+            const base: Record<string, any> = {
                 Date: format(parseISO(fb.date), 'yyyy-MM-dd'),
                 Employee: employee?.name || 'Unknown',
                 'Total Score': fb.totalScore,
             };
             fb.responses.forEach(res => {
                 const question = evaluationQuestions.find(q => q.id === res.questionId);
-                (base as any)[question?.text || res.questionId] = res.answer;
+                base[question?.text || res.questionId] = res.answer;
             });
             return base;
         });
@@ -406,6 +494,8 @@ export default function MarketingFeedbackPage() {
             </div>
             <AddMarketingEmployeeDialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen} addEmployee={addMarketingEmployee} />
             <ManageQuestionsDialog open={isManageQuestionsOpen} onOpenChange={setManageQuestionsOpen} />
+            <EditSubmissionDialog feedback={editingFeedback} open={!!editingFeedback} onOpenChange={(open) => !open && setEditingFeedback(null)} />
+
             <header className="flex items-center justify-between gap-4 mb-8">
                 <div className='flex items-center gap-4'>
                     <Button variant="outline" size="icon" asChild>
@@ -548,45 +638,50 @@ export default function MarketingFeedbackPage() {
                         <div className="lg:col-span-1 space-y-8">
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Overall Employee Rankings</CardTitle>
-                                    <CardDescription>Based on the summation of all feedback scores.</CardDescription>
+                                    <CardTitle>Submissions for {marketingEmployees.find(e => e.id === selectedEmployee)?.name || '...'}</CardTitle>
+                                    <CardDescription>View, edit or delete past evaluations for the selected employee.</CardDescription>
                                 </CardHeader>
-                                <CardContent>
-                                {isLoading ? <Loader2 className="animate-spin" /> : (
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Rank</TableHead>
-                                                <TableHead>Employee</TableHead>
-                                                <TableHead className="text-right">Total Score</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                                {evaluationSummary.map((item, index) => (
-                                                    <TableRow key={item.employeeId} className={cn(getRowClass(index))}>
-                                                        <TableCell className="font-bold">{index + 1}</TableCell>
-                                                        <TableCell>{item.name}</TableCell>
-                                                        <TableCell className="text-right font-medium">{item.score}</TableCell>
-                                                    </TableRow>
-                                                ))}
-                                        </TableBody>
-                                    </Table>
-                                )}
+                                <CardContent className="max-h-[70vh] overflow-y-auto">
+                                    {isLoading ? <Loader2 className="animate-spin" /> : employeeSubmissions.length > 0 ? (
+                                        <div className="space-y-3">
+                                            {employeeSubmissions.map(fb => (
+                                                <div key={fb.id} className="border p-3 rounded-lg flex justify-between items-center">
+                                                    <div>
+                                                        <p className="font-semibold text-sm">{format(parseISO(fb.date), 'PPP')}</p>
+                                                        <p className="text-xs text-muted-foreground">Score: {fb.totalScore} / {maxScore}</p>
+                                                    </div>
+                                                    <div className="flex gap-1">
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingFeedback(fb)}>
+                                                            <Edit className="h-4 w-4" />
+                                                        </Button>
+                                                        <AlertDialog>
+                                                            <AlertDialogTrigger asChild>
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            </AlertDialogTrigger>
+                                                            <AlertDialogContent>
+                                                                <AlertDialogHeader>
+                                                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                                    <AlertDialogDescription>
+                                                                        This will permanently delete the submission from {format(parseISO(fb.date), 'PPP')}.
+                                                                    </AlertDialogDescription>
+                                                                </AlertDialogHeader>
+                                                                <AlertDialogFooter>
+                                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                    <AlertDialogAction onClick={() => handleDeleteSubmission(fb.id)}>Delete</AlertDialogAction>
+                                                                </AlertDialogFooter>
+                                                            </AlertDialogContent>
+                                                        </AlertDialog>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ): (
+                                        <p className="text-center text-sm text-muted-foreground py-8">No submissions found for this employee.</p>
+                                    )}
                                 </CardContent>
                             </Card>
-
-                            {selectedEmployee && (
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle>
-                                            {marketingEmployees?.find(e => e.id === selectedEmployee)?.name}'s Latest Scores
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <p className="text-muted-foreground text-center">No feedback data to display.</p>
-                                    </CardContent>
-                                </Card>
-                            )}
                         </div>
                     </div>
                 </TabsContent>
