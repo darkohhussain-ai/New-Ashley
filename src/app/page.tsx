@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { Users, Box, Settings as SettingsIcon, CreditCard, Bell, ChevronDown, Calendar, Clock, PackagePlus, Star, CheckSquare, RefreshCcw, Newspaper } from "lucide-react"
+import { Users, Box, Settings as SettingsIcon, CreditCard, Bell, ChevronDown, Calendar, Clock, PackagePlus, Star, CheckSquare, RefreshCcw, Newspaper, UserCircle } from "lucide-react"
 import { DashboardCard } from "@/components/dashboard/dashboard-card"
 import useLocalStorage from "@/hooks/use-local-storage"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -42,6 +42,7 @@ export default function Home() {
     { title: "Report Designer", icon: Newspaper, href: "/report-designer", color: "bg-indigo-500" },
     { title: "Settings", icon: SettingsIcon, href: "/settings", color: "bg-purple-500" },
     { title: "Employees", icon: Users, href: "/employees", color: "bg-pink-500" },
+    { title: "My Account", icon: UserCircle, href: "/account", color: "bg-gray-500" },
   ]
 
   // We can return a loading state or the default view until the client has mounted
