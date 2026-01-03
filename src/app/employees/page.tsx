@@ -30,6 +30,7 @@ import type { Employee, Expense, Overtime, Bonus, CashWithdrawal, AllPdfSettings
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { EmployeeReportPdfHeader } from "@/components/employees/employee-report-pdf-header"
 import { Separator } from "@/components/ui/separator"
+import { useTranslation } from "@/hooks/use-translation"
 
 
 const formatCurrency = (amount: number) => {
@@ -50,6 +51,7 @@ const employeeRoles = ["Super Manager", "Manager", "IT", "Employee Supervisor", 
 
 
 function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, onDeselect: () => void }) {
+    const { t } = useTranslation();
     const { toast } = useToast();
     const { 
         employees, setEmployees,
@@ -117,7 +119,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
 
     const { totalBonuses, sortedBonuses } = useMemo(() => {
         if (!employeeBonuses) return { totalBonuses: 0, sortedBonuses: [] };
-        const total = employeeBonuses.reduce((sum, b) => sum + b.amount, 0);
+        const total = employeeBonuses.reduce((sum, b) => sum + b.totalAmount, 0);
         const sorted = [...employeeBonuses].sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
         return { totalBonuses: total, sortedBonuses: sorted };
     }, [employeeBonuses]);
@@ -158,14 +160,14 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
 
         setEmployees(employees.map(emp => emp.id === employeeId ? { ...emp, ...updatedData } : emp));
         
-        toast({ title: "Success", description: "Employee details updated." });
+        toast({ title: t('save_changes'), description: t('employee_details_updated') });
         setIsEditing(false);
     };
     
     const handleDelete = () => {
         if(!employeeId) return;
         setEmployees(employees.filter(e => e.id !== employeeId));
-        toast({ title: "Employee Deleted", description: `${employee?.name} has been removed.` });
+        toast({ title: t('employee_deleted'), description: t('employee_deleted_desc', {employeeName: employee?.name}) });
         onDeselect();
     }
 
@@ -247,17 +249,17 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                 footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' },
                 didParseCell: function (data) {
                     if (settings.customFont) {
-                        data.cell.styles.font = "CustomFont";
+                        (data.cell.styles as any).font = "CustomFont";
                     }
                 }
             });
             startY = (pdf as any).lastAutoTable.finalY + 20;
         }
 
-        addSection('Expenses', sortedExpenses, ['Date', 'Notes', 'Amount'], (e) => [format(parseISO(e.date), 'PP'), e.notes || '', formatCurrency(e.amount)], totalExpenses);
-        addSection('Overtime', sortedOvertime, ['Date', 'Hours', 'Amount'], (o) => [format(parseISO(o.date), 'PP'), o.hours.toFixed(2), formatCurrency(o.totalAmount)], totalOvertimeAmount);
-        addSection('Bonuses', sortedBonuses, ['Date', 'Reason', 'Amount'], (b) => [format(parseISO(b.date), 'PP'), b.notes || '', formatCurrency(b.amount)], totalBonuses);
-        addSection('Cash Withdrawals', sortedWithdrawals, ['Date', 'Notes', 'Amount'], (w) => [format(parseISO(w.date), 'PP'), w.notes || '', formatCurrency(w.amount)], totalWithdrawals);
+        addSection(t('expenses'), sortedExpenses, [t('date'), t('notes'), t('amount')], (e) => [format(parseISO(e.date), 'PP'), e.notes || '', formatCurrency(e.amount)], totalExpenses);
+        addSection(t('overtime'), sortedOvertime, [t('date'), t('hours_short'), t('amount')], (o) => [format(parseISO(o.date), 'PP'), o.hours.toFixed(2), formatCurrency(o.totalAmount)], totalOvertimeAmount);
+        addSection(t('bonuses'), sortedBonuses, [t('date'), 'Reason', t('amount')], (b) => [format(parseISO(b.date), 'PP'), b.notes || '', formatCurrency(b.totalAmount)], totalBonuses);
+        addSection(t('cash_withdrawals'), sortedWithdrawals, [t('date'), t('notes'), t('amount')], (w) => [format(parseISO(w.date), 'PP'), w.notes || '', formatCurrency(w.amount)], totalWithdrawals);
         
         pdf.save(`${employee.name}_report_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
     };
@@ -266,8 +268,8 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
         return (
             <div className="flex flex-col items-center justify-center h-full text-center p-8">
                 <User className="w-16 h-16 text-muted-foreground mb-4" />
-                <h2 className="text-xl font-bold">Employee Not Found</h2>
-                <p className="text-muted-foreground">The employee you're looking for may have been deleted.</p>
+                <h2 className="text-xl font-bold">{t('employee_not_found')}</h2>
+                <p className="text-muted-foreground">{t('employee_not_found_desc')}</p>
             </div>
         )
     }
@@ -290,24 +292,24 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                 <header className="flex items-center justify-end gap-2 p-4 border-b">
                     {isEditing ? (
                         <>
-                            <Button onClick={handleUpdate}><Save className="mr-2 h-4 w-4"/> Save</Button>
-                            <Button variant="ghost" onClick={() => setIsEditing(false)}><X className="mr-2 h-4 w-4"/> Cancel</Button>
+                            <Button onClick={handleUpdate}><Save className="mr-2 h-4 w-4"/> {t('save_changes')}</Button>
+                            <Button variant="ghost" onClick={() => setIsEditing(false)}><X className="mr-2 h-4 w-4"/> {t('cancel')}</Button>
                         </>
                     ) : (
                         <>
-                            <Button onClick={() => setIsEditing(true)}><Edit className="mr-2 h-4 w-4"/> Edit</Button>
-                            <Button onClick={handlePrintCard} variant="outline"><Printer className="mr-2 h-4 w-4" /> Print Card</Button>
-                            <Button onClick={handleDownloadReport} variant="outline"><FileDown className="mr-2 h-4 w-4" /> Download Report</Button>
+                            <Button onClick={() => setIsEditing(true)}><Edit className="mr-2 h-4 w-4"/> {t('edit')}</Button>
+                            <Button onClick={handlePrintCard} variant="outline"><Printer className="mr-2 h-4 w-4" /> {t('print_card')}</Button>
+                            <Button onClick={handleDownloadReport} variant="outline"><FileDown className="mr-2 h-4 w-4" /> {t('download_report')}</Button>
                             <AlertDialog>
-                                <AlertDialogTrigger asChild><Button variant="destructive"><Trash2 className="mr-2 h-4 w-4"/> Delete</Button></AlertDialogTrigger>
+                                <AlertDialogTrigger asChild><Button variant="destructive"><Trash2 className="mr-2 h-4 w-4"/> {t('delete')}</Button></AlertDialogTrigger>
                                 <AlertDialogContent>
                                     <AlertDialogHeader>
-                                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                        <AlertDialogDescription>This will permanently delete {employee.name}'s record.</AlertDialogDescription>
+                                        <AlertDialogTitle>{t('are_you_sure_delete_employee')}</AlertDialogTitle>
+                                        <AlertDialogDescription>{t('confirm_delete_employee_record', {employeeName: employee.name})}</AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction onClick={handleDelete}>Continue</AlertDialogAction>
+                                        <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                                        <AlertDialogAction onClick={handleDelete}>{t('continue')}</AlertDialogAction>
                                     </AlertDialogFooter>
                                 </AlertDialogContent>
                             </AlertDialog>
@@ -332,11 +334,11 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                             <div className="w-full">
                                 {isEditing ? (
                                     <div className='space-y-4'>
-                                        <Input className="text-2xl font-bold h-12" value={name} onChange={e => setName(e.target.value)} placeholder="Employee Name" />
+                                        <Input className="text-2xl font-bold h-12" value={name} onChange={e => setName(e.target.value)} placeholder={t('employee_name')} />
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                            <Input value={uniqueId} onChange={e => setUniqueId(e.target.value)} placeholder="Employee ID Number" />
+                                            <Input value={uniqueId} onChange={e => setUniqueId(e.target.value)} placeholder={t('employee_id_optional')} />
                                             <Select value={role} onValueChange={(v: Employee['role']) => setRole(v)}>
-                                                <SelectTrigger><SelectValue placeholder="Select a role" /></SelectTrigger>
+                                                <SelectTrigger><SelectValue placeholder={t('select_a_role')} /></SelectTrigger>
                                                 <SelectContent>
                                                     {employeeRoles.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
                                                 </SelectContent>
@@ -347,7 +349,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                                                 <PopoverTrigger asChild>
                                                     <Button variant="outline" className={cn("justify-start text-left font-normal", !employmentStartDate && "text-muted-foreground")}>
                                                         <CalendarIcon className="mr-2 h-4 w-4" />
-                                                        {employmentStartDate ? `Started: ${format(employmentStartDate, 'PPP')}` : <span>Pick start date</span>}
+                                                        {employmentStartDate ? `${t('start_date_optional')}: ${format(employmentStartDate, 'PPP')}` : <span>{t('pick_a_date')}</span>}
                                                     </Button>
                                                 </PopoverTrigger>
                                                 <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={employmentStartDate} onSelect={setEmploymentStartDate} initialFocus captionLayout="dropdown-nav" fromYear={1990} toYear={2040} /></PopoverContent>
@@ -356,7 +358,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                                                 <PopoverTrigger asChild>
                                                     <Button variant="outline" className={cn("justify-start text-left font-normal", !dateOfBirth && "text-muted-foreground")}>
                                                         <Cake className="mr-2 h-4 w-4" />
-                                                        {dateOfBirth ? `Born: ${format(dateOfBirth, 'PPP')}` : <span>Pick birth date</span>}
+                                                        {dateOfBirth ? `${t('dob_optional')}: ${format(dateOfBirth, 'PPP')}` : <span>{t('pick_a_date')}</span>}
                                                     </Button>
                                                 </PopoverTrigger>
                                                 <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={dateOfBirth} onSelect={setDateOfBirth} initialFocus captionLayout="dropdown-nav" fromYear={1950} toYear={new Date().getFullYear()} /></PopoverContent>
@@ -367,12 +369,12 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                                     <>
                                         <CardTitle className="text-3xl md:text-4xl font-bold">{employee.name}</CardTitle>
                                         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-2">
-                                            {employee.role && <CardDescription className="text-lg md:text-xl flex items-center gap-2"><Shield className="w-5 h-5"/>{employee.role}</CardDescription>}
+                                            {employee.role && <CardDescription className="text-lg md:text-xl flex items-center gap-2"><ShieldCheck className="w-5 h-5"/>{employee.role}</CardDescription>}
                                         </div>
                                         <div className="mt-4 space-y-2 text-muted-foreground">
-                                            {employee.employeeId && <p className="flex items-center gap-2 font-mono">ID: {employee.employeeId}</p>}
-                                            {safeEmploymentStartDate && <p className="flex items-center gap-2"><CalendarIcon className="w-4 h-4"/> Started on {format(safeEmploymentStartDate, 'MMMM d, yyyy')}</p>}
-                                            {safeDateOfBirth && <p className="flex items-center gap-2"><Cake className="w-4 h-4"/> Born on {format(safeDateOfBirth, 'MMMM d, yyyy')}</p>}
+                                            {employee.employeeId && <p className="flex items-center gap-2 font-mono">{t('id_colon')} {employee.employeeId}</p>}
+                                            {safeEmploymentStartDate && <p className="flex items-center gap-2"><CalendarIcon className="w-4 h-4"/> {t('started_on', {date: format(safeEmploymentStartDate, 'MMMM d, yyyy')})}</p>}
+                                            {safeDateOfBirth && <p className="flex items-center gap-2"><Cake className="w-4 h-4"/> {t('born_on', {date: format(safeDateOfBirth, 'MMMM d, yyyy')})}</p>}
                                         </div>
                                     </>
                                 )}
@@ -381,23 +383,23 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                         <CardContent className="mt-6 space-y-6">
                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                 <div className="space-y-2">
-                                    <Label>Email Address</Label>
+                                    <Label>{t('email_optional')}</Label>
                                     {isEditing ? (
                                         <div className="relative"><Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/><Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="employee@example.com" className="pl-10" /></div>
-                                    ) : ( <p className="flex items-center gap-2"><Mail className="w-4 h-4 text-muted-foreground"/> {employee.email || 'No email'}</p>)}
+                                    ) : ( <p className="flex items-center gap-2"><Mail className="w-4 h-4 text-muted-foreground"/> {employee.email || t('no_email')}</p>)}
                                 </div>
                                  <div className="space-y-2">
-                                    <Label>Phone Number</Label>
+                                    <Label>{t('phone_optional')}</Label>
                                     {isEditing ? (
                                         <div className="relative"><Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/><Input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="0000-000-000" className="pl-10"/></div>
-                                    ) : (<p className="flex items-center gap-2"><Phone className="w-4 h-4 text-muted-foreground"/> {employee.phone || 'No phone'}</p>)}
+                                    ) : (<p className="flex items-center gap-2"><Phone className="w-4 h-4 text-muted-foreground"/> {employee.phone || t('no_phone')}</p>)}
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <Label>Notes</Label>
+                                <Label>{t('notes')}</Label>
                                 {isEditing ? (
-                                    <Textarea className="min-h-[120px]" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Add notes..."/>
-                                ) : (<p className="whitespace-pre-wrap text-muted-foreground">{employee.notes || 'No notes.'}</p>)}
+                                    <Textarea className="min-h-[120px]" value={notes} onChange={e => setNotes(e.target.value)} placeholder={t('notes_optional')} />
+                                ) : (<p className="whitespace-pre-wrap text-muted-foreground">{employee.notes || t('no_notes')}</p>)}
                             </div>
                         </CardContent>
                     </Card>
@@ -406,40 +408,40 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <Card>
                             <CardHeader>
-                                <CardTitle className="flex items-center gap-2"><DollarSign className="w-5 h-5 text-blue-500"/> Expenses</CardTitle>
+                                <CardTitle className="flex items-center gap-2"><DollarSign className="w-5 h-5 text-blue-500"/> {t('expenses')}</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 {sortedExpenses.length > 0 ? (
                                     <Table>
-                                        <TableHeader><TableRow><TableHead>Date</TableHead><TableHead className="text-right">Amount</TableHead></TableRow></TableHeader>
+                                        <TableHeader><TableRow><TableHead>{t('date')}</TableHead><TableHead className="text-right">{t('amount')}</TableHead></TableRow></TableHeader>
                                         <TableBody>{sortedExpenses.slice(0, 3).map(e => (<TableRow key={e.id}><TableCell>{format(parseISO(e.date), 'PP')}</TableCell><TableCell className="text-right">{formatCurrency(e.amount)}</TableCell></TableRow>))}</TableBody>
                                     </Table>
-                                ) : <p className="text-sm text-center text-muted-foreground py-4">No expenses.</p>}
+                                ) : <p className="text-sm text-center text-muted-foreground py-4">{t('no_expenses')}</p>}
                             </CardContent>
-                            {sortedExpenses.length > 0 && <CardFooter className="justify-end gap-2 bg-muted/50 font-bold text-sm"><span className="text-muted-foreground">Total:</span><span className="text-blue-500">{formatCurrency(totalExpenses)}</span></CardFooter>}
+                            {sortedExpenses.length > 0 && <CardFooter className="justify-end gap-2 bg-muted/50 font-bold text-sm"><span className="text-muted-foreground">{t('total_colon')}</span><span className="text-blue-500">{formatCurrency(totalExpenses)}</span></CardFooter>}
                         </Card>
 
                         <Card>
                             <CardHeader>
                                 <div className="flex justify-between items-center">
                                     <CardTitle className="flex items-center gap-2">
-                                        <Clock className="w-5 h-5 text-orange-500"/> Overtime
+                                        <Clock className="w-5 h-5 text-orange-500"/> {t('overtime')}
                                     </CardTitle>
-                                    <Badge variant="outline">{totalOvertimeHours.toFixed(2)} hrs</Badge>
+                                    <Badge variant="outline">{totalOvertimeHours.toFixed(2)} {t('hours_short')}</Badge>
                                 </div>
-                                <CardDescription>This Month: {format(new Date(), 'MMMM yyyy')}</CardDescription>
+                                <CardDescription>{t('this_month_colon', {month: format(new Date(), 'MMMM yyyy')})}</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 {sortedOvertime.length > 0 ? (
                                     <Table>
-                                        <TableHeader><TableRow><TableHead>Date</TableHead><TableHead className="text-right">Amount</TableHead></TableRow></TableHeader>
+                                        <TableHeader><TableRow><TableHead>{t('date')}</TableHead><TableHead className="text-right">{t('amount')}</TableHead></TableRow></TableHeader>
                                         <TableBody>{sortedOvertime.slice(0, 3).map(o => (<TableRow key={o.id}><TableCell>{format(parseISO(o.date), 'PP')}</TableCell><TableCell className="text-right">{formatCurrency(o.totalAmount)}</TableCell></TableRow>))}</TableBody>
                                     </Table>
-                                ) : <p className="text-sm text-center text-muted-foreground py-4">No overtime this month.</p>}
+                                ) : <p className="text-sm text-center text-muted-foreground py-4">{t('no_overtime_this_month')}</p>}
                             </CardContent>
                             {sortedOvertime.length > 0 && 
                                 <CardFooter className="justify-end gap-2 bg-muted/50 font-bold text-sm">
-                                    <span className="text-muted-foreground">Month's Total:</span>
+                                    <span className="text-muted-foreground">{t('months_total_colon')}</span>
                                     <span className="text-orange-500">{formatCurrency(totalOvertimeAmount)}</span>
                                 </CardFooter>
                             }
@@ -447,32 +449,32 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
 
                          <Card>
                             <CardHeader>
-                                <CardTitle className="flex items-center gap-2"><Gift className="w-5 h-5 text-green-500"/> Bonuses</CardTitle>
+                                <CardTitle className="flex items-center gap-2"><Gift className="w-5 h-5 text-green-500"/> {t('bonuses')}</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 {sortedBonuses.length > 0 ? (
                                     <Table>
-                                        <TableHeader><TableRow><TableHead>Date</TableHead><TableHead className="text-right">Amount</TableHead></TableRow></TableHeader>
-                                        <TableBody>{sortedBonuses.slice(0, 3).map(b => (<TableRow key={b.id}><TableCell>{format(parseISO(b.date), 'PP')}</TableCell><TableCell className="text-right">{formatCurrency(b.amount)}</TableCell></TableRow>))}</TableBody>
+                                        <TableHeader><TableRow><TableHead>{t('date')}</TableHead><TableHead className="text-right">{t('amount')}</TableHead></TableRow></TableHeader>
+                                        <TableBody>{sortedBonuses.slice(0, 3).map(b => (<TableRow key={b.id}><TableCell>{format(parseISO(b.date), 'PP')}</TableCell><TableCell className="text-right">{formatCurrency(b.totalAmount)}</TableCell></TableRow>))}</TableBody>
                                     </Table>
-                                ) : <p className="text-sm text-center text-muted-foreground py-4">No bonuses.</p>}
+                                ) : <p className="text-sm text-center text-muted-foreground py-4">{t('no_bonuses')}</p>}
                             </CardContent>
-                            {sortedBonuses.length > 0 && <CardFooter className="justify-end gap-2 bg-muted/50 font-bold text-sm"><span className="text-muted-foreground">Total:</span><span className="text-green-500">{formatCurrency(totalBonuses)}</span></CardFooter>}
+                            {sortedBonuses.length > 0 && <CardFooter className="justify-end gap-2 bg-muted/50 font-bold text-sm"><span className="text-muted-foreground">{t('total_colon')}</span><span className="text-green-500">{formatCurrency(totalBonuses)}</span></CardFooter>}
                         </Card>
 
                         <Card>
                             <CardHeader>
-                                <CardTitle className="flex items-center gap-2"><Banknote className="w-5 h-5 text-rose-500"/> Cash Withdrawals</CardTitle>
+                                <CardTitle className="flex items-center gap-2"><Banknote className="w-5 h-5 text-rose-500"/> {t('cash_withdrawals')}</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 {sortedWithdrawals.length > 0 ? (
                                     <Table>
-                                        <TableHeader><TableRow><TableHead>Date</TableHead><TableHead className="text-right">Amount</TableHead></TableRow></TableHeader>
+                                        <TableHeader><TableRow><TableHead>{t('date')}</TableHead><TableHead className="text-right">{t('amount')}</TableHead></TableRow></TableHeader>
                                         <TableBody>{sortedWithdrawals.slice(0, 3).map(w => (<TableRow key={w.id}><TableCell>{format(parseISO(w.date), 'PP')}</TableCell><TableCell className="text-right">{formatCurrency(w.amount)}</TableCell></TableRow>))}</TableBody>
                                     </Table>
-                                ) : <p className="text-sm text-center text-muted-foreground py-4">No withdrawals.</p>}
+                                ) : <p className="text-sm text-center text-muted-foreground py-4">{t('no_withdrawals')}</p>}
                             </CardContent>
-                            {sortedWithdrawals.length > 0 && <CardFooter className="justify-end gap-2 bg-muted/50 font-bold text-sm"><span className="text-muted-foreground">Total:</span><span className="text-rose-500">{formatCurrency(totalWithdrawals)}</span></CardFooter>}
+                            {sortedWithdrawals.length > 0 && <CardFooter className="justify-end gap-2 bg-muted/50 font-bold text-sm"><span className="text-muted-foreground">{t('total_colon')}</span><span className="text-rose-500">{formatCurrency(totalWithdrawals)}</span></CardFooter>}
                         </Card>
                     </div>
 
@@ -483,6 +485,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
 }
 
 function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean, onOpenChange: (open: boolean) => void, addEmployee: (employee: Omit<Employee, 'id'>) => void }) {
+    const { t } = useTranslation();
     const { toast } = useToast();
     
     const [name, setName] = useState("");
@@ -507,8 +510,8 @@ function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean,
         if (!name.trim()) {
             toast({
                 variant: 'destructive',
-                title: 'Name is required',
-                description: 'Please enter a name for the employee.',
+                title: t('name_is_required'),
+                description: t('please_enter_name'),
             });
             return;
         }
@@ -526,7 +529,7 @@ function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean,
         };
         
         addEmployee(employeeData);
-        toast({ title: "Employee Added", description: `${name} has been added to the list.` });
+        toast({ title: t('employee_added'), description: t('employee_added_desc', {employeeName: name}) });
         resetForm();
     };
 
@@ -542,18 +545,18 @@ function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean,
     return (
         <Dialog open={open} onOpenChange={(isOpen) => { onOpenChange(isOpen); if (!isOpen) resetForm(); }}>
             <DialogContent className="sm:max-w-lg">
-                <DialogHeader><DialogTitle>Add New Employee</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>{t('add_new_employee')}</DialogTitle></DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 pt-4 max-h-[80vh] overflow-y-auto p-1 pr-4">
                     <div className="flex flex-col items-center gap-4">
                         <Avatar className="w-24 h-24"><AvatarImage src={photoUrl} /><AvatarFallback><User className="w-12 h-12" /></AvatarFallback></Avatar>
                         <Input id="photo" type="file" onChange={handlePhotoUpload} accept="image/*" />
                     </div>
-                    <div className="space-y-2"><Label htmlFor="name">Name</Label><Input id="name" value={name} onChange={e => setName(e.target.value)} required placeholder="e.g. John Doe" /></div>
+                    <div className="space-y-2"><Label htmlFor="name">{t('employee_name')}</Label><Input id="name" value={name} onChange={e => setName(e.target.value)} required placeholder="e.g. John Doe" /></div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-2"><Label htmlFor="employeeId">Employee ID (Optional)</Label><Input id="employeeId" value={uniqueId} onChange={e => setUniqueId(e.target.value)} placeholder="e.g. 10234" /></div>
-                        <div className="space-y-2"><Label htmlFor="role">Role (Optional)</Label>
+                        <div className="space-y-2"><Label htmlFor="employeeId">{t('employee_id_optional')}</Label><Input id="employeeId" value={uniqueId} onChange={e => setUniqueId(e.target.value)} placeholder="e.g. 10234" /></div>
+                        <div className="space-y-2"><Label htmlFor="role">{t('role_optional')}</Label>
                             <Select onValueChange={(v: Employee['role']) => setRole(v)} value={role}>
-                                <SelectTrigger id="role"><SelectValue placeholder="Select a role" /></SelectTrigger>
+                                <SelectTrigger id="role"><SelectValue placeholder={t('select_a_role')} /></SelectTrigger>
                                 <SelectContent>
                                     {employeeRoles.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
                                 </SelectContent>
@@ -561,15 +564,15 @@ function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean,
                         </div>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-2"><Label>Email (Optional)</Label><div className="relative"><Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/><Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="employee@example.com" className="pl-10" /></div></div>
-                        <div className="space-y-2"><Label>Phone (Optional)</Label><div className="relative"><Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/><Input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="0000-000-000" className="pl-10"/></div></div>
+                        <div className="space-y-2"><Label>{t('email_optional')}</Label><div className="relative"><Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/><Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="employee@example.com" className="pl-10" /></div></div>
+                        <div className="space-y-2"><Label>{t('phone_optional')}</Label><div className="relative"><Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/><Input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="0000-000-000" className="pl-10"/></div></div>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-2"><Label>Start Date (Optional)</Label><Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!employmentStartDate && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{employmentStartDate ? format(employmentStartDate, "PPP") : <span>Pick a date</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={employmentStartDate} onSelect={setEmploymentStartDate} captionLayout="dropdown-nav" fromYear={1990} toYear={2040} initialFocus/></PopoverContent></Popover></div>
-                        <div className="space-y-2"><Label>Date of Birth (Optional)</Label><Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!dateOfBirth && "text-muted-foreground")}><Cake className="mr-2 h-4 w-4" />{dateOfBirth ? format(dateOfBirth, "PPP") : <span>Pick a date</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={dateOfBirth} onSelect={setDateOfBirth} captionLayout="dropdown-nav" fromYear={1950} toYear={new Date().getFullYear()} initialFocus/></PopoverContent></Popover></div>
+                        <div className="space-y-2"><Label>{t('start_date_optional')}</Label><Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!employmentStartDate && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{employmentStartDate ? format(employmentStartDate, "PPP") : <span>{t('pick_a_date')}</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={employmentStartDate} onSelect={setEmploymentStartDate} captionLayout="dropdown-nav" fromYear={1990} toYear={2040} initialFocus/></PopoverContent></Popover></div>
+                        <div className="space-y-2"><Label>{t('dob_optional')}</Label><Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!dateOfBirth && "text-muted-foreground")}><Cake className="mr-2 h-4 w-4" />{dateOfBirth ? format(dateOfBirth, "PPP") : <span>{t('pick_a_date')}</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={dateOfBirth} onSelect={setDateOfBirth} captionLayout="dropdown-nav" fromYear={1950} toYear={new Date().getFullYear()} initialFocus/></PopoverContent></Popover></div>
                     </div>
-                    <div className="space-y-2"><Label htmlFor="notes">Notes (Optional)</Label><Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. Specializes in frontend development." /></div>
-                    <DialogFooter className="pt-4"><DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose><Button type="submit">Add Employee</Button></DialogFooter>
+                    <div className="space-y-2"><Label htmlFor="notes">{t('notes_optional')}</Label><Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder={t('notes_optional_long')} /></div>
+                    <DialogFooter className="pt-4"><DialogClose asChild><Button type="button" variant="secondary">{t('cancel')}</Button></DialogClose><Button type="submit">{t('add_employee')}</Button></DialogFooter>
                 </form>
             </DialogContent>
         </Dialog>
@@ -577,6 +580,7 @@ function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean,
 }
 
 export default function EmployeesPage() {
+  const { t } = useTranslation();
   const { employees, setEmployees } = useAppContext();
   const [isLoading, setIsLoading] = useState(true);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
@@ -678,7 +682,7 @@ export default function EmployeesPage() {
             <div className="container mx-auto flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <Button variant="outline" size="icon" asChild><Link href="/"><ArrowLeft /></Link></Button>
-                    <h1 className="text-xl font-bold">Employees</h1>
+                    <h1 className="text-xl font-bold">{t('employees')}</h1>
                 </div>
             </div>
         </header>
@@ -688,23 +692,23 @@ export default function EmployeesPage() {
                 <div className="p-4 space-y-4 border-b">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input placeholder="Search name or ID..." className="pl-10" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                        <Input placeholder={t('search_name_or_id')} className="pl-10" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
                     </div>
-                     <Button onClick={() => setAddDialogOpen(true)} className="w-full"><Plus className="mr-2 h-4 w-4" /> Add Employee</Button>
+                     <Button onClick={() => setAddDialogOpen(true)} className="w-full"><Plus className="mr-2 h-4 w-4" /> {t('add_employee')}</Button>
                 </div>
                 <div className="flex-1 overflow-y-auto">
                     {isLoading ? (
                          <div className="p-4 space-y-2">{[...Array(8)].map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
                     ) : (warehouseEmployees.length > 0 || marketingEmployees.length > 0) ? (
                         <div className="p-2 space-y-1">
-                            {warehouseEmployees.length > 0 && renderEmployeeList(warehouseEmployees, 'Warehouse')}
+                            {warehouseEmployees.length > 0 && renderEmployeeList(warehouseEmployees, t('warehouse'))}
                             {marketingEmployees.length > 0 && renderEmployeeList(marketingEmployees, 'Marketing')}
                         </div>
                     ) : (
                          <div className="text-center p-8">
                             <User className="mx-auto h-12 w-12 text-muted-foreground" />
-                            <h3 className="mt-4 text-lg font-medium">No Employees Found</h3>
-                            <p className="mt-2 text-sm text-muted-foreground">Try a different search or add a new employee.</p>
+                            <h3 className="mt-4 text-lg font-medium">{t('no_employees_found')}</h3>
+                            <p className="mt-2 text-sm text-muted-foreground">{t('no_employees_found_desc')}</p>
                         </div>
                     )}
                 </div>
@@ -717,8 +721,8 @@ export default function EmployeesPage() {
                     !isLoading && (
                         <div className="text-center">
                             <Building className="mx-auto h-16 w-16 text-muted-foreground" />
-                            <h2 className="mt-2 text-2xl font-bold">Select an Employee</h2>
-                            <p className="text-muted-foreground">Choose an employee from the list to view their details.</p>
+                            <h2 className="mt-2 text-2xl font-bold">{t('employees')}</h2>
+                            <p className="text-muted-foreground">{t('select_an_employee_to_view')}</p>
                         </div>
                     )
                 )}

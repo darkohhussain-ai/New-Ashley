@@ -1,11 +1,14 @@
+
 'use client';
 import { useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { useTranslation } from '@/hooks/use-translation';
 
 export default function EmployeeDetailRedirect() {
   const router = useRouter();
   const params = useParams();
   const { id } = params;
+  const { t } = useTranslation();
 
   useEffect(() => {
     // This page is no longer used. The functionality has been merged into /employees.
@@ -21,7 +24,7 @@ export default function EmployeeDetailRedirect() {
   // Render a simple loading state while redirecting
   return (
     <div className="flex h-screen w-screen items-center justify-center">
-      <p>Redirecting...</p>
+      <p>{t('redirecting')}...</p>
     </div>
   );
 }
