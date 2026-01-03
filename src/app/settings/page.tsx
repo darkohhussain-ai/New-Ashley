@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from 'react';
@@ -25,7 +26,8 @@ import { EmployeePdfCard } from '@/components/employees/employee-pdf-card'
 import type { PdfSettings, AllPdfSettings, Employee, Transfer } from '@/lib/types';
 import { format, formatISO } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import autoTable from 'jspdf-autotable'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { cn } from '@/lib/utils';
 
 
 const availableFonts = [
@@ -102,6 +104,12 @@ const mockTransfer: Transfer = {
     warehouseManagerName: "Manager Name",
     itemIds: ['item1', 'item2', 'item3']
 };
+
+const mockTransferItems = [
+    { model: 'Sofa Model X', quantity: 1, notes: 'Handle with care' },
+    { model: 'Dining Table', quantity: 1, notes: '' },
+    { model: 'Chair Model Y', quantity: 4, notes: 'Packed separately' },
+];
 
 type ThemeColors = {
   background: string;
@@ -709,7 +717,7 @@ export default function SettingsPage() {
                         <Card>
                             <CardHeader><CardTitle>Live Preview</CardTitle><CardDescription>A preview of your {activePdfTab} design.</CardDescription></CardHeader>
                             <CardContent className='bg-muted/50 p-6 rounded-b-lg flex justify-center items-start overflow-auto'>
-                                <div className="w-[595px] min-h-[842px] bg-white shadow-lg transform origin-top overflow-hidden flex flex-col">
+                                <div className="w-[595px] min-h-[842px] bg-white shadow-lg transform scale-[0.6] origin-top overflow-hidden flex flex-col">
                                 {activePdfTab === 'report' && (
                                     <>
                                         <ReportPdfHeader title="Example Report Title" subtitle="This is an example subtitle" logoSrc={currentPdfSettings.logo ?? null} themeColor={pdfSettings.report.reportColors?.general} headerText={currentPdfSettings.headerText} />
@@ -720,7 +728,7 @@ export default function SettingsPage() {
                                     </>
                                 )}
                                 {activePdfTab === 'invoice' && (
-                                    <div className="flex flex-col h-full">
+                                    <div className="flex flex-col h-full text-black">
                                         <div className="p-1">
                                             <TransferPdfCard
                                                 transfer={mockTransfer}
@@ -728,21 +736,25 @@ export default function SettingsPage() {
                                                 totalItems={mockTransfer.itemIds.length}
                                             />
                                         </div>
-                                        <div className='p-6 text-black flex-grow' style={{fontFamily: availableFonts.find(f => f.name === currentPdfSettings.font)?.family}}>
-                                            <table className='w-full text-left text-sm'>
-                                                <thead style={{backgroundColor: currentPdfSettings.themeColor, color: 'white'}}>
-                                                    <tr>
-                                                        <th className='p-2'>Model</th>
-                                                        <th className='p-2'>Quantity</th>
-                                                        <th className='p-2'>Notes</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    <tr className='border-b'><td className='p-2'>Sofa Model X</td><td className='p-2'>1</td><td className='p-2'>Handle with care</td></tr>
-                                                    <tr className='border-b'><td className='p-2'>Dining Table</td><td className='p-2'>1</td><td className='p-2'></td></tr>
-                                                    <tr className='border-b'><td className='p-2'>Chair Model Y</td><td className='p-2'>4</td><td className='p-2'>Packed separately</td></tr>
-                                                </tbody>
-                                            </table>
+                                        <div className='p-6 flex-grow' style={{fontFamily: availableFonts.find(f => f.name === currentPdfSettings.font)?.family}}>
+                                            <Table className={cn(currentPdfSettings.tableTheme === 'grid' && 'border')}>
+                                                <TableHeader>
+                                                    <TableRow style={{backgroundColor: currentPdfSettings.themeColor}} className="hover:bg-primary/90">
+                                                        <TableHead className="text-white">Model</TableHead>
+                                                        <TableHead className="text-white">Quantity</TableHead>
+                                                        <TableHead className="text-white">Notes</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {mockTransferItems.map((item, index) => (
+                                                        <TableRow key={index} className={cn(currentPdfSettings.tableTheme === 'striped' && 'odd:bg-muted/50')}>
+                                                            <TableCell>{item.model}</TableCell>
+                                                            <TableCell>{item.quantity}</TableCell>
+                                                            <TableCell>{item.notes}</TableCell>
+                                                        </TableRow>
+                                                    ))}
+                                                </TableBody>
+                                            </Table>
                                         </div>
                                     </div>
                                 )}

@@ -1,10 +1,10 @@
 
 'use client';
 
-import { Calendar, Truck } from "lucide-react";
+import { Calendar, Truck, Package } from "lucide-react";
 import { format, parseISO } from 'date-fns';
 import Image from 'next/image';
-import type { Transfer, PdfSettings } from "@/lib/types";
+import type { Transfer } from "@/lib/types";
 
 
 type TransferPdfCardProps = {
@@ -31,7 +31,7 @@ export function TransferPdfCard({ transfer, logoSrc, totalItems }: TransferPdfCa
       </div>
       
       {/* Details Section */}
-      <div className="grid grid-cols-2 gap-4 py-4 text-sm border-b-2 border-gray-200">
+      <div className="grid grid-cols-3 gap-4 py-4 text-sm border-b-2 border-gray-200">
         <div className="flex items-center gap-2 text-gray-700">
           <Truck className="w-4 h-4 text-gray-500" />
           <div>
@@ -46,13 +46,14 @@ export function TransferPdfCard({ transfer, logoSrc, totalItems }: TransferPdfCa
             <p className="font-semibold">{formattedDate}</p>
           </div>
         </div>
+        <div className="flex items-center gap-2 text-gray-700">
+            <Package className="w-4 h-4 text-gray-500" />
+            <div>
+                <p className="text-xs text-gray-500">Total Items</p>
+                <p className="font-semibold">{totalItems}</p>
+            </div>
+        </div>
       </div>
-      
-      <div className="py-4">
-        <p className="text-sm text-gray-500">Total Items in Cargo</p>
-        <p className="text-2xl font-bold text-gray-800">{totalItems}</p>
-      </div>
-
     </div>
   );
 };
