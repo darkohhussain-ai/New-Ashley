@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useMemo, useEffect, useRef } from "react"
@@ -12,7 +11,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { format, parseISO } from "date-fns"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ArrowLeft, Plus, User, Calendar as CalendarIcon, Edit, Trash2, Save, X, Upload, Download, Mail, Phone, Cake, Briefcase, Search, Building, DollarSign, Clock, Gift, Banknote, Shield, FileDown, Printer } from 'lucide-react'
+import { ArrowLeft, Plus, User, Calendar as CalendarIcon, Edit, Trash2, Save, X, Upload, Download, Mail, Phone, Cake, Briefcase, Search, Building, DollarSign, Clock, Gift, Banknote, FileDown, Printer } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
@@ -369,7 +368,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                                     <>
                                         <CardTitle className="text-3xl md:text-4xl font-bold">{employee.name}</CardTitle>
                                         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-2">
-                                            {employee.role && <CardDescription className="text-lg md:text-xl flex items-center gap-2"><ShieldCheck className="w-5 h-5"/>{employee.role}</CardDescription>}
+                                            {employee.role && <CardDescription className="text-lg md:text-xl flex items-center gap-2">{employee.role}</CardDescription>}
                                         </div>
                                         <div className="mt-4 space-y-2 text-muted-foreground">
                                             {employee.employeeId && <p className="flex items-center gap-2 font-mono">{t('id_colon')} {employee.employeeId}</p>}
