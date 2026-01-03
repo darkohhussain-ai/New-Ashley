@@ -151,6 +151,7 @@ export type PdfSettings = {
     customFont?: string | null;
     themeColor?: string;
     reportColors?: ReportColors;
+    tableTheme?: 'striped' | 'grid';
     headerText?: string;
     footerText?: string;
 }
