@@ -1,4 +1,5 @@
 
+
 export type Employee = {
   id: string;
   name: string;
@@ -136,11 +137,20 @@ export type EvaluationQuestion = {
     answers: [AnswerOption, AnswerOption, AnswerOption];
 };
 
+export type ReportColors = {
+  general: string;
+  expense: string;
+  overtime: string;
+  bonus: string;
+  withdrawal: string;
+}
+
 export type PdfSettings = {
     logo?: string | null;
     font?: string;
     customFont?: string | null;
     themeColor?: string;
+    reportColors?: ReportColors;
     headerText?: string;
     footerText?: string;
 }

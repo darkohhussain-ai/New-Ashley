@@ -20,6 +20,7 @@ import { useAppContext } from '@/context/app-provider';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Bar, BarChart as RechartsBarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import type { AllPdfSettings } from '@/lib/types';
+import { useTranslation } from '@/hooks/use-translation';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -30,6 +31,7 @@ const formatCurrency = (amount: number) => {
 };
 
 export default function MonthlyOvertimeReportPage() {
+  const { t } = useTranslation();
   const { overtime, employees } = useAppContext();
   const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {} });
   const pdfHeaderRef = useRef<HTMLDivElement>(null);
@@ -124,7 +126,7 @@ export default function MonthlyOvertimeReportPage() {
           body: monthlyData.summary.map(item => [item.employeeName, item.totalHours.toFixed(2), formatCurrency(item.totalAmount)]),
           foot: [['Grand Total', monthlyData.totalHours.toFixed(2), formatCurrency(monthlyData.totalAmount)]],
           theme: 'grid',
-          headStyles: { fillColor: settings.themeColor || '#22c55e' },
+          headStyles: { fillColor: settings.reportColors?.overtime || settings.themeColor || '#22c55e' },
           footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
           didParseCell: (data) => { if (settings.customFont) { (data.cell.styles as any).font = "CustomFont"; } }
         });
@@ -152,7 +154,7 @@ export default function MonthlyOvertimeReportPage() {
                 title="Monthly Overtime Report" 
                 subtitle={format(selectedDate, 'MMMM yyyy')} 
                 logoSrc={pdfSettings.report?.logo ?? null}
-                themeColor={pdfSettings.report?.themeColor}
+                themeColor={pdfSettings.report?.reportColors?.overtime ?? pdfSettings.report?.themeColor}
                 headerText={pdfSettings.report?.headerText}
             />
           </div>
@@ -164,7 +166,7 @@ export default function MonthlyOvertimeReportPage() {
             <Button variant="outline" size="icon" asChild>
               <Link href="/overtime"><ArrowLeft /></Link>
             </Button>
-            <h1 className="text-2xl md:text-3xl font-bold">Monthly Overtime Report</h1>
+            <h1 className="text-2xl md:text-3xl font-bold">{t('monthly_overtime_report')}</h1>
           </div>
           <div className="flex items-center gap-2">
             <Popover>
@@ -188,7 +190,7 @@ export default function MonthlyOvertimeReportPage() {
           <div className="space-y-8">
              <Card>
                 <CardHeader>
-                    <CardTitle>Monthly Summary by Employee</CardTitle>
+                    <CardTitle>{t('monthly_summary_by_employee')}</CardTitle>
                 </CardHeader>
                 <CardContent ref={chartRef} className="pl-0">
                     <ResponsiveContainer width="100%" height={300}>
@@ -204,16 +206,16 @@ export default function MonthlyOvertimeReportPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Summary for {selectedDate ? format(selectedDate, 'MMMM yyyy') : ''}</CardTitle>
+                <CardTitle>{t('summary_for_month', {month: selectedDate ? format(selectedDate, 'MMMM yyyy') : ''})}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Employee</TableHead>
-                                <TableHead className="text-right">Total Hours</TableHead>
-                                <TableHead className="text-right">Total Amount</TableHead>
+                                <TableHead>{t('employee')}</TableHead>
+                                <TableHead className="text-right">{t('total_hours')}</TableHead>
+                                <TableHead className="text-right">{t('total_amount')}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -227,7 +229,7 @@ export default function MonthlyOvertimeReportPage() {
                         </TableBody>
                         <TableFooter>
                             <TableRow>
-                                <TableCell className="text-lg font-bold">Grand Total</TableCell>
+                                <TableCell className="text-lg font-bold">{t('grand_total')}</TableCell>
                                 <TableCell className="text-right text-lg font-bold">{monthlyData.totalHours.toFixed(2)}</TableCell>
                                 <TableCell className="text-right text-lg font-bold text-primary">{formatCurrency(monthlyData.totalAmount)}</TableCell>
                             </TableRow>
@@ -240,8 +242,8 @@ export default function MonthlyOvertimeReportPage() {
         ) : (
           <div className="text-center py-16 border-2 border-dashed rounded-lg">
             <BarChart className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-medium">No Overtime Found</h3>
-            <p className="mt-2 text-sm text-muted-foreground">There is no overtime recorded for {selectedDate ? format(selectedDate, 'MMMM yyyy') : 'the selected month'}.</p>
+            <h3 className="mt-4 text-lg font-medium">{t('no_overtime_found')}</h3>
+            <p className="mt-2 text-sm text-muted-foreground">{t('no_overtime_found_for_month', {month: selectedDate ? format(selectedDate, 'MMMM yyyy') : 'the selected month'})}</p>
           </div>
         )}
       </div>

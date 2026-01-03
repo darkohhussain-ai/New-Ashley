@@ -23,6 +23,7 @@ import type { Overtime, AllPdfSettings } from '@/lib/types';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
+import { useTranslation } from '@/hooks/use-translation';
 
 
 const OVERTIME_RATE = 5000; // Default: 5,000 IQD per hour
@@ -36,6 +37,7 @@ const formatCurrency = (amount: number) => {
 };
 
 export default function AddOvertimePage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -195,7 +197,7 @@ export default function AddOvertimePage() {
         body: overtimeRecords.map(item => [getEmployeeName(item.employeeId), item.hours.toFixed(2), item.notes || 'N/A', formatCurrency(item.totalAmount)]),
         foot: [['Total', totalHours.toFixed(2), '', formatCurrency(totalAmount)]],
         theme: 'striped',
-        headStyles: { fillColor: settings.themeColor || '#22c55e' },
+        headStyles: { fillColor: settings.reportColors?.overtime || settings.themeColor || '#22c55e' },
         footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' },
         didParseCell: (data) => { if (settings.customFont) { (data.cell.styles as any).font = "CustomFont"; } }
     });
@@ -212,7 +214,7 @@ export default function AddOvertimePage() {
               title="Daily Overtime Report"
               subtitle={format(selectedDate, 'PPP')}
               logoSrc={pdfSettings.report?.logo ?? null}
-              themeColor={pdfSettings.report?.themeColor}
+              themeColor={pdfSettings.report?.reportColors?.overtime ?? pdfSettings.report?.themeColor}
               headerText={pdfSettings.report?.headerText}
             />
           </div>
@@ -227,7 +229,7 @@ export default function AddOvertimePage() {
                 <ArrowLeft />
               </Link>
             </Button>
-            <h1 className="text-xl font-bold">Daily Overtime</h1>
+            <h1 className="text-xl font-bold">{t('daily_overtime')}</h1>
           </div>
           <div className="flex items-center gap-2">
             <Popover>
@@ -251,13 +253,13 @@ export default function AddOvertimePage() {
             <div className="lg:col-span-1">
                 <Card>
                 <CardHeader>
-                    <CardTitle>Add Overtime Record</CardTitle>
-                    <CardDescription>Select an employee and enter their overtime hours for the selected date.</CardDescription>
+                    <CardTitle>{t('add_overtime_record')}</CardTitle>
+                    <CardDescription>{t('add_overtime_record_desc')}</CardDescription>
                 </CardHeader>
                 <form onSubmit={handleAddOvertime}>
                     <CardContent className="space-y-4">
                     <div className="space-y-2">
-                        <label htmlFor="employee">Employee</label>
+                        <label htmlFor="employee">{t('employee')}</label>
                         <Select onValueChange={setSelectedEmployee} value={selectedEmployee} disabled={isSaving}>
                         <SelectTrigger id="employee">
                             <SelectValue placeholder="Select an employee" />
@@ -274,23 +276,23 @@ export default function AddOvertimePage() {
                         </Select>
                     </div>
                     <div className="space-y-2">
-                        <label htmlFor="hours">Overtime Hours</label>
+                        <label htmlFor="hours">{t('overtime_hours')}</label>
                         <div className="relative">
                         <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input id="hours" type="number" value={hours} onChange={e => setHours(e.target.value)} required placeholder="e.g., 2.5" className="pl-8" disabled={isSaving} />
                         </div>
                     </div>
                     <div className="space-y-2">
-                        <label htmlFor="notes">Notes</label>
+                        <label htmlFor="notes">{t('notes')}</label>
                         <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Optional notes about the overtime" disabled={isSaving}/>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                        Overtime rate: {formatCurrency(OVERTIME_RATE)} / hour
+                        {t('overtime_rate')}: {formatCurrency(OVERTIME_RATE)} / {t('hour')}
                     </p>
                     </CardContent>
                     <CardFooter>
                         <Button type="submit" className="w-full" disabled={isSaving}>
-                            <Plus className="mr-2 h-4 w-4" /> Add Record
+                            <Plus className="mr-2 h-4 w-4" /> {t('add_record')}
                         </Button>
                     </CardFooter>
                 </form>
@@ -301,13 +303,13 @@ export default function AddOvertimePage() {
                 <Card>
                 <CardHeader className="flex-row items-center justify-between">
                     <div>
-                        <CardTitle>Overtime Records for {selectedDate ? format(selectedDate, 'MMMM d, yyyy') : '...'}</CardTitle>
+                        <CardTitle>{t('overtime_records_for_date', {date: selectedDate ? format(selectedDate, 'MMMM d, yyyy') : '...'})}</CardTitle>
                     </div>
                 </CardHeader>
                 <CardContent>
                     <div className="divide-y">
                     {isLoading ? (
-                        <div className="p-8 text-center text-muted-foreground">Loading records...</div>
+                        <div className="p-8 text-center text-muted-foreground">{t('loading_records')}...</div>
                     ) : overtimeRecords && overtimeRecords.length > 0 ? (
                         overtimeRecords.map(record => (
                         <div key={record.id} className="py-3 flex justify-between items-start gap-4">
@@ -329,7 +331,7 @@ export default function AddOvertimePage() {
                             ) : (
                             <div className="flex-1">
                                 <p className="font-semibold flex items-center gap-2"><User className="h-4 w-4 text-primary" /> {getEmployeeName(record.employeeId)}</p>
-                                <p className="text-sm text-muted-foreground">{record.hours} hours</p>
+                                <p className="text-sm text-muted-foreground">{record.hours} {t('hours_short')}</p>
                                 {record.notes && <p className="text-sm mt-1">{record.notes}</p>}
                             </div>
                             )}
@@ -353,14 +355,14 @@ export default function AddOvertimePage() {
                                             </AlertDialogTrigger>
                                             <AlertDialogContent>
                                                 <AlertDialogHeader>
-                                                    <AlertDialogTitle>Delete this record?</AlertDialogTitle>
+                                                    <AlertDialogTitle>{t('delete_this_record')}</AlertDialogTitle>
                                                     <AlertDialogDescription>
-                                                    This will permanently delete the overtime record for {getEmployeeName(record.employeeId)}.
+                                                    {t('confirm_delete_overtime', {employeeName: getEmployeeName(record.employeeId)})}
                                                     </AlertDialogDescription>
                                                 </AlertDialogHeader>
                                                 <AlertDialogFooter>
-                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => handleDelete(record)}>Delete</AlertDialogAction>
+                                                    <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleDelete(record)}>{t('delete')}</AlertDialogAction>
                                                 </AlertDialogFooter>
                                             </AlertDialogContent>
                                         </AlertDialog>
@@ -370,15 +372,15 @@ export default function AddOvertimePage() {
                         </div>
                         ))
                     ) : (
-                        <div className="py-8 text-center text-muted-foreground">No overtime records for this date.</div>
+                        <div className="py-8 text-center text-muted-foreground">{t('no_overtime_records_for_date')}</div>
                     )}
                     </div>
                 </CardContent>
                 {overtimeRecords && overtimeRecords.length > 0 && (
                     <CardFooter className="flex justify-between font-bold bg-muted/50 py-4 rounded-b-lg">
-                        <span>Total</span>
+                        <span>{t('total')}</span>
                         <div className='text-right'>
-                            <p>{totalHours.toFixed(2)} hours</p>
+                            <p>{totalHours.toFixed(2)} {t('hours_short')}</p>
                             <p className="text-primary">{formatCurrency(totalAmount)}</p>
                         </div>
                     </CardFooter>

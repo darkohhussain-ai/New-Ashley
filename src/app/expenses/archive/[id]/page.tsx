@@ -82,7 +82,7 @@ export default function ViewExpenseReportPage() {
       body: reportItems.map(item => [getEmployeeName(item.employeeId), item.notes || 'N/A', formatCurrency(item.amount)]),
       foot: [[t('total'), '', formatCurrency(report.totalAmount)]],
       theme: 'grid',
-      headStyles: { fillColor: settings.themeColor || '#22c55e' },
+      headStyles: { fillColor: settings.reportColors?.expense || settings.themeColor || '#22c55e' },
       footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
       didParseCell: (data) => {
         if (settings.customFont) { (data.cell.styles as any).font = "CustomFont"; }
@@ -132,7 +132,7 @@ export default function ViewExpenseReportPage() {
             title={report.reportName} 
             subtitle={`${t('report_date')}: ${format(parseISO(report.reportDate), 'PPP')}`} 
             logoSrc={pdfSettings.report?.logo ?? null} 
-            themeColor={pdfSettings.report?.themeColor}
+            themeColor={pdfSettings.report?.reportColors?.expense ?? pdfSettings.report?.themeColor}
             headerText={pdfSettings.report?.headerText}
           />
         </div>

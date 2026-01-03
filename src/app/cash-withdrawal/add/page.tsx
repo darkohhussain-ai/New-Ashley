@@ -187,7 +187,7 @@ export default function AddCashWithdrawalPage() {
         body: dailyWithdrawals.map(item => [getEmployeeName(item.employeeId), item.notes || 'N/A', formatCurrencyForPdf(item.amount)]),
         foot: [[t('total'), '', formatCurrencyForPdf(totalAmount)]],
         theme: 'striped',
-        headStyles: { fillColor: settings.themeColor || '#22c55e' },
+        headStyles: { fillColor: settings.reportColors?.withdrawal || settings.themeColor || '#22c55e' },
         footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' },
         didParseCell: (data) => { if (settings.customFont) { (data.cell.styles as any).font = "CustomFont"; } }
     });
@@ -204,7 +204,7 @@ export default function AddCashWithdrawalPage() {
               title={t('daily_cash_withdrawal_report')}
               subtitle={format(selectedDate, 'PPP')}
               logoSrc={pdfSettings.report?.logo ?? null}
-              themeColor={pdfSettings.report?.themeColor}
+              themeColor={pdfSettings.report?.reportColors?.withdrawal ?? pdfSettings.report?.themeColor}
               headerText={pdfSettings.report?.headerText}
             />
           </div>

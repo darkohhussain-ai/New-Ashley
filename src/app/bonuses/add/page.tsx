@@ -194,7 +194,7 @@ export default function AddBonusPage() {
         body: dailyBonuses.map(item => [getEmployeeName(item.employeeId), item.loadCount, item.notes || 'N/A', formatCurrency(item.totalAmount)]),
         foot: [[t('total'), totalLoads.toFixed(0), '', formatCurrency(totalAmount)]],
         theme: 'striped',
-        headStyles: { fillColor: settings.themeColor || '#22c55e' },
+        headStyles: { fillColor: settings.reportColors?.bonus || settings.themeColor || '#22c55e' },
         footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' },
         didParseCell: (data) => { if (settings.customFont) { (data.cell.styles as any).font = "CustomFont"; } }
     });
@@ -211,7 +211,7 @@ export default function AddBonusPage() {
               title={t('daily_bonus_report')}
               subtitle={format(selectedDate, 'PPP')}
               logoSrc={pdfSettings.report?.logo ?? null}
-              themeColor={pdfSettings.report?.themeColor}
+              themeColor={pdfSettings.report?.reportColors?.bonus ?? pdfSettings.report?.themeColor}
               headerText={pdfSettings.report?.headerText}
             />
           </div>
