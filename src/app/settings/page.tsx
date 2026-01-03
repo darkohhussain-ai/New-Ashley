@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from 'react';
@@ -26,6 +25,7 @@ import { EmployeePdfCard } from '@/components/employees/employee-pdf-card'
 import type { PdfSettings, AllPdfSettings, Employee, Transfer } from '@/lib/types';
 import { formatISO } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import autoTable from 'jspdf-autotable'
 
 
 const availableFonts = [
@@ -667,7 +667,33 @@ export default function SettingsPage() {
                                         {currentPdfSettings.footerText && <div className="absolute bottom-4 left-0 right-0 p-4 border-t text-center text-xs text-gray-500">{currentPdfSettings.footerText}</div>}
                                     </>
                                 )}
-                                {activePdfTab === 'invoice' && <div className='flex justify-center items-center h-full'><TransferPdfCard transfer={mockTransfer} totalItems={mockTransfer.itemIds.length} logoSrc={currentPdfSettings.logo} /></div>}
+                                {activePdfTab === 'invoice' && (
+                                    <>
+                                        <div className="p-1">
+                                            <TransferPdfCard
+                                                transfer={mockTransfer}
+                                                logoSrc={currentPdfSettings.logo}
+                                                totalItems={mockTransfer.itemIds.length}
+                                            />
+                                        </div>
+                                        <div className='p-6 text-black' style={{fontFamily: availableFonts.find(f => f.name === currentPdfSettings.font)?.family}}>
+                                            <table className='w-full text-left text-sm'>
+                                                <thead className='bg-gray-100'>
+                                                    <tr>
+                                                        <th className='p-2'>Model</th>
+                                                        <th className='p-2'>Quantity</th>
+                                                        <th className='p-2'>Notes</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr className='border-b'><td className='p-2'>Sofa Model X</td><td className='p-2'>1</td><td className='p-2'>Handle with care</td></tr>
+                                                    <tr className='border-b'><td className='p-2'>Dining Table</td><td className='p-2'>1</td><td className='p-2'></td></tr>
+                                                    <tr className='border-b'><td className='p-2'>Chair Model Y</td><td className='p-2'>4</td><td className='p-2'>Packed separately</td></tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </>
+                                )}
                                 {activePdfTab === 'card' && <div className='flex justify-center items-center h-full'><EmployeePdfCard employee={mockEmployee} settings={currentPdfSettings}/></div>}
                                 </div>
                             </CardContent>
