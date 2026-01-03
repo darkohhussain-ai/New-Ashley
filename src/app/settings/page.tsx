@@ -195,6 +195,8 @@ export default function SettingsPage() {
   const [savedDashboardBanner, setSavedDashboardBanner] = useLocalStorage<string | null>('dashboard-banner', null);
   const [savedBannerHeight, setSavedBannerHeight] = useLocalStorage('dashboard-banner-height', 150);
   const [savedPdfSettings, setSavedPdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', defaultPdfSettings);
+  const [customFontBase64, setCustomFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
+
 
   const [lightColors, setLightColors] = useState(savedLightColors);
   const [darkColors, setDarkColors] = useState(savedDarkColors);
@@ -219,27 +221,34 @@ export default function SettingsPage() {
       }
     });
   };
-
-  const applyCustomFont = (fontDataUrl: string | null) => {
-    const styleId = 'custom-pdf-font-style';
+  
+  const applyCustomAppFont = (fontDataUrl: string | null) => {
+    const styleId = 'custom-app-font-style';
     let styleElement = document.getElementById(styleId) as HTMLStyleElement;
+
     if (!styleElement) {
         styleElement = document.createElement('style');
         styleElement.id = styleId;
         document.head.appendChild(styleElement);
     }
-    if(fontDataUrl) {
-      styleElement.innerHTML = `
-        @font-face {
-          font-family: 'CustomPdfFont';
-          src: url(${fontDataUrl});
-        }
-      `;
+
+    if (fontDataUrl) {
+        styleElement.innerHTML = `
+            @font-face {
+                font-family: 'CustomAppFont';
+                src: url(${fontDataUrl});
+            }
+            :root {
+                --font-body: 'CustomAppFont', sans-serif;
+            }
+        `;
     } else {
-      styleElement.innerHTML = '';
+        styleElement.innerHTML = '';
+        document.documentElement.style.removeProperty('--font-body');
     }
-  }
-  
+  };
+
+
   useEffect(() => {
     setMounted(true)
     if (langContext) {
@@ -260,7 +269,7 @@ export default function SettingsPage() {
           card: savedPdfSettings.card || defaultCardSettings,
       };
       setPdfSettings(updatedPdfSettings);
-      applyCustomFont(updatedPdfSettings[activePdfTab].customFont || null);
+      applyCustomAppFont(customFontBase64);
     
       if (document.documentElement.classList.contains('dark')) {
         applyColors(savedDarkColors);
@@ -269,7 +278,7 @@ export default function SettingsPage() {
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mounted, savedLightColors, savedDarkColors, savedDashboardBanner, savedBannerHeight, savedPdfSettings, activePdfTab])
+  }, [mounted, savedLightColors, savedDarkColors, savedDashboardBanner, savedBannerHeight, savedPdfSettings, customFontBase64])
   
   useEffect(() => {
     if(!mounted) return;
@@ -309,9 +318,8 @@ export default function SettingsPage() {
       const reader = new FileReader();
       reader.onload = (event) => {
         const result = event.target?.result as string;
-        handlePdfSettingChange('customFont', result);
-        handlePdfSettingChange('font', 'CustomFont');
-        applyCustomFont(result);
+        setCustomFontBase64(result);
+        applyCustomAppFont(result);
         toast({ title: 'Custom font selected!', description: 'Click "Save Changes" to apply.' });
       };
       reader.readAsDataURL(file);
@@ -339,6 +347,8 @@ export default function SettingsPage() {
     setSavedDashboardBanner(dashboardBanner);
     setSavedBannerHeight(bannerHeight);
     setSavedPdfSettings(pdfSettings);
+    setCustomFontBase64(customFontBase64);
+
     if(langContext) {
       langContext.setTranslations(englishTranslations, 'en');
       langContext.setTranslations(kurdishTranslations, 'ku');
@@ -352,13 +362,15 @@ export default function SettingsPage() {
     setDashboardBanner(null);
     setBannerHeight(150);
     setPdfSettings(defaultPdfSettings);
-    applyCustomFont(null);
+    setCustomFontBase64(null);
+    applyCustomAppFont(null);
     
     setSavedLightColors(defaultLightColors);
     setSavedDarkColors(defaultDarkColors);
     setSavedDashboardBanner(null);
     setSavedBannerHeight(150);
     setSavedPdfSettings(defaultPdfSettings);
+    setCustomFontBase64(null);
     
     if (langContext) {
         langContext.resetTranslations();
@@ -477,22 +489,26 @@ export default function SettingsPage() {
         </div>
       </header>
       <main className="p-4 md:p-6 container mx-auto">
-        <Tabs defaultValue="appearance" className="w-full">
+        <Tabs defaultValue="design" className="w-full">
             <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="appearance">Appearance</TabsTrigger>
+                <TabsTrigger value="design">Design</TabsTrigger>
                 <TabsTrigger value="language">Language</TabsTrigger>
                 <TabsTrigger value="pdf">PDF & Reports</TabsTrigger>
                 <TabsTrigger value="data">Data Management</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="appearance" className="pt-6">
+            <TabsContent value="design" className="pt-6">
                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                     <Card>
                         <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Palette /> General</CardTitle></CardHeader>
-                        <CardContent className="space-y-4">
+                        <CardContent className="space-y-6">
                             <div className="flex items-center justify-between">
                                 <Label htmlFor="dark-mode">Dark Mode</Label>
                                 <Switch id="dark-mode" checked={theme === 'dark'} onCheckedChange={() => setTheme(theme === 'light' ? 'dark' : 'light')} />
+                            </div>
+                             <div>
+                                <Label htmlFor="font-upload" className="text-sm font-medium">Upload Custom App Font (.ttf, .woff)</Label>
+                                <Input id="font-upload" type="file" accept=".ttf,.otf,.woff,.woff2" className="mt-2" onChange={handleCustomFontUpload} />
                             </div>
                         </CardContent>
                     </Card>
@@ -627,17 +643,12 @@ export default function SettingsPage() {
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <Label htmlFor="font-select">Font</Label>
-                                    <Select value={currentPdfSettings.font} onValueChange={(v) => { handlePdfSettingChange('font', v); if (v !== 'CustomFont') applyCustomFont(null); }}>
+                                    <Select value={currentPdfSettings.font} onValueChange={(v) => { handlePdfSettingChange('font', v) }}>
                                         <SelectTrigger className="w-[180px]"><SelectValue placeholder="Select a font" /></SelectTrigger>
                                         <SelectContent>
                                             {availableFonts.map(f => <SelectItem key={f.name} value={f.name}>{f.name}</SelectItem>)}
-                                            {currentPdfSettings.customFont && <SelectItem value="CustomFont">Custom Font</SelectItem>}
                                         </SelectContent>
                                     </Select>
-                                </div>
-                                <div>
-                                    <Label htmlFor="font-upload" className="text-sm font-medium">Upload Custom Font (.ttf, .woff)</Label>
-                                    <Input id="font-upload" type="file" accept=".ttf,.otf,.woff,.woff2" className="mt-2" onChange={handleCustomFontUpload} />
                                 </div>
                             </CardContent>
                         </Card>
@@ -650,7 +661,7 @@ export default function SettingsPage() {
                                 {activePdfTab === 'report' && (
                                     <>
                                         <ReportPdfHeader title="Example Report Title" subtitle="This is an example subtitle" logoSrc={currentPdfSettings.logo ?? null} themeColor={currentPdfSettings.themeColor} headerText={currentPdfSettings.headerText} />
-                                        <div className="p-6" style={{fontFamily: currentPdfSettings.font === 'CustomFont' ? 'CustomPdfFont' : availableFonts.find(f => f.name === currentPdfSettings.font)?.family}}>
+                                        <div className="p-6" style={{fontFamily: availableFonts.find(f => f.name === currentPdfSettings.font)?.family}}>
                                             <p className="text-sm text-gray-600 mb-4">This is sample body text. The quick brown fox jumps over the lazy dog.</p>
                                         </div>
                                         {currentPdfSettings.footerText && <div className="absolute bottom-4 left-0 right-0 p-4 border-t text-center text-xs text-gray-500">{currentPdfSettings.footerText}</div>}
