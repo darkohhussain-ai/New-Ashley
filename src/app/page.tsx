@@ -3,15 +3,19 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { Users, Box, Settings as SettingsIcon, CreditCard, Bell, ChevronDown, Calendar, Clock, PackagePlus, Star, CheckSquare, RefreshCcw, Newspaper, UserCircle } from "lucide-react"
+import { Users, Box, Settings as SettingsIcon, CreditCard, Bell, ChevronDown, Calendar, Clock, PackagePlus, Star, CheckSquare, RefreshCcw, Newspaper, UserCircle, Languages } from "lucide-react"
 import { DashboardCard } from "@/components/dashboard/dashboard-card"
 import useLocalStorage from "@/hooks/use-local-storage"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { format } from 'date-fns';
 import { Button } from "@/components/ui/button"
+import { useTranslation } from "@/hooks/use-translation"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 export default function Home() {
   const [date, setDate] = useState<Date | null>(null);
+  const { t, setLanguage, language } = useTranslation();
+
 
   // Load settings from localStorage
   const [savedBannerHeight] = useLocalStorage('dashboard-banner-height', 150);
@@ -35,14 +39,14 @@ export default function Home() {
   };
 
   const menuItems = [
-    { title: "Ashley employees mangment", icon: CreditCard, href: "/ashley-expenses", color: "bg-blue-500" },
-    { title: "Transmit Cargo", icon: PackagePlus, href: "/transmit", color: "bg-yellow-500" },
-    { title: "Placement & Storage", icon: Box, href: "/items", color: "bg-green-500" },
-    { title: "Marketing Feedback", icon: Star, href: "/marketing-feedback", color: "bg-cyan-500" },
-    { title: "Report Designer", icon: Newspaper, href: "/report-designer", color: "bg-indigo-500" },
-    { title: "Settings", icon: SettingsIcon, href: "/settings", color: "bg-purple-500" },
-    { title: "Employees", icon: Users, href: "/employees", color: "bg-pink-500" },
-    { title: "My Account", icon: UserCircle, href: "/account", color: "bg-gray-500" },
+    { title: t("ashley_employees_management"), icon: CreditCard, href: "/ashley-expenses", color: "bg-blue-500" },
+    { title: t("transmit_cargo"), icon: PackagePlus, href: "/transmit", color: "bg-yellow-500" },
+    { title: t("placement_storage"), icon: Box, href: "/items", color: "bg-green-500" },
+    { title: t("marketing_feedback"), icon: Star, href: "/marketing-feedback", color: "bg-cyan-500" },
+    { title: t("report_designer"), icon: Newspaper, href: "/report-designer", color: "bg-indigo-500" },
+    { title: t("settings"), icon: SettingsIcon, href: "/settings", color: "bg-purple-500" },
+    { title: t("employees"), icon: Users, href: "/employees", color: "bg-pink-500" },
+    { title: t("my_account"), icon: UserCircle, href: "/account", color: "bg-gray-500" },
   ]
 
   // We can return a loading state or the default view until the client has mounted
@@ -54,7 +58,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground" dir={language === 'ku' ? 'rtl' : 'ltr'}>
       <header className="bg-card border-b top-0 z-10">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-20">
@@ -75,7 +79,18 @@ export default function Home() {
                 </div>
               )}
             </div>
-            <div className="flex items-center justify-end gap-4 w-1/3">
+            <div className="flex items-center justify-end gap-2 w-1/3">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Languages className="h-5 w-5 text-muted-foreground hover:text-primary" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setLanguage('en')}>English</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setLanguage('ku')}>کوردی (Kurdish)</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button variant="ghost" size="icon" onClick={handleRefresh} aria-label="Refresh page">
                 <RefreshCcw className="w-5 h-5 text-muted-foreground hover:text-primary" />
               </Button>
@@ -98,8 +113,8 @@ export default function Home() {
       </header>
       <main className="container mx-auto p-4 md:p-8">
         <div className="mb-8">
-          <h2 className="text-2xl font-bold">Welcome Back</h2>
-          <p className="text-muted-foreground">Select a service to continue.</p>
+          <h2 className="text-2xl font-bold">{t('welcome_back')}</h2>
+          <p className="text-muted-foreground">{t('select_service')}</p>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {menuItems.map((item) => (
