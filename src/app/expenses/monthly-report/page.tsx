@@ -172,6 +172,17 @@ export default function MonthlyExpenseReportPage() {
         });
     }
 
+    const finalYWithSignature = (doc as any).lastAutoTable.finalY + 40;
+    const pageHeightWithSignature = doc.internal.pageSize.height;
+    if (finalYWithSignature > pageHeightWithSignature - 30) {
+        doc.addPage();
+    }
+    const signatureYWithSignature = finalYWithSignature > pageHeightWithSignature - 50 ? 40 : finalYWithSignature;
+    doc.setFontSize(10);
+    doc.text("...................................", doc.internal.pageSize.width - 120, signatureYWithSignature, { align: 'center' });
+    doc.text("Warehouse Manager Signature", doc.internal.pageSize.width - 120, signatureYWithSignature + 10, { align: 'center' });
+
+
     if (settings.footerText) {
         const pageCount = (doc as any).internal.getNumberOfPages();
         for (let i = 1; i <= pageCount; i++) {
@@ -321,3 +332,5 @@ export default function MonthlyExpenseReportPage() {
     </>
   );
 }
+
+    

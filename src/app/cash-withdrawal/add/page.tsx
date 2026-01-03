@@ -192,6 +192,16 @@ export default function AddCashWithdrawalPage() {
         didParseCell: (data) => { if (settings.customFont) { (data.cell.styles as any).font = "CustomFont"; } }
     });
     
+    const finalY = (doc as any).lastAutoTable.finalY + 40;
+    const pageHeight = doc.internal.pageSize.height;
+    if (finalY > pageHeight - 30) {
+        doc.addPage();
+    }
+    const signatureY = finalY > pageHeight - 50 ? 40 : finalY;
+    doc.setFontSize(10);
+    doc.text("...................................", doc.internal.pageSize.width - 120, signatureY, { align: 'center' });
+    doc.text("Warehouse Manager Signature", doc.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
+
     doc.save(`cash-withdrawal-report-${format(selectedDate, 'yyyy-MM-dd')}.pdf`);
   };
 
@@ -376,3 +386,5 @@ export default function AddCashWithdrawalPage() {
     </>
   );
 }
+
+    

@@ -501,7 +501,17 @@ export default function FileDetailPage() {
         }
       }
     });
-    
+
+    const finalY = (pdf as any).lastAutoTable.finalY + 40;
+    const pageHeight = pdf.internal.pageSize.height;
+    if (finalY > pageHeight - 30) {
+        pdf.addPage();
+    }
+    const signatureY = finalY > pageHeight - 50 ? 40 : finalY;
+    pdf.setFontSize(10);
+    pdf.text("...................................", pdf.internal.pageSize.width - 120, signatureY, { align: 'center' });
+    pdf.text("Warehouse Manager Signature", pdf.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
+
     pdf.save(`${file.storageName}.pdf`);
   };
 
@@ -900,5 +910,7 @@ export default function FileDetailPage() {
       </main>
     </div>
   );
+
+    
 
     

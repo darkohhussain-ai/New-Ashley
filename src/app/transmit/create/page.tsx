@@ -156,11 +156,22 @@ export default function CreateTransferPage() {
       }
     });
 
-    const finalY = (pdf as any).lastAutoTable.finalY;
+    let finalY = (pdf as any).lastAutoTable.finalY + 20;
+
     pdf.setFontSize(10);
-    pdf.text(`Driver: ${lastTransfer.driverName}`, 14, finalY + 20);
-    pdf.text(`Warehouse Manager: ${lastTransfer.warehouseManagerName}`, 14, finalY + 30);
-    
+    pdf.text(`Driver: ${lastTransfer.driverName}`, 14, finalY);
+    pdf.text(`Warehouse Manager: ${lastTransfer.warehouseManagerName}`, 14, finalY + 10);
+
+    finalY += 40;
+    const pageHeight = pdf.internal.pageSize.height;
+    if (finalY > pageHeight - 30) {
+        pdf.addPage();
+    }
+    const signatureY = finalY > pageHeight - 50 ? 40 : finalY;
+    pdf.setFontSize(10);
+    pdf.text("...................................", pdf.internal.pageSize.width - 120, signatureY, { align: 'center' });
+    pdf.text("Warehouse Manager Signature", pdf.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
+
     pdf.save(`${lastTransfer.cargoName}.pdf`);
   };
 
@@ -338,3 +349,5 @@ export default function CreateTransferPage() {
     </>
   );
 }
+
+    
