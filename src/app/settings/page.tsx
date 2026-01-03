@@ -9,13 +9,16 @@ import useLocalStorage, { getAllDataForExport, importData } from '@/hooks/use-lo
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useTheme } from '@/components/shared/theme-provider'
 import { useToast } from '@/hooks/use-toast'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Slider } from '@/components/ui/slider'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
+import { useTranslation } from '@/hooks/use-translation'
+import { LanguageContext } from '@/context/language-provider'
+import { ScrollArea } from '@/components/ui/scroll-area'
 
 type ThemeColors = {
   background: string;
@@ -114,6 +117,8 @@ export default function SettingsPage() {
   const { toast } = useToast()
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
+  const langContext = React.useContext(LanguageContext)
+
   
   const [savedLightColors, setSavedLightColors] = useLocalStorage<ThemeColors>('light-theme-colors', defaultLightColors);
   const [savedDarkColors, setSavedDarkColors] = useLocalStorage<ThemeColors>('dark-theme-colors', defaultDarkColors);
@@ -126,6 +131,9 @@ export default function SettingsPage() {
   const [darkColors, setDarkColors] = useState(savedDarkColors);
   const [dashboardBanner, setDashboardBanner] = useState(savedDashboardBanner);
   const [bannerHeight, setBannerHeight] = useState(savedBannerHeight);
+
+  const [englishTranslations, setEnglishTranslations] = useState<Record<string, string>>({});
+  const [kurdishTranslations, setKurdishTranslations] = useState<Record<string, string>>({});
   
   const [importFile, setImportFile] = useState<File | null>(null);
 
@@ -144,7 +152,11 @@ export default function SettingsPage() {
   // Apply saved settings on initial mount
   useEffect(() => {
     setMounted(true)
-  }, []);
+    if (langContext) {
+      setEnglishTranslations(langContext.translations.en);
+      setKurdishTranslations(langContext.translations.ku);
+    }
+  }, [langContext]);
 
   useEffect(() => {
     if (mounted) {
@@ -198,7 +210,11 @@ export default function SettingsPage() {
     setSavedDarkColors(darkColors);
     setSavedDashboardBanner(dashboardBanner);
     setSavedBannerHeight(bannerHeight);
-    toast({ title: 'Settings saved!', description: 'Your appearance settings have been updated.' });
+    if(langContext) {
+      langContext.setTranslations(englishTranslations, 'en');
+      langContext.setTranslations(kurdishTranslations, 'ku');
+    }
+    toast({ title: 'Settings saved!', description: 'Your appearance and language settings have been updated.' });
   }
 
   const handleResetToDefault = () => {
@@ -213,7 +229,11 @@ export default function SettingsPage() {
     setSavedDashboardBanner(null);
     setSavedBannerHeight(150);
     
-    toast({ title: 'Settings Reset', description: 'All appearance settings have been reset to their default values.' });
+    if (langContext) {
+        langContext.resetTranslations();
+    }
+    
+    toast({ title: 'Settings Reset', description: 'All appearance and language settings have been reset to their default values.' });
   }
   
   const handleExport = async () => {
@@ -302,7 +322,7 @@ export default function SettingsPage() {
           </div>
         </div>
       </header>
-      <main className="p-4 md:p-6 container mx-auto">
+      <main className="p-4 md:p-6 container mx-auto space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
             <Card>
             <CardHeader>
@@ -322,14 +342,14 @@ export default function SettingsPage() {
                 <AlertDialog>
                     <AlertDialogTrigger asChild>
                         <Button variant="outline" className="w-full">
-                            <RefreshCcw className="mr-2 h-4 w-4" /> Reset to Default
+                            <RefreshCcw className="mr-2 h-4 w-4" /> Reset All Settings
                         </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                         <AlertDialogHeader>
                             <AlertDialogTitle>Reset all settings?</AlertDialogTitle>
                             <AlertDialogDescription>
-                            This will reset all appearance settings (colors, fonts, logo) to their original defaults. Your data will not be affected. This action cannot be undone.
+                            This will reset all appearance and language settings to their original defaults. Your data will not be affected. This action cannot be undone.
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
@@ -400,7 +420,57 @@ export default function SettingsPage() {
             </Card>
         </div>
         
-        <Card className="mt-6">
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">Language & Translations</CardTitle>
+                <CardDescription>Edit the text for different languages used in the app.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                 <Tabs defaultValue="english">
+                    <TabsList>
+                        <TabsTrigger value="english">English</TabsTrigger>
+                        <TabsTrigger value="kurdish">Kurdish (کوردی)</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="english">
+                        <ScrollArea className="h-96 pr-4">
+                            <div className="space-y-4">
+                                {Object.entries(englishTranslations).map(([key, value]) => (
+                                    <div key={key} className="grid grid-cols-3 gap-4 items-center">
+                                        <Label htmlFor={`en-${key}`} className="text-muted-foreground break-all">{key}</Label>
+                                        <Input
+                                            id={`en-${key}`}
+                                            value={value}
+                                            onChange={e => setEnglishTranslations(prev => ({ ...prev, [key]: e.target.value }))}
+                                            className="col-span-2"
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        </ScrollArea>
+                    </TabsContent>
+                    <TabsContent value="kurdish">
+                        <ScrollArea className="h-96 pr-4">
+                            <div className="space-y-4" dir='rtl'>
+                                {Object.entries(kurdishTranslations).map(([key, value]) => (
+                                    <div key={key} className="grid grid-cols-3 gap-4 items-center">
+                                        <Label htmlFor={`ku-${key}`} className="text-muted-foreground break-all">{key}</Label>
+                                        <Input
+                                            id={`ku-${key}`}
+                                            value={value}
+                                            onChange={e => setKurdishTranslations(prev => ({ ...prev, [key]: e.target.value }))}
+                                            className="col-span-2"
+                                            dir='rtl'
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        </ScrollArea>
+                    </TabsContent>
+                </Tabs>
+            </CardContent>
+        </Card>
+        
+        <Card>
             <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg"><ShieldCheck /> Data Management</CardTitle>
             <CardDescription>Backup or restore all application data. Your data is stored in the browser, so be sure to make regular backups.</CardDescription>

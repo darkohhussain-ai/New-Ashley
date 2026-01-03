@@ -11,11 +11,7 @@ export function useTranslation() {
     throw new Error('useTranslation must be used within a LanguageProvider');
   }
 
-  const { translations, setLanguage, language } = context;
-
-  const t = (key: string): string => {
-    return translations[key] || key;
-  };
+  const { t, setLanguage, language } = context;
 
   return { t, setLanguage, language };
 }
