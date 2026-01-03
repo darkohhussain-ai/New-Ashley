@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowLeft, Download, Upload, Save, Palette, Type, ShieldCheck, Image as ImageIcon, LayoutDashboard, RefreshCcw, Play, Newspaper, Building, FileText, Receipt, CreditCard } from 'lucide-react'
+import { ArrowLeft, Download, Upload, Save, Palette, Type, ShieldCheck, ImageIcon, LayoutDashboard, RefreshCcw, Play, Newspaper, Building, FileText, Receipt, CreditCard } from 'lucide-react'
 import useLocalStorage, { getAllDataForExport, importData } from '@/hooks/use-local-storage'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -343,7 +343,7 @@ export default function SettingsPage() {
         report: {
             ...prev.report,
             reportColors: {
-                ...prev.report.reportColors,
+                ...(prev.report.reportColors || defaultReportColors),
                 [reportType]: color,
             }
         }
@@ -717,12 +717,25 @@ export default function SettingsPage() {
                         <Card>
                             <CardHeader><CardTitle>Live Preview</CardTitle><CardDescription>A preview of your {activePdfTab} design.</CardDescription></CardHeader>
                             <CardContent className='bg-muted/50 p-6 rounded-b-lg flex justify-center items-start overflow-auto'>
-                                <div className="w-[595px] min-h-[842px] bg-white shadow-lg transform scale-[0.6] origin-top overflow-hidden flex flex-col">
+                                <div className="w-[595px] min-h-[842px] bg-white shadow-lg transform scale-100 origin-top overflow-hidden flex flex-col">
                                 {activePdfTab === 'report' && (
                                     <>
                                         <ReportPdfHeader title="Example Report Title" subtitle="This is an example subtitle" logoSrc={currentPdfSettings.logo ?? null} themeColor={pdfSettings.report.reportColors?.general} headerText={currentPdfSettings.headerText} />
-                                        <div className="p-6" style={{fontFamily: availableFonts.find(f => f.name === currentPdfSettings.font)?.family}}>
+                                        <div className="p-6 flex-grow" style={{fontFamily: availableFonts.find(f => f.name === currentPdfSettings.font)?.family}}>
+                                            <h3 className="font-bold text-gray-800 mb-2">Sample Section</h3>
                                             <p className="text-sm text-gray-600 mb-4">This is sample body text. The quick brown fox jumps over the lazy dog.</p>
+                                             <Table className={cn(currentPdfSettings.tableTheme === 'grid' && 'border')}>
+                                                <TableHeader>
+                                                    <TableRow style={{backgroundColor: pdfSettings.report.reportColors?.general, color: 'white'}} className="hover:bg-primary/90">
+                                                        <TableHead className="text-white">Column 1</TableHead>
+                                                        <TableHead className="text-white">Column 2</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                     <TableRow className={cn(currentPdfSettings.tableTheme === 'striped' && 'odd:bg-muted/50')}><TableCell>Data A1</TableCell><TableCell>Data A2</TableCell></TableRow>
+                                                     <TableRow className={cn(currentPdfSettings.tableTheme === 'striped' && 'odd:bg-muted/50')}><TableCell>Data B1</TableCell><TableCell>Data B2</TableCell></TableRow>
+                                                </TableBody>
+                                            </Table>
                                         </div>
                                         {currentPdfSettings.footerText && <div className="mt-auto p-4 border-t text-center text-xs text-gray-500">{currentPdfSettings.footerText}</div>}
                                     </>
