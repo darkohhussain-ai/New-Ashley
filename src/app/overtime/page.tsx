@@ -6,29 +6,33 @@ import { ArrowLeft, Clock, Calendar, Archive } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/hooks/use-translation';
 
-const menuItems = [
-  {
-    title: "Add Daily Overtime",
-    icon: Clock,
-    href: "/overtime/add",
-    color: "bg-blue-500",
-  },
-  {
-    title: "Monthly Overtime Report",
-    icon: Calendar,
-    href: "/overtime/monthly-report",
-    color: "bg-orange-500",
-  },
-  {
-    title: "Overtime Archive",
-    icon: Archive,
-    href: "/overtime/archive",
-    color: "bg-teal-500",
-  },
-];
 
 export default function OvertimeDashboardPage() {
+  const { t } = useTranslation();
+
+  const menuItems = [
+    {
+      title: t('add_daily_overtime'),
+      icon: Clock,
+      href: "/overtime/add",
+      color: "bg-blue-500",
+    },
+    {
+      title: t('monthly_overtime_report'),
+      icon: Calendar,
+      href: "/overtime/monthly-report",
+      color: "bg-orange-500",
+    },
+    {
+      title: t('overtime_archive'),
+      icon: Archive,
+      href: "/overtime/archive",
+      color: "bg-teal-500",
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="bg-card border-b p-4">
@@ -36,10 +40,10 @@ export default function OvertimeDashboardPage() {
           <Button variant="outline" size="icon" asChild>
             <Link href="/ashley-expenses">
               <ArrowLeft />
-              <span className="sr-only">Back to Ashley employees mangment</span>
+              <span className="sr-only">{t('back_to_ashley_management')}</span>
             </Link>
           </Button>
-          <h1 className="text-xl font-bold">Employee Overtime</h1>
+          <h1 className="text-xl font-bold">{t('employee_overtime')}</h1>
         </div>
       </header>
       <main className='container mx-auto p-4 md:p-8'>

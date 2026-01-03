@@ -23,6 +23,7 @@ import type { CashWithdrawal, AllPdfSettings } from '@/lib/types';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
+import { useTranslation } from '@/hooks/use-translation';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -40,6 +41,7 @@ const formatCurrencyForPdf = (amount: number) => {
 
 
 export default function AddCashWithdrawalPage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -113,7 +115,7 @@ export default function AddCashWithdrawalPage() {
     setIsSaving(true);
     
     setWithdrawals(withdrawals.map(rec => rec.id === editingRecord.id ? editingRecord : rec));
-    toast({ title: 'Success', description: 'Withdrawal record updated.' });
+    toast({ title: t('save_changes'), description: t('withdrawal_record_updated') });
     setEditingRecord(null);
     setIsSaving(false);
   };
@@ -121,7 +123,7 @@ export default function AddCashWithdrawalPage() {
   const handleAddWithdrawal = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedEmployee || !amount || !selectedDate || parseFloat(amount) <= 0) {
-      toast({ variant: 'destructive', title: 'Missing Fields', description: 'Please select an employee and enter a valid amount.' });
+      toast({ variant: 'destructive', title: t('missing_information'), description: t('add_withdrawal_validation_error') });
       return;
     }
     
@@ -135,14 +137,14 @@ export default function AddCashWithdrawalPage() {
     };
 
     setWithdrawals([...withdrawals, withdrawalData]);
-    toast({ title: 'Withdrawal Added', description: 'The record has been added.' });
+    toast({ title: t('withdrawal_added'), description: t('withdrawal_added_desc') });
     resetForm();
     setIsSaving(false);
   };
 
   const handleDelete = (record: CashWithdrawal) => {
     setWithdrawals(withdrawals.filter(rec => rec.id !== record.id));
-    toast({ title: 'Record Deleted', description: 'The withdrawal record has been removed.' });
+    toast({ title: t('record_deleted'), description: t('withdrawal_record_deleted') });
   };
   
   const { totalAmount } = useMemo(() => {
@@ -181,9 +183,9 @@ export default function AddCashWithdrawalPage() {
 
     autoTable(doc, {
         startY: finalImgHeight + 10,
-        head: [['Employee', 'Notes', 'Amount']],
+        head: [[t('employee'), t('notes'), t('amount')]],
         body: dailyWithdrawals.map(item => [getEmployeeName(item.employeeId), item.notes || 'N/A', formatCurrencyForPdf(item.amount)]),
-        foot: [['Total', '', formatCurrencyForPdf(totalAmount)]],
+        foot: [[t('total'), '', formatCurrencyForPdf(totalAmount)]],
         theme: 'striped',
         headStyles: { fillColor: settings.themeColor || '#22c55e' },
         footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' },
@@ -199,7 +201,7 @@ export default function AddCashWithdrawalPage() {
       {selectedDate && (
          <div ref={pdfHeaderRef} style={{ width: '700px', background: 'white', color: 'black' }}>
             <ReportPdfHeader
-              title="Daily Cash Withdrawal Report"
+              title={t('daily_cash_withdrawal_report')}
               subtitle={format(selectedDate, 'PPP')}
               logoSrc={pdfSettings.report?.logo ?? null}
               themeColor={pdfSettings.report?.themeColor}
@@ -217,14 +219,14 @@ export default function AddCashWithdrawalPage() {
                 <ArrowLeft />
               </Link>
             </Button>
-            <h1 className="text-xl font-bold">Daily Cash Withdrawals</h1>
+            <h1 className="text-xl font-bold">{t('daily_cash_withdrawals')}</h1>
           </div>
           <div className="flex items-center gap-2">
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant={"outline"} className={cn("w-48 justify-start text-left font-normal", !selectedDate && "text-muted-foreground")}>
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
+                  {selectedDate ? format(selectedDate, "PPP") : <span>{t('pick_a_date')}</span>}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="end">
@@ -241,20 +243,20 @@ export default function AddCashWithdrawalPage() {
             <div className="lg:col-span-1">
                 <Card>
                 <CardHeader>
-                    <CardTitle>Add Withdrawal Record</CardTitle>
-                    <CardDescription>Select an employee and enter the amount they wish to withdraw from their salary.</CardDescription>
+                    <CardTitle>{t('add_withdrawal_record')}</CardTitle>
+                    <CardDescription>{t('add_withdrawal_record_desc')}</CardDescription>
                 </CardHeader>
                 <form onSubmit={handleAddWithdrawal}>
                     <CardContent className="space-y-4">
                     <div className="space-y-2">
-                        <label htmlFor="employee">Employee</label>
+                        <label htmlFor="employee">{t('employee')}</label>
                         <Select onValueChange={setSelectedEmployee} value={selectedEmployee} disabled={isSaving}>
                         <SelectTrigger id="employee">
-                            <SelectValue placeholder="Select an employee" />
+                            <SelectValue placeholder={t('select_an_employee')} />
                         </SelectTrigger>
                         <SelectContent>
                             {isLoading ? (
-                            <SelectItem value="loading" disabled>Loading...</SelectItem>
+                            <SelectItem value="loading" disabled>{t('loading')}...</SelectItem>
                             ) : (
                             sortedEmployees.map(emp => (
                                 <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>
@@ -264,20 +266,20 @@ export default function AddCashWithdrawalPage() {
                         </Select>
                     </div>
                     <div className="space-y-2">
-                        <label htmlFor="amount">Amount (IQD)</label>
+                        <label htmlFor="amount">{t('amount_iqd')}</label>
                         <div className="relative">
                         <Banknote className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input id="amount" type="number" value={amount} onChange={e => setAmount(e.target.value)} required placeholder="e.g., 100000" className="pl-8" disabled={isSaving} />
                         </div>
                     </div>
                     <div className="space-y-2">
-                        <label htmlFor="notes">Notes</label>
-                        <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Optional notes" disabled={isSaving}/>
+                        <label htmlFor="notes">{t('notes')}</label>
+                        <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder={t('notes_optional')} disabled={isSaving}/>
                     </div>
                     </CardContent>
                     <CardFooter>
                         <Button type="submit" className="w-full" disabled={isSaving}>
-                            <Plus className="mr-2 h-4 w-4" /> Add Record
+                            <Plus className="mr-2 h-4 w-4" /> {t('add_record')}
                         </Button>
                     </CardFooter>
                 </form>
@@ -288,13 +290,13 @@ export default function AddCashWithdrawalPage() {
                 <Card>
                 <CardHeader className="flex-row items-center justify-between">
                     <div>
-                        <CardTitle>Withdrawals for {selectedDate ? format(selectedDate, 'MMMM d, yyyy') : '...'}</CardTitle>
+                        <CardTitle>{t('withdrawals_for_date', {date: selectedDate ? format(selectedDate, 'MMMM d, yyyy') : '...'})}</CardTitle>
                     </div>
                 </CardHeader>
                 <CardContent>
                     <div className="divide-y">
                     {isLoading ? (
-                        <div className="p-8 text-center text-muted-foreground">Loading records...</div>
+                        <div className="p-8 text-center text-muted-foreground">{t('loading_records')}...</div>
                     ) : dailyWithdrawals && dailyWithdrawals.length > 0 ? (
                         dailyWithdrawals.map(record => (
                         <div key={record.id} className="py-3 flex justify-between items-start gap-4">
@@ -310,7 +312,7 @@ export default function AddCashWithdrawalPage() {
                                 <Textarea 
                                     value={editingRecord.notes}
                                     onChange={(e) => setEditingRecord({...editingRecord, notes: e.target.value})}
-                                    placeholder="Notes..."
+                                    placeholder={t('notes_optional')}
                                 />
                             </div>
                             ) : (
@@ -339,14 +341,14 @@ export default function AddCashWithdrawalPage() {
                                             </AlertDialogTrigger>
                                             <AlertDialogContent>
                                                 <AlertDialogHeader>
-                                                    <AlertDialogTitle>Delete this record?</AlertDialogTitle>
+                                                    <AlertDialogTitle>{t('delete_this_record')}</AlertDialogTitle>
                                                     <AlertDialogDescription>
-                                                    This will permanently delete the withdrawal record for {getEmployeeName(record.employeeId)}.
+                                                    {t('confirm_delete_withdrawal', {employeeName: getEmployeeName(record.employeeId)})}
                                                     </AlertDialogDescription>
                                                 </AlertDialogHeader>
                                                 <AlertDialogFooter>
-                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => handleDelete(record)}>Delete</AlertDialogAction>
+                                                    <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleDelete(record)}>{t('delete')}</AlertDialogAction>
                                                 </AlertDialogFooter>
                                             </AlertDialogContent>
                                         </AlertDialog>
@@ -356,13 +358,13 @@ export default function AddCashWithdrawalPage() {
                         </div>
                         ))
                     ) : (
-                        <div className="py-8 text-center text-muted-foreground">No withdrawal records for this date.</div>
+                        <div className="py-8 text-center text-muted-foreground">{t('no_withdrawal_records_for_date')}</div>
                     )}
                     </div>
                 </CardContent>
                 {dailyWithdrawals && dailyWithdrawals.length > 0 && (
                     <CardFooter className="flex justify-between font-bold bg-muted/50 py-4 rounded-b-lg">
-                        <span>Total</span>
+                        <span>{t('total')}</span>
                         <p className="text-primary">{formatCurrency(totalAmount)}</p>
                     </CardFooter>
                 )}

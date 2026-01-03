@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { format, parseISO } from 'date-fns';
 import { useAppContext } from '@/context/app-provider';
 import type { CashWithdrawal } from '@/lib/types';
+import { useTranslation } from '@/hooks/use-translation';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -19,6 +20,7 @@ const formatCurrency = (amount: number) => {
 };
 
 export default function WithdrawalArchivePage() {
+  const { t } = useTranslation();
   const { withdrawals } = useAppContext();
   const isLoading = !withdrawals;
 
@@ -48,10 +50,10 @@ export default function WithdrawalArchivePage() {
           <Button variant="outline" size="icon" asChild>
             <Link href="/cash-withdrawal"><ArrowLeft /></Link>
           </Button>
-          <h1 className="text-2xl md:text-3xl font-bold">Withdrawal Archive</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">{t('withdrawal_archive')}</h1>
         </div>
          <Button asChild>
-            <Link href="/cash-withdrawal/add"><Plus className="mr-2"/> Add Withdrawal</Link>
+            <Link href="/cash-withdrawal/add"><Plus className="mr-2"/> {t('add_withdrawal')}</Link>
         </Button>
       </header>
       <main>
@@ -72,7 +74,7 @@ export default function WithdrawalArchivePage() {
                 </CardContent>
                 <CardContent>
                   <Button asChild className="w-full">
-                    <Link href={`/cash-withdrawal/add?date=${date}`}><Eye className="mr-2"/>View & Edit Details</Link>
+                    <Link href={`/cash-withdrawal/add?date=${date}`}><Eye className="mr-2"/>{t('view_edit_details')}</Link>
                   </Button>
                 </CardContent>
               </Card>
@@ -81,9 +83,9 @@ export default function WithdrawalArchivePage() {
         ) : (
           <div className="text-center py-16 border-2 border-dashed rounded-lg">
             <Archive className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-medium">No Withdrawal Records Found</h3>
-            <p className="mt-2 text-sm text-muted-foreground">Add your first withdrawal record to see the archive here.</p>
-             <Button asChild className="mt-4"><Link href="/cash-withdrawal/add">Add Withdrawal</Link></Button>
+            <h3 className="mt-4 text-lg font-medium">{t('no_withdrawal_records')}</h3>
+            <p className="mt-2 text-sm text-muted-foreground">{t('no_withdrawal_records_desc')}</p>
+             <Button asChild className="mt-4"><Link href="/cash-withdrawal/add">{t('add_withdrawal')}</Link></Button>
           </div>
         )}
       </main>

@@ -23,6 +23,7 @@ import type { Bonus, AllPdfSettings } from '@/lib/types';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
+import { useTranslation } from '@/hooks/use-translation';
 
 const BONUS_RATE = 5000; // 5,000 IQD per load
 
@@ -32,10 +33,11 @@ const formatCurrency = (amount: number) => {
     currency: 'IQD',
     currencyDisplay: 'code',
     maximumFractionDigits: 0,
-  }).format(amount).replace('IQD', '').trim() + ' IQD';
+  }).format(amount);
 };
 
 export default function AddBonusPage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -115,7 +117,7 @@ export default function AddBonusPage() {
     };
     
     setBonuses(bonuses.map(rec => rec.id === updatedData.id ? updatedData : rec));
-    toast({ title: 'Success', description: 'Bonus record updated.' });
+    toast({ title: t('save_changes'), description: t('bonus_record_updated') });
     setEditingRecord(null);
     setIsSaving(false);
   };
@@ -123,7 +125,7 @@ export default function AddBonusPage() {
   const handleAddBonus = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedEmployee || !loadCount || !selectedDate || parseInt(loadCount) <= 0) {
-      toast({ variant: 'destructive', title: 'Missing Fields', description: 'Please select an employee and enter a valid load count.' });
+      toast({ variant: 'destructive', title: t('missing_information'), description: t('add_bonus_validation_error') });
       return;
     }
     
@@ -139,14 +141,14 @@ export default function AddBonusPage() {
     };
 
     setBonuses([...bonuses, bonusData]);
-    toast({ title: 'Bonus Added', description: 'The record has been added.' });
+    toast({ title: t('bonus_added'), description: t('bonus_added_desc') });
     resetForm();
     setIsSaving(false);
   };
 
   const handleDelete = (record: Bonus) => {
     setBonuses(bonuses.filter(rec => rec.id !== record.id));
-    toast({ title: 'Record Deleted', description: 'The bonus record has been removed.' });
+    toast({ title: t('record_deleted'), description: t('bonus_record_deleted') });
   };
   
   const { totalLoads, totalAmount } = useMemo(() => {
@@ -188,9 +190,9 @@ export default function AddBonusPage() {
 
     autoTable(doc, {
         startY: finalImgHeight + 10,
-        head: [['Employee', 'Loads', 'Notes', 'Amount']],
+        head: [[t('employee'), t('loads'), t('notes'), t('amount')]],
         body: dailyBonuses.map(item => [getEmployeeName(item.employeeId), item.loadCount, item.notes || 'N/A', formatCurrency(item.totalAmount)]),
-        foot: [['Total', totalLoads.toFixed(0), '', formatCurrency(totalAmount)]],
+        foot: [[t('total'), totalLoads.toFixed(0), '', formatCurrency(totalAmount)]],
         theme: 'striped',
         headStyles: { fillColor: settings.themeColor || '#22c55e' },
         footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' },
@@ -206,7 +208,7 @@ export default function AddBonusPage() {
       {selectedDate && (
          <div ref={pdfHeaderRef} style={{ width: '700px', background: 'white', color: 'black' }}>
             <ReportPdfHeader
-              title="Daily Bonus Report"
+              title={t('daily_bonus_report')}
               subtitle={format(selectedDate, 'PPP')}
               logoSrc={pdfSettings.report?.logo ?? null}
               themeColor={pdfSettings.report?.themeColor}
@@ -224,14 +226,14 @@ export default function AddBonusPage() {
                 <ArrowLeft />
               </Link>
             </Button>
-            <h1 className="text-xl font-bold">Daily Bonuses</h1>
+            <h1 className="text-xl font-bold">{t('daily_bonuses')}</h1>
           </div>
           <div className="flex items-center gap-2">
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant={"outline"} className={cn("w-48 justify-start text-left font-normal", !selectedDate && "text-muted-foreground")}>
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
+                  {selectedDate ? format(selectedDate, "PPP") : <span>{t('pick_a_date')}</span>}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="end">
@@ -248,20 +250,20 @@ export default function AddBonusPage() {
             <div className="lg:col-span-1">
                 <Card>
                 <CardHeader>
-                    <CardTitle>Add Bonus Record</CardTitle>
-                    <CardDescription>Select an employee and enter their number of loads for the selected date.</CardDescription>
+                    <CardTitle>{t('add_bonus_record')}</CardTitle>
+                    <CardDescription>{t('add_bonus_record_desc')}</CardDescription>
                 </CardHeader>
                 <form onSubmit={handleAddBonus}>
                     <CardContent className="space-y-4">
                     <div className="space-y-2">
-                        <label htmlFor="employee">Employee</label>
+                        <label htmlFor="employee">{t('employee')}</label>
                         <Select onValueChange={setSelectedEmployee} value={selectedEmployee} disabled={isSaving}>
                         <SelectTrigger id="employee">
-                            <SelectValue placeholder="Select an employee" />
+                            <SelectValue placeholder={t('select_an_employee')} />
                         </SelectTrigger>
                         <SelectContent>
                             {isLoading ? (
-                            <SelectItem value="loading" disabled>Loading...</SelectItem>
+                            <SelectItem value="loading" disabled>{t('loading')}...</SelectItem>
                             ) : (
                             sortedEmployees.map(emp => (
                                 <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>
@@ -271,23 +273,23 @@ export default function AddBonusPage() {
                         </Select>
                     </div>
                     <div className="space-y-2">
-                        <label htmlFor="loadCount">Number of Loads</label>
+                        <label htmlFor="loadCount">{t('number_of_loads')}</label>
                         <div className="relative">
                         <Truck className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input id="loadCount" type="number" value={loadCount} onChange={e => setLoadCount(e.target.value)} required placeholder="e.g., 2" className="pl-8" disabled={isSaving} />
                         </div>
                     </div>
                     <div className="space-y-2">
-                        <label htmlFor="notes">Notes</label>
-                        <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Optional notes about the bonus" disabled={isSaving}/>
+                        <label htmlFor="notes">{t('notes')}</label>
+                        <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder={t('notes_optional')} disabled={isSaving}/>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                        Bonus rate: {formatCurrency(BONUS_RATE)} / load
+                        {t('bonus_rate', {rate: formatCurrency(BONUS_RATE)})}
                     </p>
                     </CardContent>
                     <CardFooter>
                         <Button type="submit" className="w-full" disabled={isSaving}>
-                            <Plus className="mr-2 h-4 w-4" /> Add Record
+                            <Plus className="mr-2 h-4 w-4" /> {t('add_record')}
                         </Button>
                     </CardFooter>
                 </form>
@@ -298,13 +300,13 @@ export default function AddBonusPage() {
                 <Card>
                 <CardHeader className="flex-row items-center justify-between">
                     <div>
-                        <CardTitle>Bonus Records for {selectedDate ? format(selectedDate, 'MMMM d, yyyy') : '...'}</CardTitle>
+                        <CardTitle>{t('bonus_records_for_date', {date: selectedDate ? format(selectedDate, 'MMMM d, yyyy') : '...'})}</CardTitle>
                     </div>
                 </CardHeader>
                 <CardContent>
                     <div className="divide-y">
                     {isLoading ? (
-                        <div className="p-8 text-center text-muted-foreground">Loading records...</div>
+                        <div className="p-8 text-center text-muted-foreground">{t('loading_records')}...</div>
                     ) : dailyBonuses && dailyBonuses.length > 0 ? (
                         dailyBonuses.map(record => (
                         <div key={record.id} className="py-3 flex justify-between items-start gap-4">
@@ -320,13 +322,13 @@ export default function AddBonusPage() {
                                 <Textarea 
                                     value={editingRecord.notes}
                                     onChange={(e) => setEditingRecord({...editingRecord, notes: e.target.value})}
-                                    placeholder="Notes..."
+                                    placeholder={t('notes_optional')}
                                 />
                             </div>
                             ) : (
                             <div className="flex-1">
                                 <p className="font-semibold flex items-center gap-2"><User className="h-4 w-4 text-primary" /> {getEmployeeName(record.employeeId)}</p>
-                                <p className="text-sm text-muted-foreground">{record.loadCount} loads</p>
+                                <p className="text-sm text-muted-foreground">{record.loadCount} {t('loads')}</p>
                                 {record.notes && <p className="text-sm mt-1">{record.notes}</p>}
                             </div>
                             )}
@@ -350,14 +352,14 @@ export default function AddBonusPage() {
                                             </AlertDialogTrigger>
                                             <AlertDialogContent>
                                                 <AlertDialogHeader>
-                                                    <AlertDialogTitle>Delete this record?</AlertDialogTitle>
+                                                    <AlertDialogTitle>{t('delete_this_record')}</AlertDialogTitle>
                                                     <AlertDialogDescription>
-                                                    This will permanently delete the bonus record for {getEmployeeName(record.employeeId)}.
+                                                    {t('confirm_delete_bonus', {employeeName: getEmployeeName(record.employeeId)})}
                                                     </AlertDialogDescription>
                                                 </AlertDialogHeader>
                                                 <AlertDialogFooter>
-                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => handleDelete(record)}>Delete</AlertDialogAction>
+                                                    <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleDelete(record)}>{t('delete')}</AlertDialogAction>
                                                 </AlertDialogFooter>
                                             </AlertDialogContent>
                                         </AlertDialog>
@@ -367,15 +369,15 @@ export default function AddBonusPage() {
                         </div>
                         ))
                     ) : (
-                        <div className="py-8 text-center text-muted-foreground">No bonus records for this date.</div>
+                        <div className="py-8 text-center text-muted-foreground">{t('no_bonus_records_for_date')}</div>
                     )}
                     </div>
                 </CardContent>
                 {dailyBonuses && dailyBonuses.length > 0 && (
                     <CardFooter className="flex justify-between font-bold bg-muted/50 py-4 rounded-b-lg">
-                        <span>Total</span>
+                        <span>{t('total')}</span>
                         <div className='text-right'>
-                            <p>{totalLoads.toFixed(0)} loads</p>
+                            <p>{totalLoads.toFixed(0)} {t('loads')}</p>
                             <p className="text-primary">{formatCurrency(totalAmount)}</p>
                         </div>
                     </CardFooter>

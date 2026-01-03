@@ -6,41 +6,45 @@ import { ArrowLeft, CreditCard, Clock, Gift, Banknote, Settings, Plus, Archive, 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-
-const menuItems = [
-  {
-    title: "Expense Reports",
-    icon: FileText,
-    href: "/expenses",
-    color: "bg-blue-500",
-  },
-  {
-    title: "Employee Overtime",
-    icon: Clock,
-    href: "/overtime",
-    color: "bg-orange-500",
-  },
-  {
-    title: "Loading / Unloading Bonus",
-    icon: Gift,
-    href: "/bonuses",
-    color: "bg-yellow-500",
-  },
-  {
-    title: "Cash Withdrawal",
-    icon: Banknote,
-    href: "/cash-withdrawal",
-    color: "bg-rose-500",
-  },
-  {
-    title: "Settings",
-    icon: Settings,
-    href: "/ashley-expenses-settings",
-    color: "bg-gray-500",
-  }
-];
+import { useTranslation } from '@/hooks/use-translation';
 
 export default function AshleyExpensesDashboard() {
+  const { t } = useTranslation();
+
+  const menuItems = [
+    {
+      title: t('expenses'),
+      icon: FileText,
+      href: "/expenses",
+      color: "bg-blue-500",
+    },
+    {
+      title: t('overtime'),
+      icon: Clock,
+      href: "/overtime",
+      color: "bg-orange-500",
+    },
+    {
+      title: t('bonuses'),
+      icon: Gift,
+      href: "/bonuses",
+      color: "bg-yellow-500",
+    },
+    {
+      title: t('cash_withdrawals'),
+      icon: Banknote,
+      href: "/cash-withdrawal",
+      color: "bg-rose-500",
+    },
+    {
+      title: t('settings'),
+      icon: Settings,
+      href: "/ashley-expenses-settings",
+      color: "bg-gray-500",
+    }
+  ];
+
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="bg-card border-b p-4">
@@ -48,10 +52,10 @@ export default function AshleyExpensesDashboard() {
           <Button variant="outline" size="icon" asChild>
             <Link href="/">
               <ArrowLeft />
-              <span className="sr-only">Back to Dashboard</span>
+              <span className="sr-only">{t('back_to_dashboard')}</span>
             </Link>
           </Button>
-          <h1 className="text-xl font-bold">Ashley Employees Management</h1>
+          <h1 className="text-xl font-bold">{t('ashley_employees_management')}</h1>
         </div>
       </header>
       <main className='container mx-auto p-4 md:p-8'>

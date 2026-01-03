@@ -20,6 +20,7 @@ import { useAppContext } from '@/context/app-provider';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Bar, BarChart as RechartsBarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import type { AllPdfSettings } from '@/lib/types';
+import { useTranslation } from '@/hooks/use-translation';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -30,6 +31,7 @@ const formatCurrency = (amount: number) => {
 };
 
 export default function MonthlyWithdrawalReportPage() {
+  const { t } = useTranslation();
   const { withdrawals, employees } = useAppContext();
   const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {} });
   const pdfHeaderRef = useRef<HTMLDivElement>(null);
@@ -114,13 +116,13 @@ export default function MonthlyWithdrawalReportPage() {
             startY = 20;
         }
         doc.setFontSize(14);
-        doc.text("Summary by Employee", 14, startY);
+        doc.text(t('summary_by_employee'), 14, startY);
         startY += 10;
         autoTable(doc, {
           startY: startY,
-          head: [['Employee', 'Total Withdrawn']],
+          head: [[t('employee'), t('total_withdrawn')]],
           body: monthlyData.summary.map(item => [item.employeeName, formatCurrency(item.totalAmount)]),
-          foot: [['Grand Total', formatCurrency(monthlyData.totalAmount)]],
+          foot: [[t('grand_total'), formatCurrency(monthlyData.totalAmount)]],
           theme: 'grid',
           headStyles: { fillColor: settings.themeColor || '#22c55e' },
           footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
@@ -147,7 +149,7 @@ export default function MonthlyWithdrawalReportPage() {
         {selectedDate && (
           <div ref={pdfHeaderRef} style={{ width: '700px', background: 'white', color: 'black' }}>
             <ReportPdfHeader 
-                title="Monthly Withdrawal Report" 
+                title={t('monthly_withdrawal_report')}
                 subtitle={format(selectedDate, 'MMMM yyyy')} 
                 logoSrc={pdfSettings.report?.logo ?? null}
                 themeColor={pdfSettings.report?.themeColor}
@@ -162,21 +164,21 @@ export default function MonthlyWithdrawalReportPage() {
             <Button variant="outline" size="icon" asChild>
               <Link href="/cash-withdrawal"><ArrowLeft /></Link>
             </Button>
-            <h1 className="text-2xl md:text-3xl font-bold">Monthly Withdrawal Report</h1>
+            <h1 className="text-2xl md:text-3xl font-bold">{t('monthly_withdrawal_report')}</h1>
           </div>
           <div className="flex items-center gap-2">
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" className={cn("w-[280px] justify-start text-left font-normal", !selectedDate && "text-muted-foreground")}>
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {selectedDate ? format(selectedDate, 'MMMM yyyy') : <span>Pick a month</span>}
+                  {selectedDate ? format(selectedDate, 'MMMM yyyy') : <span>{t('pick_a_month')}</span>}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="end">
                 <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} captionLayout="dropdown-buttons" fromYear={2020} toYear={2040} />
               </PopoverContent>
             </Popover>
-            <Button onClick={handleDownloadPdf} disabled={isLoading || monthlyData.records.length === 0}><FileDown className="mr-2"/>Download PDF</Button>
+            <Button onClick={handleDownloadPdf} disabled={isLoading || monthlyData.records.length === 0}><FileDown className="mr-2"/>{t('download_pdf')}</Button>
           </div>
         </header>
 
@@ -186,7 +188,7 @@ export default function MonthlyWithdrawalReportPage() {
           <div className="space-y-8">
              <Card>
                 <CardHeader>
-                    <CardTitle>Monthly Summary by Employee</CardTitle>
+                    <CardTitle>{t('monthly_summary_by_employee')}</CardTitle>
                 </CardHeader>
                 <CardContent ref={chartRef} className="pl-0">
                     <ResponsiveContainer width="100%" height={300}>
@@ -194,7 +196,7 @@ export default function MonthlyWithdrawalReportPage() {
                             <XAxis type="number" tickFormatter={(value) => formatCurrency(value as number)} />
                             <YAxis dataKey="employeeName" type="category" width={120} />
                             <Tooltip contentStyle={{backgroundColor: 'hsl(var(--background))'}} formatter={(value) => formatCurrency(value as number)} />
-                            <Bar dataKey="totalAmount" name="Total Withdrawn" fill="hsl(var(--primary))" />
+                            <Bar dataKey="totalAmount" name={t('total_withdrawn')} fill="hsl(var(--primary))" />
                         </RechartsBarChart>
                     </ResponsiveContainer>
                 </CardContent>
@@ -202,15 +204,15 @@ export default function MonthlyWithdrawalReportPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Summary for {selectedDate ? format(selectedDate, 'MMMM yyyy') : ''}</CardTitle>
+                <CardTitle>{t('summary_for_month', {month: selectedDate ? format(selectedDate, 'MMMM yyyy') : ''})}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Employee</TableHead>
-                                <TableHead className="text-right">Total Withdrawn</TableHead>
+                                <TableHead>{t('employee')}</TableHead>
+                                <TableHead className="text-right">{t('total_withdrawn')}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -223,7 +225,7 @@ export default function MonthlyWithdrawalReportPage() {
                         </TableBody>
                         <TableFooter>
                             <TableRow>
-                                <TableCell className="text-lg font-bold">Grand Total</TableCell>
+                                <TableCell className="text-lg font-bold">{t('grand_total')}</TableCell>
                                 <TableCell className="text-right text-lg font-bold text-primary">{formatCurrency(monthlyData.totalAmount)}</TableCell>
                             </TableRow>
                         </TableFooter>
@@ -235,8 +237,8 @@ export default function MonthlyWithdrawalReportPage() {
         ) : (
           <div className="text-center py-16 border-2 border-dashed rounded-lg">
             <BarChart className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-medium">No Withdrawals Found</h3>
-            <p className="mt-2 text-sm text-muted-foreground">There are no withdrawals recorded for {selectedDate ? format(selectedDate, 'MMMM yyyy') : 'the selected month'}.</p>
+            <h3 className="mt-4 text-lg font-medium">{t('no_withdrawals_found')}</h3>
+            <p className="mt-2 text-sm text-muted-foreground">{t('no_withdrawals_found_for_month', {month: selectedDate ? format(selectedDate, 'MMMM yyyy') : 'the selected month'})}</p>
           </div>
         )}
       </div>

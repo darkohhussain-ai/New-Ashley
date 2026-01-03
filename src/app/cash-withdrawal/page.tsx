@@ -6,29 +6,32 @@ import { ArrowLeft, Plus, Calendar, Archive } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-
-const menuItems = [
-  {
-    title: "Add Daily Withdrawal",
-    icon: Plus,
-    href: "/cash-withdrawal/add",
-    color: "bg-blue-500",
-  },
-  {
-    title: "Monthly Withdrawal Report",
-    icon: Calendar,
-    href: "/cash-withdrawal/monthly-report",
-    color: "bg-orange-500",
-  },
-  {
-    title: "Withdrawal Archive",
-    icon: Archive,
-    href: "/cash-withdrawal/archive",
-    color: "bg-teal-500",
-  },
-];
+import { useTranslation } from '@/hooks/use-translation';
 
 export default function CashWithdrawalDashboardPage() {
+  const { t } = useTranslation();
+  
+  const menuItems = [
+    {
+      title: t('add_daily_withdrawal'),
+      icon: Plus,
+      href: "/cash-withdrawal/add",
+      color: "bg-blue-500",
+    },
+    {
+      title: t('monthly_withdrawal_report'),
+      icon: Calendar,
+      href: "/cash-withdrawal/monthly-report",
+      color: "bg-orange-500",
+    },
+    {
+      title: t('withdrawal_archive'),
+      icon: Archive,
+      href: "/cash-withdrawal/archive",
+      color: "bg-teal-500",
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="bg-card border-b p-4">
@@ -36,10 +39,10 @@ export default function CashWithdrawalDashboardPage() {
           <Button variant="outline" size="icon" asChild>
             <Link href="/ashley-expenses">
               <ArrowLeft />
-              <span className="sr-only">Back to Ashley employees mangment</span>
+              <span className="sr-only">{t('back_to_ashley_management')}</span>
             </Link>
           </Button>
-          <h1 className="text-xl font-bold">Cash Withdrawal</h1>
+          <h1 className="text-xl font-bold">{t('cash_withdrawal')}</h1>
         </div>
       </header>
       <main className='container mx-auto p-4 md:p-8'>
