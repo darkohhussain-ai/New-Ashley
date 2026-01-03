@@ -17,6 +17,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { format, parseISO } from 'date-fns';
 import { useAppContext } from '@/context/app-provider';
 import type { Item, StorageLocation, ExcelFile } from '@/lib/types';
+import { useTranslation } from '@/hooks/use-translation';
 
 
 type SearchResult = Item & {
@@ -27,6 +28,7 @@ type SearchResult = Item & {
 };
 
 export default function LocationsPage() {
+  const { t } = useTranslation();
   const { locations, setLocations, items: allItems, excelFiles } = useAppContext();
   const { toast } = useToast();
 
@@ -105,8 +107,8 @@ export default function LocationsPage() {
     setIsSearching(false);
     if(results.length === 0) {
         toast({
-            title: "No results",
-            description: `No items found with model containing "${searchQuery}".`
+            title: t('no_results'),
+            description: t('no_results_desc', {query: searchQuery})
         })
     }
   };
@@ -151,14 +153,14 @@ export default function LocationsPage() {
     if (!generatedCode || !warehouseType) {
       toast({
         variant: "destructive",
-        title: "Incomplete Code",
-        description: "Please fill out all fields to generate a valid location code.",
+        title: t('incomplete_code'),
+        description: t('incomplete_code_desc'),
       });
       return;
     }
     
     if (locations?.some(loc => loc.name === generatedCode)) {
-        toast({ variant: "destructive", title: "Duplicate Code", description: "This location code already exists." });
+        toast({ variant: "destructive", title: t('duplicate_code'), description: t('duplicate_code_desc') });
         return;
     }
 
@@ -166,8 +168,8 @@ export default function LocationsPage() {
     setLocations([...locations, locationData]);
     
     toast({
-      title: "Location Added",
-      description: `${generatedCode} has been added to your storage locations.`,
+      title: t('location_added'),
+      description: t('location_added_desc', {code: generatedCode}),
     });
     resetForm();
   };
@@ -280,39 +282,38 @@ export default function LocationsPage() {
             <Button variant="outline" size="icon" asChild>
               <Link href="/items">
                 <ArrowLeft />
-                <span className="sr-only">Back to Placement & Storage</span>
               </Link>
             </Button>
-            <h1 className="text-2xl md:text-3xl font-bold">Manage Locations</h1>
+            <h1 className="text-2xl md:text-3xl font-bold">{t('manage_locations')}</h1>
           </div>
           <div className="flex items-center gap-2 flex-wrap justify-end">
-            <Button variant="outline" asChild><Link href="/ashley-map"><Map className="mr-2"/>Ashley Map</Link></Button>
-            <Button variant="outline" asChild><Link href="/huana-map"><Map className="mr-2"/>Huana Map</Link></Button>
+            <Button variant="outline" asChild><Link href="/ashley-map"><Map className="mr-2"/>{t('ashley_map')}</Link></Button>
+            <Button variant="outline" asChild><Link href="/huana-map"><Map className="mr-2"/>{t('huana_map')}</Link></Button>
             <Button onClick={handleGenerateAll} variant="outline" disabled={isGenerating}>
                 {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wand2 className="mr-2 h-4 w-4"/>}
-                Generate All
+                {t('generate_all')}
             </Button>
             <DialogTrigger asChild>
               <Button>
-                <Plus className="mr-2 h-4 w-4" /> Add Location
+                <Plus className="mr-2 h-4 w-4" /> {t('add_location')}
               </Button>
             </DialogTrigger>
              <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" disabled={isGenerating || !locations || locations.length === 0}>
-                  <Trash2 className="mr-2 h-4 w-4" /> Remove All
+                  <Trash2 className="mr-2 h-4 w-4" /> {t('remove_all')}
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will permanently delete all {locations?.length} storage locations. This action cannot be undone.
+                    {t('confirm_delete_all_locations', {count: locations?.length || 0})}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDeleteAll}>Delete All</AlertDialogAction>
+                  <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteAll}>{t('delete_all')}</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
@@ -321,13 +322,13 @@ export default function LocationsPage() {
 
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Add New Storage Location Code</DialogTitle>
+            <DialogTitle>{t('add_new_location')}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4 pt-4">
             <div className="space-y-2">
-              <Label>Warehouse</Label>
+              <Label>{t('warehouse')}</Label>
               <Select onValueChange={(value: 'Ashley' | 'Huana') => setWarehouseType(value)} value={warehouseType}>
-                <SelectTrigger><SelectValue placeholder="Select a warehouse" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t('select_a_warehouse')} /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Ashley">Ashley</SelectItem>
                   <SelectItem value="Huana">Huana</SelectItem>
@@ -338,21 +339,21 @@ export default function LocationsPage() {
             {warehouseType === 'Huana' && (
               <div className="space-y-4 p-4 border rounded-md bg-muted/50">
                  <div className="space-y-2">
-                    <Label>Warehouse #</Label>
+                    <Label>{t('warehouse')} #</Label>
                     <Select onValueChange={setHuanaWarehouse} value={huanaWarehouse}>
                        <SelectTrigger><SelectValue placeholder="1-3" /></SelectTrigger>
                        <SelectContent>{[1,2,3].map(n => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}</SelectContent>
                     </Select>
                  </div>
                  <div className="space-y-2">
-                    <Label>Floor</Label>
+                    <Label>{t('floor')}</Label>
                     <Select onValueChange={setHuanaFloor} value={huanaFloor}>
                        <SelectTrigger><SelectValue placeholder="1-2" /></SelectTrigger>
                        <SelectContent>{[1,2].map(n => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}</SelectContent>
                     </Select>
                  </div>
                   <div className="space-y-2">
-                    <Label>Section</Label>
+                    <Label>{t('section')}</Label>
                     <Select onValueChange={setHuanaSection} value={huanaSection}>
                        <SelectTrigger><SelectValue placeholder="1-8" /></SelectTrigger>
                        <SelectContent>{Array.from({length: 8}, (_,i) => i+1).map(n => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}</SelectContent>
@@ -364,18 +365,18 @@ export default function LocationsPage() {
              {warehouseType === 'Ashley' && (
               <div className="space-y-4 p-4 border rounded-md bg-muted/50">
                   <div className="space-y-2">
-                    <Label>Floor</Label>
+                    <Label>{t('floor')}</Label>
                     <Select onValueChange={setAshleyFloor} value={ashleyFloor}>
                        <SelectTrigger><SelectValue placeholder="3 or 4" /></SelectTrigger>
                        <SelectContent>
-                          <SelectItem value="3">Floor 3</SelectItem>
-                          <SelectItem value="4">Floor 4</SelectItem>
+                          <SelectItem value="3">{t('floor')} 3</SelectItem>
+                          <SelectItem value="4">{t('floor')} 4</SelectItem>
                        </SelectContent>
                     </Select>
                   </div>
                   {ashleyFloor === '4' && (
                     <div className="space-y-2">
-                      <Label>Section</Label>
+                      <Label>{t('section')}</Label>
                       <Select onValueChange={setAshleySection} value={ashleySection}>
                          <SelectTrigger><SelectValue placeholder="1-16" /></SelectTrigger>
                          <SelectContent>{Array.from({length: 16}, (_,i) => i+1).map(n => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}</SelectContent>
@@ -385,26 +386,26 @@ export default function LocationsPage() {
                   {ashleyFloor === '3' && (
                      <div className="space-y-4">
                         <div className="space-y-2">
-                            <Label>Area</Label>
+                            <Label>{t('area')}</Label>
                             <Select onValueChange={setAshleyArea} value={ashleyArea}>
-                                <SelectTrigger><SelectValue placeholder="Select Area" /></SelectTrigger>
+                                <SelectTrigger><SelectValue placeholder={t('select_area')} /></SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="1">Area 1</SelectItem>
-                                    <SelectItem value="O">Area 2 (Office)</SelectItem>
+                                    <SelectItem value="1">{t('area')} 1</SelectItem>
+                                    <SelectItem value="O">{t('area')} 2 ({t('office')})</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
                         {ashleyArea === '1' && (
                             <div className="space-y-4 pl-4 border-l-2">
                                 <div className="space-y-2">
-                                    <Label>Unit</Label>
+                                    <Label>{t('unit')}</Label>
                                     <Select onValueChange={setAshleyUnit} value={ashleyUnit}>
                                         <SelectTrigger><SelectValue placeholder="1-6" /></SelectTrigger>
                                         <SelectContent>{Array.from({length: 6}, (_,i) => i+1).map(n => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}</SelectContent>
                                     </Select>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Section</Label>
+                                    <Label>{t('section')}</Label>
                                     <Select onValueChange={setAshleyUnitSection} value={ashleyUnitSection}>
                                         <SelectTrigger><SelectValue placeholder="1-4" /></SelectTrigger>
                                         <SelectContent>{[1,2,3,4].map(n => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}</SelectContent>
@@ -414,7 +415,7 @@ export default function LocationsPage() {
                         )}
                         {ashleyArea === 'O' && (
                             <div className="space-y-2 pl-4 border-l-2">
-                                <Label>Office Location</Label>
+                                <Label>{t('office_location')}</Label>
                                 <Select onValueChange={setAshleyOfficeCode} value={ashleyOfficeCode}>
                                     <SelectTrigger><SelectValue placeholder="Select Code" /></SelectTrigger>
                                     <SelectContent>
@@ -435,14 +436,14 @@ export default function LocationsPage() {
             
             {generatedCode && (
               <div className="space-y-2 p-3 border rounded-md bg-green-50 dark:bg-green-900/20">
-                <Label className="text-sm text-green-700 dark:text-green-300">Generated Code</Label>
+                <Label className="text-sm text-green-700 dark:text-green-300">{t('generated_code')}</Label>
                 <p className="font-mono font-bold text-lg text-green-800 dark:text-green-200">{generatedCode}</p>
               </div>
             )}
 
             <DialogFooter>
-              <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
-              <Button type="submit" disabled={!generatedCode}>Add Location</Button>
+              <DialogClose asChild><Button type="button" variant="secondary">{t('cancel')}</Button></DialogClose>
+              <Button type="submit" disabled={!generatedCode}>{t('add_location')}</Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -450,21 +451,21 @@ export default function LocationsPage() {
       <main>
           <Card className="mb-8">
             <CardHeader>
-                <CardTitle>Search Item by Model</CardTitle>
-                <CardDescription>Find item locations across all Excel files.</CardDescription>
+                <CardTitle>{t('search_item_by_model')}</CardTitle>
+                <CardDescription>{t('search_item_by_model_desc')}</CardDescription>
             </CardHeader>
             <CardContent>
                 <div className="flex w-full max-w-sm items-center space-x-2">
                     <Input 
                         type="text" 
-                        placeholder="Enter model name..." 
+                        placeholder={t('search_by_model')} 
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                     />
                     <Button onClick={handleSearch} disabled={isSearching || isLoading}>
                         {isSearching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
-                        Search
+                        {t('search')}
                     </Button>
                 </div>
                 {searchResults.length > 0 && (
@@ -472,11 +473,11 @@ export default function LocationsPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Model</TableHead>
-                                    <TableHead>File Name</TableHead>
-                                    <TableHead>Quantity</TableHead>
-                                    <TableHead>Location</TableHead>
-                                    <TableHead>File Date</TableHead>
+                                    <TableHead>{t('model')}</TableHead>
+                                    <TableHead>{t('file_name')}</TableHead>
+                                    <TableHead>{t('quantity')}</TableHead>
+                                    <TableHead>{t('location')}</TableHead>
+                                    <TableHead>{t('file_date')}</TableHead>
                                     <TableHead>Map</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -499,7 +500,7 @@ export default function LocationsPage() {
                                         <TableCell>
                                             {item.locationId && item.warehouseType && (
                                                 <Button variant="outline" size="sm" asChild>
-                                                    <Link href={`/${item.warehouseType.toLowerCase()}-map#${item.locationId}`}>View on Map</Link>
+                                                    <Link href={`/${item.warehouseType.toLowerCase()}-map#${item.locationId}`}>{t('view_on_map')}</Link>
                                                 </Button>
                                             )}
                                         </TableCell>
@@ -513,14 +514,14 @@ export default function LocationsPage() {
           </Card>
           <Card className="mb-8">
             <CardHeader>
-                <CardTitle>Filters</CardTitle>
-                <CardDescription>Select a warehouse and area to narrow down the list of locations.</CardDescription>
+                <CardTitle>{t('filters')}</CardTitle>
+                <CardDescription>{t('filters_desc')}</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-wrap items-center gap-4">
                  <Select value={filterWarehouse} onValueChange={(v: 'All' | 'Ashley' | 'Huana') => setFilterWarehouse(v)}>
-                    <SelectTrigger className="w-[180px]"><SelectValue placeholder="Select Warehouse..." /></SelectTrigger>
+                    <SelectTrigger className="w-[180px]"><SelectValue placeholder={t('select_warehouse')} /></SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="All">All Warehouses</SelectItem>
+                        <SelectItem value="All">{t('all_warehouses')}</SelectItem>
                         <SelectItem value="Ashley">Ashley</SelectItem>
                         <SelectItem value="Huana">Huana</SelectItem>
                     </SelectContent>
@@ -529,18 +530,18 @@ export default function LocationsPage() {
                 {filterWarehouse === 'Huana' && (
                     <>
                         <Select value={filterHuanaWarehouse} onValueChange={setFilterHuanaWarehouse}>
-                             <SelectTrigger className="w-[180px]"><SelectValue placeholder="Select Huana Warehouse..." /></SelectTrigger>
+                             <SelectTrigger className="w-[180px]"><SelectValue placeholder={t('select_huana_warehouse')} /></SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="All">All Huana Warehouses</SelectItem>
-                                {[1, 2, 3].map(n => <SelectItem key={n} value={String(n)}>Warehouse {n}</SelectItem>)}
+                                <SelectItem value="All">{t('all_huana_warehouses')}</SelectItem>
+                                {[1, 2, 3].map(n => <SelectItem key={n} value={String(n)}>{t('warehouse')} {n}</SelectItem>)}
                             </SelectContent>
                         </Select>
                         {filterHuanaWarehouse !== 'All' && (
                              <Select value={filterHuanaFloor} onValueChange={setFilterHuanaFloor}>
-                                 <SelectTrigger className="w-[180px]"><SelectValue placeholder="Select Floor..." /></SelectTrigger>
+                                 <SelectTrigger className="w-[180px]"><SelectValue placeholder={t('select_floor')} /></SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="All">All Floors</SelectItem>
-                                    {[1, 2].map(n => <SelectItem key={n} value={String(n)}>Floor {n}</SelectItem>)}
+                                    <SelectItem value="All">{t('all_floors')}</SelectItem>
+                                    {[1, 2].map(n => <SelectItem key={n} value={String(n)}>{t('floor')} {n}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         )}
@@ -550,20 +551,20 @@ export default function LocationsPage() {
                 {filterWarehouse === 'Ashley' && (
                     <>
                         <Select value={filterAshleyFloor} onValueChange={setFilterAshleyFloor}>
-                             <SelectTrigger className="w-[180px]"><SelectValue placeholder="Select Floor..." /></SelectTrigger>
+                             <SelectTrigger className="w-[180px]"><SelectValue placeholder={t('select_ashley_floor')} /></SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="All">All Floors</SelectItem>
-                                <SelectItem value="4">Floor 4</SelectItem>
-                                <SelectItem value="3">Floor 3</SelectItem>
+                                <SelectItem value="All">{t('all_floors')}</SelectItem>
+                                <SelectItem value="4">{t('floor')} 4</SelectItem>
+                                <SelectItem value="3">{t('floor')} 3</SelectItem>
                             </SelectContent>
                         </Select>
                         {filterAshleyFloor === '3' && (
                             <Select value={filterAshleyArea} onValueChange={setFilterAshleyArea}>
-                                <SelectTrigger className="w-[180px]"><SelectValue placeholder="Select Area..." /></SelectTrigger>
+                                <SelectTrigger className="w-[180px]"><SelectValue placeholder={t('select_area')} /></SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="All">All Areas on Floor 3</SelectItem>
-                                    <SelectItem value="1">Area 1</SelectItem>
-                                    <SelectItem value="O">Area 2 (Office)</SelectItem>
+                                    <SelectItem value="All">{t('all_areas_on_floor_3')}</SelectItem>
+                                    <SelectItem value="1">{t('area')} 1</SelectItem>
+                                    <SelectItem value="O">{t('area')} 2 ({t('office')})</SelectItem>
                                 </SelectContent>
                             </Select>
                         )}
@@ -606,12 +607,12 @@ export default function LocationsPage() {
                                   </AlertDialogTrigger>
                                   <AlertDialogContent>
                                     <AlertDialogHeader>
-                                      <AlertDialogTitle>Delete {loc.name}?</AlertDialogTitle>
-                                      <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+                                      <AlertDialogTitle>{t('delete_location', {locationName: loc.name})}</AlertDialogTitle>
+                                      <AlertDialogDescription>{t('cannot_be_undone')}</AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => handleDelete(loc.id)}>Delete</AlertDialogAction>
+                                      <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => handleDelete(loc.id)}>{t('delete')}</AlertDialogAction>
                                     </AlertDialogFooter>
                                   </AlertDialogContent>
                                 </AlertDialog>
@@ -642,12 +643,12 @@ export default function LocationsPage() {
                                   </AlertDialogTrigger>
                                   <AlertDialogContent>
                                     <AlertDialogHeader>
-                                      <AlertDialogTitle>Delete {loc.name}?</AlertDialogTitle>
-                                      <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+                                      <AlertDialogTitle>{t('delete_location', {locationName: loc.name})}</AlertDialogTitle>
+                                      <AlertDialogDescription>{t('cannot_be_undone')}</AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => handleDelete(loc.id)}>Delete</AlertDialogAction>
+                                      <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => handleDelete(loc.id)}>{t('delete')}</AlertDialogAction>
                                     </AlertDialogFooter>
                                   </AlertDialogContent>
                                 </AlertDialog>
@@ -661,8 +662,8 @@ export default function LocationsPage() {
             {sortedLocations.ashley.length === 0 && sortedLocations.huana.length === 0 && !isLoading && (
                  <div className="text-center py-16 border-2 border-dashed rounded-lg">
                     <MapPin className="mx-auto h-12 w-12 text-muted-foreground" />
-                    <h3 className="mt-4 text-lg font-medium">No Locations Match Filters</h3>
-                    <p className="mt-2 text-sm text-muted-foreground">Try adjusting or clearing the filters to see more locations.</p>
+                    <h3 className="mt-4 text-lg font-medium">{t('no_locations_match_filters')}</h3>
+                    <p className="mt-2 text-sm text-muted-foreground">{t('no_locations_match_filters_desc')}</p>
                 </div>
             )}
             
@@ -670,16 +671,16 @@ export default function LocationsPage() {
               <Dialog open={open} onOpenChange={setOpen}>
                   <div className="text-center py-16 border-2 border-dashed rounded-lg">
                     <Warehouse className="mx-auto h-12 w-12 text-muted-foreground" />
-                    <h3 className="mt-4 text-lg font-medium">No Locations Found</h3>
-                    <p className="mt-2 text-sm text-muted-foreground">Get started by adding your first storage location or generate all of them.</p>
+                    <h3 className="mt-4 text-lg font-medium">{t('no_locations_found')}</h3>
+                    <p className="mt-2 text-sm text-muted-foreground">{t('no_locations_found_desc')}</p>
                     <div className="mt-6 flex justify-center gap-4">
                       <Button onClick={handleGenerateAll} variant="outline" disabled={isGenerating}>
                         {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wand2 className="mr-2 h-4 w-4"/>}
-                        Generate All
+                        {t('generate_all')}
                       </Button>
                       <DialogTrigger asChild>
                         <Button>
-                          <Plus className="mr-2 h-4 w-4" /> Add Manually
+                          <Plus className="mr-2 h-4 w-4" /> {t('add_manually')}
                         </Button>
                       </DialogTrigger>
                     </div>

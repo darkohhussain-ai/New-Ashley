@@ -19,12 +19,14 @@ import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/context/app-provider';
 import type { Employee, Expense, ExpenseReport } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useTranslation } from '@/hooks/use-translation';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'IQD', maximumFractionDigits: 0 }).format(amount);
 
 type NewExpenseItem = Omit<Expense, 'id' | 'expenseReportId'> & { tempId: number };
 
 export default function AddExpenseReportPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { toast } = useToast();
   const { employees, expenses, setExpenses, expenseReports, setExpenseReports } = useAppContext();
@@ -55,12 +57,12 @@ export default function AddExpenseReportPage() {
 
   const handleSaveReport = () => {
     if (!reportName.trim() || !reportDate || items.length === 0) {
-      toast({ variant: 'destructive', title: 'Missing Information', description: 'Please provide a report name, date, and at least one expense item.' });
+      toast({ variant: 'destructive', title: t('missing_information'), description: t('missing_information_desc_expense') });
       return;
     }
 
     if (items.some(item => !item.employeeId || item.amount <= 0)) {
-      toast({ variant: 'destructive', title: 'Invalid Items', description: 'All expense items must have an employee selected and an amount greater than zero.' });
+      toast({ variant: 'destructive', title: t('invalid_items'), description: t('invalid_items_desc') });
       return;
     }
 
@@ -87,7 +89,7 @@ export default function AddExpenseReportPage() {
     setExpenseReports([...expenseReports, newReport]);
     setExpenses([...expenses, ...newExpenseItems]);
 
-    toast({ title: 'Report Saved', description: `Expense report "${reportName}" has been successfully saved.` });
+    toast({ title: t('report_saved'), description: t('report_saved_desc', {reportName}) });
     router.push('/expenses/archive');
     setIsSaving(false);
   };
@@ -99,11 +101,11 @@ export default function AddExpenseReportPage() {
           <Button variant="outline" size="icon" asChild>
             <Link href="/expenses"><ArrowLeft /></Link>
           </Button>
-          <h1 className="text-2xl md:text-3xl font-bold">New Expense Report</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">{t('new_expense_report')}</h1>
         </div>
         <Button onClick={handleSaveReport} disabled={isSaving}>
           {isSaving ? <Loader2 className="animate-spin mr-2" /> : <Save className="mr-2" />}
-          Save Report
+          {t('save_report')}
         </Button>
       </header>
 
@@ -111,20 +113,20 @@ export default function AddExpenseReportPage() {
         <div className="lg:col-span-1 space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Report Details</CardTitle>
+              <CardTitle>{t('report_details')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="report-name">Report Name</Label>
-                <Input id="report-name" value={reportName} onChange={e => setReportName(e.target.value)} placeholder="e.g., Week 1 Team Lunch" />
+                <Label htmlFor="report-name">{t('report_name')}</Label>
+                <Input id="report-name" value={reportName} onChange={e => setReportName(e.target.value)} placeholder={t('report_name_placeholder')} />
               </div>
               <div className="space-y-2">
-                <Label>Report Date</Label>
+                <Label>{t('report_date')}</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !reportDate && "text-muted-foreground")}>
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {reportDate ? format(reportDate, 'PPP') : <span>Pick a date</span>}
+                      {reportDate ? format(reportDate, 'PPP') : <span>{t('pick_a_date')}</span>}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={reportDate} onSelect={setReportDate} /></PopoverContent>
@@ -138,19 +140,19 @@ export default function AddExpenseReportPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle>Expense Items</CardTitle>
-                <CardDescription>Add all expenses for this report.</CardDescription>
+                <CardTitle>{t('expense_items')}</CardTitle>
+                <CardDescription>{t('expense_items_desc')}</CardDescription>
               </div>
-              <Button variant="outline" onClick={handleAddItem}><Plus className="mr-2"/>Add Item</Button>
+              <Button variant="outline" onClick={handleAddItem}><Plus className="mr-2"/>{t('add_item')}</Button>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Employee</TableHead>
-                      <TableHead>Amount (IQD)</TableHead>
-                      <TableHead>Notes</TableHead>
+                      <TableHead>{t('employee')}</TableHead>
+                      <TableHead>{t('amount_iqd')}</TableHead>
+                      <TableHead>{t('notes')}</TableHead>
                       <TableHead className="w-[50px]"></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -159,7 +161,7 @@ export default function AddExpenseReportPage() {
                       <TableRow key={item.tempId}>
                         <TableCell className="min-w-[200px]">
                           <Select value={item.employeeId} onValueChange={v => handleItemChange(index, 'employeeId', v)}>
-                            <SelectTrigger><SelectValue placeholder="Select Employee" /></SelectTrigger>
+                            <SelectTrigger><SelectValue placeholder={t('select_an_employee')} /></SelectTrigger>
                             <SelectContent>
                               {warehouseEmployees.map(emp => (
                                 <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>
@@ -171,7 +173,7 @@ export default function AddExpenseReportPage() {
                           <Input type="number" value={item.amount} onChange={e => handleItemChange(index, 'amount', e.target.valueAsNumber)} placeholder="0" />
                         </TableCell>
                         <TableCell className="min-w-[250px]">
-                          <Textarea value={item.notes} onChange={e => handleItemChange(index, 'notes', e.target.value)} placeholder="Optional notes" />
+                          <Textarea value={item.notes} onChange={e => handleItemChange(index, 'notes', e.target.value)} placeholder={t('notes_optional')} />
                         </TableCell>
                         <TableCell>
                           <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(item.tempId)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
@@ -179,7 +181,7 @@ export default function AddExpenseReportPage() {
                       </TableRow>
                     )) : (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center h-24">No expense items added yet.</TableCell>
+                        <TableCell colSpan={4} className="text-center h-24">{t('no_expense_items_added')}</TableCell>
                       </TableRow>
                     )}
                   </TableBody>
@@ -187,7 +189,7 @@ export default function AddExpenseReportPage() {
               </div>
             </CardContent>
              <CardFooter className="justify-end font-bold text-lg bg-muted/50 p-4">
-                Total: {formatCurrency(items.reduce((sum, item) => sum + item.amount, 0))}
+                {t('total')}: {formatCurrency(items.reduce((sum, item) => sum + item.amount, 0))}
              </CardFooter>
           </Card>
         </div>

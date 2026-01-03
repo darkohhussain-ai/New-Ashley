@@ -9,10 +9,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { format, parseISO } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAppContext } from '@/context/app-provider';
+import { useTranslation } from '@/hooks/use-translation';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'IQD', maximumFractionDigits: 0 }).format(amount);
 
 export default function ExpenseArchivePage() {
+  const { t } = useTranslation();
   const { expenseReports } = useAppContext();
   const isLoading = !expenseReports;
 
@@ -28,10 +30,10 @@ export default function ExpenseArchivePage() {
           <Button variant="outline" size="icon" asChild>
             <Link href="/expenses"><ArrowLeft /></Link>
           </Button>
-          <h1 className="text-2xl md:text-3xl font-bold">Expense Reports Archive</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">{t('expense_report_archive')}</h1>
         </div>
         <Button asChild>
-          <Link href="/expenses/add"><Plus className="mr-2" /> Create Report</Link>
+          <Link href="/expenses/add"><Plus className="mr-2" /> {t('create_report')}</Link>
         </Button>
       </header>
       <main>
@@ -64,7 +66,7 @@ export default function ExpenseArchivePage() {
                 </CardContent>
                 <CardFooter>
                   <Button asChild className="w-full">
-                    <Link href={`/expenses/archive/${report.id}`}><Eye className="mr-2"/>View Details</Link>
+                    <Link href={`/expenses/archive/${report.id}`}><Eye className="mr-2"/>{t('view_edit_details')}</Link>
                   </Button>
                 </CardFooter>
               </Card>
@@ -73,9 +75,9 @@ export default function ExpenseArchivePage() {
         ) : (
           <div className="text-center py-16 border-2 border-dashed rounded-lg">
             <Archive className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-medium">No Expense Reports Found</h3>
-            <p className="mt-2 text-sm text-muted-foreground">Create your first expense report to see it here.</p>
-            <Button asChild className="mt-4"><Link href="/expenses/add">Create Report</Link></Button>
+            <h3 className="mt-4 text-lg font-medium">{t('no_expense_reports_found')}</h3>
+            <p className="mt-2 text-sm text-muted-foreground">{t('no_expense_reports_found_desc')}</p>
+            <Button asChild className="mt-4"><Link href="/expenses/add">{t('create_report')}</Link></Button>
           </div>
         )}
       </main>

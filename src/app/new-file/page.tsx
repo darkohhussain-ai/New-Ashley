@@ -19,11 +19,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useAppContext } from '@/context/app-provider';
 import type { NewItem, StorageLocation } from '@/lib/types';
+import { useTranslation } from '@/hooks/use-translation';
 
 
 const sources = ["Showroom", "Ashley Store", "Huana Store"];
 
 export default function NewFilePage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { toast } = useToast();
   const { employees, locations, setExcelFiles, setItems: setAllItems } = useAppContext();
@@ -85,7 +87,7 @@ export default function NewFilePage() {
       setExcelFiles(prev => [...prev, fileData]);
       setAllItems(prev => [...prev, ...newItems]);
 
-      toast({ title: 'Success!', description: `File "${storageName}" and its items have been saved.` });
+      toast({ title: t('import_success'), description: `File "${storageName}" and its items have been saved.` });
       router.push('/archive');
       setIsSaving(false);
   };
@@ -132,14 +134,13 @@ export default function NewFilePage() {
           <Button variant="outline" size="icon" asChild>
             <Link href="/items">
               <ArrowLeft />
-              <span className="sr-only">Back to Placement & Storage</span>
             </Link>
           </Button>
-          <h1 className="text-2xl md:text-3xl font-bold">New Excel File</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">{t('new_excel_file')}</h1>
         </div>
         <Button onClick={handleSave} disabled={isSaving}>
             {isSaving ? <Loader2 className="animate-spin mr-2"/> : <Save className="mr-2" />}
-            Save File
+            {t('save_report')}
         </Button>
       </header>
 
@@ -147,21 +148,21 @@ export default function NewFilePage() {
         <div className="lg:col-span-1 space-y-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>File Details</CardTitle>
+                    <CardTitle>{t('file_details')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="storage-name">Storage Name</Label>
+                        <Label htmlFor="storage-name">{t('report_name')}</Label>
                         <Input id="storage-name" value={storageName} onChange={(e) => setStorageName(e.target.value)} placeholder="e.g. Q1 Inventory Check" />
                     </div>
                      <div className="space-y-2">
-                        <Label htmlFor="category-name">Category Name</Label>
-                        <Input id="category-name" value={categoryName} onChange={(e) => setCategoryName(e.target.value)} placeholder="e.g. Living Room Furniture" />
+                        <Label htmlFor="category-name">{t('category_name')}</Label>
+                        <Input id="category-name" value={categoryName} onChange={(e) => setCategoryName(e.target.value)} placeholder={t('category_name_placeholder')} />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="storekeeper">Storekeeper</Label>
+                        <Label htmlFor="storekeeper">{t('storekeeper')}</Label>
                         <Select onValueChange={setStorekeeperId} value={storekeeperId}>
-                            <SelectTrigger id="storekeeper"><SelectValue placeholder="Select an employee" /></SelectTrigger>
+                            <SelectTrigger id="storekeeper"><SelectValue placeholder={t('select_an_employee')} /></SelectTrigger>
                             <SelectContent>
                             {
                                 employees?.map(emp => <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>)
@@ -170,21 +171,21 @@ export default function NewFilePage() {
                         </Select>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="source">Source</Label>
+                        <Label htmlFor="source">{t('source_location')}</Label>
                         <Select onValueChange={setSource} value={source}>
-                            <SelectTrigger id="source"><SelectValue placeholder="Select a source" /></SelectTrigger>
+                            <SelectTrigger id="source"><SelectValue placeholder={t('select_a_source')} /></SelectTrigger>
                             <SelectContent>
                             {sources.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                             </SelectContent>
                         </Select>
                     </div>
                      <div className="space-y-2">
-                        <Label>Date</Label>
+                        <Label>{t('date')}</Label>
                         <Popover>
                             <PopoverTrigger asChild>
                             <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}>
                                 <Calendar className="mr-2 h-4 w-4" />
-                                {date ? format(date, 'PPP') : <span>Pick a date</span>}
+                                {date ? format(date, 'PPP') : <span>{t('pick_a_date')}</span>}
                             </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0">
@@ -198,25 +199,25 @@ export default function NewFilePage() {
              {warehouseType && (
                 <Card>
                     <CardHeader>
-                        <CardTitle>Location Filters</CardTitle>
-                        <CardDescription>Filter the locations available for items.</CardDescription>
+                        <CardTitle>{t('location_filters')}</CardTitle>
+                        <CardDescription>{t('location_filters_desc')}</CardDescription>
                     </CardHeader>
                     <CardContent className="flex flex-wrap items-center gap-4">
                         {warehouseType === 'Huana' && (
                             <>
                                 <Select value={filterHuanaWarehouse} onValueChange={setFilterHuanaWarehouse}>
-                                    <SelectTrigger className="w-[180px]"><SelectValue placeholder="Select Huana Warehouse..." /></SelectTrigger>
+                                    <SelectTrigger className="w-[180px]"><SelectValue placeholder={t('select_huana_warehouse')} /></SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="All">All Huana Warehouses</SelectItem>
-                                        {[1, 2, 3].map(n => <SelectItem key={n} value={String(n)}>Warehouse {n}</SelectItem>)}
+                                        <SelectItem value="All">{t('all_huana_warehouses')}</SelectItem>
+                                        {[1, 2, 3].map(n => <SelectItem key={n} value={String(n)}>{t('warehouse')} {n}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                                 {filterHuanaWarehouse !== 'All' && (
                                     <Select value={filterHuanaFloor} onValueChange={setFilterHuanaFloor}>
-                                        <SelectTrigger className="w-[180px]"><SelectValue placeholder="Select Floor..." /></SelectTrigger>
+                                        <SelectTrigger className="w-[180px]"><SelectValue placeholder={t('select_floor')} /></SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="All">All Floors</SelectItem>
-                                            {[1, 2].map(n => <SelectItem key={n} value={String(n)}>Floor {n}</SelectItem>)}
+                                            <SelectItem value="All">{t('all_floors')}</SelectItem>
+                                            {[1, 2].map(n => <SelectItem key={n} value={String(n)}>{t('floor')} {n}</SelectItem>)}
                                         </SelectContent>
                                     </Select>
                                 )}
@@ -225,20 +226,20 @@ export default function NewFilePage() {
                         {warehouseType === 'Ashley' && (
                             <>
                                 <Select value={filterAshleyFloor} onValueChange={setFilterAshleyFloor}>
-                                    <SelectTrigger className="w-[180px]"><SelectValue placeholder="Select Floor..." /></SelectTrigger>
+                                    <SelectTrigger className="w-[180px]"><SelectValue placeholder={t('select_ashley_floor')} /></SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="All">All Floors</SelectItem>
-                                        <SelectItem value="4">Floor 4</SelectItem>
-                                        <SelectItem value="3">Floor 3</SelectItem>
+                                        <SelectItem value="All">{t('all_floors')}</SelectItem>
+                                        <SelectItem value="4">{t('floor')} 4</SelectItem>
+                                        <SelectItem value="3">{t('floor')} 3</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 {filterAshleyFloor === '3' && (
                                     <Select value={filterAshleyArea} onValueChange={setFilterAshleyArea}>
-                                        <SelectTrigger className="w-[180px]"><SelectValue placeholder="Select Area..." /></SelectTrigger>
+                                        <SelectTrigger className="w-[180px]"><SelectValue placeholder={t('select_area')} /></SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="All">All Areas on Floor 3</SelectItem>
-                                            <SelectItem value="1">Area 1</SelectItem>
-                                            <SelectItem value="O">Area 2 (Office)</SelectItem>
+                                            <SelectItem value="All">{t('all_areas_on_floor_3')}</SelectItem>
+                                            <SelectItem value="1">{t('area')} 1</SelectItem>
+                                            <SelectItem value="O">{t('area')} 2 ({t('office')})</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 )}
@@ -252,18 +253,18 @@ export default function NewFilePage() {
         <div className="lg:col-span-2">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle>Items ({items.length})</CardTitle>
-                    <Button variant="outline" onClick={addNewItem}><Plus className="mr-2 h-4 w-4"/> Add Item</Button>
+                    <CardTitle>{t('items_count', {count: items.length})}</CardTitle>
+                    <Button variant="outline" onClick={addNewItem}><Plus className="mr-2 h-4 w-4"/> {t('add_item')}</Button>
                 </CardHeader>
                 <CardContent>
                      <div className="overflow-x-auto">
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Model</TableHead>
-                                    <TableHead className="w-[100px]">Quantity</TableHead>
-                                    <TableHead className="w-[200px]">Location</TableHead>
-                                    <TableHead>Notes</TableHead>
+                                    <TableHead>{t('model')}</TableHead>
+                                    <TableHead className="w-[100px]">{t('quantity')}</TableHead>
+                                    <TableHead className="w-[200px]">{t('location')}</TableHead>
+                                    <TableHead>{t('notes')}</TableHead>
                                     <TableHead className="w-[50px]"></TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -283,10 +284,10 @@ export default function NewFilePage() {
                                                 disabled={!warehouseType}
                                             >
                                                 <SelectTrigger>
-                                                    <SelectValue placeholder={warehouseType ? "Select..." : "Set source"} />
+                                                    <SelectValue placeholder={warehouseType ? t('select') : "Set source"} />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="none">None</SelectItem>
+                                                    <SelectItem value="none">{t('none')}</SelectItem>
                                                     {filteredLocations.map(loc => (
                                                         <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
                                                     ))}
@@ -294,7 +295,7 @@ export default function NewFilePage() {
                                             </Select>
                                         </TableCell>
                                         <TableCell>
-                                            <Textarea value={item.notes} onChange={e => handleItemChange(index, 'notes', e.target.value)} placeholder="Optional notes..."/>
+                                            <Textarea value={item.notes} onChange={e => handleItemChange(index, 'notes', e.target.value)} placeholder={t('notes_optional')}/>
                                         </TableCell>
                                         <TableCell>
                                             <Button variant="ghost" size="icon" onClick={() => removeItem(item.tempId)}>
@@ -305,7 +306,7 @@ export default function NewFilePage() {
                                 )) : (
                                     <TableRow>
                                         <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
-                                            No items added yet.
+                                            {t('no_expense_items_added')}
                                         </TableCell>
                                     </TableRow>
                                 )}

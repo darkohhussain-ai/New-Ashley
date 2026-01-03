@@ -20,6 +20,7 @@ import { useAppContext } from '@/context/app-provider';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Bar, BarChart as RechartsBarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import type { AllPdfSettings } from '@/lib/types';
+import { useTranslation } from '@/hooks/use-translation';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -30,6 +31,7 @@ const formatCurrency = (amount: number) => {
 };
 
 export default function MonthlyExpenseReportPage() {
+  const { t } = useTranslation();
   const { expenses, employees, expenseReports } = useAppContext();
 
   const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {} });
@@ -130,13 +132,13 @@ export default function MonthlyExpenseReportPage() {
             startY = 20;
         }
         doc.setFontSize(14);
-        doc.text("Summary by Employee", 14, startY);
+        doc.text(t('summary_by_employee'), 14, startY);
         startY += 10;
         autoTable(doc, {
           startY: startY,
-          head: [['Employee', 'Total Amount']],
+          head: [[t('employee'), t('total_amount')]],
           body: monthlyData.summary.map(item => [item.employeeName, formatCurrency(item.totalAmount)]),
-          foot: [['Grand Total', formatCurrency(monthlyData.total)]],
+          foot: [[t('grand_total'), formatCurrency(monthlyData.total)]],
           theme: 'grid',
           headStyles: { fillColor: settings.themeColor || '#22c55e' },
           footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
@@ -152,11 +154,11 @@ export default function MonthlyExpenseReportPage() {
             startY = 20;
         }
         doc.setFontSize(14);
-        doc.text("Detailed Expenses", 14, startY);
+        doc.text(t('all_transactions'), 14, startY);
         startY += 10;
         autoTable(doc, {
           startY: startY,
-          head: [['Date', 'Report', 'Employee', 'Notes', 'Amount']],
+          head: [[t('date'), t('report'), t('employee'), t('notes'), t('amount')]],
           body: monthlyData.expenses.map(item => [
               format(parseISO(expenseReports.find(r=>r.id === item.expenseReportId)!.reportDate), 'PP'),
               getReportName(item.expenseReportId),
@@ -189,7 +191,7 @@ export default function MonthlyExpenseReportPage() {
         {selectedDate && (
           <div ref={pdfHeaderRef} style={{ width: '700px', background: 'white', color: 'black' }}>
             <ReportPdfHeader 
-                title="Monthly Expense Report" 
+                title={t('monthly_expense_report')} 
                 subtitle={format(selectedDate, 'MMMM yyyy')} 
                 logoSrc={pdfSettings.report?.logo ?? null}
                 themeColor={pdfSettings.report?.themeColor}
@@ -204,21 +206,21 @@ export default function MonthlyExpenseReportPage() {
             <Button variant="outline" size="icon" asChild>
               <Link href="/expenses"><ArrowLeft /></Link>
             </Button>
-            <h1 className="text-2xl md:text-3xl font-bold">Monthly Expense Report</h1>
+            <h1 className="text-2xl md:text-3xl font-bold">{t('monthly_expense_report')}</h1>
           </div>
           <div className="flex items-center gap-2">
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" className={cn("w-[280px] justify-start text-left font-normal", !selectedDate && "text-muted-foreground")}>
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {selectedDate ? format(selectedDate, 'MMMM yyyy') : <span>Pick a month</span>}
+                  {selectedDate ? format(selectedDate, 'MMMM yyyy') : <span>{t('pick_a_month')}</span>}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="end">
                 <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} captionLayout="dropdown-buttons" fromYear={2020} toYear={2040} />
               </PopoverContent>
             </Popover>
-            <Button onClick={handleDownloadPdf} disabled={isLoading || monthlyData.expenses.length === 0}><FileDown className="mr-2"/>Download PDF</Button>
+            <Button onClick={handleDownloadPdf} disabled={isLoading || monthlyData.expenses.length === 0}><FileDown className="mr-2"/>{t('download_pdf')}</Button>
           </div>
         </header>
 
@@ -228,7 +230,7 @@ export default function MonthlyExpenseReportPage() {
           <div className="space-y-8">
             <Card>
                 <CardHeader>
-                    <CardTitle>Monthly Summary by Employee</CardTitle>
+                    <CardTitle>{t('monthly_summary_by_employee')}</CardTitle>
                 </CardHeader>
                 <CardContent ref={chartRef} className="pl-0">
                     <ResponsiveContainer width="100%" height={300}>
@@ -236,7 +238,7 @@ export default function MonthlyExpenseReportPage() {
                             <XAxis type="number" tickFormatter={(value) => formatCurrency(value as number)} />
                             <YAxis dataKey="employeeName" type="category" width={120} />
                             <Tooltip contentStyle={{backgroundColor: 'hsl(var(--background))'}} formatter={(value) => formatCurrency(value as number)} />
-                            <Bar dataKey="totalAmount" name="Total Expenses" fill="hsl(var(--primary))" />
+                            <Bar dataKey="totalAmount" name={t('total_expenses')} fill="hsl(var(--primary))" />
                         </RechartsBarChart>
                     </ResponsiveContainer>
                 </CardContent>
@@ -244,16 +246,16 @@ export default function MonthlyExpenseReportPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Summary for {selectedDate ? format(selectedDate, 'MMMM yyyy') : ''}</CardTitle>
-                 <CardDescription>Each employee is listed once with their total expenses for the month.</CardDescription>
+                <CardTitle>{t('summary_for_month', {month: selectedDate ? format(selectedDate, 'MMMM yyyy') : ''})}</CardTitle>
+                 <CardDescription>{t('summary_for_month_desc')}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Employee</TableHead>
-                                <TableHead className="text-right">Total Amount</TableHead>
+                                <TableHead>{t('employee')}</TableHead>
+                                <TableHead className="text-right">{t('total_amount')}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -266,7 +268,7 @@ export default function MonthlyExpenseReportPage() {
                         </TableBody>
                         <TableFooter>
                             <TableRow>
-                                <TableCell className="text-lg font-bold">Grand Total</TableCell>
+                                <TableCell className="text-lg font-bold">{t('grand_total')}</TableCell>
                                 <TableCell className="text-right text-lg font-bold text-primary">{formatCurrency(monthlyData.total)}</TableCell>
                             </TableRow>
                         </TableFooter>
@@ -277,19 +279,19 @@ export default function MonthlyExpenseReportPage() {
             
             <Card>
               <CardHeader>
-                <CardTitle>All Transactions</CardTitle>
-                <CardDescription>A detailed list of all individual expense items for the selected month.</CardDescription>
+                <CardTitle>{t('all_transactions')}</CardTitle>
+                <CardDescription>{t('all_transactions_desc')}</CardDescription>
               </CardHeader>
               <CardContent>
                  <div className="overflow-x-auto">
                     <Table>
                         <TableHeader>
                         <TableRow>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Report</TableHead>
-                            <TableHead>Employee</TableHead>
-                            <TableHead>Notes</TableHead>
-                            <TableHead className="text-right">Amount</TableHead>
+                            <TableHead>{t('date')}</TableHead>
+                            <TableHead>{t('report')}</TableHead>
+                            <TableHead>{t('employee')}</TableHead>
+                            <TableHead>{t('notes')}</TableHead>
+                            <TableHead className="text-right">{t('amount')}</TableHead>
                         </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -311,8 +313,8 @@ export default function MonthlyExpenseReportPage() {
         ) : (
           <div className="text-center py-16 border-2 border-dashed rounded-lg">
             <BarChart className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-medium">No Expenses Found</h3>
-            <p className="mt-2 text-sm text-muted-foreground">There are no expenses recorded for {selectedDate ? format(selectedDate, 'MMMM yyyy') : 'the selected month'}.</p>
+            <h3 className="mt-4 text-lg font-medium">{t('no_expenses_found')}</h3>
+            <p className="mt-2 text-sm text-muted-foreground">{t('no_expenses_found_for_month', {month: selectedDate ? format(selectedDate, 'MMMM yyyy') : 'the selected month'})}</p>
           </div>
         )}
       </div>

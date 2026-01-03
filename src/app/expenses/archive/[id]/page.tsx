@@ -19,10 +19,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { AllPdfSettings } from '@/lib/types';
+import { useTranslation } from '@/hooks/use-translation';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'IQD', maximumFractionDigits: 0 }).format(amount);
 
 export default function ViewExpenseReportPage() {
+  const { t } = useTranslation();
   const { id: reportId } = useParams();
   const router = useRouter();
   const { toast } = useToast();
@@ -41,10 +43,10 @@ export default function ViewExpenseReportPage() {
   };
 
   const handleDeleteReport = () => {
-    if (!reportId) return;
+    if (!reportId || !report) return;
     setExpenseReports(prev => prev.filter(r => r.id !== reportId));
     setExpenses(prev => prev.filter(e => e.expenseReportId !== reportId));
-    toast({ title: 'Report Deleted', description: 'The expense report and all its items have been deleted.' });
+    toast({ title: t('report_deleted'), description: t('report_deleted_desc') });
     router.push('/expenses/archive');
   };
 
@@ -76,9 +78,9 @@ export default function ViewExpenseReportPage() {
     
     autoTable(doc, {
       startY: finalImgHeight + 10,
-      head: [['Employee', 'Notes', 'Amount']],
-      body: reportItems.map(item => [getEmployeeName(item.employeeId), item.notes || '', formatCurrency(item.amount)]),
-      foot: [['Total', '', formatCurrency(report.totalAmount)]],
+      head: [[t('employee'), t('notes'), t('amount')]],
+      body: reportItems.map(item => [getEmployeeName(item.employeeId), item.notes || 'N/A', formatCurrency(item.amount)]),
+      foot: [[t('total'), '', formatCurrency(report.totalAmount)]],
       theme: 'grid',
       headStyles: { fillColor: settings.themeColor || '#22c55e' },
       footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
@@ -113,10 +115,10 @@ export default function ViewExpenseReportPage() {
   if (!report) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center p-8">
-        <h2 className="text-2xl font-bold mb-2">Report Not Found</h2>
-        <p className="text-muted-foreground mb-6">The expense report you're looking for doesn't seem to exist.</p>
+        <h2 className="text-2xl font-bold mb-2">{t('report_not_found')}</h2>
+        <p className="text-muted-foreground mb-6">{t('report_not_found_desc')}</p>
         <Button asChild>
-          <Link href="/expenses/archive"><ArrowLeft className="mr-2"/>Back to Archive</Link>
+          <Link href="/expenses/archive"><ArrowLeft className="mr-2"/>{t('back_to_expense_archive')}</Link>
         </Button>
       </div>
     );
@@ -128,7 +130,7 @@ export default function ViewExpenseReportPage() {
         <div ref={pdfHeaderRef} style={{ width: '700px', background: 'white', color: 'black' }}>
           <ReportPdfHeader 
             title={report.reportName} 
-            subtitle={`Report Date: ${format(parseISO(report.reportDate), 'PPP')}`} 
+            subtitle={`${t('report_date')}: ${format(parseISO(report.reportDate), 'PPP')}`} 
             logoSrc={pdfSettings.report?.logo ?? null} 
             themeColor={pdfSettings.report?.themeColor}
             headerText={pdfSettings.report?.headerText}
@@ -141,24 +143,24 @@ export default function ViewExpenseReportPage() {
             <Button variant="outline" size="icon" asChild>
               <Link href="/expenses/archive"><ArrowLeft /></Link>
             </Button>
-            <h1 className="text-2xl md:text-3xl font-bold">Expense Report Details</h1>
+            <h1 className="text-2xl md:text-3xl font-bold">{t('expense_report_details')}</h1>
           </div>
           <div className="flex items-center gap-2">
-            <Button onClick={handleDownloadPdf} variant="outline"><FileDown className="mr-2"/>Download PDF</Button>
+            <Button onClick={handleDownloadPdf} variant="outline"><FileDown className="mr-2"/>{t('download_pdf')}</Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive"><Trash2 className="mr-2"/>Delete Report</Button>
+                <Button variant="destructive"><Trash2 className="mr-2"/>{t('delete_report')}</Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                  <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This action will permanently delete the report "{report.reportName}" and all its associated expenses. This cannot be undone.
+                    {t('confirm_delete_expense_report', {reportName: report.reportName})}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDeleteReport}>Delete</AlertDialogAction>
+                  <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteReport}>{t('delete')}</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
@@ -177,16 +179,16 @@ export default function ViewExpenseReportPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Expense Items ({reportItems.length})</CardTitle>
+              <CardTitle>{t('items_in_report_count', {count: reportItems.length})}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Employee</TableHead>
-                      <TableHead>Notes</TableHead>
-                      <TableHead className="text-right">Amount</TableHead>
+                      <TableHead>{t('employee')}</TableHead>
+                      <TableHead>{t('notes')}</TableHead>
+                      <TableHead className="text-right">{t('amount')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -203,7 +205,7 @@ export default function ViewExpenseReportPage() {
                   </TableBody>
                   <TableFooter>
                     <TableRow>
-                      <TableCell colSpan={2} className="text-lg font-bold">Total</TableCell>
+                      <TableCell colSpan={2} className="text-lg font-bold">{t('total')}</TableCell>
                       <TableCell className="text-right text-lg font-bold text-primary">{formatCurrency(report.totalAmount)}</TableCell>
                     </TableRow>
                   </TableFooter>
