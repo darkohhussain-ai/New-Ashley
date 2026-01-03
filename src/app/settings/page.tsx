@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from 'react';
@@ -10,7 +9,7 @@ import useLocalStorage, { getAllDataForExport, importData } from '@/hooks/use-lo
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { useTheme } from '@/components/shared/theme-provider'
 import { useToast } from '@/hooks/use-toast'
 import { Input } from '@/components/ui/input'
@@ -222,12 +221,12 @@ export default function SettingsPage() {
   const [mounted, setMounted] = useState(false)
   const langContext = React.useContext(LanguageContext)
 
-  const [savedLightColors, setSavedLightColors] = useLocalStorage<ThemeColors>('light-theme-colors', defaultLightColors);
-  const [savedDarkColors, setSavedDarkColors] = useLocalStorage<ThemeColors>('dark-theme-colors', defaultDarkColors);
-  const [savedDashboardBanner, setSavedDashboardBanner] = useLocalStorage<string | null>('dashboard-banner', null);
+  const [savedLightColors, setSavedLightColors] = useLocalStorage&lt;ThemeColors&gt;('light-theme-colors', defaultLightColors);
+  const [savedDarkColors, setSavedDarkColors] = useLocalStorage&lt;ThemeColors&gt;('dark-theme-colors', defaultDarkColors);
+  const [savedDashboardBanner, setSavedDashboardBanner] = useLocalStorage&lt;string | null&gt;('dashboard-banner', null);
   const [savedBannerHeight, setSavedBannerHeight] = useLocalStorage('dashboard-banner-height', 150);
-  const [savedPdfSettings, setSavedPdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', defaultPdfSettings);
-  const [customFontBase64, setCustomFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
+  const [savedPdfSettings, setSavedPdfSettings] = useLocalStorage&lt;AllPdfSettings&gt;('pdf-settings', defaultPdfSettings);
+  const [customFontBase64, setCustomFontBase64] = useLocalStorage&lt;string | null&gt;('custom-font-base64', null);
 
 
   const [lightColors, setLightColors] = useState(savedLightColors);
@@ -235,20 +234,20 @@ export default function SettingsPage() {
   const [dashboardBanner, setDashboardBanner] = useState(savedDashboardBanner);
   const [bannerHeight, setBannerHeight] = useState(savedBannerHeight);
   const [pdfSettings, setPdfSettings] = useState(savedPdfSettings);
-  const [activePdfTab, setActivePdfTab] = useState<'report' | 'invoice' | 'card'>('report');
+  const [activePdfTab, setActivePdfTab] = useState&lt;'report' | 'invoice' | 'card'&gt;('report');
 
-  const [englishTranslations, setEnglishTranslations] = useState<Record<string, string>>({});
-  const [kurdishTranslations, setKurdishTranslations] = useState<Record<string, string>>({});
+  const [englishTranslations, setEnglishTranslations] = useState&lt;Record&lt;string, string&gt;&gt;({});
+  const [kurdishTranslations, setKurdishTranslations] = useState&lt;Record&lt;string, string&gt;&gt;({});
   
-  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importFile, setImportFile] = useState&lt;File | null&gt;(null);
 
-  const importInputRef = useRef<HTMLInputElement>(null)
+  const importInputRef = useRef&lt;HTMLInputElement&gt;(null)
   
   const applyColors = (colors: ThemeColors) => {
     const root = document.documentElement;
     if (!colors) return;
     Object.entries(colors).forEach(([key, value]) => {
-      if (key && value) {
+      if (key &amp;&amp; value) {
         root.style.setProperty(`--${key}`, value);
       }
     });
@@ -327,7 +326,7 @@ export default function SettingsPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bannerHeight]);
 
-   const handlePdfSettingChange = <K extends keyof PdfSettings>(key: K, value: PdfSettings[K]) => {
+   const handlePdfSettingChange = &lt;K extends keyof PdfSettings&gt;(key: K, value: PdfSettings[K]) => {
     setPdfSettings(prev => ({
         ...prev,
         [activePdfTab]: {
@@ -337,7 +336,7 @@ export default function SettingsPage() {
     }));
   };
   
-   const handleReportColorChange = (reportType: keyof NonNullable<PdfSettings['reportColors']>, color: string) => {
+   const handleReportColorChange = (reportType: keyof NonNullable&lt;PdfSettings['reportColors']&gt;, color: string) => {
     setPdfSettings(prev => ({
         ...prev,
         report: {
@@ -350,7 +349,7 @@ export default function SettingsPage() {
     }));
    };
 
-  const handleCustomFontUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCustomFontUpload = (e: React.ChangeEvent&lt;HTMLInputElement&gt;) => {
     const file = e.target.files?.[0];
     if (file) {
       const validExtensions = ['.ttf', '.otf', '.woff', '.woff2'];
@@ -371,7 +370,7 @@ export default function SettingsPage() {
     }
   };
   
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, setter: (value: string | null) => void, toastTitle: string) => {
+  const handleImageUpload = (e: React.ChangeEvent&lt;HTMLInputElement&gt;, setter: (value: string | null) => void, toastTitle: string) => {
     const file = e.target.files?.[0]
     if (file) {
       const reader = new FileReader()
@@ -400,6 +399,12 @@ export default function SettingsPage() {
     }
     toast({ title: 'Settings saved!', description: 'Your appearance and language settings have been updated.' });
   }
+
+  const handleSavePdfSettings = () => {
+    setSavedPdfSettings(pdfSettings);
+    toast({ title: 'PDF &amp; Report settings saved!', description: 'Your design changes have been updated.' });
+  };
+
 
   const handleResetToDefault = () => {
     setLightColors(defaultLightColors);
@@ -444,7 +449,7 @@ export default function SettingsPage() {
     }
   }
 
-  const handleImportFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImportFileSelect = (e: React.ChangeEvent&lt;HTMLInputElement&gt;) => {
     const file = e.target.files?.[0];
     if (file) {
       setImportFile(file);
@@ -480,329 +485,334 @@ export default function SettingsPage() {
         <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
             <header className="flex items-center gap-4 mb-8">
                 <Button variant="outline" size="icon" asChild>
-                    <Link href="/"> <ArrowLeft /> </Link>
-                </Button>
-                <h1 className="text-2xl md:text-3xl font-bold">Settings</h1>
-            </header>
-            <div className="flex items-center justify-center">Loading...</div>
-        </div>
+                    &lt;Link href="/"&gt; &lt;ArrowLeft /&gt; &lt;/Link&gt;
+                &lt;/Button&gt;
+                &lt;h1 className="text-2xl md:text-3xl font-bold"&gt;Settings&lt;/h1&gt;
+            &lt;/header&gt;
+            &lt;div className="flex items-center justify-center"&gt;Loading...&lt;/div&gt;
+        &lt;/div&gt;
     );
   }
 
   const currentPdfSettings = pdfSettings[activePdfTab];
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-        <style>{`
+    &lt;div className="min-h-screen bg-background text-foreground"&gt;
+        &lt;style&gt;{&`
             @font-face {
               font-family: 'CustomPdfFont';
               src: ${currentPdfSettings?.customFont ? `url(${currentPdfSettings.customFont})` : 'none'};
             }
-        `}</style>
-      <header className="bg-card border-b p-4">
-        <div className="container mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="icon" asChild>
-              <Link href="/"> <ArrowLeft /> </Link>
-            </Button>
-            <h1 className="text-xl font-bold">Settings</h1>
-          </div>
-          <div className="ml-auto flex items-center gap-4">
-             <AlertDialog>
-                <AlertDialogTrigger asChild>
-                    <Button variant="outline">
-                        <RefreshCcw className="mr-2 h-4 w-4" /> Reset All
-                    </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Reset all settings?</AlertDialogTitle>
-                        <AlertDialogDescription>
+        `}&lt;/style&gt;
+      &lt;header className="bg-card border-b p-4"&gt;
+        &lt;div className="container mx-auto flex items-center justify-between"&gt;
+          &lt;div className="flex items-center gap-4"&gt;
+            &lt;Button variant="outline" size="icon" asChild&gt;
+              &lt;Link href="/"&gt; &lt;ArrowLeft /&gt; &lt;/Link&gt;
+            &lt;/Button&gt;
+            &lt;h1 className="text-xl font-bold"&gt;Settings&lt;/h1&gt;
+          &lt;/div&gt;
+          &lt;div className="ml-auto flex items-center gap-4"&gt;
+             &lt;AlertDialog&gt;
+                &lt;AlertDialogTrigger asChild&gt;
+                    &lt;Button variant="outline"&gt;
+                        &lt;RefreshCcw className="mr-2 h-4 w-4" /&gt; Reset All
+                    &lt;/Button&gt;
+                &lt;/AlertDialogTrigger&gt;
+                &lt;AlertDialogContent&gt;
+                    &lt;AlertDialogHeader&gt;
+                        &lt;AlertDialogTitle&gt;Reset all settings?&lt;/AlertDialogTitle&gt;
+                        &lt;AlertDialogDescription&gt;
                         This will reset all appearance, language, and PDF settings to their original defaults. Your data will not be affected. This action cannot be undone.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleResetToDefault}>Reset Settings</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-            <Button onClick={handleSaveChanges}>
-              <Save className="mr-2 h-4 w-4" /> Save All Changes
-            </Button>
-          </div>
-        </div>
-      </header>
-      <main className="p-4 md:p-6 container mx-auto">
-        <Tabs defaultValue="design" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="design">Design</TabsTrigger>
-                <TabsTrigger value="language">Language</TabsTrigger>
-                <TabsTrigger value="pdf">PDF & Reports</TabsTrigger>
-                <TabsTrigger value="data">Data Management</TabsTrigger>
-            </TabsList>
+                        &lt;/AlertDialogDescription&gt;
+                    &lt;/AlertDialogHeader&gt;
+                    &lt;AlertDialogFooter&gt;
+                        &lt;AlertDialogCancel&gt;Cancel&lt;/AlertDialogCancel&gt;
+                        &lt;AlertDialogAction onClick={handleResetToDefault}&gt;Reset Settings&lt;/AlertDialogAction&gt;
+                    &lt;/AlertDialogFooter&gt;
+                &lt;/AlertDialogContent&gt;
+            &lt;/AlertDialog&gt;
+            &lt;Button onClick={handleSaveChanges}&gt;
+              &lt;Save className="mr-2 h-4 w-4" /&gt; Save All Changes
+            &lt;/Button&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/header&gt;
+      &lt;main className="p-4 md:p-6 container mx-auto"&gt;
+        &lt;Tabs defaultValue="design" className="w-full"&gt;
+            &lt;TabsList className="grid w-full grid-cols-4"&gt;
+                &lt;TabsTrigger value="design"&gt;Design&lt;/TabsTrigger&gt;
+                &lt;TabsTrigger value="language"&gt;Language&lt;/TabsTrigger&gt;
+                &lt;TabsTrigger value="pdf"&gt;PDF &amp; Reports&lt;/TabsTrigger&gt;
+                &lt;TabsTrigger value="data"&gt;Data Management&lt;/TabsTrigger&gt;
+            &lt;/TabsList&gt;
 
-            <TabsContent value="design" className="pt-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                    <Card>
-                        <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Palette /> General</CardTitle></CardHeader>
-                        <CardContent className="space-y-6">
-                            <div className="flex items-center justify-between">
-                                <Label htmlFor="dark-mode">Dark Mode</Label>
-                                <Switch id="dark-mode" checked={theme === 'dark'} onCheckedChange={() => setTheme(theme === 'light' ? 'dark' : 'light')} />
-                            </div>
-                             <div>
-                                <Label htmlFor="font-upload" className="text-sm font-medium">Upload Custom App Font (.ttf, .woff)</Label>
-                                <Input id="font-upload" type="file" accept=".ttf,.otf,.woff,.woff2" className="mt-2" onChange={handleCustomFontUpload} />
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><LayoutDashboard /> Dashboard</CardTitle></CardHeader>
-                        <CardContent className="space-y-6">
-                            <div className="w-full h-24 border rounded-md flex items-center justify-center bg-muted/30 relative overflow-hidden">
-                                {dashboardBanner ? <Image src={dashboardBanner} alt="Current Dashboard Banner" fill={true} className="object-cover" /> : <span className='text-sm text-muted-foreground'>Dashboard Banner Preview</span>}
-                            </div>
-                            <div>
-                                <Label htmlFor="banner-upload">Upload Dashboard Banner</Label>
-                                <Input id="banner-upload" type="file" accept="image/*" className="mt-2" onChange={(e) => handleImageUpload(e, setDashboardBanner, "Banner updated!")} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="banner-height">Banner Height: {bannerHeight}px</Label>
-                                <Slider id="banner-height" min={80} max={300} step={10} value={[bannerHeight]} onValueChange={(value) => setBannerHeight(value[0])} />
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="lg:col-span-2 xl:col-span-1">
-                        <CardHeader><CardTitle className="flex items-center gap-2"><Palette/> Color Palette</CardTitle><CardDescription>Adjust colors for light and dark themes.</CardDescription></CardHeader>
-                        <CardContent>
-                            <Tabs defaultValue="light" className="w-full">
-                                <TabsList className="grid w-full grid-cols-2">
-                                    <TabsTrigger value="light">Light Mode</TabsTrigger>
-                                    <TabsTrigger value="dark">Dark Mode</TabsTrigger>
-                                </TabsList>
-                                <TabsContent value="light" className="space-y-4 pt-4">
-                                    <ColorPicker label="Background" value={lightColors.background} onChange={(c) => setLightColors(p => ({...p, background: c}))} />
-                                    <ColorPicker label="Foreground" value={lightColors.foreground} onChange={(c) => setLightColors(p => ({...p, foreground: c}))} />
-                                    <ColorPicker label="Primary" value={lightColors.primary} onChange={(c) => setLightColors(p => ({...p, primary: c}))} />
-                                    <ColorPicker label="Accent" value={lightColors.accent} onChange={(c) => setLightColors(p => ({...p, accent: c}))} />
-                                    <ColorPicker label="Card" value={lightColors.card} onChange={(c) => setLightColors(p => ({...p, card: c}))} />
-                                </TabsContent>
-                                    <TabsContent value="dark" className="space-y-4 pt-4">
-                                    <ColorPicker label="Background" value={darkColors.background} onChange={(c) => setDarkColors(p => ({...p, background: c}))} />
-                                    <ColorPicker label="Foreground" value={darkColors.foreground} onChange={(c) => setDarkColors(p => ({...p, foreground: c}))} />
-                                    <ColorPicker label="Primary" value={darkColors.primary} onChange={(c) => setDarkColors(p => ({...p, primary: c}))} />
-                                    <ColorPicker label="Accent" value={darkColors.accent} onChange={(c) => setDarkColors(p => ({...p, accent: c}))} />
-                                    <ColorPicker label="Card" value={darkColors.card} onChange={(c) => setDarkColors(p => ({...p, card: c}))} />
-                                </TabsContent>
-                            </Tabs>
-                        </CardContent>
-                    </Card>
-                </div>
-            </TabsContent>
+            &lt;TabsContent value="design" className="pt-6"&gt;
+                &lt;div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6"&gt;
+                    &lt;Card&gt;
+                        &lt;CardHeader&gt;&lt;CardTitle className="flex items-center gap-2 text-lg"&gt;&lt;Palette /&gt; General&lt;/CardTitle&gt;&lt;/CardHeader&gt;
+                        &lt;CardContent className="space-y-6"&gt;
+                            &lt;div className="flex items-center justify-between"&gt;
+                                &lt;Label htmlFor="dark-mode"&gt;Dark Mode&lt;/Label&gt;
+                                &lt;Switch id="dark-mode" checked={theme === 'dark'} onCheckedChange={() => setTheme(theme === 'light' ? 'dark' : 'light')} /&gt;
+                            &lt;/div&gt;
+                             &lt;div&gt;
+                                &lt;Label htmlFor="font-upload" className="text-sm font-medium"&gt;Upload Custom App Font (.ttf, .woff)&lt;/Label&gt;
+                                &lt;Input id="font-upload" type="file" accept=".ttf,.otf,.woff,.woff2" className="mt-2" onChange={handleCustomFontUpload} /&gt;
+                            &lt;/div&gt;
+                        &lt;/CardContent&gt;
+                    &lt;/Card&gt;
+                    &lt;Card&gt;
+                        &lt;CardHeader&gt;&lt;CardTitle className="flex items-center gap-2 text-lg"&gt;&lt;LayoutDashboard /&gt; Dashboard&lt;/CardTitle&gt;&lt;/CardHeader&gt;
+                        &lt;CardContent className="space-y-6"&gt;
+                            &lt;div className="w-full h-24 border rounded-md flex items-center justify-center bg-muted/30 relative overflow-hidden"&gt;
+                                {dashboardBanner ? &lt;Image src={dashboardBanner} alt="Current Dashboard Banner" fill={true} className="object-cover" /&gt; : &lt;span className='text-sm text-muted-foreground'&gt;Dashboard Banner Preview&lt;/span&gt;}
+                            &lt;/div&gt;
+                            &lt;div&gt;
+                                &lt;Label htmlFor="banner-upload"&gt;Upload Dashboard Banner&lt;/Label&gt;
+                                &lt;Input id="banner-upload" type="file" accept="image/*" className="mt-2" onChange={(e) => handleImageUpload(e, setDashboardBanner, "Banner updated!")} /&gt;
+                            &lt;/div&gt;
+                            &lt;div className="space-y-2"&gt;
+                                &lt;Label htmlFor="banner-height"&gt;Banner Height: {bannerHeight}px&lt;/Label&gt;
+                                &lt;Slider id="banner-height" min={80} max={300} step={10} value={[bannerHeight]} onValueChange={(value) => setBannerHeight(value[0])} /&gt;
+                            &lt;/div&gt;
+                        &lt;/CardContent&gt;
+                    &lt;/Card&gt;
+                    &lt;Card className="lg:col-span-2 xl:col-span-1"&gt;
+                        &lt;CardHeader&gt;&lt;CardTitle className="flex items-center gap-2"&gt;&lt;Palette/&gt; Color Palette&lt;/CardTitle&gt;&lt;CardDescription&gt;Adjust colors for light and dark themes.&lt;/CardDescription&gt;&lt;/CardHeader&gt;
+                        &lt;CardContent&gt;
+                            &lt;Tabs defaultValue="light" className="w-full"&gt;
+                                &lt;TabsList className="grid w-full grid-cols-2"&gt;
+                                    &lt;TabsTrigger value="light"&gt;Light Mode&lt;/TabsTrigger&gt;
+                                    &lt;TabsTrigger value="dark"&gt;Dark Mode&lt;/TabsTrigger&gt;
+                                &lt;/TabsList&gt;
+                                &lt;TabsContent value="light" className="space-y-4 pt-4"&gt;
+                                    &lt;ColorPicker label="Background" value={lightColors.background} onChange={(c) => setLightColors(p => ({...p, background: c}))} /&gt;
+                                    &lt;ColorPicker label="Foreground" value={lightColors.foreground} onChange={(c) => setLightColors(p => ({...p, foreground: c}))} /&gt;
+                                    &lt;ColorPicker label="Primary" value={lightColors.primary} onChange={(c) => setLightColors(p => ({...p, primary: c}))} /&gt;
+                                    &lt;ColorPicker label="Accent" value={lightColors.accent} onChange={(c) => setLightColors(p => ({...p, accent: c}))} /&gt;
+                                    &lt;ColorPicker label="Card" value={lightColors.card} onChange={(c) => setLightColors(p => ({...p, card: c}))} /&gt;
+                                &lt;/TabsContent&gt;
+                                    &lt;TabsContent value="dark" className="space-y-4 pt-4"&gt;
+                                    &lt;ColorPicker label="Background" value={darkColors.background} onChange={(c) => setDarkColors(p => ({...p, background: c}))} /&gt;
+                                    &lt;ColorPicker label="Foreground" value={darkColors.foreground} onChange={(c) => setDarkColors(p => ({...p, foreground: c}))} /&gt;
+                                    &lt;ColorPicker label="Primary" value={darkColors.primary} onChange={(c) => setDarkColors(p => ({...p, primary: c}))} /&gt;
+                                    &lt;ColorPicker label="Accent" value={darkColors.accent} onChange={(c) => setDarkColors(p => ({...p, accent: c}))} /&gt;
+                                    &lt;ColorPicker label="Card" value={darkColors.card} onChange={(c) => setDarkColors(p => ({...p, card: c}))} /&gt;
+                                &lt;/TabsContent&gt;
+                            &lt;/Tabs&gt;
+                        &lt;/CardContent&gt;
+                    &lt;/Card&gt;
+                &lt;/div&gt;
+            &lt;/TabsContent&gt;
 
-            <TabsContent value="language" className="pt-6">
-                 <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">Language & Translations</CardTitle>
-                        <CardDescription>Edit the text for different languages used in the app.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Tabs defaultValue="english">
-                            <TabsList>
-                                <TabsTrigger value="english">English</TabsTrigger>
-                                <TabsTrigger value="kurdish">Kurdish (کوردی)</TabsTrigger>
-                            </TabsList>
-                            <TabsContent value="english">
-                                <ScrollArea className="h-96 pr-4">
-                                    <div className="space-y-4">
+            &lt;TabsContent value="language" className="pt-6"&gt;
+                 &lt;Card&gt;
+                    &lt;CardHeader&gt;
+                        &lt;CardTitle className="flex items-center gap-2"&gt;Language &amp; Translations&lt;/CardTitle&gt;
+                        &lt;CardDescription&gt;Edit the text for different languages used in the app.&lt;/CardDescription&gt;
+                    &lt;/CardHeader&gt;
+                    &lt;CardContent&gt;
+                        &lt;Tabs defaultValue="english"&gt;
+                            &lt;TabsList&gt;
+                                &lt;TabsTrigger value="english"&gt;English&lt;/TabsTrigger&gt;
+                                &lt;TabsTrigger value="kurdish"&gt;Kurdish (کوردی)&lt;/TabsTrigger&gt;
+                            &lt;/TabsList&gt;
+                            &lt;TabsContent value="english"&gt;
+                                &lt;ScrollArea className="h-96 pr-4"&gt;
+                                    &lt;div className="space-y-4"&gt;
                                         {Object.entries(englishTranslations).map(([key, value]) => (
-                                            <div key={key} className="grid grid-cols-3 gap-4 items-center">
-                                                <Label htmlFor={`en-${key}`} className="text-muted-foreground break-all">{key}</Label>
-                                                <Input id={`en-${key}`} value={value} onChange={e => setEnglishTranslations(prev => ({ ...prev, [key]: e.target.value }))} className="col-span-2" />
-                                            </div>
+                                            &lt;div key={key} className="grid grid-cols-3 gap-4 items-center"&gt;
+                                                &lt;Label htmlFor={`en-${key}`} className="text-muted-foreground break-all"&gt;{key}&lt;/Label&gt;
+                                                &lt;Input id={`en-${key}`} value={value} onChange={e => setEnglishTranslations(prev => ({ ...prev, [key]: e.target.value }))} className="col-span-2" /&gt;
+                                            &lt;/div&gt;
                                         ))}
-                                    </div>
-                                </ScrollArea>
-                            </TabsContent>
-                            <TabsContent value="kurdish">
-                                <ScrollArea className="h-96 pr-4">
-                                    <div className="space-y-4" dir='rtl'>
+                                    &lt;/div&gt;
+                                &lt;/ScrollArea&gt;
+                            &lt;/TabsContent&gt;
+                            &lt;TabsContent value="kurdish"&gt;
+                                &lt;ScrollArea className="h-96 pr-4"&gt;
+                                    &lt;div className="space-y-4" dir='rtl'&gt;
                                         {Object.entries(kurdishTranslations).map(([key, value]) => (
-                                            <div key={key} className="grid grid-cols-3 gap-4 items-center">
-                                                <Label htmlFor={`ku-${key}`} className="text-muted-foreground break-all">{key}</Label>
-                                                <Input id={`ku-${key}`} value={value} onChange={e => setKurdishTranslations(prev => ({ ...prev, [key]: e.target.value }))} className="col-span-2" dir='rtl' />
-                                            </div>
+                                            &lt;div key={key} className="grid grid-cols-3 gap-4 items-center"&gt;
+                                                &lt;Label htmlFor={`ku-${key}`} className="text-muted-foreground break-all"&gt;{key}&lt;/Label&gt;
+                                                &lt;Input id={`ku-${key}`} value={value} onChange={e => setKurdishTranslations(prev => ({ ...prev, [key]: e.target.value }))} className="col-span-2" dir='rtl' /&gt;
+                                            &lt;/div&gt;
                                         ))}
-                                    </div>
-                                </ScrollArea>
-                            </TabsContent>
-                        </Tabs>
-                    </CardContent>
-                </Card>
-            </TabsContent>
+                                    &lt;/div&gt;
+                                &lt;/ScrollArea&gt;
+                            &lt;/TabsContent&gt;
+                        &lt;/Tabs&gt;
+                    &lt;/CardContent&gt;
+                &lt;/Card&gt;
+            &lt;/TabsContent&gt;
 
-            <TabsContent value="pdf" className="pt-6">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-1 space-y-6">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>PDF Template</CardTitle>
-                                <CardDescription>Select which PDF type you want to customize.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <Tabs value={activePdfTab} onValueChange={(v) => setActivePdfTab(v as 'report' | 'invoice' | 'card')} className="w-full">
-                                    <TabsList className="grid w-full grid-cols-3">
-                                        <TabsTrigger value="report"><FileText className="mr-2"/>Report</TabsTrigger>
-                                        <TabsTrigger value="invoice"><Receipt className="mr-2"/>Invoice</TabsTrigger>
-                                        <TabsTrigger value="card"><CreditCard className="mr-2"/>ID Card</TabsTrigger>
-                                    </TabsList>
-                                </Tabs>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2 text-lg"><FileText /> Content</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div>
-                                    <Label htmlFor="logo-upload">Company Logo</Label>
-                                    <Input id="logo-upload" type="file" accept="image/*" className="mt-2" onChange={(e) => handleImageUpload(e, (val) => handlePdfSettingChange('logo', val), "Logo updated!")} />
-                                </div>
-                                <div className="space-y-2">
-                                <Label htmlFor="header-text">Header Text (Optional)</Label>
-                                <Input id="header-text" value={currentPdfSettings.headerText} onChange={(e) => handlePdfSettingChange('headerText', e.target.value)} placeholder="e.g. Confidential Document"/>
-                                </div>
-                                <div className="space-y-2">
-                                <Label htmlFor="footer-text">Footer Text (Optional)</Label>
-                                <Input id="footer-text" value={currentPdfSettings.footerText} onChange={(e) => handlePdfSettingChange('footerText', e.target.value)} placeholder="e.g. Generated by Ashley DRP"/>
-                                </div>
-                            </CardContent>
-                        </Card>
-                         <Card>
-                            <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Palette /> Styling</CardTitle></CardHeader>
-                            <CardContent className="space-y-6">
-                                {activePdfTab === 'report' && (
-                                    <div className="space-y-4">
-                                        <CardDescription>Set a unique color for each report type's header.</CardDescription>
-                                        <ReportColorPicker label="General" value={pdfSettings.report.reportColors?.general || '#000000'} onChange={(c) => handleReportColorChange('general', c)} />
-                                        <ReportColorPicker label="Expense" value={pdfSettings.report.reportColors?.expense || '#000000'} onChange={(c) => handleReportColorChange('expense', c)} />
-                                        <ReportColorPicker label="Overtime" value={pdfSettings.report.reportColors?.overtime || '#000000'} onChange={(c) => handleReportColorChange('overtime', c)} />
-                                        <ReportColorPicker label="Bonus" value={pdfSettings.report.reportColors?.bonus || '#000000'} onChange={(c) => handleReportColorChange('bonus', c)} />
-                                        <ReportColorPicker label="Withdrawal" value={pdfSettings.report.reportColors?.withdrawal || '#000000'} onChange={(c) => handleReportColorChange('withdrawal', c)} />
-                                    </div>
+            &lt;TabsContent value="pdf" className="pt-6"&gt;
+                &lt;div className="grid grid-cols-1 lg:grid-cols-3 gap-6"&gt;
+                    &lt;div className="lg:col-span-1 space-y-6"&gt;
+                        &lt;Card&gt;
+                            &lt;CardHeader&gt;
+                                &lt;CardTitle&gt;PDF Template&lt;/CardTitle&gt;
+                                &lt;CardDescription&gt;Select which PDF type you want to customize.&lt;/CardDescription&gt;
+                            &lt;/CardHeader&gt;
+                            &lt;CardContent&gt;
+                                &lt;Tabs value={activePdfTab} onValueChange={(v) => setActivePdfTab(v as 'report' | 'invoice' | 'card')} className="w-full"&gt;
+                                    &lt;TabsList className="grid w-full grid-cols-3"&gt;
+                                        &lt;TabsTrigger value="report"&gt;&lt;FileText className="mr-2"/&gt;Report&lt;/TabsTrigger&gt;
+                                        &lt;TabsTrigger value="invoice"&gt;&lt;Receipt className="mr-2"/&gt;Invoice&lt;/TabsTrigger&gt;
+                                        &lt;TabsTrigger value="card"&gt;&lt;CreditCard className="mr-2"/&gt;ID Card&lt;/TabsTrigger&gt;
+                                    &lt;/TabsList&gt;
+                                &lt;/Tabs&gt;
+                            &lt;/CardContent&gt;
+                            &lt;CardFooter&gt;
+                                &lt;Button onClick={handleSavePdfSettings} className="w-full"&gt;
+                                    &lt;Save className="mr-2 h-4 w-4" /&gt; Save Design
+                                &lt;/Button&gt;
+                            &lt;/CardFooter&gt;
+                        &lt;/Card&gt;
+                        &lt;Card&gt;
+                            &lt;CardHeader&gt;
+                                &lt;CardTitle className="flex items-center gap-2 text-lg"&gt;&lt;FileText /&gt; Content&lt;/CardTitle&gt;
+                            &lt;/CardHeader&gt;
+                            &lt;CardContent className="space-y-4"&gt;
+                                &lt;div&gt;
+                                    &lt;Label htmlFor="logo-upload"&gt;Company Logo&lt;/Label&gt;
+                                    &lt;Input id="logo-upload" type="file" accept="image/*" className="mt-2" onChange={(e) => handleImageUpload(e, (val) => handlePdfSettingChange('logo', val), "Logo updated!")} /&gt;
+                                &lt;/div&gt;
+                                &lt;div className="space-y-2"&gt;
+                                &lt;Label htmlFor="header-text"&gt;Header Text (Optional)&lt;/Label&gt;
+                                &lt;Input id="header-text" value={currentPdfSettings.headerText} onChange={(e) => handlePdfSettingChange('headerText', e.target.value)} placeholder="e.g. Confidential Document"/&gt;
+                                &lt;/div&gt;
+                                &lt;div className="space-y-2"&gt;
+                                &lt;Label htmlFor="footer-text"&gt;Footer Text (Optional)&lt;/Label&gt;
+                                &lt;Input id="footer-text" value={currentPdfSettings.footerText} onChange={(e) => handlePdfSettingChange('footerText', e.target.value)} placeholder="e.g. Generated by Ashley DRP"/&gt;
+                                &lt;/div&gt;
+                            &lt;/CardContent&gt;
+                        &lt;/Card&gt;
+                         &lt;Card&gt;
+                            &lt;CardHeader&gt;&lt;CardTitle className="flex items-center gap-2 text-lg"&gt;&lt;Palette /&gt; Styling&lt;/CardTitle&gt;&lt;/CardHeader&gt;
+                            &lt;CardContent className="space-y-6"&gt;
+                                {activePdfTab === 'report' &amp;&amp; (
+                                    &lt;div className="space-y-4"&gt;
+                                        &lt;CardDescription&gt;Set a unique color for each report type's header.&lt;/CardDescription&gt;
+                                        &lt;ReportColorPicker label="General" value={pdfSettings.report.reportColors?.general || '#000000'} onChange={(c) => handleReportColorChange('general', c)} /&gt;
+                                        &lt;ReportColorPicker label="Expense" value={pdfSettings.report.reportColors?.expense || '#000000'} onChange={(c) => handleReportColorChange('expense', c)} /&gt;
+                                        &lt;ReportColorPicker label="Overtime" value={pdfSettings.report.reportColors?.overtime || '#000000'} onChange={(c) => handleReportColorChange('overtime', c)} /&gt;
+                                        &lt;ReportColorPicker label="Bonus" value={pdfSettings.report.reportColors?.bonus || '#000000'} onChange={(c) => handleReportColorChange('bonus', c)} /&gt;
+                                        &lt;ReportColorPicker label="Withdrawal" value={pdfSettings.report.reportColors?.withdrawal || '#000000'} onChange={(c) => handleReportColorChange('withdrawal', c)} /&gt;
+                                    &lt;/div&gt;
                                 )}
-                                {(activePdfTab === 'invoice' || activePdfTab === 'card') && (
-                                    <div className="flex items-center justify-between">
-                                        <Label htmlFor="theme-color">Theme Color</Label>
-                                        <Input id="theme-color" type="color" value={currentPdfSettings.themeColor} onChange={(e) => handlePdfSettingChange('themeColor', e.target.value)} className="w-10 h-10 p-1" />
-                                    </div>
+                                {(activePdfTab === 'invoice' || activePdfTab === 'card') &amp;&amp; (
+                                    &lt;div className="flex items-center justify-between"&gt;
+                                        &lt;Label htmlFor="theme-color"&gt;Theme Color&lt;/Label&gt;
+                                        &lt;Input id="theme-color" type="color" value={currentPdfSettings.themeColor} onChange={(e) => handlePdfSettingChange('themeColor', e.target.value)} className="w-10 h-10 p-1" /&gt;
+                                    &lt;/div&gt;
                                 )}
-                                {(activePdfTab === 'report' || activePdfTab === 'invoice') && (
-                                    <div className="flex items-center justify-between">
-                                        <Label htmlFor="table-theme-select">Table Theme</Label>
-                                        <Select value={currentPdfSettings.tableTheme} onValueChange={(v: 'striped' | 'grid') => handlePdfSettingChange('tableTheme', v)}>
-                                            <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="striped">Striped</SelectItem>
-                                                <SelectItem value="grid">Grid</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
+                                {(activePdfTab === 'report' || activePdfTab === 'invoice') &amp;&amp; (
+                                    &lt;div className="flex items-center justify-between"&gt;
+                                        &lt;Label htmlFor="table-theme-select"&gt;Table Theme&lt;/Label&gt;
+                                        &lt;Select value={currentPdfSettings.tableTheme} onValueChange={(v: 'striped' | 'grid') => handlePdfSettingChange('tableTheme', v)}&gt;
+                                            &lt;SelectTrigger className="w-[180px]"&gt;&lt;SelectValue /&gt;&lt;/SelectTrigger&gt;
+                                            &lt;SelectContent&gt;
+                                                &lt;SelectItem value="striped"&gt;Striped&lt;/SelectItem&gt;
+                                                &lt;SelectItem value="grid"&gt;Grid&lt;/SelectItem&gt;
+                                            &lt;/SelectContent&gt;
+                                        &lt;/Select&gt;
+                                    &lt;/div&gt;
                                 )}
-                            </CardContent>
-                        </Card>
-                    </div>
-                    <div className="lg:col-span-2">
-                        <Card>
-                            <CardHeader><CardTitle>Live Preview</CardTitle><CardDescription>A preview of your {activePdfTab} design.</CardDescription></CardHeader>
-                            <CardContent className='bg-muted/50 p-6 rounded-b-lg flex justify-center items-start overflow-auto'>
-                                <div className="w-[595px] min-h-[842px] bg-white shadow-lg transform scale-100 origin-top overflow-hidden flex flex-col">
-                                {activePdfTab === 'report' && (
-                                    <>
-                                        <ReportPdfHeader title="Example Report Title" subtitle="This is an example subtitle" logoSrc={currentPdfSettings.logo ?? null} themeColor={pdfSettings.report.reportColors?.general} headerText={currentPdfSettings.headerText} />
-                                        <div className="p-6 flex-grow" style={{fontFamily: availableFonts.find(f => f.name === currentPdfSettings.font)?.family}}>
-                                            <h3 className="font-bold text-gray-800 mb-2">Sample Section</h3>
-                                            <p className="text-sm text-gray-600 mb-4">This is sample body text. The quick brown fox jumps over the lazy dog.</p>
-                                             <Table className={cn(currentPdfSettings.tableTheme === 'grid' && 'border')}>
-                                                <TableHeader>
-                                                    <TableRow style={{backgroundColor: pdfSettings.report.reportColors?.general, color: 'white'}} className="hover:bg-primary/90">
-                                                        <TableHead className="text-white">Column 1</TableHead>
-                                                        <TableHead className="text-white">Column 2</TableHead>
-                                                    </TableRow>
-                                                </TableHeader>
-                                                <TableBody>
-                                                     <TableRow className={cn(currentPdfSettings.tableTheme === 'striped' && 'odd:bg-muted/50')}><TableCell>Data A1</TableCell><TableCell>Data A2</TableCell></TableRow>
-                                                     <TableRow className={cn(currentPdfSettings.tableTheme === 'striped' && 'odd:bg-muted/50')}><TableCell>Data B1</TableCell><TableCell>Data B2</TableCell></TableRow>
-                                                </TableBody>
-                                            </Table>
-                                        </div>
-                                        {currentPdfSettings.footerText && <div className="mt-auto p-4 border-t text-center text-xs text-gray-500">{currentPdfSettings.footerText}</div>}
-                                    </>
+                            &lt;/CardContent&gt;
+                        &lt;/Card&gt;
+                    &lt;/div&gt;
+                    &lt;div className="lg:col-span-2"&gt;
+                        &lt;Card&gt;
+                            &lt;CardHeader&gt;&lt;CardTitle&gt;Live Preview&lt;/CardTitle&gt;&lt;CardDescription&gt;A preview of your {activePdfTab} design.&lt;/CardDescription&gt;&lt;/CardHeader&gt;
+                            &lt;CardContent className='bg-muted/50 p-6 rounded-b-lg flex justify-center items-start overflow-auto'&gt;
+                                &lt;div className="w-[595px] min-h-[842px] bg-white shadow-lg transform scale-[0.8] origin-top overflow-hidden flex flex-col"&gt;
+                                {activePdfTab === 'report' &amp;&amp; (
+                                    &lt;&gt;
+                                        &lt;ReportPdfHeader title="Example Report Title" subtitle="This is an example subtitle" logoSrc={currentPdfSettings.logo ?? null} themeColor={pdfSettings.report.reportColors?.general} headerText={currentPdfSettings.headerText} /&gt;
+                                        &lt;div className="p-6 flex-grow" style={{fontFamily: availableFonts.find(f => f.name === currentPdfSettings.font)?.family}}&gt;
+                                            &lt;h3 className="font-bold text-gray-800 mb-2"&gt;Sample Section&lt;/h3&gt;
+                                            &lt;p className="text-sm text-gray-600 mb-4"&gt;This is sample body text. The quick brown fox jumps over the lazy dog.&lt;/p&gt;
+                                             &lt;Table className={cn(currentPdfSettings.tableTheme === 'grid' &amp;&amp; 'border')}&gt;
+                                                &lt;TableHeader&gt;
+                                                    &lt;TableRow style={{backgroundColor: pdfSettings.report.reportColors?.general, color: 'white'}} className="hover:bg-primary/90"&gt;
+                                                        &lt;TableHead className="text-white"&gt;Column 1&lt;/TableHead&gt;
+                                                        &lt;TableHead className="text-white"&gt;Column 2&lt;/TableHead&gt;
+                                                    &lt;/TableRow&gt;
+                                                &lt;/TableHeader&gt;
+                                                &lt;TableBody&gt;
+                                                     &lt;TableRow className={cn(currentPdfSettings.tableTheme === 'striped' &amp;&amp; 'odd:bg-muted/50')}&gt;&lt;TableCell&gt;Data A1&lt;/TableCell&gt;&lt;TableCell&gt;Data A2&lt;/TableCell&gt;&lt;/TableRow&gt;
+                                                     &lt;TableRow className={cn(currentPdfSettings.tableTheme === 'striped' &amp;&amp; 'odd:bg-muted/50')}&gt;&lt;TableCell&gt;Data B1&lt;/TableCell&gt;&lt;TableCell&gt;Data B2&lt;/TableCell&gt;&lt;/TableRow&gt;
+                                                &lt;/TableBody&gt;
+                                            &lt;/Table&gt;
+                                        &lt;/div&gt;
+                                        {currentPdfSettings.footerText &amp;&amp; &lt;div className="mt-auto p-4 border-t text-center text-xs text-gray-500"&gt;{currentPdfSettings.footerText}&lt;/div&gt;}
+                                    &lt;/&gt;
                                 )}
-                                {activePdfTab === 'invoice' && (
-                                    <div className="flex flex-col h-full text-black">
-                                        <div className="p-1">
-                                            <TransferPdfCard
+                                {activePdfTab === 'invoice' &amp;&amp; (
+                                    &lt;div className="flex flex-col h-full text-black"&gt;
+                                        &lt;div className="p-1"&gt;
+                                            &lt;TransferPdfCard
                                                 transfer={mockTransfer}
                                                 logoSrc={currentPdfSettings.logo}
                                                 totalItems={mockTransfer.itemIds.length}
-                                            />
-                                        </div>
-                                        <div className='p-6 flex-grow' style={{fontFamily: availableFonts.find(f => f.name === currentPdfSettings.font)?.family}}>
-                                            <Table className={cn(currentPdfSettings.tableTheme === 'grid' && 'border')}>
-                                                <TableHeader>
-                                                    <TableRow style={{backgroundColor: currentPdfSettings.themeColor}} className="hover:bg-primary/90">
-                                                        <TableHead className="text-white">Model</TableHead>
-                                                        <TableHead className="text-white">Quantity</TableHead>
-                                                        <TableHead className="text-white">Notes</TableHead>
-                                                    </TableRow>
-                                                </TableHeader>
-                                                <TableBody>
+                                            /&gt;
+                                        &lt;/div&gt;
+                                        &lt;div className='p-6 flex-grow' style={{fontFamily: availableFonts.find(f => f.name === currentPdfSettings.font)?.family}}&gt;
+                                            &lt;Table className={cn(currentPdfSettings.tableTheme === 'grid' &amp;&amp; 'border')}&gt;
+                                                &lt;TableHeader&gt;
+                                                    &lt;TableRow style={{backgroundColor: currentPdfSettings.themeColor}} className="hover:bg-primary/90"&gt;
+                                                        &lt;TableHead className="text-white"&gt;Model&lt;/TableHead&gt;
+                                                        &lt;TableHead className="text-white"&gt;Quantity&lt;/TableHead&gt;
+                                                        &lt;TableHead className="text-white"&gt;Notes&lt;/TableHead&gt;
+                                                    &lt;/TableRow&gt;
+                                                &lt;/TableHeader&gt;
+                                                &lt;TableBody&gt;
                                                     {mockTransferItems.map((item, index) => (
-                                                        <TableRow key={index} className={cn(currentPdfSettings.tableTheme === 'striped' && 'odd:bg-muted/50')}>
-                                                            <TableCell>{item.model}</TableCell>
-                                                            <TableCell>{item.quantity}</TableCell>
-                                                            <TableCell>{item.notes}</TableCell>
-                                                        </TableRow>
+                                                        &lt;TableRow key={index} className={cn(currentPdfSettings.tableTheme === 'striped' &amp;&amp; 'odd:bg-muted/50')}&gt;
+                                                            &lt;TableCell&gt;{item.model}&lt;/TableCell&gt;
+                                                            &lt;TableCell&gt;{item.quantity}&lt;/TableCell&gt;
+                                                            &lt;TableCell&gt;{item.notes}&lt;/TableCell&gt;
+                                                        &lt;/TableRow&gt;
                                                     ))}
-                                                </TableBody>
-                                            </Table>
-                                        </div>
-                                    </div>
+                                                &lt;/TableBody&gt;
+                                            &lt;/Table&gt;
+                                        &lt;/div&gt;
+                                    &lt;/div&gt;
                                 )}
-                                {activePdfTab === 'card' && <div className='flex justify-center items-center h-full'><EmployeePdfCard employee={mockEmployee} settings={currentPdfSettings}/></div>}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-                </div>
-            </TabsContent>
+                                {activePdfTab === 'card' &amp;&amp; &lt;div className='flex justify-center items-center h-full'&gt;&lt;EmployeePdfCard employee={mockEmployee} settings={currentPdfSettings}/&gt;&lt;/div&gt;}
+                                &lt;/div&gt;
+                            &lt;/CardContent&gt;
+                        &lt;/Card&gt;
+                    &lt;/div&gt;
+                &lt;/div&gt;
+            &lt;/TabsContent&gt;
             
-            <TabsContent value="data" className="pt-6">
-                 <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-lg"><ShieldCheck /> Data Management</CardTitle>
-                        <CardDescription>Backup or restore all application data. Your data is stored in the browser, so be sure to make regular backups.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="p-4 border rounded-lg flex flex-col sm:flex-row items-center justify-between gap-4">
-                            <p className="font-medium">Export all application data</p>
-                            <Button onClick={handleExport} variant="outline"><Download className="mr-2 h-4 w-4" /> Export Data</Button>
-                        </div>
-                        <div className="p-4 border rounded-lg space-y-4">
-                            <p className="font-medium">Import data from a backup file</p>
-                            <p className="text-sm text-destructive">Warning: Importing data will overwrite all existing data in the application. This action cannot be undone.</p>
-                            <div className="flex flex-col sm:flex-row items-center gap-4">
-                                <Input type="file" ref={importInputRef} className="max-w-xs" accept=".json" onChange={handleImportFileSelect} />
-                                <Button onClick={handleRunImport} disabled={!importFile}><Play className="mr-2 h-4 w-4" /> Run Import</Button>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-            </TabsContent>
-        </Tabs>
-      </main>
-    </div>
+            &lt;TabsContent value="data" className="pt-6"&gt;
+                 &lt;Card&gt;
+                    &lt;CardHeader&gt;
+                        &lt;CardTitle className="flex items-center gap-2 text-lg"&gt;&lt;ShieldCheck /&gt; Data Management&lt;/CardTitle&gt;
+                        &lt;CardDescription&gt;Backup or restore all application data. Your data is stored in the browser, so be sure to make regular backups.&lt;/CardDescription&gt;
+                    &lt;/CardHeader&gt;
+                    &lt;CardContent className="space-y-4"&gt;
+                        &lt;div className="p-4 border rounded-lg flex flex-col sm:flex-row items-center justify-between gap-4"&gt;
+                            &lt;p className="font-medium"&gt;Export all application data&lt;/p&gt;
+                            &lt;Button onClick={handleExport} variant="outline"&gt;&lt;Download className="mr-2 h-4 w-4" /&gt; Export Data&lt;/Button&gt;
+                        &lt;/div&gt;
+                        &lt;div className="p-4 border rounded-lg space-y-4"&gt;
+                            &lt;p className="font-medium"&gt;Import data from a backup file&lt;/p&gt;
+                            &lt;p className="text-sm text-destructive"&gt;Warning: Importing data will overwrite all existing data in the application. This action cannot be undone.&lt;/p&gt;
+                            &lt;div className="flex flex-col sm:flex-row items-center gap-4"&gt;
+                                &lt;Input type="file" ref={importInputRef} className="max-w-xs" accept=".json" onChange={handleImportFileSelect} /&gt;
+                                &lt;Button onClick={handleRunImport} disabled={!importFile}&gt;&lt;Play className="mr-2 h-4 w-4" /&gt; Run Import&lt;/Button&gt;
+                            &lt;/div&gt;
+                        &lt;/div&gt;
+                    &lt;/CardContent&gt;
+                &lt;/Card&gt;
+            &lt;/TabsContent&gt;
+        &lt;/Tabs&gt;
+      &lt;/main&gt;
+    &lt;/div&gt;
   )
 }
