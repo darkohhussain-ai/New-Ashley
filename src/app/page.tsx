@@ -14,7 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 
 export default function Home() {
   const [date, setDate] = useState<Date | null>(null);
-  const { t, setLanguage, language } = useTranslation();
+  const { t, language } = useTranslation();
 
 
   // Load settings from localStorage
@@ -79,17 +79,6 @@ export default function Home() {
               )}
             </div>
             <div className="flex items-center justify-end gap-2 w-1/3">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <Languages className="h-5 w-5 text-muted-foreground hover:text-primary" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setLanguage('en')}>English</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setLanguage('ku')}>کوردی (Kurdish)</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
               <Button variant="ghost" size="icon" onClick={handleRefresh} aria-label="Refresh page">
                 <RefreshCcw className="w-5 h-5 text-muted-foreground hover:text-primary" />
               </Button>

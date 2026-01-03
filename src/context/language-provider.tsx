@@ -4,7 +4,6 @@
 import React, { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import useLocalStorage from '@/hooks/use-local-storage';
 import en from '@/locales/en.json';
-import ku from '@/locales/ku.json';
 
 type Language = 'en' | 'ku';
 
@@ -22,7 +21,7 @@ interface LanguageContextType {
 
 export const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-const defaultTranslations = { en, ku };
+const defaultTranslations = { en, ku: en }; // Default Kurdish to English
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Language>('en');
@@ -30,16 +29,9 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const [englishTranslations, setEnglishTranslations] = useLocalStorage('translations_en', defaultTranslations.en);
   const [kurdishTranslations, setKurdishTranslations] = useLocalStorage('translations_ku', defaultTranslations.ku);
 
-  useEffect(() => {
-    const storedLanguage = localStorage.getItem('ashley-hr-lang') as Language | null;
-    if (storedLanguage && (storedLanguage === 'en' || storedLanguage === 'ku')) {
-      setLanguageState(storedLanguage);
-    }
-  }, []);
-
   const setLanguage = (lang: Language) => {
-    setLanguageState(lang);
-    localStorage.setItem('ashley-hr-lang', lang);
+    // This function is now a no-op as we are removing the language switcher.
+    // We will keep it in the context to avoid breaking dependencies, but it won't do anything.
   };
 
   const setTranslations = useCallback((newTranslations: Record<string, string>, lang: Language) => {
@@ -56,9 +48,9 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   }, [setEnglishTranslations, setKurdishTranslations]);
 
   const t = useCallback((key: string): string => {
-    const translations = language === 'en' ? englishTranslations : kurdishTranslations;
-    return translations[key] || key;
-  }, [language, englishTranslations, kurdishTranslations]);
+    // Always return English for now
+    return englishTranslations[key] || key;
+  }, [englishTranslations]);
 
   const value = {
     language,

@@ -657,7 +657,7 @@ export default function SettingsPage() {
                         <Card>
                             <CardHeader><CardTitle>Live Preview</CardTitle><CardDescription>A preview of your {activePdfTab} design.</CardDescription></CardHeader>
                             <CardContent className='bg-muted/50 p-4 rounded-b-lg flex justify-center items-start overflow-auto'>
-                                <div className="w-[595px] h-[842px] bg-white shadow-lg transform scale-[0.6] -translate-y-[160px] origin-top overflow-hidden flex flex-col">
+                                <div className="w-[595px] h-[842px] bg-white shadow-lg transform scale-100 origin-top overflow-hidden flex flex-col">
                                 {activePdfTab === 'report' && (
                                     <>
                                         <ReportPdfHeader title="Example Report Title" subtitle="This is an example subtitle" logoSrc={currentPdfSettings.logo ?? null} themeColor={currentPdfSettings.themeColor} headerText={currentPdfSettings.headerText} />
