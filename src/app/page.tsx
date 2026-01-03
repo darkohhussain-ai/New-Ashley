@@ -43,7 +43,6 @@ export default function Home() {
     { title: t("transmit_cargo"), icon: PackagePlus, href: "/transmit", color: "bg-yellow-500" },
     { title: t("placement_storage"), icon: Box, href: "/items", color: "bg-green-500" },
     { title: t("marketing_feedback"), icon: Star, href: "/marketing-feedback", color: "bg-cyan-500" },
-    { title: t("report_designer"), icon: Newspaper, href: "/report-designer", color: "bg-indigo-500" },
     { title: t("settings"), icon: SettingsIcon, href: "/settings", color: "bg-purple-500" },
     { title: t("employees"), icon: Users, href: "/employees", color: "bg-pink-500" },
     { title: t("my_account"), icon: UserCircle, href: "/account", color: "bg-gray-500" },
