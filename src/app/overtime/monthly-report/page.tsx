@@ -79,12 +79,16 @@ export default function MonthlyOvertimeReportPage() {
     const settings = pdfSettings.report || {};
     
     if (settings.customFont) {
-        const fontName = "CustomFont";
-        const fontStyle = "normal";
-        const fontBase64 = settings.customFont.split(',')[1];
-        doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
-        doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
-        doc.setFont(fontName);
+        try {
+            const fontName = "CustomFont";
+            const fontStyle = "normal";
+            const fontBase64 = settings.customFont.split(',')[1];
+            doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
+            doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
+            doc.setFont(fontName);
+        } catch (e) {
+            console.error("Failed to load custom font:", e);
+        }
     }
     
     const headerCanvas = await html2canvas(pdfHeaderRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
