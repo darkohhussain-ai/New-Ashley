@@ -180,6 +180,7 @@ export default function AddBonusPage() {
             const fontBase64 = settings.customFont.split(',')[1];
             doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
             doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
+            doc.setFont(fontName);
         } catch(e) {
             console.error("Could not add custom font to PDF", e);
         }
@@ -417,5 +418,7 @@ export default function AddBonusPage() {
     </>
   );
 }
+
+    
 
     
