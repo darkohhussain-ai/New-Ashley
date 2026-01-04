@@ -113,11 +113,11 @@ export function DashboardClient() {
             <div className="hidden md:flex items-center gap-4 text-sm text-muted-foreground w-1/3">
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
-                <span>{time ? format(time, 'MMMM d, yyyy') : '...'}</span>
+                <span suppressHydrationWarning>{time ? format(time, 'MMMM d, yyyy') : '...'}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4" />
-                <span>{time ? format(time, 'h:mm:ss a') : '...'}</span>
+                <span suppressHydrationWarning>{time ? format(time, 'h:mm:ss a') : '...'}</span>
               </div>
             </div>
             <div className="flex items-center justify-center w-1/3">
