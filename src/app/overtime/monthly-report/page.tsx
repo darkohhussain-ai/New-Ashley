@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useRef } from 'react';
@@ -88,10 +89,6 @@ export default function MonthlyOvertimeReportPage() {
         } catch (e) {
             console.error("Failed to load custom font:", e);
         }
-    } else {
-        // Fallback font that supports Arabic script
-        doc.addFont('/fonts/Amiri-Regular.ttf', 'Amiri', 'normal');
-        doc.setFont('Amiri');
     }
     
     const headerCanvas = await html2canvas(pdfHeaderRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
@@ -136,9 +133,8 @@ export default function MonthlyOvertimeReportPage() {
           headStyles: { fillColor: settings.reportColors?.overtime || settings.themeColor || '#22c55e' },
           footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
           didParseCell: (data) => { 
-            const fontNameToUse = settings.customFont ? 'CustomFont' : 'Amiri';
-            if (data.cell.styles.font !== fontNameToUse) {
-                data.cell.styles.font = fontNameToUse;
+            if (settings.customFont) {
+                (data.cell.styles as any).font = "CustomFont";
             }
           }
         });
