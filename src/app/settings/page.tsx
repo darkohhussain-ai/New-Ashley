@@ -225,7 +225,7 @@ export default function SettingsPage() {
   const [dashboardBanner, setDashboardBanner] = useState(savedDashboardBanner);
   const [bannerHeight, setBannerHeight] = useState(savedBannerHeight);
   const [pdfSettings, setPdfSettings] = useState(savedPdfSettings);
-  const [customFontBase64, setCustomFontBase64] = useState(savedCustomFontBase64);
+  const [previewFontBase64, setPreviewFontBase64] = useState<string | null>(null);
   const [activePdfTab, setActivePdfTab] = useState<'report' | 'invoice' | 'card'>('report');
 
   const [translations, setTranslations] = useState<Record<string, string>>({});
@@ -257,7 +257,7 @@ export default function SettingsPage() {
       setDarkColors(savedDarkColors);
       setDashboardBanner(savedDashboardBanner);
       setBannerHeight(savedBannerHeight);
-      setCustomFontBase64(savedCustomFontBase64);
+      setPreviewFontBase64(savedCustomFontBase64);
       
       const mergedPdfSettings: AllPdfSettings = {
           report: { ...defaultReportSettings, ...(savedPdfSettings.report || {})},
@@ -327,20 +327,50 @@ export default function SettingsPage() {
       const reader = new FileReader();
       reader.onload = (event) => {
         const result = event.target?.result as string;
-        setCustomFontBase64(result);
-        
-        // This state update is temporary for the UI. The actual saving happens in handleSaveChanges.
-        setPdfSettings(prev => ({
-          report: { ...prev.report, customFont: result },
-          invoice: { ...prev.invoice, customFont: result },
-          card: { ...prev.card, customFont: result },
-        }));
-
-        toast({ title: 'Custom font selected!', description: 'Applied to previews. Click "Save All Changes" to persist.' });
+        setPreviewFontBase64(result);
+        toast({ title: 'Font selected!', description: 'Click "Apply Font" to preview it across the app.' });
       };
       reader.readAsDataURL(file);
     }
   };
+
+  const handleApplyFont = () => {
+    if (previewFontBase64) {
+      const styleId = 'custom-app-font-style';
+      let styleElement = document.getElementById(styleId) as HTMLStyleElement;
+      if (!styleElement) {
+        styleElement = document.createElement('style');
+        styleElement.id = styleId;
+        document.head.appendChild(styleElement);
+      }
+      styleElement.innerHTML = `
+        @font-face {
+            font-family: 'CustomAppFont';
+            src: url(${previewFontBase64});
+        }
+        body {
+            font-family: 'CustomAppFont', var(--font-body), sans-serif !important;
+        }
+      `;
+      // Update PDF settings in state for previews to use the font
+      setPdfSettings(prev => ({
+          report: { ...prev.report, customFont: previewFontBase64 },
+          invoice: { ...prev.invoice, customFont: previewFontBase64 },
+          card: { ...prev.card, customFont: previewFontBase64 },
+      }));
+      toast({ title: 'Font applied for preview.' });
+    }
+  };
+  
+  const handleSaveFolder = () => {
+      if (previewFontBase64) {
+          setSavedCustomFontBase64(previewFontBase64);
+          toast({ title: 'Font saved!', description: 'The new font will be used across the application.' });
+      } else {
+          toast({ variant: 'destructive', title: 'No font selected', description: 'Please upload a font before saving.' });
+      }
+  };
+
   
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, setter: (value: string | null) => void, toastTitle: string) => {
     const file = e.target.files?.[0]
@@ -362,8 +392,6 @@ export default function SettingsPage() {
     setSavedDarkColors(darkColors);
     setSavedDashboardBanner(dashboardBanner);
     setSavedBannerHeight(bannerHeight);
-    setSavedPdfSettings(pdfSettings);
-    setSavedCustomFontBase64(customFontBase64);
 
     if(langContext) {
       langContext.setTranslations(translations, 'en');
@@ -383,7 +411,7 @@ export default function SettingsPage() {
     setDashboardBanner(null);
     setBannerHeight(150);
     setPdfSettings(defaultPdfSettings);
-    setCustomFontBase64(null);
+    setPreviewFontBase64(null);
     
     setSavedLightColors(defaultLightColors);
     setSavedDarkColors(defaultDarkColors);
@@ -581,10 +609,25 @@ export default function SettingsPage() {
                     <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-8">
                        <div className="space-y-4">
                            <h3 className="font-semibold">Custom Application Font</h3>
-                            <div>
-                                <Label htmlFor="font-upload" className="text-sm font-medium">Upload Font File (.ttf, .woff)</Label>
-                                <Input id="font-upload" type="file" accept=".ttf,.otf,.woff,.woff2" className="mt-2" onChange={handleCustomFontUpload} />
-                            </div>
+                           <div className="p-4 border rounded-lg space-y-4">
+                                <div>
+                                    <Label htmlFor="font-upload" className="text-sm font-medium">Upload Font File (.ttf, .woff)</Label>
+                                    <Input id="font-upload" type="file" accept=".ttf,.otf,.woff,.woff2" className="mt-2" onChange={handleCustomFontUpload} />
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button onClick={handleApplyFont} variant="outline" className="w-full" disabled={!previewFontBase64}>Apply Font</Button>
+                                  <Button onClick={handleSaveFolder} className="w-full" disabled={!previewFontBase64}>Save Font</Button>
+                                </div>
+                           </div>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Font Preview</CardTitle>
+                                </CardHeader>
+                                <CardContent style={{ fontFamily: previewFontBase64 ? 'CustomAppFont' : 'inherit' }}>
+                                    <p className="text-lg">English: The quick brown fox jumps over the lazy dog.</p>
+                                    <p className="text-lg" dir="rtl">کوردی: ڕێوی ڕەساسی خێرا باز دەدات بەسەر سەگی تەمبەڵدا.</p>
+                                </CardContent>
+                            </Card>
                        </div>
                        <div className="space-y-4">
                            <h3 className="font-semibold">Application Text</h3>
