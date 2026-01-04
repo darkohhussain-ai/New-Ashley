@@ -6,6 +6,7 @@ import { format, parseISO } from 'date-fns';
 import { User, Mail, Phone, Calendar as CalendarIcon, ShieldCheck, Briefcase } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { Employee, PdfSettings } from "@/lib/types";
+import { useTranslation } from '@/hooks/use-translation';
 
 type EmployeeReportPdfHeaderProps = {
   employee: Employee;
@@ -13,6 +14,7 @@ type EmployeeReportPdfHeaderProps = {
 };
 
 export function EmployeeReportPdfHeader({ employee, settings }: EmployeeReportPdfHeaderProps) {
+  const { t } = useTranslation();
 
   const safeDate = (dateValue: string | undefined): Date | null => {
     if (!dateValue) return null;
@@ -21,7 +23,7 @@ export function EmployeeReportPdfHeader({ employee, settings }: EmployeeReportPd
   }
   
   const safeJoinedDate = safeDate(employee.employmentStartDate);
-  const formattedJoinedDate = safeJoinedDate ? format(safeJoinedDate, 'MMMM d, yyyy') : 'N/A';
+  const formattedJoinedDate = safeJoinedDate ? format(safeJoinedDate, 'MMMM d, yyyy') : t('na');
 
   return (
     <div className="bg-white text-black w-full p-6 font-sans border-b-2 border-gray-200" style={{ fontFamily: settings.font === 'CustomFont' ? 'CustomPdfFont' : (settings.font || 'sans-serif') }}>
@@ -33,8 +35,8 @@ export function EmployeeReportPdfHeader({ employee, settings }: EmployeeReportPd
       {/* Main Header */}
       <div className="flex justify-between items-center pb-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Employee Report</h1>
-          <p className="text-sm text-gray-500">As of {format(new Date(), 'MMMM d, yyyy')}</p>
+          <h1 className="text-2xl font-bold text-gray-800">{t('employee_report')}</h1>
+          <p className="text-sm text-gray-500">{t('as_of')} {format(new Date(), 'MMMM d, yyyy')}</p>
         </div>
         <div className="w-20 h-20 flex items-center justify-center">
           {settings.logo && <Image src={settings.logo} alt="Company Logo" width={80} height={80} className="object-contain" />}
@@ -51,10 +53,10 @@ export function EmployeeReportPdfHeader({ employee, settings }: EmployeeReportPd
           <h2 className="text-xl font-bold text-gray-900">{employee.name}</h2>
           <div className="mt-2 grid grid-cols-2 gap-x-6 gap-y-2 text-sm text-gray-700">
             {employee.role && (
-              <p className="flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-gray-500" /> <strong>Role:</strong> {employee.role}</p>
+              <p className="flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-gray-500" /> <strong>{t('role')}:</strong> {employee.role}</p>
             )}
             {employee.employeeId && (
-              <p className="flex items-center gap-2"><Briefcase className="w-4 h-4 text-gray-500" /> <strong>ID:</strong> {employee.employeeId}</p>
+              <p className="flex items-center gap-2"><Briefcase className="w-4 h-4 text-gray-500" /> <strong>{t('id_colon')}</strong> {employee.employeeId}</p>
             )}
             {employee.email && (
               <p className="flex items-center gap-2"><Mail className="w-4 h-4 text-gray-500" /> {employee.email}</p>
@@ -62,7 +64,7 @@ export function EmployeeReportPdfHeader({ employee, settings }: EmployeeReportPd
             {employee.phone && (
               <p className="flex items-center gap-2"><Phone className="w-4 h-4 text-gray-500" /> {employee.phone}</p>
             )}
-            <p className="flex items-center gap-2 col-span-2"><CalendarIcon className="w-4 h-4 text-gray-500" /> <strong>Joined on:</strong> {formattedJoinedDate}</p>
+            <p className="flex items-center gap-2 col-span-2"><CalendarIcon className="w-4 h-4 text-gray-500" /> <strong>{t('joined_on')}:</strong> {formattedJoinedDate}</p>
           </div>
         </div>
       </div>

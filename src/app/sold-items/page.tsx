@@ -16,10 +16,12 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { useAppContext } from '@/context/app-provider';
 import type { SoldItemReceipt } from '@/lib/types';
+import { useTranslation } from '@/hooks/use-translation';
 
 
 export default function SoldItemsCheckPage() {
     const { toast } = useToast();
+    const { t } = useTranslation();
     const { receipts: savedReceipts, setReceipts } = useAppContext();
 
     const [receiptNumberDigits, setReceiptNumberDigits] = useState('');
@@ -54,11 +56,11 @@ export default function SoldItemsCheckPage() {
 
     const handleSaveReceipt = async () => {
         if (receiptNumberDigits.length !== 4) {
-            toast({ variant: 'destructive', title: 'Invalid Receipt Number', description: 'Please enter exactly 4 digits for the receipt number.' });
+            toast({ variant: 'destructive', title: t('invalid_receipt_number'), description: t('invalid_receipt_number_desc') });
             return;
         }
         if (itemCategories.length === 0) {
-            toast({ variant: 'destructive', title: 'No Categories', description: 'Please add at least one item category.' });
+            toast({ variant: 'destructive', title: t('no_categories'), description: t('no_categories_desc') });
             return;
         }
 
@@ -72,7 +74,7 @@ export default function SoldItemsCheckPage() {
         };
 
         setReceipts([...savedReceipts, receiptData]);
-        toast({ title: 'Receipt Saved!', description: `Receipt ${fullReceiptNumber} has been recorded.` });
+        toast({ title: t('receipt_saved'), description: t('receipt_saved_desc', {receiptNumber: fullReceiptNumber}) });
         resetForm();
         setIsSaving(false);
     };
@@ -93,19 +95,19 @@ export default function SoldItemsCheckPage() {
                 <Button variant="outline" size="icon" asChild>
                     <Link href="/items"><ArrowLeft /></Link>
                 </Button>
-                <h1 className="text-2xl md:text-3xl font-bold">Sold Items Check</h1>
+                <h1 className="text-2xl md:text-3xl font-bold">{t('sold_items_check')}</h1>
             </header>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-1">
                     <Card>
                         <CardHeader>
-                            <CardTitle>New Receipt</CardTitle>
-                            <CardDescription>Enter the details for a new sold item receipt.</CardDescription>
+                            <CardTitle>{t('new_receipt')}</CardTitle>
+                            <CardDescription>{t('new_receipt_desc')}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
                             <div className="space-y-2">
-                                <Label htmlFor="receipt-number">Receipt Number</Label>
+                                <Label htmlFor="receipt-number">{t('receipt_number')}</Label>
                                 <div className="flex items-center gap-2">
                                     <span className="text-muted-foreground font-mono">115-0</span>
                                     <Input
@@ -122,30 +124,30 @@ export default function SoldItemsCheckPage() {
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <Label>Receipt Date (Optional)</Label>
+                                <Label>{t('receipt_date_optional')}</Label>
                                 <Popover>
                                     <PopoverTrigger asChild>
                                         <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !receiptDate && "text-muted-foreground")}>
                                             <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {receiptDate ? format(receiptDate, 'PPP') : <span>Pick a date</span>}
+                                            {receiptDate ? format(receiptDate, 'PPP') : <span>{t('pick_a_date')}</span>}
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={receiptDate} onSelect={setReceiptDate} /></PopoverContent>
                                 </Popover>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="customer-name">Customer Name (Optional)</Label>
-                                <Input id="customer-name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Enter customer's name" />
+                                <Label htmlFor="customer-name">{t('customer_name_optional')}</Label>
+                                <Input id="customer-name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder={t('enter_customer_name')} />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="item-category">Item Categories</Label>
+                                <Label htmlFor="item-category">{t('item_categories')}</Label>
                                 <div className="flex items-center gap-2">
                                     <Input
                                         id="item-category"
                                         value={currentCategory}
                                         onChange={(e) => setCurrentCategory(e.target.value)}
                                         onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddCategory())}
-                                        placeholder="e.g., Dining Set"
+                                        placeholder={t('item_categories_placeholder')}
                                     />
                                     <Button type="button" onClick={handleAddCategory}><Plus /></Button>
                                 </div>
@@ -162,7 +164,7 @@ export default function SoldItemsCheckPage() {
                             </div>
                             <Button onClick={handleSaveReceipt} disabled={isSaving || isLoading} className="w-full">
                                 {isSaving ? <Loader2 className="animate-spin mr-2" /> : <Save className="mr-2" />}
-                                Save Receipt
+                                {t('save_receipt')}
                             </Button>
                         </CardContent>
                     </Card>
@@ -171,7 +173,7 @@ export default function SoldItemsCheckPage() {
                 <div className="lg:col-span-2">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Recently Saved Receipts</CardTitle>
+                            <CardTitle>{t('recently_saved_receipts')}</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="max-h-[600px] overflow-y-auto">
@@ -197,8 +199,8 @@ export default function SoldItemsCheckPage() {
                                 ) : (
                                     <div className="text-center py-16 border-2 border-dashed rounded-lg">
                                         <List className="mx-auto h-12 w-12 text-muted-foreground" />
-                                        <h3 className="mt-4 text-lg font-medium">No Receipts Found</h3>
-                                        <p className="mt-2 text-sm text-muted-foreground">Saved receipts will appear here.</p>
+                                        <h3 className="mt-4 text-lg font-medium">{t('no_receipts_found')}</h3>
+                                        <p className="mt-2 text-sm text-muted-foreground">{t('no_receipts_found_desc')}</p>
                                     </div>
                                 )}
                             </div>

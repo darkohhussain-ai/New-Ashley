@@ -17,7 +17,7 @@ export default function PdfArchivePage() {
   const isLoading = !files || !employees;
 
   const getEmployeeName = (id: string) => {
-    return employees?.find(e => e.id === id)?.name || 'Unknown';
+    return employees?.find(e => e.id === id)?.name || t('unknown');
   };
 
   const sortedFiles = useMemo(() => {

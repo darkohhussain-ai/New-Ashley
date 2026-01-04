@@ -5,6 +5,7 @@ import { Calendar, Truck, Package } from "lucide-react";
 import { format, parseISO } from 'date-fns';
 import Image from 'next/image';
 import type { Transfer } from "@/lib/types";
+import { useTranslation } from "@/hooks/use-translation";
 
 
 type TransferPdfCardProps = {
@@ -14,6 +15,7 @@ type TransferPdfCardProps = {
 };
 
 export function TransferPdfCard({ transfer, logoSrc, totalItems }: TransferPdfCardProps) {
+  const { t } = useTranslation();
   
   const formattedDate = transfer.transferDate ? format(parseISO(transfer.transferDate), 'MMMM d, yyyy') : 'N/A';
 
@@ -22,11 +24,11 @@ export function TransferPdfCard({ transfer, logoSrc, totalItems }: TransferPdfCa
       {/* Header */}
       <div className="flex justify-between items-start pb-4 border-b-2 border-gray-200">
         <div className="flex-1">
-          <h1 className="text-2xl font-bold text-gray-800">Cargo Transfer Slip</h1>
+          <h1 className="text-2xl font-bold text-gray-800">{t('cargo_transfer_slip')}</h1>
           <p className="text-lg font-semibold text-blue-600">{transfer.cargoName}</p>
         </div>
         <div className="w-[80px] h-[80px] flex items-center justify-center">
-            {logoSrc && <Image src={logoSrc} alt="Company Logo" width={60} height={60} className="object-contain" />}
+            {logoSrc && <Image src={logoSrc} alt={t('company_logo')} width={60} height={60} className="object-contain" />}
         </div>
       </div>
       
@@ -35,21 +37,21 @@ export function TransferPdfCard({ transfer, logoSrc, totalItems }: TransferPdfCa
         <div className="flex items-center gap-2 text-gray-700">
           <Truck className="w-4 h-4 text-gray-500" />
           <div>
-            <p className="text-xs text-gray-500">Destination</p>
+            <p className="text-xs text-gray-500">{t('destination')}</p>
             <p className="font-semibold">{transfer.destinationCity}</p>
           </div>
         </div>
         <div className="flex items-center gap-2 text-gray-700">
           <Calendar className="w-4 h-4 text-gray-500" />
           <div>
-            <p className="text-xs text-gray-500">Transfer Date</p>
+            <p className="text-xs text-gray-500">{t('transfer_date')}</p>
             <p className="font-semibold">{formattedDate}</p>
           </div>
         </div>
         <div className="flex items-center gap-2 text-gray-700">
             <Package className="w-4 h-4 text-gray-500" />
             <div>
-                <p className="text-xs text-gray-500">Total Items</p>
+                <p className="text-xs text-gray-500">{t('total_items')}</p>
                 <p className="font-semibold">{totalItems}</p>
             </div>
         </div>

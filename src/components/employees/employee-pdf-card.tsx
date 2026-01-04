@@ -7,6 +7,7 @@ import { format, parseISO } from 'date-fns';
 import Image from 'next/image';
 import type { Employee, PdfSettings } from "@/lib/types";
 import { useEffect, useState } from "react";
+import { useTranslation } from "@/hooks/use-translation";
 
 type EmployeePdfCardProps = {
   employee: Employee;
@@ -14,6 +15,7 @@ type EmployeePdfCardProps = {
 };
 
 export function EmployeePdfCard({ employee, settings }: EmployeePdfCardProps) {
+  const { t } = useTranslation();
   const [formattedDob, setFormattedDob] = useState('N/A');
   const [formattedJoinedDate, setFormattedJoinedDate] = useState('N/A');
   const [isMounted, setIsMounted] = useState(false);
@@ -51,7 +53,7 @@ export function EmployeePdfCard({ employee, settings }: EmployeePdfCardProps) {
           </Avatar>
           <div className="text-center">
             <h2 className="text-lg font-bold text-gray-900">{employee.name}</h2>
-            <p className="text-sm text-gray-500">{employee.role || 'Employee'}</p>
+            <p className="text-sm text-gray-500">{employee.role || t('employee')}</p>
           </div>
            <div className="mt-4 text-xs text-left w-full space-y-2">
                 <p className="flex items-center gap-2 truncate"><Mail className="w-3 h-3 shrink-0"/>{employee.email || 'N/A'}</p>
@@ -73,7 +75,7 @@ export function EmployeePdfCard({ employee, settings }: EmployeePdfCardProps) {
                 }}
              ></div>
             <div className="z-10">
-                <h1 className="font-bold text-xl uppercase">{employee.role || 'EMPLOYEE'}</h1>
+                <h1 className="font-bold text-xl uppercase">{employee.role || t('employee').toLocaleUpperCase()}</h1>
                 {settings.headerText && <p className="text-xs opacity-90">{settings.headerText}</p>}
             </div>
             <div className="relative w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-md z-10">
@@ -81,7 +83,7 @@ export function EmployeePdfCard({ employee, settings }: EmployeePdfCardProps) {
                     {settings.logo ? (
                         <Image src={settings.logo} alt="Company Logo" fill className="object-contain" />
                     ) : (
-                        <span className='text-xs text-center text-gray-500'>Logo</span>
+                        <span className='text-xs text-center text-gray-500'>{t('logo')}</span>
                     )}
                 </div>
             </div>
@@ -91,16 +93,16 @@ export function EmployeePdfCard({ employee, settings }: EmployeePdfCardProps) {
           <div className="relative bg-white p-4 flex-grow flex flex-col">
               {/* Details Grid */}
               <div className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm mt-4">
-                  <div><p className="text-gray-500 text-xs">ID No</p><p className="font-semibold">{employee.employeeId || 'N/A'}</p></div>
-                  <div><p className="text-gray-500 text-xs">Joined Date</p><p className="font-semibold">{isMounted ? formattedJoinedDate : '...'}</p></div>
-                  <div><p className="text-gray-500 text-xs">D.O.B</p><p className="font-semibold">{isMounted ? formattedDob : '...'}</p></div>
-                  <div><p className="text-gray-500 text-xs">Expire Date</p><p className="font-semibold">N/A</p></div>
+                  <div><p className="text-gray-500 text-xs">{t('id_no')}</p><p className="font-semibold">{employee.employeeId || 'N/A'}</p></div>
+                  <div><p className="text-gray-500 text-xs">{t('joined_date')}</p><p className="font-semibold">{isMounted ? formattedJoinedDate : '...'}</p></div>
+                  <div><p className="text-gray-500 text-xs">{t('dob')}</p><p className="font-semibold">{isMounted ? formattedDob : '...'}</p></div>
+                  <div><p className="text-gray-500 text-xs">{t('expire_date')}</p><p className="font-semibold">N/A</p></div>
               </div>
               
               {/* Signature & QR Area */}
               <div className="mt-auto pt-4 flex justify-between items-end">
                   <div className="text-left">
-                      <p className="text-xs text-gray-500">Employee Signature</p>
+                      <p className="text-xs text-gray-500">{t('employee_signature')}</p>
                       <div className="w-32 h-8 border-b border-gray-400"></div>
                   </div>
                   <div className="flex flex-col items-center">

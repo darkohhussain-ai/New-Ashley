@@ -4,6 +4,7 @@
 import { format } from 'date-fns';
 import Image from 'next/image';
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { useTranslation } from '@/hooks/use-translation';
 
 type EvaluationSummary = {
   employeeId: string;
@@ -19,13 +20,14 @@ type MarketingFeedbackPdfCardProps = {
 
 
 export function MarketingFeedbackPdfCard({ logoSrc, totalEvaluations, evaluationSummary }: MarketingFeedbackPdfCardProps) {
+  const { t } = useTranslation();
   const formattedDate = format(new Date(), 'MMMM d, yyyy');
 
   return (
     <div className="bg-white text-black w-full p-4 font-sans border-2 border-gray-200 rounded-xl" style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" }}>
       <div className="flex justify-between items-start pb-4 border-b-2 border-gray-200">
         <div className="flex-1">
-          <h1 className="text-2xl font-bold text-gray-800">Marketing Feedback Report</h1>
+          <h1 className="text-2xl font-bold text-gray-800">{t('marketing_feedback_report')}</h1>
           <p className="text-lg font-semibold text-gray-600">{formattedDate}</p>
         </div>
         <div className="w-[80px] h-[80px] flex items-center justify-center">
@@ -35,14 +37,14 @@ export function MarketingFeedbackPdfCard({ logoSrc, totalEvaluations, evaluation
       
       <div className="grid grid-cols-2 gap-4 py-4">
          <div className="flex flex-col items-center justify-center">
-            <p className="text-sm text-gray-500">Total Evaluations Submitted</p>
+            <p className="text-sm text-gray-500">{t('total_evaluations_submitted')}</p>
             <p className="text-4xl font-bold text-gray-800">{totalEvaluations}</p>
          </div>
       </div>
       
       {evaluationSummary.length > 0 && (
         <div className="pt-4 border-t-2 border-gray-100">
-            <h2 className="text-center font-bold text-gray-700 mb-2">Employee Performance</h2>
+            <h2 className="text-center font-bold text-gray-700 mb-2">{t('employee_performance')}</h2>
             <div style={{width: '100%', height: '300px'}}>
               <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={evaluationSummary} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
@@ -54,7 +56,7 @@ export function MarketingFeedbackPdfCard({ logoSrc, totalEvaluations, evaluation
                           labelStyle={{ fontWeight: 'bold' }}
                       />
                       <Legend wrapperStyle={{fontSize: '12px'}} />
-                      <Bar dataKey="score" name="Total Score" fill="#8884d8" />
+                      <Bar dataKey="score" name={t('total_score')} fill="#8884d8" />
                   </BarChart>
               </ResponsiveContainer>
             </div>

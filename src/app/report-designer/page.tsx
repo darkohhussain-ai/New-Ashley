@@ -1,10 +1,13 @@
+
 "use client"
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from '@/hooks/use-translation';
 
 export default function ReportDesignerRedirect() {
   const router = useRouter();
+  const { t } = useTranslation();
 
   useEffect(() => {
     // This page is no longer used. The functionality has been merged into /settings under the "PDF & Reports" tab.
@@ -14,7 +17,7 @@ export default function ReportDesignerRedirect() {
 
   return (
     <div className="flex h-screen w-screen items-center justify-center">
-      <p>Redirecting to settings...</p>
+      <p>{t('redirecting')}...</p>
     </div>
   );
 }
