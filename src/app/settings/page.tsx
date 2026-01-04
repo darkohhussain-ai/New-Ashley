@@ -218,7 +218,7 @@ function ReportColorPicker({ label, value, onChange }: { label: string, value: s
 
 export default function SettingsPage() {
   const { toast } = useToast()
-  const { theme, setTheme } = useTheme()
+  const { theme, setTheme, applyCustomAppFont } = useTheme()
   const [mounted, setMounted] = useState(false)
   const langContext = React.useContext(LanguageContext)
 
@@ -252,34 +252,6 @@ export default function SettingsPage() {
       }
     });
   };
-  
-  const applyCustomAppFont = (fontDataUrl: string | null) => {
-    const styleId = 'custom-app-font-style';
-    let styleElement = document.getElementById(styleId) as HTMLStyleElement;
-
-    if (!styleElement) {
-        styleElement = document.createElement('style');
-        styleElement.id = styleId;
-        document.head.appendChild(styleElement);
-    }
-
-    if (fontDataUrl) {
-        styleElement.innerHTML = `
-            @font-face {
-                font-family: 'CustomAppFont';
-                src: url(${fontDataUrl});
-            }
-            body {
-                font-family: 'CustomAppFont', var(--font-body), sans-serif;
-            }
-        `;
-    } else {
-        styleElement.innerHTML = '';
-        // Reset to default
-        document.body.style.fontFamily = 'var(--font-body), sans-serif';
-    }
-  };
-
 
   useEffect(() => {
     setMounted(true)
@@ -301,7 +273,6 @@ export default function SettingsPage() {
           card: { ...defaultCardSettings, ...(savedPdfSettings.card || {})},
       };
       
-      // Ensure customFont from root is applied to all
       if (customFontBase64) {
           mergedPdfSettings.report.customFont = customFontBase64;
           mergedPdfSettings.invoice.customFont = customFontBase64;
@@ -309,7 +280,6 @@ export default function SettingsPage() {
       }
 
       setPdfSettings(mergedPdfSettings);
-      applyCustomAppFont(customFontBase64);
     
       if (document.documentElement.classList.contains('dark')) {
         applyColors(savedDarkColors);
@@ -372,9 +342,7 @@ export default function SettingsPage() {
       reader.onload = (event) => {
         const result = event.target?.result as string;
         setCustomFontBase64(result);
-        applyCustomAppFont(result);
         
-        // Also update PDF settings
         setPdfSettings(prev => ({
           report: { ...prev.report, customFont: result, font: 'CustomAppFont' },
           invoice: { ...prev.invoice, customFont: result, font: 'CustomAppFont' },
@@ -428,7 +396,6 @@ export default function SettingsPage() {
     setBannerHeight(150);
     setPdfSettings(defaultPdfSettings);
     setCustomFontBase64(null);
-    applyCustomAppFont(null);
     
     setSavedLightColors(defaultLightColors);
     setSavedDarkColors(defaultDarkColors);
@@ -728,7 +695,7 @@ export default function SettingsPage() {
                         <Card>
                             <CardHeader><CardTitle>Live Preview</CardTitle><CardDescription>A preview of your {activePdfTab} design.</CardDescription></CardHeader>
                             <CardContent className='bg-muted/50 p-6 rounded-b-lg flex justify-center items-start overflow-auto'>
-                                <div className="w-full max-w-xl bg-white shadow-lg transform origin-top overflow-hidden flex flex-col scale-[0.8]" style={{ aspectRatio: '1 / 1.4142' }}>
+                                <div className="w-full max-w-2xl bg-white shadow-lg transform origin-top overflow-hidden flex flex-col scale-[0.8]" style={{ aspectRatio: '1 / 1.4142' }}>
                                 {activePdfTab === 'report' && (
                                     <>
                                         <ReportPdfHeader title="Example Report Title" subtitle="This is an example subtitle" logoSrc={currentPdfSettings.logo ?? null} themeColor={pdfSettings.report.reportColors?.general} headerText={currentPdfSettings.headerText} />
