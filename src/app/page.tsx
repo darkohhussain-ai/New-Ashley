@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
+import Link from "next/link"
 import { Users, Box, Settings as SettingsIcon, CreditCard, Bell, ChevronDown, Calendar, Clock, PackagePlus, Star, CheckSquare, RefreshCcw, UserCircle, Languages } from "lucide-react"
 import useLocalStorage from "@/hooks/use-local-storage"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -11,6 +12,8 @@ import { Button } from "@/components/ui/button"
 import { useTranslation } from "@/hooks/use-translation"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import type { Language } from "@/context/language-provider"
+import { cn } from "@/lib/utils"
+import { Card, CardContent } from "@/components/ui/card"
 
 
 export default function Home() {
