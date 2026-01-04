@@ -26,12 +26,12 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [isLoading, setIsLoading] = useState(true);
+  const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
     // This timer ensures the splash screen is shown for at least 3 seconds.
     const timer = setTimeout(() => {
-      setIsLoading(false);
+      setShowSplash(false);
     }, 3000);
 
     return () => clearTimeout(timer);
@@ -40,7 +40,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-body antialiased`}>
-        {isLoading ? (
+        {showSplash ? (
           <SplashScreen />
         ) : (
           <FirebaseProvider>
