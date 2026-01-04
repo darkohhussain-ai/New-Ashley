@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -133,7 +134,6 @@ export default function CreateTransferPage() {
         const fontBase64 = settings.customFont.split(',')[1];
         pdf.addFileToVFS(`${fontName}.ttf`, fontBase64);
         pdf.addFont(`${fontName}.ttf`, fontName, fontStyle);
-        pdf.setFont(fontName);
     }
     
     const canvas = await html2canvas(pdfCardRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
@@ -156,7 +156,9 @@ export default function CreateTransferPage() {
       headStyles: { fillColor: settings.themeColor || '#3b82f6', textColor: 255, fontStyle: 'bold' },
       didParseCell: function (data) {
         if (settings.customFont) {
+          try {
             data.cell.styles.font = "CustomFont";
+          } catch(e) { console.error(e) }
         }
       }
     });
@@ -354,3 +356,5 @@ export default function CreateTransferPage() {
     </>
   );
 }
+
+    
