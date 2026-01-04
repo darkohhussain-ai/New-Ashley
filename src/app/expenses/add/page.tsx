@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -36,6 +37,7 @@ export default function AddExpenseReportPage() {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
+    // Only set the date on the client-side
     setReportDate(new Date());
   }, []);
 

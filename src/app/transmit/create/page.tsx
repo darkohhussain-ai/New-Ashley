@@ -44,6 +44,7 @@ export default function CreateTransferPage() {
   const [selectedItems, setSelectedItems] = useState<Record<string, boolean>>({});
   
   useEffect(() => {
+    // Only set the date on the client-side
     setTransferDate(new Date());
   }, []);
 
@@ -356,5 +357,4 @@ export default function CreateTransferPage() {
     </>
   );
 }
-
     

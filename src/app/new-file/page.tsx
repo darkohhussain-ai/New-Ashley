@@ -39,11 +39,12 @@ export default function NewFilePage() {
   const [source, setSource] = useState('');
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [items, setItems] = useState<NewItem[]>([]);
-  
+
   useEffect(() => {
+    // Only set the date on the client-side
     setDate(new Date());
   }, []);
-
+  
   // Filter states
   const [filterHuanaWarehouse, setFilterHuanaWarehouse] = useState('All');
   const [filterHuanaFloor, setFilterHuanaFloor] = useState('All');
@@ -324,5 +325,4 @@ export default function NewFilePage() {
     </div>
   );
 }
-
     

@@ -43,6 +43,7 @@ export default function ImportPage() {
   const [date, setDate] = useState<Date | undefined>(undefined);
 
   useEffect(() => {
+    // Only set the date on the client-side
     setDate(new Date());
   }, []);
   
@@ -209,5 +210,3 @@ export default function ImportPage() {
     </div>
   );
 }
-
-    

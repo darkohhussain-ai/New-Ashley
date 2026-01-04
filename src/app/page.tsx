@@ -20,12 +20,12 @@ export default function Home() {
 
 
   // Load settings from localStorage
-  const [savedBannerHeight] = useLocalStorage('dashboard-banner-height', 150);
-  const [savedDashboardBanner] = useLocalStorage('dashboard-banner', 'https://i.ibb.co/6Wp2t1Y/image.png');
-  const [savedLogo] = useLocalStorage('app-logo', "https://picsum.photos/seed/ashley-logo/300/100");
+  const [savedBannerHeight, setSavedBannerHeight] = useLocalStorage('dashboard-banner-height', 150);
+  const [savedDashboardBanner, setSavedDashboardBanner] = useLocalStorage('dashboard-banner', 'https://i.ibb.co/6Wp2t1Y/image.png');
+  const [savedLogo, setSavedLogo] = useLocalStorage('app-logo', "https://picsum.photos/seed/ashley-logo/300/100");
   
   const [isMounted, setIsMounted] = useState(false);
-
+  
   useEffect(() => {
     // This effect runs only on the client, after the component has mounted.
     setIsMounted(true);
@@ -35,6 +35,7 @@ export default function Home() {
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+  
 
   const handleRefresh = () => {
     window.location.reload();
@@ -58,11 +59,11 @@ export default function Home() {
             <div className="hidden md:flex items-center gap-4 text-sm text-muted-foreground w-1/3">
                 <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4"/>
-                    <span>{time ? format(time, 'MMMM d, yyyy') : '...'}</span>
+                    <span suppressHydrationWarning>{time ? format(time, 'MMMM d, yyyy') : '...'}</span>
                 </div>
                 <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4"/>
-                    <span>{time ? format(time, 'h:mm:ss a') : '...'}</span>
+                    <span suppressHydrationWarning>{time ? format(time, 'h:mm:ss a') : '...'}</span>
                 </div>
             </div>
             <div className="flex items-center justify-center w-1/3">

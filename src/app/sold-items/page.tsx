@@ -32,6 +32,7 @@ export default function SoldItemsCheckPage() {
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
+      // Only set the date on the client-side
       setReceiptDate(new Date());
     }, []);
 

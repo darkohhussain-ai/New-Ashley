@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, FileText, Calendar as CalendarIcon, User, Building, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,13 @@ export default function ArchivePage() {
   const [isLoading, setIsLoading] = useState(true);
   const { t } = useTranslation();
 
+  useEffect(() => {
+    // Only set loading to false on the client side after data is available
+    if (excelFiles && employees) {
+      setIsLoading(false);
+    }
+  }, [excelFiles, employees]);
+
   const getEmployeeName = (id: string) => {
     return employees?.find(e => e.id === id)?.name || 'Unknown';
   };
@@ -31,9 +38,40 @@ export default function ArchivePage() {
       return dateB - dateA;
     });
   }, [excelFiles]);
-  
-  if (excelFiles && employees && isLoading) {
-    setIsLoading(false);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        <header className="bg-card border-b p-4">
+          <div className="container mx-auto flex items-center gap-4">
+            <Button variant="outline" size="icon" asChild>
+              <Link href="/items">
+                <ArrowLeft />
+                <span className="sr-only">{t('back_to_placement_storage')}</span>
+              </Link>
+            </Button>
+            <h1 className="text-xl font-bold">{t('excel_archive')}</h1>
+          </div>
+        </header>
+        <main className="container mx-auto p-4 md:p-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <Card key={i} className="animate-pulse">
+                <CardHeader>
+                  <Skeleton className="h-6 w-3/4" />
+                  <Skeleton className="h-4 w-1/2 mt-2" />
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-2/3" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </main>
+      </div>
+    );
   }
 
   return (
@@ -50,23 +88,7 @@ export default function ArchivePage() {
         </div>
       </header>
       <main className="container mx-auto p-4 md:p-8">
-        {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[...Array(6)].map((_, i) => (
-                    <Card key={i} className="animate-pulse">
-                        <CardHeader>
-                            <Skeleton className="h-6 w-3/4" />
-                            <Skeleton className="h-4 w-1/2 mt-2" />
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                            <Skeleton className="h-4 w-full" />
-                            <Skeleton className="h-4 w-full" />
-                            <Skeleton className="h-4 w-2/3" />
-                        </CardContent>
-                    </Card>
-                ))}
-            </div>
-        ) : sortedFiles.length > 0 ? (
+        {sortedFiles.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {sortedFiles.map(file => (
               <Card key={file.id} className="hover:border-primary hover:shadow-xl transition-all h-full flex flex-col">
