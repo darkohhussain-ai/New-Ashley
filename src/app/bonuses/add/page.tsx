@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useRef } from 'react';
@@ -196,7 +195,7 @@ export default function AddBonusPage() {
         theme: 'striped',
         headStyles: { fillColor: settings.reportColors?.bonus || settings.themeColor || '#22c55e' },
         footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' },
-        didParseCell: (data) => { if (settings.customFont) { (data.cell.styles as any).font = "CustomFont"; } }
+        didParseCell: (data) => { if (settings.customFont) { data.cell.styles.font = "CustomFont"; } }
     });
     
     const finalY = (doc as any).lastAutoTable.finalY + 40;

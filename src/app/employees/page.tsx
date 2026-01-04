@@ -246,17 +246,13 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                 theme: 'striped',
                 headStyles: { fillColor: settings.themeColor || '#22c55e' },
                 footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' },
-                didParseCell: function (data) {
-                    if (settings.customFont) {
-                        (data.cell.styles as any).font = "CustomFont";
-                    }
-                }
+                didParseCell: (data) => { if (settings.customFont) { data.cell.styles.font = "CustomFont"; } }
             });
             startY = (pdf as any).lastAutoTable.finalY + 20;
         }
 
         addSection(t('expenses'), sortedExpenses, [t('date'), t('notes'), t('amount')], (e) => [format(parseISO(e.date), 'PP'), e.notes || '', formatCurrency(e.amount)], totalExpenses);
-        addSection(t('overtime'), sortedOvertime, [t('date'), t('hours_short'), t('amount')], (o) => [format(parseISO(o.date), 'PP'), o.hours.toFixed(2), formatCurrency(o.totalAmount)], totalOvertimeAmount);
+        addSection(t('overtime'), sortedOvertime, [t('date'), 'Hours', t('amount')], (o) => [format(parseISO(o.date), 'PP'), o.hours.toFixed(2), formatCurrency(o.totalAmount)], totalOvertimeAmount);
         addSection(t('bonuses'), sortedBonuses, [t('date'), 'Reason', t('amount')], (b) => [format(parseISO(b.date), 'PP'), b.notes || '', formatCurrency(b.totalAmount)], totalBonuses);
         addSection(t('cash_withdrawals'), sortedWithdrawals, [t('date'), t('notes'), t('amount')], (w) => [format(parseISO(w.date), 'PP'), w.notes || '', formatCurrency(w.amount)], totalWithdrawals);
         

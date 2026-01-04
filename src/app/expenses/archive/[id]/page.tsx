@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo, useRef } from 'react';
@@ -85,7 +84,7 @@ export default function ViewExpenseReportPage() {
       headStyles: { fillColor: settings.reportColors?.expense || settings.themeColor || '#22c55e' },
       footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
       didParseCell: (data) => {
-        if (settings.customFont) { (data.cell.styles as any).font = "CustomFont"; }
+        if (settings.customFont) { data.cell.styles.font = "CustomFont"; }
       }
     });
 
@@ -229,5 +228,4 @@ export default function ViewExpenseReportPage() {
     </>
   );
 }
-
     

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useRef } from 'react';
@@ -146,7 +145,7 @@ export default function MonthlyExpenseReportPage() {
           theme: 'grid',
           headStyles: { fillColor: settings.reportColors?.expense || settings.themeColor || '#22c55e' },
           footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
-          didParseCell: (data) => { if (settings.customFont) { (data.cell.styles as any).font = "CustomFont"; } }
+          didParseCell: (data) => { if (settings.customFont) { data.cell.styles.font = "CustomFont"; } }
         });
         startY = (doc as any).lastAutoTable.finalY + 20;
     }
@@ -172,7 +171,7 @@ export default function MonthlyExpenseReportPage() {
           ]),
           theme: 'striped',
           headStyles: { fillColor: [40, 40, 40] },
-          didParseCell: (data) => { if (settings.customFont) { (data.cell.styles as any).font = "CustomFont"; } }
+          didParseCell: (data) => { if (settings.customFont) { data.cell.styles.font = "CustomFont"; } }
         });
     }
 
@@ -183,8 +182,8 @@ export default function MonthlyExpenseReportPage() {
     }
     const signatureYWithSignature = finalYWithSignature > pageHeightWithSignature - 50 ? 40 : finalYWithSignature;
     doc.setFontSize(10);
-    doc.text("...................................", doc.internal.pageSize.width - 120, signatureYWithSignature, { align: 'center' });
-    doc.text("Warehouse Manager Signature", doc.internal.pageSize.width - 120, signatureYWithSignature + 10, { align: 'center' });
+    doc.text("...................................", doc.internal.pageSize.getWidth() - 120, signatureYWithSignature, { align: 'center' });
+    doc.text("Warehouse Manager Signature", doc.internal.pageSize.getWidth() - 120, signatureYWithSignature + 10, { align: 'center' });
 
 
     if (settings.footerText) {
