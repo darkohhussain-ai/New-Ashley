@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Calendar as CalendarIcon, FileDown, BarChart } from 'lucide-react';
+import { ArrowLeft, Calendar as CalendarIcon, FileText, BarChart, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -135,7 +136,13 @@ export default function MonthlyBonusReportPage() {
           theme: 'grid',
           headStyles: { fillColor: settings.reportColors?.bonus || settings.themeColor || '#22c55e' },
           footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
-          didParseCell: (data) => { if (settings.customFont) { data.cell.styles.font = "CustomFont"; } }
+          didParseCell: (data) => {
+             if (settings.customFont) {
+                try {
+                    data.cell.styles.font = "CustomFont";
+                } catch(e) { console.error(e) }
+             }
+           }
         });
     }
 
@@ -162,6 +169,10 @@ export default function MonthlyBonusReportPage() {
     doc.save(`monthly-bonus-report-${format(selectedDate, 'yyyy-MM')}.pdf`);
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <>
       <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
@@ -177,8 +188,8 @@ export default function MonthlyBonusReportPage() {
           </div>
         )}
       </div>
-      <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
-        <header className="flex items-center justify-between gap-4 mb-8">
+      <div className="min-h-screen bg-background text-foreground p-4 md:p-8 print:p-0">
+        <header className="flex items-center justify-between gap-4 mb-8 print:hidden">
           <div className="flex items-center gap-4">
             <Button variant="outline" size="icon" asChild>
               <Link href="/bonuses"><ArrowLeft /></Link>
@@ -197,7 +208,8 @@ export default function MonthlyBonusReportPage() {
                 <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} captionLayout="dropdown-buttons" fromYear={2020} toYear={2040} />
               </PopoverContent>
             </Popover>
-            <Button onClick={handleDownloadPdf} disabled={isLoading || monthlyData.records.length === 0}><FileDown className="mr-2"/>{t('download_pdf')}</Button>
+            <Button onClick={handleDownloadPdf} disabled={isLoading || monthlyData.records.length === 0}><FileText className="mr-2"/>{t('download_pdf')}</Button>
+            <Button variant="outline" onClick={handlePrint} disabled={isLoading || monthlyData.records.length === 0}><Printer className="mr-2"/>{t('print')}</Button>
           </div>
         </header>
 
@@ -257,7 +269,7 @@ export default function MonthlyBonusReportPage() {
             </Card>
           </div>
         ) : (
-          <div className="text-center py-16 border-2 border-dashed rounded-lg">
+          <div className="text-center py-16 border-2 border-dashed rounded-lg print:hidden">
             <BarChart className="mx-auto h-12 w-12 text-muted-foreground" />
             <h3 className="mt-4 text-lg font-medium">{t('no_bonuses_found')}</h3>
             <p className="mt-2 text-sm text-muted-foreground">{t('no_bonuses_found_for_month', {month: selectedDate ? format(selectedDate, 'MMMM yyyy') : 'the selected month'})}</p>

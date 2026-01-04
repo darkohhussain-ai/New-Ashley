@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, Trash2, Calendar as CalendarIcon, Clock, User, Edit, Save, X, FileDown } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Calendar as CalendarIcon, Clock, User, Edit, Save, X, FileText, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -176,12 +177,16 @@ export default function AddOvertimePage() {
     const settings = pdfSettings.report || {};
     
     if (settings.customFont) {
-        const fontName = "CustomFont";
-        const fontStyle = "normal";
-        const fontBase64 = settings.customFont.split(',')[1];
-        doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
-        doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
-        doc.setFont(fontName);
+        try {
+            const fontName = "CustomFont";
+            const fontStyle = "normal";
+            const fontBase64 = settings.customFont.split(',')[1];
+            doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
+            doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
+            doc.setFont(fontName);
+        } catch(e) {
+            console.error("Could not add custom font to PDF", e);
+        }
     }
 
     const canvas = await html2canvas(pdfHeaderRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
@@ -201,7 +206,13 @@ export default function AddOvertimePage() {
         theme: 'striped',
         headStyles: { fillColor: settings.reportColors?.overtime || settings.themeColor || '#22c55e' },
         footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' },
-        didParseCell: (data) => { if (settings.customFont) { (data.cell.styles as any).font = "CustomFont"; } }
+        didParseCell: (data) => {
+            if (settings.customFont) {
+                try {
+                    data.cell.styles.font = "CustomFont";
+                } catch(e) { console.error(e) }
+            }
+        }
     });
     
     const finalY = (doc as any).lastAutoTable.finalY + 40;
@@ -215,6 +226,10 @@ export default function AddOvertimePage() {
     doc.text("Warehouse Manager Signature", doc.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
 
     doc.save(`overtime-report-${format(selectedDate, 'yyyy-MM-dd')}.pdf`);
+  };
+
+  const handlePrint = () => {
+    window.print();
   };
 
   return (
@@ -233,7 +248,7 @@ export default function AddOvertimePage() {
       )}
     </div>
     <div className="min-h-screen bg-background text-foreground">
-      <header className="bg-card border-b p-4">
+      <header className="bg-card border-b p-4 print:hidden">
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button variant="outline" size="icon" asChild>
@@ -255,14 +270,15 @@ export default function AddOvertimePage() {
                 <Calendar mode="single" selected={selectedDate} onSelect={(date) => { setSelectedDate(date); if (dateParam) router.push('/overtime/add'); }} initialFocus captionLayout="dropdown-nav" fromYear={2020} toYear={2040} />
               </PopoverContent>
             </Popover>
-             <Button variant="outline" onClick={handleDownloadPdf} disabled={!overtimeRecords || overtimeRecords.length === 0}><FileDown className="mr-2 h-4 w-4" />PDF</Button>
+            <Button variant="outline" onClick={handleDownloadPdf} disabled={!overtimeRecords || overtimeRecords.length === 0}><FileText className="mr-2 h-4 w-4" />PDF</Button>
+            <Button variant="outline" onClick={handlePrint} disabled={!overtimeRecords || overtimeRecords.length === 0}><Printer className="mr-2 h-4 w-4" />Print</Button>
           </div>
         </div>
       </header>
 
       <main className="container mx-auto p-4 md:p-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-1">
+            <div className="lg:col-span-1 print:hidden">
                 <Card>
                 <CardHeader>
                     <CardTitle>{t('add_overtime_record')}</CardTitle>
@@ -326,7 +342,7 @@ export default function AddOvertimePage() {
                         overtimeRecords.map(record => (
                         <div key={record.id} className="py-3 flex justify-between items-start gap-4">
                             {editingRecord?.id === record.id ? (
-                            <div className="flex-1 space-y-2">
+                            <div className="flex-1 space-y-2 print:hidden">
                                 <p className="font-bold">{getEmployeeName(record.employeeId)}</p>
                                 <Input 
                                     type="number" 
@@ -350,12 +366,12 @@ export default function AddOvertimePage() {
                             <div className='flex flex-col items-end'>
                                 <p className="font-semibold text-primary">{formatCurrency(record.totalAmount)}</p>
                                 {editingRecord?.id === record.id ? (
-                                    <div className="flex gap-1 mt-2">
+                                    <div className="flex gap-1 mt-2 print:hidden">
                                         <Button size="icon" className="h-8 w-8" onClick={handleUpdateRecord} disabled={isSaving}><Save className="h-4 w-4"/></Button>
                                         <Button size="icon" variant="ghost" className="h-8 w-8" onClick={cancelEditing}><X className="h-4 w-4"/></Button>
                                     </div>
                                 ) : (
-                                    <div className="flex gap-1 mt-1">
+                                    <div className="flex gap-1 mt-1 print:hidden">
                                         <Button size="icon" variant="ghost" className="text-muted-foreground hover:text-primary h-8 w-8" onClick={() => startEditing(record)}>
                                             <Edit className="h-4 w-4"/>
                                         </Button>
@@ -405,5 +421,3 @@ export default function AddOvertimePage() {
     </>
   );
 }
-
-    

@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, User, Calendar as CalendarIcon, Building, FileText, MapPin, Edit, Trash2, Save, X, ArrowUpDown, ArrowDown, ArrowUp, FileSpreadsheet, ChevronLeft, ChevronRight, Download, Search, Upload } from 'lucide-react';
+import { ArrowLeft, User, Calendar as CalendarIcon, Building, FileText, MapPin, Edit, Trash2, Save, X, ArrowUpDown, ArrowDown, ArrowUp, FileSpreadsheet, ChevronLeft, ChevronRight, Download, Search, Upload, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -449,12 +449,16 @@ export default function FileDetailPage() {
     
     const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
      if (customFontBase64) {
-        const fontName = "CustomFont";
-        const fontStyle = "normal";
-        const fontBase64 = customFontBase64.split(',')[1];
-        pdf.addFileToVFS(`${fontName}.ttf`, fontBase64);
-        pdf.addFont(`${fontName}.ttf`, fontName, fontStyle);
-        pdf.setFont(fontName);
+        try {
+            const fontName = "CustomFont";
+            const fontStyle = "normal";
+            const fontBase64 = customFontBase64.split(',')[1];
+            pdf.addFileToVFS(`${fontName}.ttf`, fontBase64);
+            pdf.addFont(`${fontName}.ttf`, fontName, fontStyle);
+            pdf.setFont(fontName);
+        } catch (e) {
+            console.error("Could not add custom font to PDF", e);
+        }
     }
     
     const canvas = await html2canvas(pdfCardRef.current, {
@@ -497,7 +501,9 @@ export default function FileDetailPage() {
       },
       didParseCell: function (data) {
         if (customFontBase64) {
-            data.cell.styles.font = "CustomFont";
+             try {
+                data.cell.styles.font = "CustomFont";
+             } catch(e) { console.error(e) }
         }
       }
     });
@@ -537,6 +543,9 @@ export default function FileDetailPage() {
     setCurrentPage(1);
   }, [searchQuery]);
 
+  const handlePrint = () => {
+    window.print();
+  };
 
   if (isLoading) {
     return (
@@ -600,7 +609,7 @@ export default function FileDetailPage() {
             </div>
           )}
       </div>
-      <header className="bg-card border-b p-4">
+      <header className="bg-card border-b p-4 print:hidden">
         <div className="container mx-auto flex items-center justify-between gap-4">
             <div className='flex items-center gap-4'>
                 <Button variant="outline" size="icon" asChild>
@@ -622,8 +631,8 @@ export default function FileDetailPage() {
                 ) : (
                     <>
                     <Button onClick={() => setIsEditing(true)}><Edit className="mr-2"/>Edit</Button>
-                    <Button onClick={handleDownloadPdf}><Download className="mr-2 h-4 w-4" /> PDF</Button>
-                    <Button variant="outline" onClick={handleDownloadExcel}><FileSpreadsheet className="mr-2 h-4 w-4" /> Excel</Button>
+                    <Button variant="outline" onClick={handleDownloadPdf}><FileText className="mr-2 h-4 w-4" /> PDF</Button>
+                    <Button variant="outline" onClick={handlePrint}><Printer className="mr-2 h-4 w-4" /> Print</Button>
                     <AlertDialog>
                         <AlertDialogTrigger asChild><Button variant="destructive"><Trash2 className="mr-2"/>Delete</Button></AlertDialogTrigger>
                         <AlertDialogContent>
@@ -681,7 +690,7 @@ export default function FileDetailPage() {
               </Card>
 
               {isEditing && warehouseType && (
-                <Card>
+                <Card className="print:hidden">
                     <CardHeader>
                         <CardTitle>Location Filters</CardTitle>
                         <CardDescription>Filter the locations available for items.</CardDescription>
@@ -797,7 +806,7 @@ export default function FileDetailPage() {
           </div>
         
           <Card className="lg:col-span-2">
-            <CardHeader>
+            <CardHeader className="print:hidden">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <CardTitle>Items ({sortedItems.length})</CardTitle>
                 <div className="relative w-full max-w-sm">
@@ -904,13 +913,10 @@ export default function FileDetailPage() {
                 </Table>
               </div>
             </CardContent>
-            {totalPages > 1 && <CardContent><PaginationControls currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} /></CardContent>}
+            {totalPages > 1 && <CardContent className="print:hidden"><PaginationControls currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} /></CardContent>}
           </Card>
         </div>
       </main>
     </div>
   );
-
-    
-
-    
+}

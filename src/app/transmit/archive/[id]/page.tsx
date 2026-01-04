@@ -4,7 +4,7 @@
 import { useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ArrowLeft, Calendar, Truck, FileDown, User, Warehouse } from 'lucide-react';
+import { ArrowLeft, Calendar, Truck, FileText, User, Warehouse, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { format, parseISO } from 'date-fns';
@@ -40,12 +40,16 @@ export default function ViewTransferPage() {
     const settings = pdfSettings.invoice || {};
 
     if (settings.customFont) {
-        const fontName = "CustomFont";
-        const fontStyle = "normal";
-        const fontBase64 = settings.customFont.split(',')[1];
-        pdf.addFileToVFS(`${fontName}.ttf`, fontBase64);
-        pdf.addFont(`${fontName}.ttf`, fontName, fontStyle);
-        pdf.setFont(fontName);
+        try {
+            const fontName = "CustomFont";
+            const fontStyle = "normal";
+            const fontBase64 = settings.customFont.split(',')[1];
+            pdf.addFileToVFS(`${fontName}.ttf`, fontBase64);
+            pdf.addFont(`${fontName}.ttf`, fontName, fontStyle);
+            pdf.setFont(fontName);
+        } catch(e) {
+            console.error("Could not add custom font to PDF", e);
+        }
     }
     
     const canvas = await html2canvas(pdfCardRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
@@ -68,7 +72,9 @@ export default function ViewTransferPage() {
       headStyles: { fillColor: settings.themeColor || '#3b82f6', textColor: 255, fontStyle: 'bold' },
       didParseCell: function (data) {
         if (settings.customFont) {
-            data.cell.styles.font = "CustomFont";
+            try {
+                data.cell.styles.font = "CustomFont";
+            } catch(e) { console.error(e) }
         }
       }
     });
@@ -92,6 +98,10 @@ export default function ViewTransferPage() {
     pdf.save(`${transfer.cargoName}.pdf`);
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <>
     {transfer && (
@@ -105,17 +115,22 @@ export default function ViewTransferPage() {
           </div>
        </div>
     )}
-    <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
-      <header className="flex items-center justify-between gap-4 mb-8">
+    <div className="min-h-screen bg-background text-foreground p-4 md:p-8 print:p-0">
+      <header className="flex items-center justify-between gap-4 mb-8 print:hidden">
           <div className="flex items-center gap-4">
             <Button variant="outline" size="icon" asChild>
                 <Link href="/transmit/archive"><ArrowLeft /></Link>
             </Button>
             <h1 className="text-2xl md:text-3xl font-bold">{t('transfer_details')}</h1>
           </div>
-          <Button onClick={handleDownloadPdf} disabled={!transfer || !items}>
-              <FileDown className="mr-2"/> {t('download_pdf')}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={handleDownloadPdf} disabled={!transfer || !items}>
+                <FileText className="mr-2"/> {t('download_pdf')}
+            </Button>
+            <Button variant="outline" onClick={handlePrint} disabled={!transfer || !items}>
+                <Printer className="mr-2"/> {t('print')}
+            </Button>
+          </div>
       </header>
 
       {isLoading ? (
