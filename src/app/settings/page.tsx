@@ -218,7 +218,7 @@ function ReportColorPicker({ label, value, onChange }: { label: string, value: s
 
 export default function SettingsPage() {
   const { toast } = useToast()
-  const { theme, setTheme, applyCustomAppFont } = useTheme()
+  const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const langContext = React.useContext(LanguageContext)
 
@@ -634,7 +634,7 @@ export default function SettingsPage() {
                             </CardContent>
                             <CardFooter>
                                 <Button onClick={handleSavePdfSettings} className="w-full">
-                                    <Save className="mr-2 h-4 w-4" /> Save PDF Design
+                                    <Save className="mr-2 h-4 w-4" /> Save Design
                                 </Button>
                             </CardFooter>
                         </Card>
