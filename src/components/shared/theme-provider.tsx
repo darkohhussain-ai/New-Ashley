@@ -17,33 +17,35 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [customFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
 
   useEffect(() => {
-    const applyCustomAppFont = (fontDataUrl: string | null) => {
-      const styleId = 'custom-app-font-style';
-      let styleElement = document.getElementById(styleId) as HTMLStyleElement;
+    // This effect handles applying the custom font to the document.
+    const styleId = 'custom-app-font-style';
+    let styleElement = document.getElementById(styleId) as HTMLStyleElement;
+    if (!styleElement) {
+        styleElement = document.createElement('style');
+        styleElement.id = styleId;
+        document.head.appendChild(styleElement);
+    }
 
-      if (!styleElement) {
-          styleElement = document.createElement('style');
-          styleElement.id = styleId;
-          document.head.appendChild(styleElement);
-      }
-
-      if (fontDataUrl) {
-          styleElement.innerHTML = `
-              @font-face {
-                  font-family: 'CustomAppFont';
-                  src: url(${fontDataUrl});
-              }
-              body {
-                  font-family: 'CustomAppFont', var(--font-body), sans-serif;
-              }
-          `;
-      } else {
-          styleElement.innerHTML = '';
-          document.body.style.fontFamily = 'var(--font-body), sans-serif';
-      }
-    };
-    
-    applyCustomAppFont(customFontBase64);
+    if (customFontBase64) {
+        // If a custom font is present, create the @font-face rule
+        // and set the body to use it, with a fallback.
+        styleElement.innerHTML = `
+            @font-face {
+                font-family: 'CustomAppFont';
+                src: url(${customFontBase64});
+            }
+            body {
+                font-family: 'CustomAppFont', var(--font-body), sans-serif;
+            }
+        `;
+    } else {
+        // If no custom font, ensure the default font is used.
+        styleElement.innerHTML = `
+            body {
+                font-family: var(--font-body), sans-serif;
+            }
+        `;
+    }
   }, [customFontBase64]);
 
   useEffect(() => {
