@@ -4,7 +4,6 @@
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Users, Box, Settings as SettingsIcon, CreditCard, Bell, ChevronDown, Calendar, Clock, PackagePlus, Star, CheckSquare, RefreshCcw, UserCircle, Languages } from "lucide-react"
-import { DashboardCard } from "@/components/dashboard/dashboard-card"
 import useLocalStorage from "@/hooks/use-local-storage"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { format } from 'date-fns';
@@ -18,8 +17,7 @@ export default function Home() {
   const [time, setTime] = useState<Date | null>(null);
   const { t, setLanguage, language } = useTranslation();
 
-
-  // Load settings from localStorage
+  // Initialize with null to avoid hydration mismatch
   const [savedBannerHeight, setSavedBannerHeight] = useLocalStorage('dashboard-banner-height', 150);
   const [savedDashboardBanner, setSavedDashboardBanner] = useLocalStorage('dashboard-banner', 'https://i.ibb.co/6Wp2t1Y/image.png');
   const [savedLogo, setSavedLogo] = useLocalStorage('app-logo', "https://picsum.photos/seed/ashley-logo/300/100");
@@ -117,10 +115,23 @@ export default function Home() {
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {menuItems.map((item) => (
-            <DashboardCard 
-                key={item.title} 
-                {...item} 
-            />
+             <Link key={item.title} href={item.href} className="group block">
+              <Card 
+                className={cn(
+                  "bg-card transition-all duration-300 transform hover:-translate-y-1 shadow-lg hover:shadow-2xl text-white h-48",
+                  item.color
+                )}
+              >
+                <CardContent className="flex flex-col items-center justify-center p-6 text-center h-full">
+                  <div className="p-4 bg-white/20 rounded-full mb-4">
+                    <item.icon 
+                      className="text-white transition-transform duration-300 group-hover:scale-110 w-10 h-10"
+                    />
+                  </div>
+                  <h3 className="text-lg font-semibold text-white">{item.title}</h3>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
         </div>
       </main>
