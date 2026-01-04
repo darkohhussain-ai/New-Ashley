@@ -18,8 +18,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Slider } from '@/components/ui/slider'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { useTranslation } from '@/hooks/use-translation'
-import { LanguageContext } from '@/context/language-provider'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { ReportPdfHeader } from '@/components/reports/report-pdf-header'
 import { TransferPdfCard } from '@/components/transmit/transfer-pdf-card'
 import { EmployeePdfCard } from '@/components/employees/employee-pdf-card'
@@ -210,7 +208,7 @@ export default function SettingsPage() {
   const { toast } = useToast()
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
-  const langContext = React.useContext(LanguageContext)
+  const { t } = useTranslation();
 
   const [savedLightColors, setSavedLightColors] = useLocalStorage<ThemeColors>('light-theme-colors', defaultLightColors);
   const [savedDarkColors, setSavedDarkColors] = useLocalStorage<ThemeColors>('dark-theme-colors', defaultDarkColors);
@@ -227,9 +225,6 @@ export default function SettingsPage() {
   const [pdfSettings, setPdfSettings] = useState(savedPdfSettings);
   const [previewFontBase64, setPreviewFontBase64] = useState<string | null>(null);
   const [activePdfTab, setActivePdfTab] = useState<'report' | 'invoice' | 'card'>('report');
-
-  const [englishTranslations, setEnglishTranslations] = useState<Record<string, string>>({});
-  const [kurdishTranslations, setKurdishTranslations] = useState<Record<string, string>>({});
   
   const [importFile, setImportFile] = useState<File | null>(null);
 
@@ -247,11 +242,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     setMounted(true)
-    if (langContext) {
-      setEnglishTranslations(langContext.translations.en);
-      setKurdishTranslations(langContext.translations.ku);
-    }
-  }, [langContext]);
+  }, []);
 
   useEffect(() => {
     if (mounted) {
@@ -373,12 +364,7 @@ export default function SettingsPage() {
     setSavedDarkColors(darkColors);
     setSavedDashboardBanner(dashboardBanner);
     setSavedBannerHeight(bannerHeight);
-
-    if(langContext) {
-      langContext.setTranslations(englishTranslations, 'en');
-      langContext.setTranslations(kurdishTranslations, 'ku');
-    }
-    toast({ title: 'Settings saved!', description: 'Your appearance and language settings have been updated.' });
+    toast({ title: 'Settings saved!', description: 'Your appearance settings have been updated.' });
   }
 
   const handleSavePdfSettings = () => {
@@ -401,10 +387,6 @@ export default function SettingsPage() {
     setSavedBannerHeight(150);
     setSavedPdfSettings(defaultPdfSettings);
     setSavedCustomFontBase64(null);
-    
-    if (langContext) {
-        langContext.resetTranslations();
-    }
     
     toast({ title: 'Settings Reset', description: 'All settings have been reset to their default values.' });
   }
@@ -467,9 +449,9 @@ export default function SettingsPage() {
                 <Button variant="outline" size="icon" asChild>
                     <Link href="/"> <ArrowLeft /> </Link>
                 </Button>
-                <h1 className="text-2xl md:text-3xl font-bold">Settings</h1>
+                <h1 className="text-2xl md:text-3xl font-bold">{t('settings')}</h1>
             </header>
-            <div className="flex items-center justify-center">Loading...</div>
+            <div className="flex items-center justify-center">{t('loading')}</div>
         </div>
     );
   }
@@ -490,30 +472,30 @@ export default function SettingsPage() {
             <Button variant="outline" size="icon" asChild>
               <Link href="/"> <ArrowLeft /> </Link>
             </Button>
-            <h1 className="text-xl font-bold">Settings</h1>
+            <h1 className="text-xl font-bold">{t('settings')}</h1>
           </div>
           <div className="ml-auto flex items-center gap-4">
              <AlertDialog>
                 <AlertDialogTrigger asChild>
                     <Button variant="outline">
-                        <RefreshCcw className="mr-2 h-4 w-4" /> Reset All
+                        <RefreshCcw className="mr-2 h-4 w-4" /> {t('reset_all_settings')}
                     </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Reset all settings?</AlertDialogTitle>
+                        <AlertDialogTitle>{t('reset_all_settings_q')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                        This will reset all appearance, language, and PDF settings to their original defaults. Your data will not be affected. This action cannot be undone.
+                        {t('reset_all_settings_desc')}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleResetToDefault}>Reset Settings</AlertDialogAction>
+                        <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleResetToDefault}>{t('reset_settings')}</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
             <Button onClick={handleSaveChanges}>
-              <Save className="mr-2 h-4 w-4" /> Save All Changes
+              <Save className="mr-2 h-4 w-4" /> {t('save_all_changes')}
             </Button>
           </div>
         </div>
@@ -521,46 +503,46 @@ export default function SettingsPage() {
       <main className="p-4 md:p-6 container mx-auto">
         <Tabs defaultValue="design" className="w-full">
             <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="design">Design</TabsTrigger>
-                <TabsTrigger value="language">Language & Text</TabsTrigger>
-                <TabsTrigger value="pdf">PDF & Reports</TabsTrigger>
-                <TabsTrigger value="data">Data Management</TabsTrigger>
+                <TabsTrigger value="design">{t('design')}</TabsTrigger>
+                <TabsTrigger value="language">{t('language_text')}</TabsTrigger>
+                <TabsTrigger value="pdf">{t('pdf_reports')}</TabsTrigger>
+                <TabsTrigger value="data">{t('data_management')}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="design" className="pt-6">
                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                     <Card>
-                        <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Palette /> General</CardTitle></CardHeader>
+                        <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Palette /> {t('general')}</CardTitle></CardHeader>
                         <CardContent className="space-y-6">
                             <div className="flex items-center justify-between">
-                                <Label htmlFor="dark-mode">Dark Mode</Label>
+                                <Label htmlFor="dark-mode">{t('dark_mode')}</Label>
                                 <Switch id="dark-mode" checked={theme === 'dark'} onCheckedChange={() => setTheme(theme === 'light' ? 'dark' : 'light')} />
                             </div>
                         </CardContent>
                     </Card>
                     <Card>
-                        <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><LayoutDashboard /> Dashboard</CardTitle></CardHeader>
+                        <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><LayoutDashboard /> {t('dashboard')}</CardTitle></CardHeader>
                         <CardContent className="space-y-6">
                             <div className="w-full h-24 border rounded-md flex items-center justify-center bg-muted/30 relative overflow-hidden">
-                                {dashboardBanner ? <Image src={dashboardBanner} alt="Current Dashboard Banner" fill={true} className="object-cover" /> : <span className='text-sm text-muted-foreground'>Dashboard Banner Preview</span>}
+                                {dashboardBanner ? <Image src={dashboardBanner} alt="Current Dashboard Banner" fill={true} className="object-cover" /> : <span className='text-sm text-muted-foreground'>{t('dashboard_banner_preview')}</span>}
                             </div>
                             <div>
-                                <Label htmlFor="banner-upload">Upload Dashboard Banner</Label>
+                                <Label htmlFor="banner-upload">{t('upload_dashboard_banner')}</Label>
                                 <Input id="banner-upload" type="file" accept="image/*" className="mt-2" onChange={(e) => handleImageUpload(e, setDashboardBanner, "Banner updated!")} />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="banner-height">Banner Height: {bannerHeight}px</Label>
+                                <Label htmlFor="banner-height">{t('banner_height')}: {bannerHeight}px</Label>
                                 <Slider id="banner-height" min={80} max={300} step={10} value={[bannerHeight]} onValueChange={(value) => setBannerHeight(value[0])} />
                             </div>
                         </CardContent>
                     </Card>
                     <Card className="lg:col-span-2 xl:col-span-1">
-                        <CardHeader><CardTitle className="flex items-center gap-2"><Palette/> Color Palette</CardTitle><CardDescription>Adjust colors for light and dark themes.</CardDescription></CardHeader>
+                        <CardHeader><CardTitle className="flex items-center gap-2"><Palette/> {t('color_palette')}</CardTitle><CardDescription>{t('color_palette_desc')}</CardDescription></CardHeader>
                         <CardContent>
                             <Tabs defaultValue="light" className="w-full">
                                 <TabsList className="grid w-full grid-cols-2">
-                                    <TabsTrigger value="light">Light Mode</TabsTrigger>
-                                    <TabsTrigger value="dark">Dark Mode</TabsTrigger>
+                                    <TabsTrigger value="light">{t('light_mode')}</TabsTrigger>
+                                    <TabsTrigger value="dark">{t('dark_mode')}</TabsTrigger>
                                 </TabsList>
                                 <TabsContent value="light" className="space-y-4 pt-4">
                                     <ColorPicker label="Background" value={lightColors.background} onChange={(c) => setLightColors(p => ({...p, background: c}))} />
@@ -585,45 +567,31 @@ export default function SettingsPage() {
             <TabsContent value="language" className="pt-6">
                  <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Languages /> Language & Text</CardTitle>
-                        <CardDescription>Edit the text for different UI elements and upload a custom font for the application.</CardDescription>
+                        <CardTitle className="flex items-center gap-2"><Languages /> {t('language_text')}</CardTitle>
+                        <CardDescription>{t('language_text_desc')}</CardDescription>
                     </CardHeader>
                     <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-8">
                        <div className="space-y-4">
-                           <h3 className="font-semibold">Custom Application Font</h3>
+                           <h3 className="font-semibold">{t('custom_app_font')}</h3>
                            <div className="p-4 border rounded-lg space-y-4">
                                 <div>
-                                    <Label htmlFor="font-upload" className="text-sm font-medium">Upload Font File (.ttf, .woff)</Label>
+                                    <Label htmlFor="font-upload" className="text-sm font-medium">{t('upload_font_file')}</Label>
                                     <Input id="font-upload" type="file" accept=".ttf,.otf,.woff,.woff2" className="mt-2" onChange={handleCustomFontUpload} />
                                 </div>
                                 <div className="flex gap-2">
-                                  <Button onClick={handleApplyFont} variant="outline" className="w-full" disabled={!previewFontBase64}>Apply Font</Button>
-                                  <Button onClick={handleSaveFolder} className="w-full" disabled={!previewFontBase64}>Save Font</Button>
+                                  <Button onClick={handleApplyFont} variant="outline" className="w-full" disabled={!previewFontBase64}>{t('apply_font')}</Button>
+                                  <Button onClick={handleSaveFolder} className="w-full" disabled={!previewFontBase64}>{t('save_font')}</Button>
                                 </div>
                            </div>
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Font Preview</CardTitle>
+                                    <CardTitle>{t('font_preview')}</CardTitle>
                                 </CardHeader>
                                 <CardContent style={{ fontFamily: previewFontBase64 ? 'CustomAppFont' : 'inherit' }}>
                                     <p className="text-lg">English: The quick brown fox jumps over the lazy dog.</p>
                                     <p className="text-lg" dir="rtl">کوردی: ڕێوی ڕەساسی خێرا باز دەدات بەسەر سەگی تەمبەڵدا.</p>
                                 </CardContent>
                             </Card>
-                       </div>
-                       <div className="space-y-4">
-                           <h3 className="font-semibold">Application Text</h3>
-                            <ScrollArea className="h-96 pr-4 border rounded-md p-4">
-                                <div className="space-y-4">
-                                    {Object.keys(englishTranslations).map((key) => (
-                                        <div key={key} className="grid grid-cols-1 gap-2 items-center">
-                                            <Label htmlFor={`en-${key}`} className="text-muted-foreground break-all text-xs">{key}</Label>
-                                            <Input id={`en-${key}`} value={englishTranslations[key]} onChange={e => setEnglishTranslations(prev => ({ ...prev, [key]: e.target.value }))} className="h-8" />
-                                            <Input id={`ku-${key}`} value={kurdishTranslations[key]} onChange={e => setKurdishTranslations(prev => ({ ...prev, [key]: e.target.value }))} className="h-8" dir="rtl" />
-                                        </div>
-                                    ))}
-                                </div>
-                            </ScrollArea>
                        </div>
                     </CardContent>
                 </Card>
@@ -634,49 +602,49 @@ export default function SettingsPage() {
                     <div className="lg:col-span-1 space-y-6">
                         <Card>
                             <CardHeader>
-                                <CardTitle>PDF Template</CardTitle>
-                                <CardDescription>Select which PDF type you want to customize.</CardDescription>
+                                <CardTitle>{t('pdf_template')}</CardTitle>
+                                <CardDescription>{t('pdf_template_desc')}</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <Tabs value={activePdfTab} onValueChange={(v) => setActivePdfTab(v as 'report' | 'invoice' | 'card')} className="w-full">
                                     <TabsList className="grid w-full grid-cols-3">
-                                        <TabsTrigger value="report"><FileText className="mr-2"/>Report</TabsTrigger>
-                                        <TabsTrigger value="invoice"><Receipt className="mr-2"/>Invoice</TabsTrigger>
-                                        <TabsTrigger value="card"><CreditCard className="mr-2"/>ID Card</TabsTrigger>
+                                        <TabsTrigger value="report"><FileText className="mr-2"/>{t('report')}</TabsTrigger>
+                                        <TabsTrigger value="invoice"><Receipt className="mr-2"/>{t('invoice')}</TabsTrigger>
+                                        <TabsTrigger value="card"><CreditCard className="mr-2"/>{t('id_card')}</TabsTrigger>
                                     </TabsList>
                                 </Tabs>
                             </CardContent>
                             <CardFooter>
                                 <Button onClick={handleSavePdfSettings} className="w-full">
-                                    <Save className="mr-2 h-4 w-4" /> Save Design
+                                    <Save className="mr-2 h-4 w-4" /> {t('save_design')}
                                 </Button>
                             </CardFooter>
                         </Card>
                         <Card>
                             <CardHeader>
-                                <CardTitle className="flex items-center gap-2 text-lg"><FileText /> Content</CardTitle>
+                                <CardTitle className="flex items-center gap-2 text-lg"><FileText /> {t('content')}</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 <div>
-                                    <Label htmlFor="logo-upload">Company Logo</Label>
+                                    <Label htmlFor="logo-upload">{t('company_logo')}</Label>
                                     <Input id="logo-upload" type="file" accept="image/*" className="mt-2" onChange={(e) => handleImageUpload(e, (val) => handlePdfSettingChange('logo', val), "Logo updated!")} />
                                 </div>
                                 <div className="space-y-2">
-                                <Label htmlFor="header-text">Header Text (Optional)</Label>
+                                <Label htmlFor="header-text">{t('header_text_optional')}</Label>
                                 <Input id="header-text" value={currentPdfSettings.headerText} onChange={(e) => handlePdfSettingChange('headerText', e.target.value)} placeholder="e.g. Confidential Document"/>
                                 </div>
                                 <div className="space-y-2">
-                                <Label htmlFor="footer-text">Footer Text (Optional)</Label>
+                                <Label htmlFor="footer-text">{t('footer_text_optional')}</Label>
                                 <Input id="footer-text" value={currentPdfSettings.footerText} onChange={(e) => handlePdfSettingChange('footerText', e.target.value)} placeholder="e.g. Generated by Ashley DRP"/>
                                 </div>
                             </CardContent>
                         </Card>
                          <Card>
-                            <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Palette /> Styling</CardTitle></CardHeader>
+                            <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Palette /> {t('styling')}</CardTitle></CardHeader>
                             <CardContent className="space-y-6">
                                 {activePdfTab === 'report' && (
                                     <div className="space-y-4">
-                                        <CardDescription>Set a unique color for each report type's header.</CardDescription>
+                                        <CardDescription>{t('report_color_desc')}</CardDescription>
                                         <ReportColorPicker label="General" value={pdfSettings.report.reportColors?.general || '#000000'} onChange={(c) => handleReportColorChange('general', c)} />
                                         <ReportColorPicker label="Expense" value={pdfSettings.report.reportColors?.expense || '#000000'} onChange={(c) => handleReportColorChange('expense', c)} />
                                         <ReportColorPicker label="Overtime" value={pdfSettings.report.reportColors?.overtime || '#000000'} onChange={(c) => handleReportColorChange('overtime', c)} />
@@ -686,18 +654,18 @@ export default function SettingsPage() {
                                 )}
                                 {(activePdfTab === 'invoice' || activePdfTab === 'card') && (
                                     <div className="flex items-center justify-between">
-                                        <Label htmlFor="theme-color">Theme Color</Label>
+                                        <Label htmlFor="theme-color">{t('theme_color')}</Label>
                                         <Input id="theme-color" type="color" value={currentPdfSettings.themeColor} onChange={(e) => handlePdfSettingChange('themeColor', e.target.value)} className="w-10 h-10 p-1" />
                                     </div>
                                 )}
                                 {(activePdfTab === 'report' || activePdfTab === 'invoice') && (
                                     <div className="flex items-center justify-between">
-                                        <Label htmlFor="table-theme-select">Table Theme</Label>
+                                        <Label htmlFor="table-theme-select">{t('table_theme')}</Label>
                                         <Select value={currentPdfSettings.tableTheme} onValueChange={(v: 'striped' | 'grid') => handlePdfSettingChange('tableTheme', v)}>
                                             <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="striped">Striped</SelectItem>
-                                                <SelectItem value="grid">Grid</SelectItem>
+                                                <SelectItem value="striped">{t('striped')}</SelectItem>
+                                                <SelectItem value="grid">{t('grid')}</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -707,20 +675,20 @@ export default function SettingsPage() {
                     </div>
                     <div className="lg:col-span-2">
                         <Card>
-                            <CardHeader><CardTitle>Live Preview</CardTitle><CardDescription>A preview of your {activePdfTab} design.</CardDescription></CardHeader>
+                            <CardHeader><CardTitle>{t('live_preview')}</CardTitle><CardDescription>{t('live_preview_desc', {type: activePdfTab})}</CardDescription></CardHeader>
                             <CardContent className='bg-muted/50 p-6 rounded-b-lg flex justify-center items-start overflow-auto'>
                                 <div className="w-full max-w-2xl bg-white shadow-lg transform origin-top overflow-hidden flex flex-col scale-[0.8]" style={{ aspectRatio: '1 / 1.4142' }}>
                                 {activePdfTab === 'report' && (
                                     <>
                                         <ReportPdfHeader title="Example Report Title" subtitle="This is an example subtitle" logoSrc={currentPdfSettings.logo ?? null} themeColor={pdfSettings.report.reportColors?.general} headerText={currentPdfSettings.headerText} />
                                         <div className="p-6 flex-grow" style={{fontFamily: 'CustomPdfFont'}}>
-                                            <h3 className="font-bold text-gray-800 mb-2">Sample Section</h3>
-                                            <p className="text-sm text-gray-600 mb-4">This is sample body text. The quick brown fox jumps over the lazy dog.</p>
+                                            <h3 className="font-bold text-gray-800 mb-2">{t('sample_section')}</h3>
+                                            <p className="text-sm text-gray-600 mb-4">{t('sample_body_text')}</p>
                                              <Table className={cn(currentPdfSettings.tableTheme === 'grid' && 'border')}>
                                                 <TableHeader>
                                                     <TableRow style={{backgroundColor: pdfSettings.report.reportColors?.general, color: 'white'}} className="hover:bg-primary/90">
-                                                        <TableHead className="text-white">Column 1</TableHead>
-                                                        <TableHead className="text-white">Column 2</TableHead>
+                                                        <TableHead className="text-white">{t('column_1')}</TableHead>
+                                                        <TableHead className="text-white">{t('column_2')}</TableHead>
                                                     </TableRow>
                                                 </TableHeader>
                                                 <TableBody>
@@ -745,9 +713,9 @@ export default function SettingsPage() {
                                             <Table className={cn(currentPdfSettings.tableTheme === 'grid' && 'border')}>
                                                 <TableHeader>
                                                     <TableRow style={{backgroundColor: currentPdfSettings.themeColor}} className="hover:bg-primary/90">
-                                                        <TableHead className="text-white">Model</TableHead>
-                                                        <TableHead className="text-white">Quantity</TableHead>
-                                                        <TableHead className="text-white">Notes</TableHead>
+                                                        <TableHead className="text-white">{t('model')}</TableHead>
+                                                        <TableHead className="text-white">{t('quantity')}</TableHead>
+                                                        <TableHead className="text-white">{t('notes')}</TableHead>
                                                     </TableRow>
                                                 </TableHeader>
                                                 <TableBody>
@@ -774,20 +742,20 @@ export default function SettingsPage() {
             <TabsContent value="data" className="pt-6">
                  <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-lg"><ShieldCheck /> Data Management</CardTitle>
-                        <CardDescription>Backup or restore all application data. Your data is stored in the browser, so be sure to make regular backups.</CardDescription>
+                        <CardTitle className="flex items-center gap-2 text-lg"><ShieldCheck /> {t('data_management')}</CardTitle>
+                        <CardDescription>{t('data_management_desc')}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="p-4 border rounded-lg flex flex-col sm:flex-row items-center justify-between gap-4">
-                            <p className="font-medium">Export all application data</p>
-                            <Button onClick={handleExport} variant="outline"><Download className="mr-2 h-4 w-4" /> Export Data</Button>
+                            <p className="font-medium">{t('export_data_desc')}</p>
+                            <Button onClick={handleExport} variant="outline"><Download className="mr-2 h-4 w-4" /> {t('export_data')}</Button>
                         </div>
                         <div className="p-4 border rounded-lg space-y-4">
-                            <p className="font-medium">Import data from a backup file</p>
-                            <p className="text-sm text-destructive">Warning: Importing data will overwrite all existing data in the application. This action cannot be undone.</p>
+                            <p className="font-medium">{t('import_data_title')}</p>
+                            <p className="text-sm text-destructive">{t('import_data_warning')}</p>
                             <div className="flex flex-col sm:flex-row items-center gap-4">
                                 <Input type="file" ref={importInputRef} className="max-w-xs" accept=".json" onChange={handleImportFileSelect} />
-                                <Button onClick={handleRunImport} disabled={!importFile}><Play className="mr-2 h-4 w-4" /> Run Import</Button>
+                                <Button onClick={handleRunImport} disabled={!importFile}><Play className="mr-2 h-4 w-4" /> {t('run_import')}</Button>
                             </div>
                         </div>
                     </CardContent>

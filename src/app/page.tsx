@@ -92,7 +92,7 @@ export default function Home() {
                     English
                   </DropdownMenuItem>
                   <DropdownMenuItem onSelect={() => setLanguage('ku')} disabled={language === 'ku'}>
-                    Kurdish
+                    Kurdish (Soranî)
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

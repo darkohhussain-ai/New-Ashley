@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useContext } from 'react';
@@ -11,7 +10,5 @@ export function useTranslation() {
     throw new Error('useTranslation must be used within a LanguageProvider');
   }
 
-  const { t, setLanguage, language } = context;
-
-  return { t, setLanguage, language };
+  return context;
 }
