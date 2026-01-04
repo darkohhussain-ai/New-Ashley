@@ -6,8 +6,8 @@ import { produce } from 'immer';
 
 // Simple heuristic to decide if a value is "large" and should go to IndexedDB
 const isLargeValue = (value: any): boolean => {
-  if (typeof value === 'string' && value.startsWith('data:image')) {
-    return true; // All images go to IndexedDB
+  if (typeof value === 'string' && (value.startsWith('data:image') || value.startsWith('data:font'))) {
+    return true; // All images and fonts go to IndexedDB
   }
   try {
     // If stringifying the object makes it larger than 100KB, store in IDB.
@@ -35,25 +35,26 @@ function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((val
     const item = window.localStorage.getItem(key);
     if (item) {
       try {
-        let parsedItem;
-        // Check if item is a JSON string before parsing
-        if (item.startsWith('{') || item.startsWith('[') || item.startsWith('"')) {
-            parsedItem = JSON.parse(item);
-        } else {
-            // It's likely a raw string that's not valid JSON, like a font name.
-            parsedItem = item;
+        // IDB pointers are stored as JSON strings like ""idb_...""
+        if (item.startsWith('"') && item.endsWith('"')) {
+            const parsedItem = JSON.parse(item);
+            if (typeof parsedItem === 'string' && isIdbKey(parsedItem)) {
+                get(fromIdbKey(parsedItem)).then(idbValue => {
+                    if (idbValue !== undefined) {
+                      setStoredValue(idbValue);
+                    }
+                });
+                return; // Exit here to avoid falling through
+            }
+        }
+        
+        // For other JSON or raw strings
+        try {
+            setStoredValue(JSON.parse(item));
+        } catch {
+            setStoredValue(item as any); // It's a raw string value
         }
 
-        if (typeof parsedItem === 'string' && isIdbKey(parsedItem)) {
-          // It's a pointer to an IndexedDB value
-          get(fromIdbKey(parsedItem)).then(idbValue => {
-            if (idbValue !== undefined) {
-              setStoredValue(idbValue);
-            }
-          });
-        } else {
-          setStoredValue(parsedItem);
-        }
       } catch (error) {
         console.error(`Error parsing localStorage key "${key}":`, error);
         setStoredValue(initialValue);
@@ -69,7 +70,6 @@ function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((val
       const valueToStore = value instanceof Function ? produce(storedValue, value) : value;
 
       if (isLargeValue(valueToStore)) {
-        // Store in IndexedDB and put a pointer in localStorage
         const idbKey = key;
         set(idbKey, valueToStore)
           .then(() => {
@@ -78,13 +78,14 @@ function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((val
           })
           .catch(err => console.error("Failed to set value in IndexedDB:", err));
       } else {
-        // Store directly in localStorage
         const existingItem = window.localStorage.getItem(key);
         if(existingItem) {
             try {
-              const parsedItem = JSON.parse(existingItem);
-              if (isIdbKey(parsedItem)) {
-                  del(fromIdbKey(parsedItem)).catch(err => console.error("Could not clean up old IDB key:", err));
+              if (existingItem.startsWith('"')) { // Check if it could be a JSON string pointer
+                const parsedItem = JSON.parse(existingItem);
+                if (isIdbKey(parsedItem)) {
+                    del(fromIdbKey(parsedItem)).catch(err => console.error("Could not clean up old IDB key:", err));
+                }
               }
             } catch {}
         }
@@ -100,7 +101,6 @@ function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((val
     } catch (error) {
       if (error instanceof DOMException && (error.name === 'QuotaExceededError')) {
           console.error(`Local Storage quota exceeded for key: "${key}". The data could not be saved.`, error);
-          // Here you could add a toast notification to inform the user.
       } else {
           console.error(`Error saving to localStorage for key "${key}":`, error);
       }
@@ -122,22 +122,26 @@ export const getAllDataForExport = async (): Promise<Record<string, any>> => {
             if (item) {
                 try {
                     const parsed = JSON.parse(item);
-                    if (typeof parsed === 'string' && isIdbKey(parsed)) {
+                     if (typeof parsed === 'string' && isIdbKey(parsed)) {
                         // This is a pointer, the real data is in IDB
-                        const idbKey = fromIdbKey(parsed);
-                        const idbValue = await get(idbKey);
-                        if (idbValue !== undefined) {
-                            data[idbKey] = idbValue;
-                        }
-                    } else {
-                        data[key] = parsed;
+                        // Let's store the raw pointer and handle it during import
                     }
+                    data[key] = parsed;
                 } catch {
                      data[key] = item; // Store as raw string if not JSON
                 }
             }
         }
     }
+
+    // Get all from IndexedDB
+    const idbKeys = await keys();
+    for (const key of idbKeys) {
+        if (typeof key === 'string') {
+            data[key] = await get(key);
+        }
+    }
+
     return data;
 };
 
@@ -158,11 +162,13 @@ const mergeArray = <T extends { id: string }>(existingArray: T[] = [], newItems:
     if (!Array.isArray(existingArray) || !Array.isArray(newItems)) return existingArray;
     return produce(existingArray, draft => {
         newItems.forEach(newItem => {
-            const index = draft.findIndex(item => item.id === newItem.id);
-            if (index !== -1) {
-                draft[index] = { ...draft[index], ...newItem };
-            } else {
-                draft.push(newItem);
+            if (newItem && typeof newItem.id !== 'undefined') {
+                const index = draft.findIndex(item => item.id === newItem.id);
+                if (index !== -1) {
+                    draft[index] = { ...draft[index], ...newItem };
+                } else {
+                    draft.push(newItem);
+                }
             }
         });
     });
@@ -173,44 +179,32 @@ export const importData = async (data: Record<string, any>) => {
     for (const key in data) {
         if (Object.prototype.hasOwnProperty.call(data, key)) {
             const newValue = data[key];
-            const existingRaw = localStorage.getItem(key);
-            let existingValue: any;
 
-            if (existingRaw) {
-                try {
-                    const parsed = JSON.parse(existingRaw);
-                    if (isIdbKey(parsed)) {
-                        existingValue = await get(fromIdbKey(parsed));
-                    } else {
-                        existingValue = parsed;
-                    }
-                } catch {
-                    existingValue = existingRaw;
-                }
-            }
-
-            let valueToStore = newValue;
-            // If both new and existing values are arrays, merge them.
-            if (Array.isArray(existingValue) && Array.isArray(newValue)) {
-                valueToStore = mergeArray(existingValue, newValue);
-            } else if (typeof newValue === 'string' && !isIdbKey(newValue)) {
-                try {
-                    // If the new value is a string that can be parsed, we probably want to store it as an object
-                    // but if not, store as string.
-                    valueToStore = JSON.parse(newValue);
-                } catch {
-                    valueToStore = newValue;
-                }
-            }
-
-            if (isLargeValue(valueToStore)) {
-                await set(key, valueToStore);
+            // If the value is large (like a font), store it in IDB and put pointer in LS.
+            if (isLargeValue(newValue)) {
+                await set(key, newValue);
                 localStorage.setItem(key, JSON.stringify(toIdbKey(key)));
             } else {
-                 if (typeof valueToStore === 'string') {
-                    localStorage.setItem(key, valueToStore);
+                let finalValue = newValue;
+                // Check if existing value is an array to merge.
+                try {
+                    const existingRaw = localStorage.getItem(key);
+                    if (existingRaw) {
+                        const existingParsed = JSON.parse(existingRaw);
+                        if (Array.isArray(existingParsed) && Array.isArray(newValue)) {
+                             // This is a simplistic array merge. A more sophisticated one might be needed
+                             // depending on the data structure (e.g., merging objects within arrays by ID).
+                             finalValue = mergeArray(existingParsed, newValue);
+                        }
+                    }
+                } catch {
+                    // Could not parse existing data, so we will overwrite.
+                }
+                
+                if (typeof finalValue === 'string') {
+                    localStorage.setItem(key, finalValue);
                 } else {
-                    localStorage.setItem(key, JSON.stringify(valueToStore));
+                    localStorage.setItem(key, JSON.stringify(finalValue));
                 }
             }
         }

@@ -1,8 +1,9 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { Users, Box, Settings as SettingsIcon, CreditCard, Bell, ChevronDown, Calendar, Clock, PackagePlus, Star, CheckSquare, RefreshCcw, Newspaper, UserCircle, Languages } from "lucide-react"
+import { Users, Box, Settings as SettingsIcon, CreditCard, Bell, ChevronDown, Calendar, Clock, PackagePlus, Star, CheckSquare, RefreshCcw, Newspaper, UserCircle } from "lucide-react"
 import { DashboardCard } from "@/components/dashboard/dashboard-card"
 import useLocalStorage from "@/hooks/use-local-storage"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -12,7 +13,7 @@ import { useTranslation } from "@/hooks/use-translation"
 
 export default function Home() {
   const [date, setDate] = useState<Date | null>(null);
-  const { t, language } = useTranslation();
+  const { t } = useTranslation();
 
 
   // Load settings from localStorage
@@ -55,7 +56,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground" dir={language === 'ku' ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen bg-background text-foreground">
       <header className="bg-card border-b top-0 z-10">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-20">

@@ -1,10 +1,11 @@
+
 "use client"
 
 import * as React from 'react';
 import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowLeft, Download, Upload, Save, Palette, Type, ShieldCheck, ImageIcon, LayoutDashboard, RefreshCcw, Play, Newspaper, Building, FileText, Receipt, CreditCard } from 'lucide-react'
+import { ArrowLeft, Download, Upload, Save, Palette, Type, ShieldCheck, ImageIcon, LayoutDashboard, RefreshCcw, Play, Newspaper, Building, FileText, Receipt, CreditCard, Languages } from 'lucide-react'
 import useLocalStorage, { getAllDataForExport, importData } from '@/hooks/use-local-storage'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -236,8 +237,7 @@ export default function SettingsPage() {
   const [pdfSettings, setPdfSettings] = useState(savedPdfSettings);
   const [activePdfTab, setActivePdfTab] = useState<'report' | 'invoice' | 'card'>('report');
 
-  const [englishTranslations, setEnglishTranslations] = useState<Record<string, string>>({});
-  const [kurdishTranslations, setKurdishTranslations] = useState<Record<string, string>>({});
+  const [translations, setTranslations] = useState<Record<string, string>>({});
   
   const [importFile, setImportFile] = useState<File | null>(null);
 
@@ -284,8 +284,7 @@ export default function SettingsPage() {
   useEffect(() => {
     setMounted(true)
     if (langContext) {
-      setEnglishTranslations(langContext.translations.en);
-      setKurdishTranslations(langContext.translations.ku);
+      setTranslations(langContext.translations.en);
     }
   }, [langContext]);
 
@@ -377,12 +376,12 @@ export default function SettingsPage() {
         
         // Also update PDF settings
         setPdfSettings(prev => ({
-          report: { ...prev.report, customFont: result, font: 'CustomFont' },
-          invoice: { ...prev.invoice, customFont: result, font: 'CustomFont' },
-          card: { ...prev.card, customFont: result, font: 'CustomFont' },
+          report: { ...prev.report, customFont: result, font: 'CustomAppFont' },
+          invoice: { ...prev.invoice, customFont: result, font: 'CustomAppFont' },
+          card: { ...prev.card, customFont: result, font: 'CustomAppFont' },
         }));
 
-        toast({ title: 'Custom font selected!', description: 'Applied to UI and PDF previews. Click "Save Changes" to persist.' });
+        toast({ title: 'Custom font selected!', description: 'Applied to UI and PDF previews. Click "Save All Changes" to persist.' });
       };
       reader.readAsDataURL(file);
     }
@@ -396,7 +395,7 @@ export default function SettingsPage() {
         const result = loadEvent.target?.result
         if (typeof result === 'string') {
           setter(result)
-          toast({ title: toastTitle, description: 'Click "Save Changes" to apply.' })
+          toast({ title: toastTitle, description: 'Click "Save All Changes" to apply.' })
         }
       }
       reader.readAsDataURL(file)
@@ -408,12 +407,10 @@ export default function SettingsPage() {
     setSavedDarkColors(darkColors);
     setSavedDashboardBanner(dashboardBanner);
     setSavedBannerHeight(bannerHeight);
-    setSavedPdfSettings(pdfSettings); // Save PDF settings with the main save
-    // customFontBase64 is already saved by its own hook
+    setSavedPdfSettings(pdfSettings);
 
     if(langContext) {
-      langContext.setTranslations(englishTranslations, 'en');
-      langContext.setTranslations(kurdishTranslations, 'ku');
+      langContext.setTranslations(translations, 'en');
     }
     toast({ title: 'Settings saved!', description: 'Your appearance and language settings have been updated.' });
   }
@@ -560,7 +557,7 @@ export default function SettingsPage() {
         <Tabs defaultValue="design" className="w-full">
             <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="design">Design</TabsTrigger>
-                <TabsTrigger value="language">Language</TabsTrigger>
+                <TabsTrigger value="language">Language & Text</TabsTrigger>
                 <TabsTrigger value="pdf">PDF & Reports</TabsTrigger>
                 <TabsTrigger value="data">Data Management</TabsTrigger>
             </TabsList>
@@ -627,40 +624,20 @@ export default function SettingsPage() {
             <TabsContent value="language" className="pt-6">
                  <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2">Language & Translations</CardTitle>
-                        <CardDescription>Edit the text for different languages used in the app.</CardDescription>
+                        <CardTitle className="flex items-center gap-2"><Languages /> Language & Text</CardTitle>
+                        <CardDescription>Edit the text for different UI elements used in the app. Click "Save All Changes" at the top to apply.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <Tabs defaultValue="english">
-                            <TabsList>
-                                <TabsTrigger value="english">English</TabsTrigger>
-                                <TabsTrigger value="kurdish">Kurdish (کوردی)</TabsTrigger>
-                            </TabsList>
-                            <TabsContent value="english">
-                                <ScrollArea className="h-96 pr-4">
-                                    <div className="space-y-4">
-                                        {Object.entries(englishTranslations).map(([key, value]) => (
-                                            <div key={key} className="grid grid-cols-3 gap-4 items-center">
-                                                <Label htmlFor={`en-${key}`} className="text-muted-foreground break-all">{key}</Label>
-                                                <Input id={`en-${key}`} value={value} onChange={e => setEnglishTranslations(prev => ({ ...prev, [key]: e.target.value }))} className="col-span-2" />
-                                            </div>
-                                        ))}
+                        <ScrollArea className="h-96 pr-4">
+                            <div className="space-y-4">
+                                {Object.entries(translations).map(([key, value]) => (
+                                    <div key={key} className="grid grid-cols-3 gap-4 items-center">
+                                        <Label htmlFor={`en-${key}`} className="text-muted-foreground break-all">{key}</Label>
+                                        <Input id={`en-${key}`} value={value} onChange={e => setTranslations(prev => ({ ...prev, [key]: e.target.value }))} className="col-span-2" />
                                     </div>
-                                </ScrollArea>
-                            </TabsContent>
-                            <TabsContent value="kurdish">
-                                <ScrollArea className="h-96 pr-4">
-                                    <div className="space-y-4" dir='rtl'>
-                                        {Object.entries(kurdishTranslations).map(([key, value]) => (
-                                            <div key={key} className="grid grid-cols-3 gap-4 items-center">
-                                                <Label htmlFor={`ku-${key}`} className="text-muted-foreground break-all">{key}</Label>
-                                                <Input id={`ku-${key}`} value={value} onChange={e => setKurdishTranslations(prev => ({ ...prev, [key]: e.target.value }))} className="col-span-2" dir='rtl' />
-                                            </div>
-                                        ))}
-                                    </div>
-                                </ScrollArea>
-                            </TabsContent>
-                        </Tabs>
+                                ))}
+                            </div>
+                        </ScrollArea>
                     </CardContent>
                 </Card>
             </TabsContent>
@@ -745,7 +722,7 @@ export default function SettingsPage() {
                         <Card>
                             <CardHeader><CardTitle>Live Preview</CardTitle><CardDescription>A preview of your {activePdfTab} design.</CardDescription></CardHeader>
                             <CardContent className='bg-muted/50 p-6 rounded-b-lg flex justify-center items-start overflow-auto'>
-                                <div className="w-[595px] min-h-[842px] bg-white shadow-lg transform scale-100 origin-top overflow-hidden flex flex-col">
+                                <div className="w-full bg-white shadow-lg transform origin-top overflow-hidden flex flex-col" style={{ aspectRatio: '1 / 1.4142' }}>
                                 {activePdfTab === 'report' && (
                                     <>
                                         <ReportPdfHeader title="Example Report Title" subtitle="This is an example subtitle" logoSrc={currentPdfSettings.logo ?? null} themeColor={pdfSettings.report.reportColors?.general} headerText={currentPdfSettings.headerText} />
