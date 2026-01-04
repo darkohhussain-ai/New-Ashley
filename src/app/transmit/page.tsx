@@ -6,35 +6,38 @@ import { ArrowLeft, PackagePlus, ListPlus, Eye, ClipboardList } from 'lucide-rea
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-
-const menuItems = [
-  {
-    title: "Add & Manage Items",
-    icon: ListPlus,
-    href: "/transmit/add",
-    color: "bg-blue-500",
-  },
-  {
-    title: "View Staged Items",
-    icon: ClipboardList,
-    href: "/transmit/staged",
-    color: "bg-orange-500",
-  },
-  {
-    title: "Create Transfer Slip",
-    icon: PackagePlus,
-    href: "/transmit/create",
-    color: "bg-green-500",
-  },
-  {
-    title: "View Transfers",
-    icon: Eye,
-    href: "/transmit/archive",
-    color: "bg-purple-500",
-  }
-];
+import { useTranslation } from '@/hooks/use-translation';
 
 export default function TransmitDashboardPage() {
+    const { t } = useTranslation();
+
+    const menuItems = [
+      {
+        title: t('add_manage_items'),
+        icon: ListPlus,
+        href: "/transmit/add",
+        color: "bg-blue-500",
+      },
+      {
+        title: t('view_staged_items'),
+        icon: ClipboardList,
+        href: "/transmit/staged",
+        color: "bg-orange-500",
+      },
+      {
+        title: t('create_transfer_slip'),
+        icon: PackagePlus,
+        href: "/transmit/create",
+        color: "bg-green-500",
+      },
+      {
+        title: t('view_transfers'),
+        icon: Eye,
+        href: "/transmit/archive",
+        color: "bg-purple-500",
+      }
+    ];
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="bg-card border-b p-4">
@@ -42,10 +45,10 @@ export default function TransmitDashboardPage() {
           <Button variant="outline" size="icon" asChild>
             <Link href="/">
               <ArrowLeft />
-              <span className="sr-only">Back to Dashboard</span>
+              <span className="sr-only">{t('back_to_dashboard')}</span>
             </Link>
           </Button>
-          <h1 className="text-xl font-bold">Transmit Cargo</h1>
+          <h1 className="text-xl font-bold">{t('transmit_cargo')}</h1>
         </div>
       </header>
       <main className='container mx-auto p-4 md:p-8'>

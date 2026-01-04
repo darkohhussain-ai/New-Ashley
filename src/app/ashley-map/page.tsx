@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { cn } from '@/lib/utils';
 import { useAppContext } from '@/context/app-provider';
 import type { Item, StorageLocation } from '@/lib/types';
+import { useTranslation } from '@/hooks/use-translation';
 
 
 const SectionButton = ({ id, code, items, onClick, className, isHighlighted }: { id: string, code: string; items: Item[]; onClick: () => void, className?: string, isHighlighted?: boolean }) => {
@@ -41,6 +42,7 @@ const SectionButton = ({ id, code, items, onClick, className, isHighlighted }: {
 export default function AshleyMapPage() {
   const { locations, items: allItems } = useAppContext();
   const [highlightId, setHighlightId] = useState('');
+  const { t } = useTranslation();
 
   const [selectedLocation, setSelectedLocation] = useState<StorageLocation | null>(null);
   const [itemsInLocation, setItemsInLocation] = useState<Item[]>([]);
@@ -101,12 +103,12 @@ export default function AshleyMapPage() {
     );
     
     const area1 = Object.keys(area1Units).sort().map(unitKey => ({
-      name: `Unit ${unitKey}`,
+      name: `${t('unit')} ${unitKey}`,
       sections: area1Units[unitKey]
     }));
 
     return { floor4, floor3: { area1, office } };
-  }, [ashleyLocations]);
+  }, [ashleyLocations, t]);
   
   const itemsByLocationId = useMemo(() => {
     if (!allItems) return new Map<string, Item[]>();
@@ -126,10 +128,10 @@ export default function AshleyMapPage() {
           <Button variant="outline" size="icon" asChild>
             <Link href="/">
               <ArrowLeft />
-              <span className="sr-only">Back to Dashboard</span>
+              <span className="sr-only">{t('back_to_dashboard')}</span>
             </Link>
           </Button>
-          <h1 className="text-2xl md:text-3xl font-bold">Ashley Warehouse Map</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">{t('ashley_warehouse_map')}</h1>
         </header>
         <main className="space-y-8">
           {isLoading ? (
@@ -145,7 +147,7 @@ export default function AshleyMapPage() {
             <>
               <Card>
                 <CardHeader>
-                  <CardTitle>Floor 4</CardTitle>
+                  <CardTitle>{t('floor_4')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
@@ -164,11 +166,11 @@ export default function AshleyMapPage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Floor 3</CardTitle>
+                  <CardTitle>{t('floor_3')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-8">
                   <div>
-                    <h3 className="font-semibold text-lg mb-4">Area 1</h3>
+                    <h3 className="font-semibold text-lg mb-4">{t('area_1')}</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {floor3.area1.map(unit => (
                         <Card key={unit.name} className="p-3">
@@ -190,7 +192,7 @@ export default function AshleyMapPage() {
                     </div>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-lg mb-4">Area 2 (Office)</h3>
+                    <h3 className="font-semibold text-lg mb-4">{t('area_2_office')}</h3>
                     <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
                        {floor3.office.map(loc => (
                         <SectionButton 
@@ -211,25 +213,25 @@ export default function AshleyMapPage() {
            {(!isLoading && floor4.length === 0 && floor3.area1.length === 0 && floor3.office.length === 0) && (
              <div className="text-center py-16 border-2 border-dashed rounded-lg">
                 <Box className="mx-auto h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-4 text-lg font-medium">No Ashley Locations Found</h3>
-                <p className="mt-2 text-sm text-muted-foreground">Go to 'Manage Locations' to generate the warehouse codes.</p>
-                <Button asChild className="mt-4"><Link href="/locations">Manage Locations</Link></Button>
+                <h3 className="mt-4 text-lg font-medium">{t('no_ashley_locations_found')}</h3>
+                <p className="mt-2 text-sm text-muted-foreground">{t('no_ashley_locations_found_desc')}</p>
+                <Button asChild className="mt-4"><Link href="/locations">{t('manage_locations')}</Link></Button>
             </div>
            )}
         </main>
       </div>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Items in Location: {selectedLocation?.name}</DialogTitle>
-          <CardDescription>A list of all items currently stored in this section.</CardDescription>
+          <DialogTitle>{t('items_in_location', {locationName: selectedLocation?.name})}</DialogTitle>
+          <CardDescription>{t('items_in_location_desc')}</CardDescription>
         </DialogHeader>
         <div className="max-h-[60vh] overflow-y-auto">
           {itemsInLocation.length > 0 ? (
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead>Model</TableHead>
-                        <TableHead className="text-right">Quantity</TableHead>
+                        <TableHead>{t('model')}</TableHead>
+                        <TableHead className="text-right">{t('quantity_short')}</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -242,7 +244,7 @@ export default function AshleyMapPage() {
                 </TableBody>
             </Table>
           ) : (
-            <p className="text-center text-muted-foreground p-8">No items found in this location.</p>
+            <p className="text-center text-muted-foreground p-8">{t('no_items_in_this_location')}</p>
           )}
         </div>
       </DialogContent>

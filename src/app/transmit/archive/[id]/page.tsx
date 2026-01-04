@@ -17,10 +17,12 @@ import autoTable from 'jspdf-autotable';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAppContext } from '@/context/app-provider';
 import type { Transfer, ItemForTransfer, AllPdfSettings } from '@/lib/types';
+import { useTranslation } from '@/hooks/use-translation';
 
 
 export default function ViewTransferPage() {
   const { id: transferId } = useParams();
+  const { t } = useTranslation();
   const { transfers, transferItems } = useAppContext();
 
   const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {}, card: {} });
@@ -59,7 +61,7 @@ export default function ViewTransferPage() {
     
     autoTable(pdf, {
       startY: finalImgHeight + 30,
-      head: [['Model', 'Quantity', 'Notes']],
+      head: [[t('model'), t('quantity'), t('notes')]],
       body: items.map(item => [item.model, item.quantity, item.notes || '']),
       theme: 'grid',
       styles: { fontSize: 8, cellPadding: 2 },
@@ -74,8 +76,8 @@ export default function ViewTransferPage() {
     let finalY = (pdf as any).lastAutoTable.finalY + 20;
 
     pdf.setFontSize(10);
-    pdf.text(`Driver: ${transfer.driverName}`, 14, finalY);
-    pdf.text(`Warehouse Manager: ${transfer.warehouseManagerName}`, 14, finalY + 10);
+    pdf.text(`${t('driver')}: ${transfer.driverName}`, 14, finalY);
+    pdf.text(`${t('warehouse_manager')}: ${transfer.warehouseManagerName}`, 14, finalY + 10);
     
     finalY += 40;
     const pageHeight = pdf.internal.pageSize.height;
@@ -109,10 +111,10 @@ export default function ViewTransferPage() {
             <Button variant="outline" size="icon" asChild>
                 <Link href="/transmit/archive"><ArrowLeft /></Link>
             </Button>
-            <h1 className="text-2xl md:text-3xl font-bold">Transfer Details</h1>
+            <h1 className="text-2xl md:text-3xl font-bold">{t('transfer_details')}</h1>
           </div>
           <Button onClick={handleDownloadPdf} disabled={!transfer || !items}>
-              <FileDown className="mr-2"/> Download PDF
+              <FileDown className="mr-2"/> {t('download_pdf')}
           </Button>
       </header>
 
@@ -128,24 +130,24 @@ export default function ViewTransferPage() {
                     <CardTitle>{transfer.cargoName}</CardTitle>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-                    <p className="flex gap-2 items-center"><Truck className="w-4 h-4 text-primary"/> <strong>Destination:</strong> {transfer.destinationCity}</p>
-                    <p className="flex gap-2 items-center"><Calendar className="w-4 h-4 text-primary"/> <strong>Date:</strong> {format(parseISO(transfer.transferDate), 'PPP')}</p>
-                    <p className="flex gap-2 items-center"><User className="w-4 h-4 text-primary"/> <strong>Driver:</strong> {transfer.driverName}</p>
-                    <p className="flex gap-2 items-center"><Warehouse className="w-4 h-4 text-primary"/> <strong>Manager:</strong> {transfer.warehouseManagerName}</p>
+                    <p className="flex gap-2 items-center"><Truck className="w-4 h-4 text-primary"/> <strong>{t('destination')}:</strong> {transfer.destinationCity}</p>
+                    <p className="flex gap-2 items-center"><Calendar className="w-4 h-4 text-primary"/> <strong>{t('date')}:</strong> {format(parseISO(transfer.transferDate), 'PPP')}</p>
+                    <p className="flex gap-2 items-center"><User className="w-4 h-4 text-primary"/> <strong>{t('driver')}:</strong> {transfer.driverName}</p>
+                    <p className="flex gap-2 items-center"><Warehouse className="w-4 h-4 text-primary"/> <strong>{t('manager')}:</strong> {transfer.warehouseManagerName}</p>
                 </CardContent>
             </Card>
             <Card>
                 <CardHeader>
-                    <CardTitle>Transferred Items ({items.length})</CardTitle>
+                    <CardTitle>{t('transferred_items')} ({items.length})</CardTitle>
                 </CardHeader>
                 <CardContent>
                      <div className="overflow-x-auto">
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Model</TableHead>
-                                    <TableHead>Quantity</TableHead>
-                                    <TableHead>Notes</TableHead>
+                                    <TableHead>{t('model')}</TableHead>
+                                    <TableHead>{t('quantity')}</TableHead>
+                                    <TableHead>{t('notes')}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -153,7 +155,7 @@ export default function ViewTransferPage() {
                                     <TableRow key={item.id}>
                                         <TableCell className="font-medium">{item.model}</TableCell>
                                         <TableCell>{item.quantity}</TableCell>
-                                        <TableCell className="text-muted-foreground">{item.notes || 'N/A'}</TableCell>
+                                        <TableCell className="text-muted-foreground">{item.notes || t('na')}</TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -164,13 +166,11 @@ export default function ViewTransferPage() {
         </div>
       ) : (
         <div className="text-center py-16">
-            <h2 className="text-2xl font-bold">Transfer Not Found</h2>
-            <p className="text-muted-foreground">The transfer you are looking for does not exist.</p>
+            <h2 className="text-2xl font-bold">{t('transfer_not_found')}</h2>
+            <p className="text-muted-foreground">{t('transfer_not_found_desc')}</p>
         </div>
       )}
     </div>
     </>
   );
 }
-
-    

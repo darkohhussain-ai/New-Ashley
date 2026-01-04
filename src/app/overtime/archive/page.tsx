@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { format, parseISO } from 'date-fns';
 import { useAppContext } from '@/context/app-provider';
 import type { Overtime } from '@/lib/types';
+import { useTranslation } from '@/hooks/use-translation';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -19,6 +20,7 @@ const formatCurrency = (amount: number) => {
 };
 
 export default function OvertimeArchivePage() {
+  const { t } = useTranslation();
   const { overtime: allOvertimeRecords } = useAppContext();
   const isLoading = !allOvertimeRecords;
 
@@ -49,10 +51,10 @@ export default function OvertimeArchivePage() {
           <Button variant="outline" size="icon" asChild>
             <Link href="/overtime"><ArrowLeft /></Link>
           </Button>
-          <h1 className="text-2xl md:text-3xl font-bold">Overtime Archive</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">{t('overtime_archive')}</h1>
         </div>
          <Button asChild>
-            <Link href="/overtime/add"><Plus className="mr-2"/> Add Overtime</Link>
+            <Link href="/overtime/add"><Plus className="mr-2"/> {t('add_overtime')}</Link>
         </Button>
       </header>
       <main>
@@ -74,7 +76,7 @@ export default function OvertimeArchivePage() {
                 </CardContent>
                 <CardContent>
                   <Button asChild className="w-full">
-                    <Link href={`/overtime/add?date=${date}`}><Eye className="mr-2"/>View & Edit Details</Link>
+                    <Link href={`/overtime/add?date=${date}`}><Eye className="mr-2"/>{t('view_edit_details')}</Link>
                   </Button>
                 </CardContent>
               </Card>
@@ -83,9 +85,9 @@ export default function OvertimeArchivePage() {
         ) : (
           <div className="text-center py-16 border-2 border-dashed rounded-lg">
             <Archive className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-medium">No Overtime Records Found</h3>
-            <p className="mt-2 text-sm text-muted-foreground">Add your first overtime record to see the archive here.</p>
-             <Button asChild className="mt-4"><Link href="/overtime/add">Add Overtime</Link></Button>
+            <h3 className="mt-4 text-lg font-medium">{t('no_overtime_records_found')}</h3>
+            <p className="mt-2 text-sm text-muted-foreground">{t('no_overtime_records_found_desc')}</p>
+             <Button asChild className="mt-4"><Link href="/overtime/add">{t('add_overtime')}</Link></Button>
           </div>
         )}
       </main>

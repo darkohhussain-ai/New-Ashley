@@ -13,11 +13,13 @@ import { format } from 'date-fns';
 import { useAppContext } from '@/context/app-provider';
 import { ItemForTransfer } from '@/lib/types';
 import useLocalStorage from '@/hooks/use-local-storage';
+import { useTranslation } from '@/hooks/use-translation';
 
 
 const destinations = ["Erbil", "Baghdad", "Diwan", "Dohuk"];
 
 export default function StagedItemsPage() {
+  const { t } = useTranslation();
   const { transferItems } = useAppContext();
   const [selectedDestination, setSelectedDestination] = useState<string | null>(null);
   const [customFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
@@ -54,7 +56,7 @@ export default function StagedItemsPage() {
     
     autoTable(doc, {
         startY: 40,
-        head: [['Model', 'Quantity', 'Notes']],
+        head: [[t('model'), t('quantity'), t('notes')]],
         body: itemsForSelectedDestination.map(item => [item.model, item.quantity, item.notes || '']),
         didParseCell: function (data) {
           if (customFontBase64) {
@@ -83,7 +85,7 @@ export default function StagedItemsPage() {
                 <Button variant="outline" size="icon" asChild>
                     <Link href="/transmit"><ArrowLeft /></Link>
                 </Button>
-                <h1 className="text-2xl md:text-3xl font-bold">Staged Items List</h1>
+                <h1 className="text-2xl md:text-3xl font-bold">{t('view_staged_items')}</h1>
             </header>
             <div className="flex justify-center p-8"><Loader2 className="animate-spin text-primary h-8 w-8"/></div>
         </div>
@@ -98,10 +100,10 @@ export default function StagedItemsPage() {
                     <Button variant="outline" size="icon" onClick={() => setSelectedDestination(null)}>
                         <ArrowLeft />
                     </Button>
-                    <h1 className="text-2xl md:text-3xl font-bold">Staged Items for {selectedDestination}</h1>
+                    <h1 className="text-2xl md:text-3xl font-bold">{t('staged_items_for')} {selectedDestination}</h1>
                 </div>
                 <Button onClick={handleDownloadPdf} disabled={itemsForSelectedDestination.length === 0}>
-                    <FileDown className="mr-2 h-4 w-4" /> Download PDF
+                    <FileDown className="mr-2 h-4 w-4" /> {t('download_pdf')}
                 </Button>
             </header>
              <Card>
@@ -111,9 +113,9 @@ export default function StagedItemsPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Model</TableHead>
-                                    <TableHead className="w-24">Quantity</TableHead>
-                                    <TableHead>Notes</TableHead>
+                                    <TableHead>{t('model')}</TableHead>
+                                    <TableHead className="w-24">{t('quantity')}</TableHead>
+                                    <TableHead>{t('notes')}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -121,7 +123,7 @@ export default function StagedItemsPage() {
                                     <TableRow key={item.id}>
                                         <TableCell className="font-medium">{item.model}</TableCell>
                                         <TableCell>{item.quantity}</TableCell>
-                                        <TableCell className="text-muted-foreground">{item.notes || 'N/A'}</TableCell>
+                                        <TableCell className="text-muted-foreground">{item.notes || t('na')}</TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -130,8 +132,8 @@ export default function StagedItemsPage() {
                 ) : (
                     <div className="text-center py-16">
                         <ListPlus className="mx-auto h-12 w-12 text-muted-foreground" />
-                        <h3 className="mt-4 text-lg font-medium">No Items Staged</h3>
-                        <p className="mt-2 text-sm text-muted-foreground">There are no items currently staged for {selectedDestination}.</p>
+                        <h3 className="mt-4 text-lg font-medium">{t('no_items_staged')}</h3>
+                        <p className="mt-2 text-sm text-muted-foreground">{t('no_items_staged_for_destination', {destination: selectedDestination})}</p>
                     </div>
                 )}
               </CardContent>
@@ -147,15 +149,15 @@ export default function StagedItemsPage() {
             <Button variant="outline" size="icon" asChild>
                 <Link href="/transmit"><ArrowLeft /></Link>
             </Button>
-            <h1 className="text-2xl md:text-3xl font-bold">View Staged Items</h1>
+            <h1 className="text-2xl md:text-3xl font-bold">{t('view_staged_items')}</h1>
         </div>
       </header>
 
       <main>
         <Card>
             <CardHeader>
-                <CardTitle>Select a Destination</CardTitle>
-                <CardDescription>Choose a branch to view the list of items staged for transfer.</CardDescription>
+                <CardTitle>{t('select_a_destination')}</CardTitle>
+                <CardDescription>{t('select_destination_to_view_staged')}</CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {destinations.map(destination => (
@@ -175,5 +177,3 @@ export default function StagedItemsPage() {
     </div>
   );
 }
-
-    

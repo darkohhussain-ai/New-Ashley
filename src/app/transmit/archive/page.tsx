@@ -9,10 +9,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { format, parseISO } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAppContext } from '@/context/app-provider';
+import { useTranslation } from '@/hooks/use-translation';
 
 
 export default function TransferArchivePage() {
   const { transfers } = useAppContext();
+  const { t } = useTranslation();
   const isLoading = !transfers;
 
   const sortedTransfers = useMemo(() => {
@@ -28,7 +30,7 @@ export default function TransferArchivePage() {
             <ArrowLeft />
           </Link>
         </Button>
-        <h1 className="text-2xl md:text-3xl font-bold">View Transfers</h1>
+        <h1 className="text-2xl md:text-3xl font-bold">{t('view_transfers')}</h1>
       </header>
       <main>
         {isLoading ? (
@@ -53,18 +55,18 @@ export default function TransferArchivePage() {
                 <Card key={transfer.id} className="hover:border-primary/50 hover:shadow-lg transition-all h-full flex flex-col">
                     <CardHeader>
                     <CardTitle className="text-lg leading-tight">{transfer.cargoName}</CardTitle>
-                    <CardDescription>To: {transfer.destinationCity}</CardDescription>
+                    <CardDescription>{t('to_destination')}: {transfer.destinationCity}</CardDescription>
                     </CardHeader>
                     <CardContent className="flex-grow space-y-3 text-sm text-muted-foreground">
                     <p className="flex items-center gap-2"><CalendarIcon className="w-4 h-4 text-primary" /> {format(parseISO(transfer.transferDate), 'PPP')}</p>
-                    <p className="flex items-center gap-2"><Truck className="w-4 h-4 text-primary" /> Driver: {transfer.driverName}</p>
-                    <p className="flex items-center gap-2"><User className="w-4 h-4 text-primary" /> Manager: {transfer.warehouseManagerName}</p>
+                    <p className="flex items-center gap-2"><Truck className="w-4 h-4 text-primary" /> {t('driver')}: {transfer.driverName}</p>
+                    <p className="flex items-center gap-2"><User className="w-4 h-4 text-primary" /> {t('manager')}: {transfer.warehouseManagerName}</p>
                     </CardContent>
                     <CardContent className="flex justify-between items-center">
-                        <p className="font-bold text-sm text-primary">{transfer.itemIds.length} items</p>
+                        <p className="font-bold text-sm text-primary">{transfer.itemIds.length} {t('items_lowercase')}</p>
                         <Button asChild variant="outline" size="sm">
                             <Link href={`/transmit/archive/${transfer.id}`}>
-                                <Eye className="mr-2 h-4 w-4"/> View
+                                <Eye className="mr-2 h-4 w-4"/> {t('view')}
                             </Link>
                         </Button>
                     </CardContent>
@@ -74,8 +76,8 @@ export default function TransferArchivePage() {
         ) : (
           <div className="text-center py-16 border-2 border-dashed rounded-lg">
             <Archive className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-medium">No Archived Transfers</h3>
-            <p className="mt-2 text-sm text-muted-foreground">Create your first transfer slip to see it here.</p>
+            <h3 className="mt-4 text-lg font-medium">{t('no_archived_transfers')}</h3>
+            <p className="mt-2 text-sm text-muted-foreground">{t('no_archived_transfers_desc')}</p>
           </div>
         )}
       </main>

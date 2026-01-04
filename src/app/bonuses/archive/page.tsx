@@ -72,7 +72,7 @@ export default function BonusArchivePage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="flex-grow space-y-3 text-sm">
-                  <p className="flex items-center gap-2 text-muted-foreground"><Truck className="w-4 h-4"/> {t('total_loads')}: <span className="font-bold text-foreground">{totalLoads.toFixed(0)}</span></p>
+                  <p className="flex items-center gap-2 text-muted-foreground"><Truck className="w-4 h-4"/> Total Loads: <span className="font-bold text-foreground">{totalLoads.toFixed(0)}</span></p>
                   <p className="text-lg font-bold text-primary">{formatCurrency(totalAmount)}</p>
                 </CardContent>
                 <CardContent>

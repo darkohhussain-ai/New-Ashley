@@ -24,12 +24,14 @@ import autoTable from 'jspdf-autotable';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAppContext } from '@/context/app-provider';
 import type { Transfer, ItemForTransfer, AllPdfSettings } from '@/lib/types';
+import { useTranslation } from '@/hooks/use-translation';
 
 
 const destinations = ["Erbil", "Baghdad", "Diwan", "Dohuk"];
 
 export default function CreateTransferPage() {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const { transferItems, setTransferItems, transfers, setTransfers } = useAppContext();
 
   const [isSaving, setIsSaving] = useState(false);
@@ -73,7 +75,7 @@ export default function CreateTransferPage() {
     const selectedItemIds = Object.keys(selectedItems).filter(id => selectedItems[id]);
 
     if (!destinationCity || !driverName || !warehouseManagerName || !transferDate || selectedItemIds.length === 0) {
-      toast({ variant: 'destructive', title: 'Missing Information', description: 'Please fill out all transfer details and select at least one item.' });
+      toast({ variant: 'destructive', title: t('missing_information'), description: t('create_transfer_validation') });
       return;
     }
     setIsSaving(true);
@@ -100,7 +102,7 @@ export default function CreateTransferPage() {
         setLastTransfer(transferData);
         setLastTransferItems(itemsForThisTransfer);
         setIsModalOpen(true);
-        toast({ title: 'Success!', description: 'Transfer slip created successfully.' });
+        toast({ title: t('success'), description: t('transfer_slip_created') });
 
         setDestinationCity('');
         setDriverName('');
@@ -110,7 +112,7 @@ export default function CreateTransferPage() {
         
     } catch (error) {
         console.error("Error creating transfer:", error);
-        toast({ variant: 'destructive', title: 'Save Error', description: 'Could not create the transfer slip.' });
+        toast({ variant: 'destructive', title: t('save_error'), description: t('create_transfer_error') });
     } finally {
         setIsSaving(false);
     }
@@ -144,7 +146,7 @@ export default function CreateTransferPage() {
     
     autoTable(pdf, {
       startY: finalImgHeight + 30,
-      head: [['Model', 'Quantity', 'Notes']],
+      head: [[t('model'), t('quantity'), t('notes')]],
       body: lastTransferItems.map(item => [item.model, item.quantity, item.notes || '']),
       theme: 'grid',
       styles: { fontSize: 8, cellPadding: 2 },
@@ -159,8 +161,8 @@ export default function CreateTransferPage() {
     let finalY = (pdf as any).lastAutoTable.finalY + 20;
 
     pdf.setFontSize(10);
-    pdf.text(`Driver: ${lastTransfer.driverName}`, 14, finalY);
-    pdf.text(`Warehouse Manager: ${lastTransfer.warehouseManagerName}`, 14, finalY + 10);
+    pdf.text(`${t('driver')}: ${lastTransfer.driverName}`, 14, finalY);
+    pdf.text(`${t('warehouse_manager')}: ${lastTransfer.warehouseManagerName}`, 14, finalY + 10);
 
     finalY += 40;
     const pageHeight = pdf.internal.pageSize.height;
@@ -193,41 +195,41 @@ export default function CreateTransferPage() {
           <Button variant="outline" size="icon" asChild>
             <Link href="/transmit"><ArrowLeft /></Link>
           </Button>
-          <h1 className="text-2xl md:text-3xl font-bold">Create Transfer Slip</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">{t('create_transfer_slip')}</h1>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-1 space-y-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Transfer Details</CardTitle>
-                    <CardDescription>Select items from the list and fill out the details below.</CardDescription>
+                    <CardTitle>{t('transfer_details')}</CardTitle>
+                    <CardDescription>{t('transfer_details_desc')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="destination">Destination City</Label>
+                        <Label htmlFor="destination">{t('destination_city')}</Label>
                         <Select onValueChange={setDestinationCity} value={destinationCity}>
-                            <SelectTrigger id="destination"><SelectValue placeholder="Filter items by city" /></SelectTrigger>
+                            <SelectTrigger id="destination"><SelectValue placeholder={t('filter_items_by_city')} /></SelectTrigger>
                             <SelectContent>
                                 {destinations.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
                             </SelectContent>
                         </Select>
                     </div>
                      <div className="space-y-2">
-                        <Label htmlFor="driver-name">Driver Name</Label>
-                        <Input id="driver-name" value={driverName} onChange={e => setDriverName(e.target.value)} placeholder="Enter driver's name" />
+                        <Label htmlFor="driver-name">{t('driver_name')}</Label>
+                        <Input id="driver-name" value={driverName} onChange={e => setDriverName(e.target.value)} placeholder={t('enter_driver_name')} />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="manager-name">Warehouse Manager</Label>
-                        <Input id="manager-name" value={warehouseManagerName} onChange={e => setWarehouseManagerName(e.target.value)} placeholder="Enter manager's name" />
+                        <Label htmlFor="manager-name">{t('warehouse_manager')}</Label>
+                        <Input id="manager-name" value={warehouseManagerName} onChange={e => setWarehouseManagerName(e.target.value)} placeholder={t('enter_manager_name')} />
                     </div>
                     <div className="space-y-2">
-                        <Label>Transfer Date</Label>
+                        <Label>{t('transfer_date')}</Label>
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !transferDate && "text-muted-foreground")}>
                                     <Calendar className="mr-2 h-4 w-4" />
-                                    {transferDate ? format(transferDate, 'PPP') : <span>Pick a date</span>}
+                                    {transferDate ? format(transferDate, 'PPP') : <span>{t('pick_a_date')}</span>}
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0"><CalendarComponent mode="single" selected={transferDate} onSelect={setTransferDate} initialFocus /></PopoverContent>
@@ -237,7 +239,7 @@ export default function CreateTransferPage() {
                 <CardContent>
                      <Button onClick={handleCreateTransfer} disabled={isSaving || Object.keys(selectedItems).filter(k => selectedItems[k]).length === 0} className="w-full">
                         {isSaving ? <Loader2 className="animate-spin mr-2"/> : <Truck className="mr-2" />}
-                        Create Transfer &amp; Generate Report
+                        {t('create_transfer_generate_report')}
                     </Button>
                 </CardContent>
             </Card>
@@ -245,8 +247,8 @@ export default function CreateTransferPage() {
         <div className="lg:col-span-2">
             <Card>
                 <CardHeader>
-                    <CardTitle>Items Ready for Transfer ({filteredItems.length})</CardTitle>
-                    <CardDescription>Select items to include in this shipment. List is filtered by destination.</CardDescription>
+                    <CardTitle>{t('items_ready_for_transfer')} ({filteredItems.length})</CardTitle>
+                    <CardDescription>{t('items_ready_for_transfer_desc')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                      <div className="overflow-x-auto">
@@ -261,9 +263,9 @@ export default function CreateTransferPage() {
                                           disabled={!destinationCity}
                                         />
                                     </TableHead>
-                                    <TableHead>Model</TableHead>
-                                    <TableHead>Quantity</TableHead>
-                                    <TableHead>Destination</TableHead>
+                                    <TableHead>{t('model')}</TableHead>
+                                    <TableHead>{t('quantity')}</TableHead>
+                                    <TableHead>{t('destination')}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -289,7 +291,7 @@ export default function CreateTransferPage() {
                                 )) : (
                                     <TableRow>
                                         <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">
-                                            {destinationCity ? 'No items for this destination.' : 'Please select a destination city to see items.'}
+                                            {destinationCity ? t('no_items_for_destination') : t('select_destination_to_see_items')}
                                         </TableCell>
                                     </TableRow>
                                 )}
@@ -305,26 +307,26 @@ export default function CreateTransferPage() {
          <AlertDialog open={isModalOpen} onOpenChange={setIsModalOpen}>
             <AlertDialogContent className="max-w-2xl">
                 <AlertDialogHeader>
-                    <AlertDialogTitle>Transfer Slip Created!</AlertDialogTitle>
+                    <AlertDialogTitle>{t('transfer_slip_created_title')}</AlertDialogTitle>
                     <AlertDialogDescription>
-                        The transfer slip for "{lastTransfer.cargoName}" has been successfully created.
+                        {t('transfer_slip_created_desc', {cargoName: lastTransfer.cargoName})}
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <div className="max-h-[60vh] overflow-y-auto p-1">
-                   <h3 className="text-lg font-semibold mb-2">Transfer Summary</h3>
+                   <h3 className="text-lg font-semibold mb-2">{t('transfer_summary')}</h3>
                    <div className="grid grid-cols-2 gap-4 text-sm mb-4">
-                        <p className="flex gap-2"><Truck className="w-4 h-4 text-primary"/> <strong>Destination:</strong> {lastTransfer.destinationCity}</p>
-                        <p className="flex gap-2"><Calendar className="w-4 h-4 text-primary"/> <strong>Date:</strong> {format(parseISO(lastTransfer.transferDate), 'PPP')}</p>
-                        <p className="flex gap-2"><User className="w-4 h-4 text-primary"/> <strong>Driver:</strong> {lastTransfer.driverName}</p>
-                        <p className="flex gap-2"><Warehouse className="w-4 h-4 text-primary"/> <strong>Manager:</strong> {lastTransfer.warehouseManagerName}</p>
+                        <p className="flex gap-2"><Truck className="w-4 h-4 text-primary"/> <strong>{t('destination')}:</strong> {lastTransfer.destinationCity}</p>
+                        <p className="flex gap-2"><Calendar className="w-4 h-4 text-primary"/> <strong>{t('date')}:</strong> {format(parseISO(lastTransfer.transferDate), 'PPP')}</p>
+                        <p className="flex gap-2"><User className="w-4 h-4 text-primary"/> <strong>{t('driver')}:</strong> {lastTransfer.driverName}</p>
+                        <p className="flex gap-2"><Warehouse className="w-4 h-4 text-primary"/> <strong>{t('manager')}:</strong> {lastTransfer.warehouseManagerName}</p>
                    </div>
-                   <h3 className="text-lg font-semibold mb-2">Transferred Items ({lastTransfer.itemIds.length})</h3>
+                   <h3 className="text-lg font-semibold mb-2">{t('transferred_items')} ({lastTransfer.itemIds.length})</h3>
                    <div className="border rounded-md">
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Model</TableHead>
-                                    <TableHead>Quantity</TableHead>
+                                    <TableHead>{t('model')}</TableHead>
+                                    <TableHead>{t('quantity')}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -339,8 +341,8 @@ export default function CreateTransferPage() {
                    </div>
                 </div>
                 <AlertDialogFooter>
-                    <Button variant="outline" onClick={() => setIsModalOpen(false)}>Close</Button>
-                    <Button onClick={handleDownloadPdf}><FileDown className="mr-2"/> Download PDF</Button>
+                    <Button variant="outline" onClick={() => setIsModalOpen(false)}>{t('close')}</Button>
+                    <Button onClick={handleDownloadPdf}><FileDown className="mr-2"/> {t('download_pdf')}</Button>
                 </AlertDialogFooter>
             </AlertDialogContent>
          </AlertDialog>
@@ -349,5 +351,3 @@ export default function CreateTransferPage() {
     </>
   );
 }
-
-    

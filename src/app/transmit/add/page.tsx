@@ -16,11 +16,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useAppContext } from '@/context/app-provider';
 import type { ItemForTransfer } from '@/lib/types';
 import { formatISO } from 'date-fns';
+import { useTranslation } from '@/hooks/use-translation';
 
 const destinations = ["Erbil", "Baghdad", "Diwan", "Dohuk"];
 
 export default function AddItemsPage() {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const { transferItems, setTransferItems } = useAppContext();
 
   const [isSaving, setIsSaving] = useState(false);
@@ -54,7 +56,7 @@ export default function AddItemsPage() {
 
   const handleAddItem = () => {
     if (!model.trim() || !destination) {
-      toast({ variant: 'destructive', title: 'Missing Information', description: 'Please provide a model and destination.' });
+      toast({ variant: 'destructive', title: t('missing_information'), description: t('provide_model_destination') });
       return;
     }
     
@@ -70,7 +72,7 @@ export default function AddItemsPage() {
     };
     
     setTransferItems([...transferItems, newItemData]);
-    toast({ title: 'Item Added', description: `${model} has been added to the transfer list.` });
+    toast({ title: t('item_added'), description: t('item_added_to_transfer_list', {model}) });
     resetForm();
     setIsSaving(false);
   };
@@ -80,14 +82,14 @@ export default function AddItemsPage() {
 
     setIsSaving(true);
     setTransferItems(transferItems.map(item => item.id === editingItem.id ? editingItem : item));
-    toast({ title: 'Item Updated', description: 'Your changes have been saved.' });
+    toast({ title: t('item_updated'), description: t('item_changes_saved') });
     setEditingItem(null);
     setIsSaving(false);
   };
 
   const handleDeleteItem = (itemToDelete: ItemForTransfer) => {
     setTransferItems(transferItems.filter(item => item.id !== itemToDelete.id));
-    toast({ title: 'Item Removed', description: `${itemToDelete.model} has been removed.` });
+    toast({ title: t('item_removed'), description: t('item_removed_from_list', {model: itemToDelete.model}) });
   };
   
   const startEditing = (item: ItemForTransfer) => {
@@ -102,29 +104,29 @@ export default function AddItemsPage() {
             <ArrowLeft />
           </Link>
         </Button>
-        <h1 className="text-2xl md:text-3xl font-bold">Add & Manage Transfer Items</h1>
+        <h1 className="text-2xl md:text-3xl font-bold">{t('add_manage_items')}</h1>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-1">
             <Card>
                 <CardHeader>
-                    <CardTitle>{editingItem ? 'Edit Item' : 'Add New Item'}</CardTitle>
+                    <CardTitle>{editingItem ? t('edit_item') : t('add_new_item')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="model">Model Name</Label>
+                        <Label htmlFor="model">{t('model_name')}</Label>
                         <Input id="model" value={editingItem ? editingItem.model : model} onChange={(e) => editingItem ? setEditingItem({...editingItem, model: e.target.value}) : setModel(e.target.value)} placeholder="e.g., Sofa 123" />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="quantity">Quantity</Label>
+                            <Label htmlFor="quantity">{t('quantity')}</Label>
                             <Input id="quantity" type="number" value={editingItem ? editingItem.quantity : quantity} onChange={(e) => editingItem ? setEditingItem({...editingItem, quantity: e.target.valueAsNumber}) : setQuantity(e.target.valueAsNumber)} min="1" />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="destination">Destination</Label>
+                            <Label htmlFor="destination">{t('destination')}</Label>
                              <Select value={editingItem ? editingItem.destination : destination} onValueChange={(val) => editingItem ? setEditingItem({...editingItem, destination: val}) : setDestination(val)}>
-                                <SelectTrigger id="destination"><SelectValue placeholder="Select branch" /></SelectTrigger>
+                                <SelectTrigger id="destination"><SelectValue placeholder={t('select_branch')} /></SelectTrigger>
                                 <SelectContent>
                                     {destinations.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
                                 </SelectContent>
@@ -132,22 +134,22 @@ export default function AddItemsPage() {
                         </div>
                     </div>
                      <div className="space-y-2">
-                        <Label htmlFor="notes">Notes</Label>
-                        <Textarea id="notes" value={editingItem ? editingItem.notes || '' : notes} onChange={(e) => editingItem ? setEditingItem({...editingItem, notes: e.target.value}) : setNotes(e.target.value)} placeholder="Optional notes about the item" />
+                        <Label htmlFor="notes">{t('notes')}</Label>
+                        <Textarea id="notes" value={editingItem ? editingItem.notes || '' : notes} onChange={(e) => editingItem ? setEditingItem({...editingItem, notes: e.target.value}) : setNotes(e.target.value)} placeholder={t('optional_notes_about_item')} />
                     </div>
                      <div className="flex gap-2 pt-2">
                         {editingItem ? (
                             <>
                                 <Button onClick={handleUpdateItem} disabled={isSaving} className="w-full">
                                     {isSaving ? <Loader2 className="animate-spin mr-2"/> : <Save className="mr-2"/>}
-                                    Update Item
+                                    {t('update_item')}
                                 </Button>
-                                <Button variant="outline" onClick={() => setEditingItem(null)}>Cancel</Button>
+                                <Button variant="outline" onClick={() => setEditingItem(null)}>{t('cancel')}</Button>
                             </>
                         ) : (
                             <Button onClick={handleAddItem} disabled={isSaving} className="w-full">
                                 {isSaving ? <Loader2 className="animate-spin mr-2"/> : <Plus className="mr-2"/>}
-                                Add to List
+                                {t('add_to_list')}
                             </Button>
                         )}
                     </div>
@@ -157,19 +159,19 @@ export default function AddItemsPage() {
         <div className="lg:col-span-2">
             <Card>
                 <CardHeader>
-                    <CardTitle>Items Staged for Transfer</CardTitle>
-                    <CardDescription>This is the current list of items waiting to be shipped.</CardDescription>
+                    <CardTitle>{t('items_staged_for_transfer')}</CardTitle>
+                    <CardDescription>{t('items_staged_for_transfer_desc')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                      <div className="overflow-x-auto">
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Model</TableHead>
-                                    <TableHead>Quantity</TableHead>
-                                    <TableHead>Destination</TableHead>
-                                    <TableHead>Notes</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
+                                    <TableHead>{t('model')}</TableHead>
+                                    <TableHead>{t('quantity')}</TableHead>
+                                    <TableHead>{t('destination')}</TableHead>
+                                    <TableHead>{t('notes')}</TableHead>
+                                    <TableHead className="text-right">{t('actions')}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -180,7 +182,7 @@ export default function AddItemsPage() {
                                         <TableCell className="font-medium">{item.model}</TableCell>
                                         <TableCell>{item.quantity}</TableCell>
                                         <TableCell>{item.destination}</TableCell>
-                                        <TableCell className="text-muted-foreground">{item.notes || 'N/A'}</TableCell>
+                                        <TableCell className="text-muted-foreground">{item.notes || t('na')}</TableCell>
                                         <TableCell className="text-right">
                                             <Button variant="ghost" size="icon" onClick={() => startEditing(item)}><Edit className="w-4 h-4"/></Button>
                                             <Button variant="ghost" size="icon" onClick={() => handleDeleteItem(item)}><Trash2 className="w-4 h-4 text-destructive"/></Button>
@@ -190,7 +192,7 @@ export default function AddItemsPage() {
                                     <TableRow>
                                         <TableCell colSpan={5} className="text-center h-24">
                                             <ListPlus className="mx-auto h-12 w-12 text-muted-foreground mb-2"/>
-                                            No items staged for transfer yet.
+                                            {t('no_items_staged_yet')}
                                         </TableCell>
                                     </TableRow>
                                 )}

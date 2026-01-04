@@ -11,11 +11,13 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAppContext } from '@/context/app-provider';
 import type { Employee, ExcelFile } from '@/lib/types';
+import { useTranslation } from '@/hooks/use-translation';
 
 
 export default function ArchivePage() {
   const { excelFiles, employees } = useAppContext();
   const [isLoading, setIsLoading] = useState(true);
+  const { t } = useTranslation();
 
   const getEmployeeName = (id: string) => {
     return employees?.find(e => e.id === id)?.name || 'Unknown';
@@ -41,10 +43,10 @@ export default function ArchivePage() {
           <Button variant="outline" size="icon" asChild>
             <Link href="/items">
               <ArrowLeft />
-              <span className="sr-only">Back to Placement & Storage</span>
+              <span className="sr-only">{t('back_to_placement_storage')}</span>
             </Link>
           </Button>
-          <h1 className="text-xl font-bold">Excel Archive</h1>
+          <h1 className="text-xl font-bold">{t('excel_archive')}</h1>
         </div>
       </header>
       <main className="container mx-auto p-4 md:p-8">
@@ -89,8 +91,8 @@ export default function ArchivePage() {
         ) : (
           <div className="text-center py-16 border-2 border-dashed rounded-lg">
             <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-medium">No Archived Files</h3>
-            <p className="mt-2 text-sm text-muted-foreground">Import or create your first Excel file to see it here.</p>
+            <h3 className="mt-4 text-lg font-medium">{t('no_archived_files')}</h3>
+            <p className="mt-2 text-sm text-muted-foreground">{t('no_archived_files_desc')}</p>
           </div>
         )}
       </main>

@@ -9,9 +9,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { format, parseISO } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAppContext } from '@/context/app-provider';
+import { useTranslation } from '@/hooks/use-translation';
 
 export default function PdfArchivePage() {
   const { excelFiles: files, employees } = useAppContext();
+  const { t } = useTranslation();
   const isLoading = !files || !employees;
 
   const getEmployeeName = (id: string) => {
@@ -33,10 +35,10 @@ export default function PdfArchivePage() {
         <Button variant="outline" size="icon" asChild>
           <Link href="/items">
             <ArrowLeft />
-            <span className="sr-only">Back to Placement & Storage</span>
+            <span className="sr-only">{t('back_to_placement_storage')}</span>
           </Link>
         </Button>
-        <h1 className="text-2xl md:text-3xl font-bold">PDF Report Archive</h1>
+        <h1 className="text-2xl md:text-3xl font-bold">{t('pdf_archive')}</h1>
       </header>
       <main>
         {isLoading ? (
@@ -68,7 +70,7 @@ export default function PdfArchivePage() {
                   </CardHeader>
                   <CardContent className="p-2 mt-auto text-xs text-muted-foreground w-full">
                      <p className="flex items-center justify-center gap-1.5"><User className="w-3 h-3"/> {getEmployeeName(file.storekeeperId)}</p>
-                     <p className="flex items-center justify-center gap-1.5 mt-1"><CalendarIcon className="w-3 h-3"/> {file.date ? format(parseISO(file.date), 'PPP') : 'Invalid Date'}</p>
+                     <p className="flex items-center justify-center gap-1.5 mt-1"><CalendarIcon className="w-3 h-3"/> {file.date ? format(parseISO(file.date), 'PPP') : t('invalid_date')}</p>
                   </CardContent>
                 </Card>
               </Link>
@@ -77,8 +79,8 @@ export default function PdfArchivePage() {
         ) : (
           <div className="text-center py-16 border-2 border-dashed rounded-lg">
             <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-medium">No Files Found</h3>
-            <p className="mt-2 text-sm text-muted-foreground">Import or create your first Excel file to see it here.</p>
+            <h3 className="mt-4 text-lg font-medium">{t('no_archived_files')}</h3>
+            <p className="mt-2 text-sm text-muted-foreground">{t('no_archived_files_desc')}</p>
           </div>
         )}
       </main>
