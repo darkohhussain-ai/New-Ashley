@@ -3,9 +3,9 @@
 
 import { useState, useMemo, useRef } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Calendar as CalendarIcon, FileDown, BarChart } from 'lucide-react';
+import { ArrowLeft, Calendar as CalendarIcon, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
@@ -18,7 +18,6 @@ import { ReportPdfHeader } from '@/components/reports/report-pdf-header';
 import useLocalStorage from '@/hooks/use-local-storage';
 import { useAppContext } from '@/context/app-provider';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Bar, BarChart as RechartsBarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import type { AllPdfSettings } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
 
@@ -35,7 +34,6 @@ export default function MonthlyOvertimeReportPage() {
   const { overtime, employees } = useAppContext();
   const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {} });
   const pdfHeaderRef = useRef<HTMLDivElement>(null);
-  const chartRef = useRef<HTMLDivElement>(null);
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const isLoading = !overtime || !employees;
@@ -73,7 +71,7 @@ export default function MonthlyOvertimeReportPage() {
   }, [isLoading, selectedDate, overtime, employees]);
 
   const handleDownloadPdf = async () => {
-    if (!pdfHeaderRef.current || !selectedDate) return;
+    if (!pdfHeaderRef.current || !selectedDate || monthlyData.records.length === 0) return;
     
     const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
     const settings = pdfSettings.report || {};
@@ -87,7 +85,7 @@ export default function MonthlyOvertimeReportPage() {
             doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
             doc.setFont(fontName);
         } catch (e) {
-            console.error("Failed to load custom font:", e);
+            console.error("Failed to load custom font for PDF:", e);
         }
     }
     
@@ -99,46 +97,26 @@ export default function MonthlyOvertimeReportPage() {
     const finalHeaderHeight = finalHeaderWidth / headerRatio;
     doc.addImage(headerImgData, 'PNG', 0, 0, finalHeaderWidth, finalHeaderHeight);
 
-    let startY = finalHeaderHeight + 10;
+    let startY = finalHeaderHeight + 20;
 
-    if (chartRef.current) {
-        const chartCanvas = await html2canvas(chartRef.current, { scale: 2, backgroundColor: '#ffffff' });
-        const chartImgData = chartCanvas.toDataURL('image/png');
-        const chartRatio = chartCanvas.width / chartCanvas.height;
-        const chartWidth = pdfWidth - 28;
-        const chartHeight = chartWidth / chartRatio;
-        
-        if (startY + chartHeight > doc.internal.pageSize.getHeight()) {
-            doc.addPage();
-            startY = 20;
-        }
-        doc.addImage(chartImgData, 'PNG', 14, startY, chartWidth, chartHeight);
-        startY += chartHeight + 20;
-    }
-    
-    if(monthlyData.summary.length > 0) {
-        if (startY + 40 > doc.internal.pageSize.getHeight()) {
-            doc.addPage();
-            startY = 20;
-        }
-        doc.setFontSize(14);
-        doc.text(t('summary_by_employee'), 14, startY);
-        startY += 10;
-        autoTable(doc, {
-          startY: startY,
-          head: [[t('employee'), t('total_hours'), t('total_amount')]],
-          body: monthlyData.summary.map(item => [item.employeeName, item.totalHours.toFixed(2), formatCurrency(item.totalAmount)]),
-          foot: [[t('grand_total'), monthlyData.totalHours.toFixed(2), formatCurrency(monthlyData.totalAmount)]],
-          theme: 'grid',
-          headStyles: { fillColor: settings.reportColors?.overtime || settings.themeColor || '#22c55e' },
-          footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
-          didParseCell: (data) => { 
-            if (settings.customFont) {
-                (data.cell.styles as any).font = "CustomFont";
+    autoTable(doc, {
+      startY: startY,
+      head: [[t('employee'), t('total_hours'), t('total_amount')]],
+      body: monthlyData.summary.map(item => [item.employeeName, item.totalHours.toFixed(2), formatCurrency(item.totalAmount)]),
+      foot: [[t('grand_total'), monthlyData.totalHours.toFixed(2), formatCurrency(monthlyData.totalAmount)]],
+      theme: 'grid',
+      headStyles: { fillColor: settings.reportColors?.overtime || settings.themeColor || '#22c55e' },
+      footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
+      didParseCell: (data) => { 
+        if (settings.customFont) {
+            try {
+              (data.cell.styles as any).font = "CustomFont";
+            } catch(e) {
+              console.error("Failed to set custom font in table cell", e);
             }
-          }
-        });
-    }
+        }
+      }
+    });
 
     const finalY = (doc as any).lastAutoTable.finalY + 40;
     const pageHeight = doc.internal.pageSize.height;
@@ -203,25 +181,9 @@ export default function MonthlyOvertimeReportPage() {
         </header>
 
         {isLoading ? (
-          <div className="space-y-6"><Skeleton className="h-48 w-full" /><Skeleton className="h-64 w-full" /></div>
+          <div className="space-y-6"><Skeleton className="h-64 w-full" /></div>
         ) : monthlyData.records.length > 0 ? (
           <div className="space-y-8">
-             <Card>
-                <CardHeader>
-                    <CardTitle>{t('monthly_summary_by_employee')}</CardTitle>
-                </CardHeader>
-                <CardContent ref={chartRef} className="pl-0">
-                    <ResponsiveContainer width="100%" height={300}>
-                        <RechartsBarChart data={monthlyData.summary} layout="vertical" margin={{top: 5, right: 30, left: 20, bottom: 5}}>
-                            <XAxis type="number" tickFormatter={(value) => formatCurrency(value as number)} />
-                            <YAxis dataKey="employeeName" type="category" width={120} />
-                            <Tooltip contentStyle={{backgroundColor: 'hsl(var(--background))'}} formatter={(value) => formatCurrency(value as number)} />
-                            <Bar dataKey="totalAmount" name={t('overtime')} fill="hsl(var(--primary))" />
-                        </RechartsBarChart>
-                    </ResponsiveContainer>
-                </CardContent>
-            </Card>
-
             <Card>
               <CardHeader>
                 <CardTitle>{t('summary_for_month', {month: selectedDate ? format(selectedDate, 'MMMM yyyy') : ''})}</CardTitle>
@@ -259,7 +221,7 @@ export default function MonthlyOvertimeReportPage() {
           </div>
         ) : (
           <div className="text-center py-16 border-2 border-dashed rounded-lg">
-            <BarChart className="mx-auto h-12 w-12 text-muted-foreground" />
+            <CalendarIcon className="mx-auto h-12 w-12 text-muted-foreground" />
             <h3 className="mt-4 text-lg font-medium">{t('no_overtime_found')}</h3>
             <p className="mt-2 text-sm text-muted-foreground">{t('no_overtime_found_for_month', {month: selectedDate ? format(selectedDate, 'MMMM yyyy') : t('the_selected_month')})}</p>
           </div>
