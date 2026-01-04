@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from 'react';
@@ -270,13 +269,14 @@ export default function SettingsPage() {
                 font-family: 'CustomAppFont';
                 src: url(${fontDataUrl});
             }
-            :root {
-                --font-body: 'CustomAppFont', sans-serif;
+            body {
+                font-family: 'CustomAppFont', var(--font-body), sans-serif;
             }
         `;
     } else {
         styleElement.innerHTML = '';
-        document.documentElement.style.removeProperty('--font-body');
+        // Reset to default
+        document.body.style.fontFamily = 'var(--font-body), sans-serif';
     }
   };
 
@@ -295,12 +295,21 @@ export default function SettingsPage() {
       setDarkColors(savedDarkColors);
       setDashboardBanner(savedDashboardBanner);
       setBannerHeight(savedBannerHeight);
-      const updatedPdfSettings = {
+      
+      const mergedPdfSettings: AllPdfSettings = {
           report: { ...defaultReportSettings, ...(savedPdfSettings.report || {})},
           invoice: { ...defaultInvoiceSettings, ...(savedPdfSettings.invoice || {})},
           card: { ...defaultCardSettings, ...(savedPdfSettings.card || {})},
       };
-      setPdfSettings(updatedPdfSettings);
+      
+      // Ensure customFont from root is applied to all
+      if (customFontBase64) {
+          mergedPdfSettings.report.customFont = customFontBase64;
+          mergedPdfSettings.invoice.customFont = customFontBase64;
+          mergedPdfSettings.card.customFont = customFontBase64;
+      }
+
+      setPdfSettings(mergedPdfSettings);
       applyCustomAppFont(customFontBase64);
     
       if (document.documentElement.classList.contains('dark')) {
@@ -365,7 +374,15 @@ export default function SettingsPage() {
         const result = event.target?.result as string;
         setCustomFontBase64(result);
         applyCustomAppFont(result);
-        toast({ title: 'Custom font selected!', description: 'Click "Save Changes" to apply.' });
+        
+        // Also update PDF settings
+        setPdfSettings(prev => ({
+          report: { ...prev.report, customFont: result, font: 'CustomFont' },
+          invoice: { ...prev.invoice, customFont: result, font: 'CustomFont' },
+          card: { ...prev.card, customFont: result, font: 'CustomFont' },
+        }));
+
+        toast({ title: 'Custom font selected!', description: 'Applied to UI and PDF previews. Click "Save Changes" to persist.' });
       };
       reader.readAsDataURL(file);
     }
@@ -391,6 +408,8 @@ export default function SettingsPage() {
     setSavedDarkColors(darkColors);
     setSavedDashboardBanner(dashboardBanner);
     setSavedBannerHeight(bannerHeight);
+    setSavedPdfSettings(pdfSettings); // Save PDF settings with the main save
+    // customFontBase64 is already saved by its own hook
 
     if(langContext) {
       langContext.setTranslations(englishTranslations, 'en');
@@ -665,7 +684,7 @@ export default function SettingsPage() {
                             </CardContent>
                             <CardFooter>
                                 <Button onClick={handleSavePdfSettings} className="w-full">
-                                    <Save className="mr-2 h-4 w-4" /> Save Design
+                                    <Save className="mr-2 h-4 w-4" /> Save PDF Design
                                 </Button>
                             </CardFooter>
                         </Card>
