@@ -30,13 +30,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { cn } from '@/lib/utils';
 
 
-const availableFonts = [
-  { name: 'Inter', family: "Inter, sans-serif" },
-  { name: 'Roboto', family: "Roboto, sans-serif" },
-  { name: 'Open Sans', family: "Open Sans, sans-serif" },
-  { name: 'Lato', family: "Lato, sans-serif" },
-];
-
 const defaultReportColors = {
   general: '#22c55e',
   expense: '#3b82f6',
@@ -47,7 +40,6 @@ const defaultReportColors = {
 
 const defaultReportSettings: PdfSettings = {
     logo: null,
-    font: 'Inter',
     customFont: null,
     themeColor: '#22c55e', // Green
     reportColors: defaultReportColors,
@@ -58,7 +50,6 @@ const defaultReportSettings: PdfSettings = {
 
 const defaultInvoiceSettings: PdfSettings = {
     logo: null,
-    font: 'Inter',
     customFont: null,
     themeColor: '#3b82f6', // Blue
     tableTheme: 'grid',
@@ -68,7 +59,6 @@ const defaultInvoiceSettings: PdfSettings = {
 
 const defaultCardSettings: PdfSettings = {
     logo: null,
-    font: 'Inter',
     customFont: null,
     themeColor: '#8b5cf6', // Violet
     headerText: 'Employee ID',
@@ -227,7 +217,7 @@ export default function SettingsPage() {
   const [savedDashboardBanner, setSavedDashboardBanner] = useLocalStorage<string | null>('dashboard-banner', null);
   const [savedBannerHeight, setSavedBannerHeight] = useLocalStorage('dashboard-banner-height', 150);
   const [savedPdfSettings, setSavedPdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', defaultPdfSettings);
-  const [customFontBase64, setCustomFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
+  const [savedCustomFontBase64, setSavedCustomFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
 
 
   const [lightColors, setLightColors] = useState(savedLightColors);
@@ -235,6 +225,7 @@ export default function SettingsPage() {
   const [dashboardBanner, setDashboardBanner] = useState(savedDashboardBanner);
   const [bannerHeight, setBannerHeight] = useState(savedBannerHeight);
   const [pdfSettings, setPdfSettings] = useState(savedPdfSettings);
+  const [customFontBase64, setCustomFontBase64] = useState(savedCustomFontBase64);
   const [activePdfTab, setActivePdfTab] = useState<'report' | 'invoice' | 'card'>('report');
 
   const [translations, setTranslations] = useState<Record<string, string>>({});
@@ -266,6 +257,7 @@ export default function SettingsPage() {
       setDarkColors(savedDarkColors);
       setDashboardBanner(savedDashboardBanner);
       setBannerHeight(savedBannerHeight);
+      setCustomFontBase64(savedCustomFontBase64);
       
       const mergedPdfSettings: AllPdfSettings = {
           report: { ...defaultReportSettings, ...(savedPdfSettings.report || {})},
@@ -273,10 +265,10 @@ export default function SettingsPage() {
           card: { ...defaultCardSettings, ...(savedPdfSettings.card || {})},
       };
       
-      if (customFontBase64) {
-          mergedPdfSettings.report.customFont = customFontBase64;
-          mergedPdfSettings.invoice.customFont = customFontBase64;
-          mergedPdfSettings.card.customFont = customFontBase64;
+      if (savedCustomFontBase64) {
+          mergedPdfSettings.report.customFont = savedCustomFontBase64;
+          mergedPdfSettings.invoice.customFont = savedCustomFontBase64;
+          mergedPdfSettings.card.customFont = savedCustomFontBase64;
       }
 
       setPdfSettings(mergedPdfSettings);
@@ -288,7 +280,7 @@ export default function SettingsPage() {
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mounted, savedLightColors, savedDarkColors, savedDashboardBanner, savedBannerHeight, savedPdfSettings, customFontBase64])
+  }, [mounted, savedLightColors, savedDarkColors, savedDashboardBanner, savedBannerHeight, savedPdfSettings, savedCustomFontBase64])
   
   useEffect(() => {
     if(!mounted) return;
@@ -298,12 +290,6 @@ export default function SettingsPage() {
       applyColors(lightColors);
     }
   }, [lightColors, darkColors, theme, mounted])
-
-  useEffect(() => {
-    if(!mounted) return;
-    setSavedBannerHeight(bannerHeight);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bannerHeight]);
 
    const handlePdfSettingChange = <K extends keyof PdfSettings>(key: K, value: PdfSettings[K]) => {
     setPdfSettings(prev => ({
@@ -343,13 +329,14 @@ export default function SettingsPage() {
         const result = event.target?.result as string;
         setCustomFontBase64(result);
         
+        // This state update is temporary for the UI. The actual saving happens in handleSaveChanges.
         setPdfSettings(prev => ({
-          report: { ...prev.report, customFont: result, font: 'CustomAppFont' },
-          invoice: { ...prev.invoice, customFont: result, font: 'CustomAppFont' },
-          card: { ...prev.card, customFont: result, font: 'CustomAppFont' },
+          report: { ...prev.report, customFont: result },
+          invoice: { ...prev.invoice, customFont: result },
+          card: { ...prev.card, customFont: result },
         }));
 
-        toast({ title: 'Custom font selected!', description: 'Applied to UI and PDF previews. Click "Save All Changes" to persist.' });
+        toast({ title: 'Custom font selected!', description: 'Applied to previews. Click "Save All Changes" to persist.' });
       };
       reader.readAsDataURL(file);
     }
@@ -376,6 +363,7 @@ export default function SettingsPage() {
     setSavedDashboardBanner(dashboardBanner);
     setSavedBannerHeight(bannerHeight);
     setSavedPdfSettings(pdfSettings);
+    setSavedCustomFontBase64(customFontBase64);
 
     if(langContext) {
       langContext.setTranslations(translations, 'en');
@@ -402,7 +390,7 @@ export default function SettingsPage() {
     setSavedDashboardBanner(null);
     setSavedBannerHeight(150);
     setSavedPdfSettings(defaultPdfSettings);
-    setCustomFontBase64(null);
+    setSavedCustomFontBase64(null);
     
     if (langContext) {
         langContext.resetTranslations();
@@ -699,7 +687,7 @@ export default function SettingsPage() {
                                 {activePdfTab === 'report' && (
                                     <>
                                         <ReportPdfHeader title="Example Report Title" subtitle="This is an example subtitle" logoSrc={currentPdfSettings.logo ?? null} themeColor={pdfSettings.report.reportColors?.general} headerText={currentPdfSettings.headerText} />
-                                        <div className="p-6 flex-grow" style={{fontFamily: availableFonts.find(f => f.name === currentPdfSettings.font)?.family}}>
+                                        <div className="p-6 flex-grow" style={{fontFamily: 'CustomPdfFont'}}>
                                             <h3 className="font-bold text-gray-800 mb-2">Sample Section</h3>
                                             <p className="text-sm text-gray-600 mb-4">This is sample body text. The quick brown fox jumps over the lazy dog.</p>
                                              <Table className={cn(currentPdfSettings.tableTheme === 'grid' && 'border')}>
@@ -727,7 +715,7 @@ export default function SettingsPage() {
                                                 totalItems={mockTransfer.itemIds.length}
                                             />
                                         </div>
-                                        <div className='p-6 flex-grow' style={{fontFamily: availableFonts.find(f => f.name === currentPdfSettings.font)?.family}}>
+                                        <div className='p-6 flex-grow' style={{fontFamily: 'CustomPdfFont'}}>
                                             <Table className={cn(currentPdfSettings.tableTheme === 'grid' && 'border')}>
                                                 <TableHeader>
                                                     <TableRow style={{backgroundColor: currentPdfSettings.themeColor}} className="hover:bg-primary/90">

@@ -15,40 +15,50 @@ const ThemeProviderContext = createContext<ThemeProviderState | undefined>(undef
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>("light")
   const [customFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+
+  useEffect(() => {
+    if (!isMounted) return;
+
     // This effect handles applying the custom font to the document.
     const styleId = 'custom-app-font-style';
     let styleElement = document.getElementById(styleId) as HTMLStyleElement;
+
     if (!styleElement) {
         styleElement = document.createElement('style');
         styleElement.id = styleId;
         document.head.appendChild(styleElement);
     }
-
+    
     if (customFontBase64) {
-        // If a custom font is present, create the @font-face rule
-        // and set the body to use it, with a fallback.
         styleElement.innerHTML = `
             @font-face {
                 font-family: 'CustomAppFont';
                 src: url(${customFontBase64});
             }
             body {
-                font-family: 'CustomAppFont', var(--font-body), sans-serif;
+                font-family: 'CustomAppFont', var(--font-body), sans-serif !important;
             }
         `;
     } else {
-        // If no custom font, ensure the default font is used.
+        // If no custom font, revert to the default body font
         styleElement.innerHTML = `
-            body {
+             body {
                 font-family: var(--font-body), sans-serif;
             }
         `;
     }
-  }, [customFontBase64]);
+
+  }, [customFontBase64, isMounted]);
 
   useEffect(() => {
+    if (!isMounted) return;
+
     const storedTheme = localStorage.getItem("ashley-drp-theme") as Theme | null
     if (storedTheme) {
       setTheme(storedTheme)
@@ -56,16 +66,18 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
         setTheme(prefersDark ? 'dark' : 'light')
     }
-  }, [])
+  }, [isMounted])
 
   useEffect(() => {
+    if (!isMounted) return;
+    
     if (theme === "dark") {
       document.documentElement.classList.add("dark")
     } else {
       document.documentElement.classList.remove("dark")
     }
     localStorage.setItem("ashley-drp-theme", theme)
-  }, [theme])
+  }, [theme, isMounted])
 
   return (
     <ThemeProviderContext.Provider value={{ theme, setTheme }}>
