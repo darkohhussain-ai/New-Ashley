@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { cn } from '@/lib/utils';
 import { useAppContext } from '@/context/app-provider';
 import type { Item, StorageLocation } from '@/lib/types';
+import { useTranslation } from '@/hooks/use-translation';
 
 
 const Section = ({ id, code, items, onClick, isHighlighted }: { id: string, code: string; items: Item[]; onClick: () => void, isHighlighted?: boolean }) => {
@@ -37,6 +38,7 @@ const Section = ({ id, code, items, onClick, isHighlighted }: { id: string, code
 };
 
 export default function HuanaMapPage() {
+  const { t } = useTranslation();
   const { locations, items: allItems } = useAppContext();
   const [highlightId, setHighlightId] = useState('');
 
@@ -94,13 +96,13 @@ export default function HuanaMapPage() {
     }
 
     return Object.keys(grouped).sort().map(whKey => ({
-      name: `Warehouse ${whKey}`,
+      name: `${t('warehouse')} ${whKey}`,
       floors: Object.keys(grouped[whKey]).sort().map(flKey => ({
-        name: `Floor ${flKey}`,
+        name: `${t('floor')} ${flKey}`,
         sections: grouped[whKey][flKey]
       }))
     }));
-  }, [huanaLocations]);
+  }, [huanaLocations, t]);
   
   const itemsByLocationId = useMemo(() => {
     if (!allItems) return new Map<string, Item[]>();
@@ -120,10 +122,10 @@ export default function HuanaMapPage() {
           <Button variant="outline" size="icon" asChild>
             <Link href="/">
               <ArrowLeft />
-              <span className="sr-only">Back to Dashboard</span>
+              <span className="sr-only">{t('back_to_dashboard')}</span>
             </Link>
           </Button>
-          <h1 className="text-2xl md:text-3xl font-bold">Huana Warehouse Map</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">{t('huana_warehouse_map')}</h1>
         </header>
         <main className="space-y-8">
           {isLoading ? (
@@ -165,25 +167,25 @@ export default function HuanaMapPage() {
           ) : (
             <div className="text-center py-16 border-2 border-dashed rounded-lg">
                 <Box className="mx-auto h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-4 text-lg font-medium">No Huana Locations Found</h3>
-                <p className="mt-2 text-sm text-muted-foreground">Go to 'Manage Locations' to generate the warehouse codes.</p>
-                <Button asChild className="mt-4"><Link href="/locations">Manage Locations</Link></Button>
+                <h3 className="mt-4 text-lg font-medium">{t('no_huana_locations_found')}</h3>
+                <p className="mt-2 text-sm text-muted-foreground">{t('no_huana_locations_found_desc')}</p>
+                <Button asChild className="mt-4"><Link href="/locations">{t('manage_locations')}</Link></Button>
             </div>
           )}
         </main>
       </div>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Items in Location: {selectedLocation?.name}</DialogTitle>
-          <CardDescription>A list of all items currently stored in this section.</CardDescription>
+          <DialogTitle>{t('items_in_location', {locationName: selectedLocation?.name})}</DialogTitle>
+          <CardDescription>{t('items_in_location_desc')}</CardDescription>
         </DialogHeader>
         <div className="max-h-[60vh] overflow-y-auto">
           {itemsInLocation.length > 0 ? (
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead>Model</TableHead>
-                        <TableHead className="text-right">Quantity</TableHead>
+                        <TableHead>{t('model')}</TableHead>
+                        <TableHead className="text-right">{t('quantity')}</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -196,7 +198,7 @@ export default function HuanaMapPage() {
                 </TableBody>
             </Table>
           ) : (
-            <p className="text-center text-muted-foreground p-8">No items found in this location.</p>
+            <p className="text-center text-muted-foreground p-8">{t('no_items_in_this_location')}</p>
           )}
         </div>
       </DialogContent>

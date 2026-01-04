@@ -6,7 +6,7 @@ import { format, parseISO } from 'date-fns';
 import { User, Mail, Phone, Calendar as CalendarIcon, ShieldCheck, Briefcase } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { Employee, PdfSettings } from "@/lib/types";
-import { useTranslation } from '@/hooks/use-translation';
+import { useTranslation } from "@/hooks/use-translation";
 
 type EmployeeReportPdfHeaderProps = {
   employee: Employee;

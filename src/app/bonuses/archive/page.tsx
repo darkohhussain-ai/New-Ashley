@@ -15,7 +15,6 @@ const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'IQD',
-    currencyDisplay: 'code',
     maximumFractionDigits: 0,
   }).format(amount);
 };
