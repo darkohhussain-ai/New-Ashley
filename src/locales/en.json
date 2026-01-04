@@ -317,6 +317,7 @@
   "total_hours": "Total Hours",
   "no_overtime_found": "No Overtime Found",
   "no_overtime_found_for_month": "There are no overtime records for {month}.",
+  "the_selected_month": "the selected month",
   "employee_overtime": "Employee Overtime",
   "add_daily_overtime": "Add Daily Overtime",
   "invalid_receipt_number": "Invalid Receipt Number",
@@ -440,5 +441,6 @@
   "export_data": "Export Data",
   "import_data_title": "Import data from a backup file",
   "import_data_warning": "Warning: Importing data will overwrite all existing data in the application. This action cannot be undone.",
-  "run_import": "Run Import"
+  "run_import": "Run Import",
+  "print": "Print"
 }

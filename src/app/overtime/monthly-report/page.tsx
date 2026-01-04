@@ -1,9 +1,8 @@
-
 'use client';
 
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Calendar as CalendarIcon, FileDown } from 'lucide-react';
+import { ArrowLeft, Calendar as CalendarIcon, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -11,14 +10,8 @@ import { Calendar } from '@/components/ui/calendar';
 import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import html2canvas from 'html2canvas';
-import { ReportPdfHeader } from '@/components/reports/report-pdf-header';
-import useLocalStorage from '@/hooks/use-local-storage';
 import { useAppContext } from '@/context/app-provider';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { AllPdfSettings } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
 
 const formatCurrency = (amount: number) => {
@@ -32,8 +25,6 @@ const formatCurrency = (amount: number) => {
 export default function MonthlyOvertimeReportPage() {
   const { t } = useTranslation();
   const { overtime, employees } = useAppContext();
-  const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {} });
-  const pdfHeaderRef = useRef<HTMLDivElement>(null);
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const isLoading = !overtime || !employees;
@@ -70,94 +61,14 @@ export default function MonthlyOvertimeReportPage() {
     return { records: filteredRecords, summary, totalAmount, totalHours };
   }, [isLoading, selectedDate, overtime, employees]);
 
-  const handleDownloadPdf = async () => {
-    if (!pdfHeaderRef.current || !selectedDate || monthlyData.records.length === 0) return;
-    
-    const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
-    const settings = pdfSettings.report || {};
-    
-    if (settings.customFont) {
-        try {
-            const fontName = "CustomFont";
-            const fontStyle = "normal";
-            const fontBase64 = settings.customFont.split(',')[1];
-            doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
-            doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
-            doc.setFont(fontName);
-        } catch (e) {
-            console.error("Failed to load custom font for PDF:", e);
-        }
-    }
-    
-    const headerCanvas = await html2canvas(pdfHeaderRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
-    const headerImgData = headerCanvas.toDataURL('image/png');
-    const pdfWidth = doc.internal.pageSize.getWidth();
-    const headerRatio = headerCanvas.width / headerCanvas.height;
-    const finalHeaderWidth = pdfWidth;
-    const finalHeaderHeight = finalHeaderWidth / headerRatio;
-    doc.addImage(headerImgData, 'PNG', 0, 0, finalHeaderWidth, finalHeaderHeight);
-
-    let startY = finalHeaderHeight + 20;
-
-    autoTable(doc, {
-      startY: startY,
-      head: [[t('employee'), t('total_hours'), t('total_amount')]],
-      body: monthlyData.summary.map(item => [item.employeeName, item.totalHours.toFixed(2), formatCurrency(item.totalAmount)]),
-      foot: [[t('grand_total'), monthlyData.totalHours.toFixed(2), formatCurrency(monthlyData.totalAmount)]],
-      theme: 'grid',
-      headStyles: { fillColor: settings.reportColors?.overtime || settings.themeColor || '#22c55e' },
-      footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
-      didParseCell: (data) => { 
-        if (settings.customFont) {
-            try {
-              (data.cell.styles as any).font = "CustomFont";
-            } catch(e) {
-              console.error("Failed to set custom font in table cell", e);
-            }
-        }
-      }
-    });
-
-    const finalY = (doc as any).lastAutoTable.finalY + 40;
-    const pageHeight = doc.internal.pageSize.height;
-    if (finalY > pageHeight - 30) {
-        doc.addPage();
-    }
-    const signatureY = finalY > pageHeight - 50 ? 40 : finalY;
-    doc.setFontSize(10);
-    doc.text("...................................", doc.internal.pageSize.width - 120, signatureY, { align: 'center' });
-    doc.text("Warehouse Manager Signature", doc.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
-    
-    if (settings.footerText) {
-        const pageCount = (doc as any).internal.getNumberOfPages();
-        for (let i = 1; i <= pageCount; i++) {
-            doc.setPage(i);
-            doc.setFontSize(8);
-            doc.setTextColor(150);
-            doc.text(settings.footerText, doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
-        }
-    }
-    
-    doc.save(`monthly-overtime-report-${format(selectedDate, 'yyyy-MM')}.pdf`);
+  const handlePrint = () => {
+    window.print();
   };
 
   return (
     <>
-      <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-        {selectedDate && (
-          <div ref={pdfHeaderRef} style={{ width: '700px', background: 'white', color: 'black' }}>
-            <ReportPdfHeader 
-                title={t('monthly_overtime_report')} 
-                subtitle={format(selectedDate, 'MMMM yyyy')} 
-                logoSrc={pdfSettings.report?.logo ?? null}
-                themeColor={pdfSettings.report?.reportColors?.overtime ?? pdfSettings.report?.themeColor}
-                headerText={pdfSettings.report?.headerText}
-            />
-          </div>
-        )}
-      </div>
-      <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
-        <header className="flex items-center justify-between gap-4 mb-8">
+      <div className="min-h-screen bg-background text-foreground p-4 md:p-8 print:p-0">
+        <header className="flex items-center justify-between gap-4 mb-8 print:hidden">
           <div className="flex items-center gap-4">
             <Button variant="outline" size="icon" asChild>
               <Link href="/overtime"><ArrowLeft /></Link>
@@ -176,7 +87,7 @@ export default function MonthlyOvertimeReportPage() {
                 <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} captionLayout="dropdown-buttons" fromYear={2020} toYear={2040} />
               </PopoverContent>
             </Popover>
-            <Button onClick={handleDownloadPdf} disabled={isLoading || monthlyData.records.length === 0}><FileDown className="mr-2"/>{t('download_pdf')}</Button>
+            <Button onClick={handlePrint} disabled={isLoading || monthlyData.records.length === 0}><Printer className="mr-2"/>{t('print')}</Button>
           </div>
         </header>
 
@@ -184,7 +95,7 @@ export default function MonthlyOvertimeReportPage() {
           <div className="space-y-6"><Skeleton className="h-64 w-full" /></div>
         ) : monthlyData.records.length > 0 ? (
           <div className="space-y-8">
-            <Card>
+            <Card className="print:shadow-none print:border-none">
               <CardHeader>
                 <CardTitle>{t('summary_for_month', {month: selectedDate ? format(selectedDate, 'MMMM yyyy') : ''})}</CardTitle>
               </CardHeader>
@@ -220,7 +131,7 @@ export default function MonthlyOvertimeReportPage() {
             </Card>
           </div>
         ) : (
-          <div className="text-center py-16 border-2 border-dashed rounded-lg">
+          <div className="text-center py-16 border-2 border-dashed rounded-lg print:hidden">
             <CalendarIcon className="mx-auto h-12 w-12 text-muted-foreground" />
             <h3 className="mt-4 text-lg font-medium">{t('no_overtime_found')}</h3>
             <p className="mt-2 text-sm text-muted-foreground">{t('no_overtime_found_for_month', {month: selectedDate ? format(selectedDate, 'MMMM yyyy') : t('the_selected_month')})}</p>
