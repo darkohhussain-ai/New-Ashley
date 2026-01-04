@@ -15,7 +15,7 @@ import type { Language } from "@/context/language-provider"
 
 
 export default function Home() {
-  const [date, setDate] = useState<Date | null>(null);
+  const [time, setTime] = useState<Date | null>(null);
   const { t, setLanguage, language } = useTranslation();
 
 
@@ -31,8 +31,8 @@ export default function Home() {
     setIsMounted(true);
     
     // Set the initial date only on the client
-    setDate(new Date());
-    const timer = setInterval(() => setDate(new Date()), 1000);
+    setTime(new Date());
+    const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
@@ -50,14 +50,6 @@ export default function Home() {
     { title: t("my_account"), icon: UserCircle, href: "/account", color: "bg-gray-500" },
   ]
 
-  // We can return a loading state or the default view until the client has mounted
-  // to prevent hydration mismatch. Here, we render the default view on the server
-  // and then update it on the client once localStorage is available.
-  if (!isMounted) {
-      // Render a placeholder or the default server-rendered version.
-      // Returning the default version is okay since it will match the server.
-  }
-
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="bg-card border-b top-0 z-10">
@@ -66,15 +58,15 @@ export default function Home() {
             <div className="hidden md:flex items-center gap-4 text-sm text-muted-foreground w-1/3">
                 <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4"/>
-                    <span>{date ? format(date, 'MMMM d, yyyy') : '...'}</span>
+                    <span>{time ? format(time, 'MMMM d, yyyy') : '...'}</span>
                 </div>
                 <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4"/>
-                    <span>{date ? format(date, 'h:mm:ss a') : '...'}</span>
+                    <span>{time ? format(time, 'h:mm:ss a') : '...'}</span>
                 </div>
             </div>
             <div className="flex items-center justify-center w-1/3">
-              {savedLogo && (
+              {isMounted && savedLogo && (
                 <div className="relative w-full max-w-[240px] aspect-[3/1]">
                     <Image src={savedLogo} alt="App Logo" fill className="object-contain" data-ai-hint="logo" />
                 </div>
@@ -110,7 +102,7 @@ export default function Home() {
               </div>
             </div>
           </div>
-           {savedDashboardBanner && (
+           {isMounted && savedDashboardBanner && (
              <div className="relative w-full mx-auto my-4 max-w-6xl rounded-lg overflow-hidden" style={{height: `${savedBannerHeight}px`}}>
                 <Image src={savedDashboardBanner} alt="Dashboard Banner" fill className="object-contain" data-ai-hint="banner abstract" />
              </div>
