@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Plus, Save, Trash2, Calendar as CalendarIcon, DollarSign, Loader2 } from 'lucide-react';
@@ -32,9 +31,13 @@ export default function AddExpenseReportPage() {
   const { employees, expenses, setExpenses, expenseReports, setExpenseReports } = useAppContext();
 
   const [reportName, setReportName] = useState('');
-  const [reportDate, setReportDate] = useState<Date | undefined>(new Date());
+  const [reportDate, setReportDate] = useState<Date | undefined>(undefined);
   const [items, setItems] = useState<NewExpenseItem[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    setReportDate(new Date());
+  }, []);
 
   const warehouseEmployees = useMemo(() => {
     if (!employees) return [];

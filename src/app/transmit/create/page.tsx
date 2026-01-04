@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Calendar, Truck, FileDown, User, Warehouse, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -40,9 +39,13 @@ export default function CreateTransferPage() {
   const [destinationCity, setDestinationCity] = useState('');
   const [driverName, setDriverName] = useState('');
   const [warehouseManagerName, setWarehouseManagerName] = useState('');
-  const [transferDate, setTransferDate] = useState<Date | undefined>(new Date());
+  const [transferDate, setTransferDate] = useState<Date | undefined>(undefined);
   const [selectedItems, setSelectedItems] = useState<Record<string, boolean>>({});
   
+  useEffect(() => {
+    setTransferDate(new Date());
+  }, []);
+
   const [lastTransfer, setLastTransfer] = useState<Transfer | null>(null);
   const [lastTransferItems, setLastTransferItems] = useState<ItemForTransfer[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);

@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Plus, Trash2, Save, Loader2, Calendar } from 'lucide-react';
@@ -37,9 +36,13 @@ export default function NewFilePage() {
   const [categoryName, setCategoryName] = useState('');
   const [storekeeperId, setStorekeeperId] = useState('');
   const [source, setSource] = useState('');
-  const [date, setDate] = useState<Date | undefined>(new Date());
+  const [date, setDate] = useState<Date | undefined>(undefined);
   const [items, setItems] = useState<NewItem[]>([]);
   
+  useEffect(() => {
+    setDate(new Date());
+  }, []);
+
   // Filter states
   const [filterHuanaWarehouse, setFilterHuanaWarehouse] = useState('All');
   const [filterHuanaFloor, setFilterHuanaFloor] = useState('All');

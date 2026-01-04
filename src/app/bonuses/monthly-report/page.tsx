@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Calendar as CalendarIcon, FileDown, BarChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -36,7 +36,11 @@ export default function MonthlyBonusReportPage() {
   const pdfHeaderRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<HTMLDivElement>(null);
 
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  useEffect(() => {
+    setSelectedDate(new Date());
+  }, []);
+  
   const isLoading = !bonuses || !employees;
 
   const getEmployeeName = (employeeId: string) => {

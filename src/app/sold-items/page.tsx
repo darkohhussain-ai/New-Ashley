@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Plus, Save, Trash2, Calendar as CalendarIcon, Loader2, List, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -25,11 +24,15 @@ export default function SoldItemsCheckPage() {
     const { receipts: savedReceipts, setReceipts } = useAppContext();
 
     const [receiptNumberDigits, setReceiptNumberDigits] = useState('');
-    const [receiptDate, setReceiptDate] = useState<Date | undefined>();
+    const [receiptDate, setReceiptDate] = useState<Date | undefined>(undefined);
     const [customerName, setCustomerName] = useState('');
     const [itemCategories, setItemCategories] = useState<string[]>([]);
     const [currentCategory, setCurrentCategory] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+
+    useEffect(() => {
+      setReceiptDate(new Date());
+    }, []);
 
     const isLoading = !savedReceipts;
 
@@ -48,7 +51,7 @@ export default function SoldItemsCheckPage() {
 
     const resetForm = () => {
         setReceiptNumberDigits('');
-        setReceiptDate(undefined);
+        setReceiptDate(new Date());
         setCustomerName('');
         setItemCategories([]);
         setCurrentCategory('');

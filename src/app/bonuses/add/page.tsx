@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Plus, Trash2, Calendar as CalendarIcon, User, Edit, Save, X, FileDown, Truck } from 'lucide-react';
@@ -46,17 +46,20 @@ export default function AddBonusPage() {
 
   const dateParam = searchParams.get('date');
 
-  const getInitialDate = () => {
-    if (dateParam) {
-      const parsedDate = parseISO(dateParam);
-      if (!isNaN(parsedDate.getTime())) {
-        return parsedDate;
-      }
-    }
-    return new Date();
-  };
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(getInitialDate());
+  useEffect(() => {
+    const getInitialDate = () => {
+      if (dateParam) {
+        const parsedDate = parseISO(dateParam);
+        if (!isNaN(parsedDate.getTime())) {
+          return parsedDate;
+        }
+      }
+      return new Date();
+    };
+    setSelectedDate(getInitialDate());
+  }, [dateParam]);
   
   // Form state
   const [selectedEmployee, setSelectedEmployee] = useState('');

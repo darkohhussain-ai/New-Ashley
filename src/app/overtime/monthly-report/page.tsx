@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Calendar as CalendarIcon, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -26,7 +26,12 @@ export default function MonthlyOvertimeReportPage() {
   const { t } = useTranslation();
   const { overtime, employees } = useAppContext();
 
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  
+  useEffect(() => {
+    setSelectedDate(new Date());
+  }, []);
+  
   const isLoading = !overtime || !employees;
 
   const getEmployeeName = (employeeId: string) => {

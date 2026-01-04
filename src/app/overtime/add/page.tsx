@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -47,17 +46,20 @@ export default function AddOvertimePage() {
 
   const dateParam = searchParams.get('date');
 
-  const getInitialDate = () => {
-    if (dateParam) {
-      const parsedDate = parseISO(dateParam);
-      if (!isNaN(parsedDate.getTime())) {
-        return parsedDate;
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+
+  useEffect(() => {
+    const getInitialDate = () => {
+      if (dateParam) {
+        const parsedDate = parseISO(dateParam);
+        if (!isNaN(parsedDate.getTime())) {
+          return parsedDate;
+        }
       }
-    }
-    return new Date();
-  };
-  
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(getInitialDate());
+      return new Date();
+    };
+    setSelectedDate(getInitialDate());
+  }, [dateParam]);
   
   // Form state
   const [selectedEmployee, setSelectedEmployee] = useState('');

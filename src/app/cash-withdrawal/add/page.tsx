@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Plus, Trash2, Calendar as CalendarIcon, User, Edit, Save, X, FileDown, Banknote } from 'lucide-react';
@@ -49,17 +49,21 @@ export default function AddCashWithdrawalPage() {
   const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {}, card: {} });
 
   const dateParam = searchParams.get('date');
-  const getInitialDate = () => {
-    if (dateParam) {
-      const parsedDate = parseISO(dateParam);
-      if (!isNaN(parsedDate.getTime())) {
-        return parsedDate;
-      }
-    }
-    return new Date();
-  };
 
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(getInitialDate());
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  
+  useEffect(() => {
+    const getInitialDate = () => {
+      if (dateParam) {
+        const parsedDate = parseISO(dateParam);
+        if (!isNaN(parsedDate.getTime())) {
+          return parsedDate;
+        }
+      }
+      return new Date();
+    };
+    setSelectedDate(getInitialDate());
+  }, [dateParam]);
   
   // Form state
   const [selectedEmployee, setSelectedEmployee] = useState('');
