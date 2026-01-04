@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { Users, Box, Settings as SettingsIcon, CreditCard, Bell, ChevronDown, Calendar, Clock, PackagePlus, Star, CheckSquare, RefreshCcw, Newspaper, UserCircle, Languages } from "lucide-react"
+import { Users, Box, Settings as SettingsIcon, CreditCard, Bell, ChevronDown, Calendar, Clock, PackagePlus, Star, CheckSquare, RefreshCcw, UserCircle, Languages } from "lucide-react"
 import { DashboardCard } from "@/components/dashboard/dashboard-card"
 import useLocalStorage from "@/hooks/use-local-storage"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
