@@ -228,7 +228,8 @@ export default function SettingsPage() {
   const [previewFontBase64, setPreviewFontBase64] = useState<string | null>(null);
   const [activePdfTab, setActivePdfTab] = useState<'report' | 'invoice' | 'card'>('report');
 
-  const [translations, setTranslations] = useState<Record<string, string>>({});
+  const [englishTranslations, setEnglishTranslations] = useState<Record<string, string>>({});
+  const [kurdishTranslations, setKurdishTranslations] = useState<Record<string, string>>({});
   
   const [importFile, setImportFile] = useState<File | null>(null);
 
@@ -247,7 +248,8 @@ export default function SettingsPage() {
   useEffect(() => {
     setMounted(true)
     if (langContext) {
-      setTranslations(langContext.translations.en);
+      setEnglishTranslations(langContext.translations.en);
+      setKurdishTranslations(langContext.translations.ku);
     }
   }, [langContext]);
 
@@ -336,28 +338,7 @@ export default function SettingsPage() {
 
   const handleApplyFont = () => {
     if (previewFontBase64) {
-      const styleId = 'custom-app-font-style';
-      let styleElement = document.getElementById(styleId) as HTMLStyleElement;
-      if (!styleElement) {
-        styleElement = document.createElement('style');
-        styleElement.id = styleId;
-        document.head.appendChild(styleElement);
-      }
-      styleElement.innerHTML = `
-        @font-face {
-            font-family: 'CustomAppFont';
-            src: url(${previewFontBase64});
-        }
-        body {
-            font-family: 'CustomAppFont', var(--font-body), sans-serif !important;
-        }
-      `;
-      // Update PDF settings in state for previews to use the font
-      setPdfSettings(prev => ({
-          report: { ...prev.report, customFont: previewFontBase64 },
-          invoice: { ...prev.invoice, customFont: previewFontBase64 },
-          card: { ...prev.card, customFont: previewFontBase64 },
-      }));
+      setSavedCustomFontBase64(previewFontBase64); // This will trigger the useEffect in ThemeProvider
       toast({ title: 'Font applied for preview.' });
     }
   };
@@ -394,7 +375,8 @@ export default function SettingsPage() {
     setSavedBannerHeight(bannerHeight);
 
     if(langContext) {
-      langContext.setTranslations(translations, 'en');
+      langContext.setTranslations(englishTranslations, 'en');
+      langContext.setTranslations(kurdishTranslations, 'ku');
     }
     toast({ title: 'Settings saved!', description: 'Your appearance and language settings have been updated.' });
   }
@@ -633,10 +615,11 @@ export default function SettingsPage() {
                            <h3 className="font-semibold">Application Text</h3>
                             <ScrollArea className="h-96 pr-4 border rounded-md p-4">
                                 <div className="space-y-4">
-                                    {Object.entries(translations).map(([key, value]) => (
-                                        <div key={key} className="grid grid-cols-3 gap-4 items-center">
+                                    {Object.keys(englishTranslations).map((key) => (
+                                        <div key={key} className="grid grid-cols-1 gap-2 items-center">
                                             <Label htmlFor={`en-${key}`} className="text-muted-foreground break-all text-xs">{key}</Label>
-                                            <Input id={`en-${key}`} value={value} onChange={e => setTranslations(prev => ({ ...prev, [key]: e.target.value }))} className="col-span-2 h-8" />
+                                            <Input id={`en-${key}`} value={englishTranslations[key]} onChange={e => setEnglishTranslations(prev => ({ ...prev, [key]: e.target.value }))} className="h-8" />
+                                            <Input id={`ku-${key}`} value={kurdishTranslations[key]} onChange={e => setKurdishTranslations(prev => ({ ...prev, [key]: e.target.value }))} className="h-8" dir="rtl" />
                                         </div>
                                     ))}
                                 </div>

@@ -3,17 +3,20 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { Users, Box, Settings as SettingsIcon, CreditCard, Bell, ChevronDown, Calendar, Clock, PackagePlus, Star, CheckSquare, RefreshCcw, Newspaper, UserCircle } from "lucide-react"
+import { Users, Box, Settings as SettingsIcon, CreditCard, Bell, ChevronDown, Calendar, Clock, PackagePlus, Star, CheckSquare, RefreshCcw, Newspaper, UserCircle, Languages } from "lucide-react"
 import { DashboardCard } from "@/components/dashboard/dashboard-card"
 import useLocalStorage from "@/hooks/use-local-storage"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { format } from 'date-fns';
 import { Button } from "@/components/ui/button"
 import { useTranslation } from "@/hooks/use-translation"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import type { Language } from "@/context/language-provider"
+
 
 export default function Home() {
   const [date, setDate] = useState<Date | null>(null);
-  const { t } = useTranslation();
+  const { t, setLanguage, language } = useTranslation();
 
 
   // Load settings from localStorage
@@ -78,6 +81,22 @@ export default function Home() {
               )}
             </div>
             <div className="flex items-center justify-end gap-2 w-1/3">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Languages className="w-5 h-5 text-muted-foreground hover:text-primary" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onSelect={() => setLanguage('en')} disabled={language === 'en'}>
+                    English
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => setLanguage('ku')} disabled={language === 'ku'}>
+                    Kurdish
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
               <Button variant="ghost" size="icon" onClick={handleRefresh} aria-label="Refresh page">
                 <RefreshCcw className="w-5 h-5 text-muted-foreground hover:text-primary" />
               </Button>
