@@ -23,16 +23,16 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-body antialiased`}>
-        <ThemeProvider>
-          <FirebaseProvider>
+        <FirebaseProvider>
+          <ThemeProvider>
             <AppProvider>
               <LanguageProvider>
                 {children}
               </LanguageProvider>
             </AppProvider>
-          </FirebaseProvider>
+          </ThemeProvider>
           <Toaster />
-        </ThemeProvider>
+        </FirebaseProvider>
       </body>
     </html>
   );
