@@ -571,10 +571,6 @@ export default function SettingsPage() {
                                 <Label htmlFor="dark-mode">Dark Mode</Label>
                                 <Switch id="dark-mode" checked={theme === 'dark'} onCheckedChange={() => setTheme(theme === 'light' ? 'dark' : 'light')} />
                             </div>
-                             <div>
-                                <Label htmlFor="font-upload" className="text-sm font-medium">Upload Custom App Font (.ttf, .woff)</Label>
-                                <Input id="font-upload" type="file" accept=".ttf,.otf,.woff,.woff2" className="mt-2" onChange={handleCustomFontUpload} />
-                            </div>
                         </CardContent>
                     </Card>
                     <Card>
@@ -625,19 +621,29 @@ export default function SettingsPage() {
                  <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><Languages /> Language & Text</CardTitle>
-                        <CardDescription>Edit the text for different UI elements used in the app. Click "Save All Changes" at the top to apply.</CardDescription>
+                        <CardDescription>Edit the text for different UI elements and upload a custom font for the application.</CardDescription>
                     </CardHeader>
-                    <CardContent>
-                        <ScrollArea className="h-96 pr-4">
-                            <div className="space-y-4">
-                                {Object.entries(translations).map(([key, value]) => (
-                                    <div key={key} className="grid grid-cols-3 gap-4 items-center">
-                                        <Label htmlFor={`en-${key}`} className="text-muted-foreground break-all">{key}</Label>
-                                        <Input id={`en-${key}`} value={value} onChange={e => setTranslations(prev => ({ ...prev, [key]: e.target.value }))} className="col-span-2" />
-                                    </div>
-                                ))}
+                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                       <div className="space-y-4">
+                           <h3 className="font-semibold">Custom Application Font</h3>
+                            <div>
+                                <Label htmlFor="font-upload" className="text-sm font-medium">Upload Font File (.ttf, .woff)</Label>
+                                <Input id="font-upload" type="file" accept=".ttf,.otf,.woff,.woff2" className="mt-2" onChange={handleCustomFontUpload} />
                             </div>
-                        </ScrollArea>
+                       </div>
+                       <div className="space-y-4">
+                           <h3 className="font-semibold">Application Text</h3>
+                            <ScrollArea className="h-96 pr-4 border rounded-md p-4">
+                                <div className="space-y-4">
+                                    {Object.entries(translations).map(([key, value]) => (
+                                        <div key={key} className="grid grid-cols-3 gap-4 items-center">
+                                            <Label htmlFor={`en-${key}`} className="text-muted-foreground break-all text-xs">{key}</Label>
+                                            <Input id={`en-${key}`} value={value} onChange={e => setTranslations(prev => ({ ...prev, [key]: e.target.value }))} className="col-span-2 h-8" />
+                                        </div>
+                                    ))}
+                                </div>
+                            </ScrollArea>
+                       </div>
                     </CardContent>
                 </Card>
             </TabsContent>
@@ -722,7 +728,7 @@ export default function SettingsPage() {
                         <Card>
                             <CardHeader><CardTitle>Live Preview</CardTitle><CardDescription>A preview of your {activePdfTab} design.</CardDescription></CardHeader>
                             <CardContent className='bg-muted/50 p-6 rounded-b-lg flex justify-center items-start overflow-auto'>
-                                <div className="w-full bg-white shadow-lg transform origin-top overflow-hidden flex flex-col" style={{ aspectRatio: '1 / 1.4142' }}>
+                                <div className="w-full max-w-xl bg-white shadow-lg transform origin-top overflow-hidden flex flex-col scale-[0.8]" style={{ aspectRatio: '1 / 1.4142' }}>
                                 {activePdfTab === 'report' && (
                                     <>
                                         <ReportPdfHeader title="Example Report Title" subtitle="This is an example subtitle" logoSrc={currentPdfSettings.logo ?? null} themeColor={pdfSettings.report.reportColors?.general} headerText={currentPdfSettings.headerText} />
