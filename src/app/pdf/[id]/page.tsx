@@ -20,6 +20,8 @@ import useLocalStorage from '@/hooks/use-local-storage';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
 import { useAppContext } from '@/context/app-provider';
 import type { Employee, ExcelFile, Item, StorageLocation } from '@/lib/types';
+import { useTranslation } from '@/hooks/use-translation';
+import { shapeText } from '@/lib/pdf-utils';
 
 
 const statusChartConfig = {
@@ -39,6 +41,7 @@ const conditionChartConfig = {
 export default function PdfViewPage() {
   const params = useParams();
   const fileId = params.id as string;
+  const { t, language } = useTranslation();
   const { excelFiles, items, employees, locations } = useAppContext();
 
   const defaultLogo = "https://picsum.photos/seed/1/300/100";
@@ -96,13 +99,19 @@ export default function PdfViewPage() {
     if (!file || !fileItems || !pdfCardRef.current) return;
     
     const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
-    if (customFontBase64) {
-      const fontName = "CustomFont";
-      const fontStyle = "normal";
-      const fontBase64 = customFontBase64.split(',')[1];
-      pdf.addFileToVFS(`${fontName}.ttf`, fontBase64);
-      pdf.addFont(`${fontName}.ttf`, fontName, fontStyle);
-      pdf.setFont(fontName);
+    const useKurdish = language === 'ku';
+
+    if (customFontBase64 && useKurdish) {
+        try {
+            const fontName = "CustomFont";
+            pdf.addFileToVFS(`${fontName}.ttf`, customFontBase64.split(',')[1]);
+            pdf.addFont(`${fontName}.ttf`, fontName, "normal");
+            pdf.setFont(fontName);
+        } catch (e) {
+            console.error("Could not add custom font to PDF", e);
+        }
+    } else {
+        pdf.setFont('helvetica');
     }
 
     const canvas = await html2canvas(pdfCardRef.current, { scale: 2, useCORS: true, backgroundColor: null });
@@ -118,24 +127,28 @@ export default function PdfViewPage() {
     
     autoTable(pdf, {
       startY: finalImgHeight + 30,
-      head: [['Model', 'Qty', 'Storage Status', 'Condition', 'Qty/Cond', 'Location', 'Notes']],
+      head: [[shapeText(t('model')), t('quantity'), shapeText(t('storage_status')), shapeText(t('condition')), t('qty_per_condition'), shapeText(t('location')), shapeText(t('notes'))]],
       body: fileItems.map(item => [
-        item.model,
+        shapeText(item.model),
         item.quantity,
-        item.storageStatus || '',
-        item.modelCondition || '',
+        shapeText(t(item.storageStatus?.toLowerCase() || '') || item.storageStatus || ''),
+        shapeText(t(item.modelCondition?.toLowerCase() || '') || item.modelCondition || ''),
         item.quantityPerCondition ?? '',
-        item.locationId ? getLocationName(item.locationId) : '',
-        item.notes || ''
+        shapeText(item.locationId ? getLocationName(item.locationId) : ''),
+        shapeText(item.notes || '')
       ]),
       theme: 'grid',
-      styles: { fontSize: 8, cellPadding: 2 },
-      headStyles: { fillColor: [22, 163, 74], textColor: 255, fontStyle: 'bold' },
-      didParseCell: function (data) {
-        if (customFontBase64) {
-            data.cell.styles.font = "CustomFont";
-        }
-      }
+      styles: {
+        font: (useKurdish && customFontBase64) ? 'CustomFont' : 'helvetica',
+        halign: useKurdish ? 'right' : 'left',
+        fontSize: 8,
+        cellPadding: 2,
+      },
+      headStyles: {
+        fillColor: [22, 163, 74],
+        textColor: 255,
+        fontStyle: 'bold',
+      },
     });
     
     pdf.save(`${file.storageName}.pdf`);
@@ -175,9 +188,9 @@ export default function PdfViewPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center p-8">
         <FileText className="w-24 h-24 text-muted-foreground mb-4" />
-        <h2 className="text-2xl font-bold mb-2">File Not Found</h2>
-        <p className="text-muted-foreground mb-6">The report you're looking for doesn't seem to exist.</p>
-        <Button asChild><Link href="/pdf-archive"><ArrowLeft className="mr-2 h-4 w-4" />Back to PDF Archive</Link></Button>
+        <h2 className="text-2xl font-bold mb-2">{t('file_not_found')}</h2>
+        <p className="text-muted-foreground mb-6">{t('file_not_found_desc')}</p>
+        <Button asChild><Link href="/pdf-archive"><ArrowLeft className="mr-2 h-4 w-4" />{t('back_to_archive')}</Link></Button>
       </div>
     );
   }
@@ -319,5 +332,3 @@ export default function PdfViewPage() {
     </>
   );
 }
-
-    

@@ -462,6 +462,8 @@ export default function FileDetailPage() {
         } catch (e) {
             console.error("Could not add custom font to PDF", e);
         }
+    } else {
+        pdf.setFont('helvetica');
     }
     
     const canvas = await html2canvas(pdfCardRef.current, {
@@ -486,18 +488,18 @@ export default function FileDetailPage() {
       body: sortedItems.map(item => [
         shapeText(item.model),
         item.quantity,
-        shapeText(item.storageStatus || ''),
-        shapeText(item.modelCondition || ''),
+        shapeText(t(item.storageStatus?.toLowerCase() || '') || item.storageStatus || ''),
+        shapeText(t(item.modelCondition?.toLowerCase() || '') || item.modelCondition || ''),
         item.quantityPerCondition ?? '',
         shapeText(item.locationId ? getLocationName(item.locationId) : ''),
         shapeText(item.notes || '')
       ]),
       theme: 'grid',
       styles: {
-          fontSize: 8,
-          cellPadding: 2,
           font: (useKurdish && customFontBase64) ? 'CustomFont' : 'helvetica',
           halign: useKurdish ? 'right' : 'left',
+          fontSize: 8,
+          cellPadding: 2,
       },
       headStyles: {
           fillColor: [34, 197, 94], // Tailwind green-500
