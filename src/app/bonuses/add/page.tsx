@@ -219,6 +219,11 @@ export default function AddBonusPage() {
         styles: { font: (settings.customFont && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
         headStyles: { fillColor: settings.reportColors?.bonus || settings.themeColor || '#22c55e' },
         footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' },
+         didParseCell: (data) => {
+            if (useKurdish && settings.customFont) {
+                try { data.cell.styles.font = "CustomFont"; } catch(e) { console.error(e) }
+            }
+        }
     });
     
     const finalY = (doc as any).lastAutoTable.finalY + 40;
@@ -227,6 +232,7 @@ export default function AddBonusPage() {
         doc.addPage();
     }
     const signatureY = finalY > pageHeight - 50 ? 40 : finalY;
+    if (useKurdish && settings.customFont) doc.setFont('CustomFont');
     doc.setFontSize(10);
     doc.text(shapeText(t('warehouse_manager_signature')), doc.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
     doc.text("...................................", doc.internal.pageSize.width - 120, signatureY, { align: 'center' });

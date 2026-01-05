@@ -20,6 +20,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Bar, BarChart as RechartsBarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import type { AllPdfSettings } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
+import { shapeText } from '@/lib/pdf-utils';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -30,7 +31,7 @@ const formatCurrency = (amount: number) => {
 };
 
 export default function MonthlyWithdrawalReportPage() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { withdrawals, employees } = useAppContext();
   const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {} });
   const pdfHeaderRef = useRef<HTMLDivElement>(null);
@@ -43,8 +44,10 @@ export default function MonthlyWithdrawalReportPage() {
   
   const isLoading = !withdrawals || !employees || !selectedDate;
 
-  const getEmployeeName = (employeeId: string) => {
-    return employees.find(e => e.id === employeeId)?.name || 'Unknown';
+  const getEmployeeName = (employeeId: string, useKurdish: boolean = false) => {
+    const employee = employees.find(e => e.id === employeeId);
+    if (!employee) return t('unknown');
+    return useKurdish && employee.kurdishName ? employee.kurdishName : employee.name;
   };
 
   const monthlyData = useMemo(() => {
@@ -64,22 +67,23 @@ export default function MonthlyWithdrawalReportPage() {
 
     const summary = Array.from(employeeTotals.entries()).map(([employeeId, totals]) => ({
       employeeId,
-      employeeName: getEmployeeName(employeeId),
+      employeeName: getEmployeeName(employeeId, language === 'ku'),
       ...totals
     })).sort((a,b) => b.totalAmount - a.totalAmount);
     
     const totalAmount = summary.reduce((sum, item) => sum + item.totalAmount, 0);
 
     return { records: filteredRecords, summary, totalAmount };
-  }, [withdrawals, employees, selectedDate]);
+  }, [withdrawals, employees, selectedDate, getEmployeeName, language]);
 
   const handleDownloadPdf = async () => {
     if (!pdfHeaderRef.current || !selectedDate) return;
     
     const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
     const settings = pdfSettings.report || {};
+    const useKurdish = language === 'ku';
     
-    if (settings.customFont) {
+    if (settings.customFont && useKurdish) {
         try {
             const fontName = "CustomFont";
             const fontStyle = "normal";
@@ -122,23 +126,22 @@ export default function MonthlyWithdrawalReportPage() {
             doc.addPage();
             startY = 20;
         }
+        if (useKurdish && settings.customFont) doc.setFont('CustomFont');
         doc.setFontSize(14);
         doc.text(t('summary_by_employee'), 14, startY);
         startY += 10;
         autoTable(doc, {
           startY: startY,
-          head: [[t('employee'), t('total_withdrawn')]],
-          body: monthlyData.summary.map(item => [item.employeeName, formatCurrency(item.totalAmount)]),
-          foot: [[t('grand_total'), formatCurrency(monthlyData.totalAmount)]],
+          head: [[shapeText(t('employee')), shapeText(t('total_withdrawn'))]],
+          body: monthlyData.summary.map(item => [shapeText(item.employeeName), formatCurrency(item.totalAmount)]),
+          foot: [[shapeText(t('grand_total')), formatCurrency(monthlyData.totalAmount)]],
           theme: 'grid',
-          headStyles: { fillColor: settings.reportColors?.withdrawal || settings.themeColor || '#22c55e', font: settings.customFont ? 'CustomFont' : 'helvetica' },
-          bodyStyles: { font: settings.customFont ? 'CustomFont' : 'helvetica' },
-          footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', font: settings.customFont ? 'CustomFont' : 'helvetica' },
+          styles: { font: (useKurdish && settings.customFont) ? 'CustomFont' : 'helvetica' },
+          headStyles: { fillColor: settings.reportColors?.withdrawal || settings.themeColor || '#22c55e' },
+          footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold'},
           didParseCell: (data) => {
-            if (settings.customFont) {
-                try {
-                    data.cell.styles.font = "CustomFont";
-                } catch(e) { console.error(e) }
+            if (useKurdish && settings.customFont) {
+                try { data.cell.styles.font = "CustomFont"; } catch(e) { console.error(e) }
             }
           }
         });
@@ -150,14 +153,16 @@ export default function MonthlyWithdrawalReportPage() {
         doc.addPage();
     }
     const signatureY = finalY > pageHeight - 50 ? 40 : finalY;
+    if (useKurdish && settings.customFont) doc.setFont('CustomFont');
     doc.setFontSize(10);
     doc.text("...................................", doc.internal.pageSize.width - 120, signatureY, { align: 'center' });
-    doc.text("Warehouse Manager Signature", doc.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
+    doc.text(shapeText("Warehouse Manager Signature"), doc.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
     
     if (settings.footerText) {
         const pageCount = (doc as any).internal.getNumberOfPages();
         for (let i = 1; i <= pageCount; i++) {
             doc.setPage(i);
+            if (useKurdish && settings.customFont) doc.setFont('CustomFont');
             doc.setFontSize(8);
             doc.setTextColor(150);
             doc.text(settings.footerText, doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
@@ -278,5 +283,4 @@ export default function MonthlyWithdrawalReportPage() {
     </>
   );
 }
-
     
