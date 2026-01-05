@@ -26,6 +26,8 @@ import useLocalStorage from '@/hooks/use-local-storage';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
 import { useAppContext } from '@/context/app-provider';
 import type { ExcelFile, Item, Employee, StorageLocation } from '@/lib/types';
+import { useTranslation } from '@/hooks/use-translation';
+import { shapeText } from '@/lib/pdf-utils';
 
 
 type SortableKeys = keyof Item;
@@ -104,6 +106,7 @@ const conditionChartConfig = {
 export default function FileDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { t, language } = useTranslation();
   const { toast } = useToast();
   const fileId = params.id as string;
   const { 
@@ -448,13 +451,13 @@ export default function FileDetailPage() {
     if (!file || !sortedItems || !pdfCardRef.current) return;
     
     const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
-     if (customFontBase64) {
+    const useKurdish = language === 'ku';
+
+     if (customFontBase64 && useKurdish) {
         try {
             const fontName = "CustomFont";
-            const fontStyle = "normal";
-            const fontBase64 = customFontBase64.split(',')[1];
-            pdf.addFileToVFS(`${fontName}.ttf`, fontBase64);
-            pdf.addFont(`${fontName}.ttf`, fontName, fontStyle);
+            pdf.addFileToVFS(`${fontName}.ttf`, customFontBase64.split(',')[1]);
+            pdf.addFont(`${fontName}.ttf`, fontName, "normal");
             pdf.setFont(fontName);
         } catch (e) {
             console.error("Could not add custom font to PDF", e);
@@ -479,33 +482,28 @@ export default function FileDetailPage() {
     
     autoTable(pdf, {
       startY: finalImgHeight + 30,
-      head: [['Model', 'Qty', 'Storage Status', 'Condition', 'Qty/Cond', 'Location', 'Notes']],
+      head: [[shapeText(t('model')), t('quantity'), shapeText(t('storage_status')), shapeText(t('condition')), t('qty_per_condition'), shapeText(t('location')), shapeText(t('notes'))]],
       body: sortedItems.map(item => [
-        item.model,
+        shapeText(item.model),
         item.quantity,
-        item.storageStatus || '',
-        item.modelCondition || '',
+        shapeText(item.storageStatus || ''),
+        shapeText(item.modelCondition || ''),
         item.quantityPerCondition ?? '',
-        item.locationId ? getLocationName(item.locationId) : '',
-        item.notes || ''
+        shapeText(item.locationId ? getLocationName(item.locationId) : ''),
+        shapeText(item.notes || '')
       ]),
       theme: 'grid',
       styles: {
           fontSize: 8,
           cellPadding: 2,
+          font: (useKurdish && customFontBase64) ? 'CustomFont' : 'helvetica',
+          halign: useKurdish ? 'right' : 'left',
       },
       headStyles: {
           fillColor: [34, 197, 94], // Tailwind green-500
           textColor: 255,
           fontStyle: 'bold',
       },
-      didParseCell: function (data) {
-        if (customFontBase64) {
-             try {
-                data.cell.styles.font = "CustomFont";
-             } catch(e) { console.error(e) }
-        }
-      }
     });
 
     const finalY = (pdf as any).lastAutoTable.finalY + 40;
@@ -514,9 +512,10 @@ export default function FileDetailPage() {
         pdf.addPage();
     }
     const signatureY = finalY > pageHeight - 50 ? 40 : finalY;
+    if (useKurdish && customFontBase64) pdf.setFont("CustomFont");
     pdf.setFontSize(10);
     pdf.text("...................................", pdf.internal.pageSize.width - 120, signatureY, { align: 'center' });
-    pdf.text("Warehouse Manager Signature", pdf.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
+    pdf.text(shapeText(t('warehouse_manager_signature')), pdf.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
 
     pdf.save(`${file.storageName}.pdf`);
   };
@@ -573,12 +572,12 @@ export default function FileDetailPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center p-8">
         <FileText className="w-24 h-24 text-muted-foreground mb-4" />
-        <h2 className="text-2xl font-bold mb-2">File Not Found</h2>
-        <p className="text-muted-foreground mb-6">The archived file you're looking for doesn't seem to exist.</p>
+        <h2 className="text-2xl font-bold mb-2">{t('file_not_found')}</h2>
+        <p className="text-muted-foreground mb-6">{t('file_not_found_desc')}</p>
         <Button asChild>
           <Link href="/archive">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Archive
+            {t('back_to_archive')}
           </Link>
         </Button>
       </div>
@@ -617,34 +616,34 @@ export default function FileDetailPage() {
                     <ArrowLeft />
                     </Link>
                 </Button>
-                <h1 className="text-xl font-bold">File Details</h1>
+                <h1 className="text-xl font-bold">{t('file_details')}</h1>
             </div>
             <div className='flex items-center gap-2 flex-wrap justify-end'>
                 {isEditing ? (
                     <>
                     <Button variant="outline" onClick={() => updateFileInputRef.current?.click()}>
-                        <Upload className="mr-2 h-4 w-4" /> Update with New File
+                        <Upload className="mr-2 h-4 w-4" /> {t('update_with_new_file')}
                     </Button>
-                    <Button onClick={handleSave}><Save className="mr-2 h-4 w-4"/> Save Changes</Button>
-                    <Button variant="ghost" onClick={() => setIsEditing(false)}><X className="mr-2 h-4 w-4"/> Cancel</Button>
+                    <Button onClick={handleSave}><Save className="mr-2 h-4 w-4"/> {t('save_changes')}</Button>
+                    <Button variant="ghost" onClick={() => setIsEditing(false)}><X className="mr-2 h-4 w-4"/> {t('cancel')}</Button>
                     </>
                 ) : (
                     <>
-                    <Button onClick={() => setIsEditing(true)}><Edit className="mr-2"/>Edit</Button>
-                    <Button variant="outline" onClick={handleDownloadPdf}><FileText className="mr-2 h-4 w-4" /> PDF</Button>
-                    <Button variant="outline" onClick={handlePrint}><Printer className="mr-2 h-4 w-4" /> Print</Button>
+                    <Button onClick={() => setIsEditing(true)}><Edit className="mr-2"/>{t('edit')}</Button>
+                    <Button variant="outline" onClick={handleDownloadPdf}><FileText className="mr-2 h-4 w-4" /> {t('download_pdf')}</Button>
+                    <Button variant="outline" onClick={handlePrint}><Printer className="mr-2 h-4 w-4" /> {t('print')}</Button>
                     <AlertDialog>
-                        <AlertDialogTrigger asChild><Button variant="destructive"><Trash2 className="mr-2"/>Delete</Button></AlertDialogTrigger>
+                        <AlertDialogTrigger asChild><Button variant="destructive"><Trash2 className="mr-2"/>{t('delete')}</Button></AlertDialogTrigger>
                         <AlertDialogContent>
                             <AlertDialogHeader>
-                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    This will permanently delete the file "{file.storageName}". This action cannot be undone.
+                                    {t('confirm_delete_file', {fileName: file.storageName})}
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleDeleteFile}>Delete</AlertDialogAction>
+                                <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleDeleteFile}>{t('delete')}</AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
@@ -667,7 +666,7 @@ export default function FileDetailPage() {
                                             value={editableFile.storageName || ''} 
                                             onChange={(e) => setEditableFile(prev => ({...prev, storageName: e.target.value}))}
                                             className="text-2xl md:text-3xl font-bold h-auto p-0 border-0 shadow-none focus-visible:ring-0"
-                                            placeholder="Enter File Name"
+                                            placeholder={t('enter_file_name')}
                                         />
                                     ) : (
                                         <CardTitle className="text-2xl md:text-3xl font-bold">{file.storageName}</CardTitle>
@@ -681,7 +680,7 @@ export default function FileDetailPage() {
                                 <span className="flex items-center gap-2"><Building className="w-4 h-4"/>{file.source}</span>
                                 <span className="flex items-center gap-2">
                                   <CalendarIcon className="w-4 h-4"/>
-                                  {file.date ? format(parseISO(file.date), 'PPP') : 'Invalid Date'}
+                                  {file.date ? format(parseISO(file.date), 'PPP') : t('invalid_date')}
                                 </span>
                             </CardDescription>
                         </div>
@@ -692,25 +691,25 @@ export default function FileDetailPage() {
               {isEditing && warehouseType && (
                 <Card className="print:hidden">
                     <CardHeader>
-                        <CardTitle>Location Filters</CardTitle>
-                        <CardDescription>Filter the locations available for items.</CardDescription>
+                        <CardTitle>{t('location_filters')}</CardTitle>
+                        <CardDescription>{t('location_filters_desc')}</CardDescription>
                     </CardHeader>
                     <CardContent className="flex flex-wrap items-center gap-4">
                         {warehouseType === 'Huana' && (
                             <>
                                 <Select value={filterHuanaWarehouse} onValueChange={setFilterHuanaWarehouse}>
-                                    <SelectTrigger className="w-[180px]"><SelectValue placeholder="Select Huana Warehouse..." /></SelectTrigger>
+                                    <SelectTrigger className="w-[180px]"><SelectValue placeholder={t('select_huana_warehouse')} /></SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="All">All Huana Warehouses</SelectItem>
-                                        {[1, 2, 3].map(n => <SelectItem key={n} value={String(n)}>Warehouse {n}</SelectItem>)}
+                                        <SelectItem value="All">{t('all_huana_warehouses')}</SelectItem>
+                                        {[1, 2, 3].map(n => <SelectItem key={n} value={String(n)}>{t('warehouse')} {n}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                                 {filterHuanaWarehouse !== 'All' && (
                                     <Select value={filterHuanaFloor} onValueChange={setFilterHuanaFloor}>
-                                        <SelectTrigger className="w-[180px]"><SelectValue placeholder="Select Floor..." /></SelectTrigger>
+                                        <SelectTrigger className="w-[180px]"><SelectValue placeholder={t('select_floor')} /></SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="All">All Floors</SelectItem>
-                                            {[1, 2].map(n => <SelectItem key={n} value={String(n)}>Floor {n}</SelectItem>)}
+                                            <SelectItem value="All">{t('all_floors')}</SelectItem>
+                                            {[1, 2].map(n => <SelectItem key={n} value={String(n)}>{t('floor')} {n}</SelectItem>)}
                                         </SelectContent>
                                     </Select>
                                 )}
@@ -719,20 +718,20 @@ export default function FileDetailPage() {
                         {warehouseType === 'Ashley' && (
                             <>
                                 <Select value={filterAshleyFloor} onValueChange={setFilterAshleyFloor}>
-                                    <SelectTrigger className="w-[180px]"><SelectValue placeholder="Select Floor..." /></SelectTrigger>
+                                    <SelectTrigger className="w-[180px]"><SelectValue placeholder={t('select_ashley_floor')} /></SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="All">All Floors</SelectItem>
-                                        <SelectItem value="4">Floor 4</SelectItem>
-                                        <SelectItem value="3">Floor 3</SelectItem>
+                                        <SelectItem value="All">{t('all_floors')}</SelectItem>
+                                        <SelectItem value="4">{t('floor')} 4</SelectItem>
+                                        <SelectItem value="3">{t('floor')} 3</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 {filterAshleyFloor === '3' && (
                                     <Select value={filterAshleyArea} onValueChange={setFilterAshleyArea}>
-                                        <SelectTrigger className="w-[180px]"><SelectValue placeholder="Select Area..." /></SelectTrigger>
+                                        <SelectTrigger className="w-[180px]"><SelectValue placeholder={t('select_area')} /></SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="All">All Areas on Floor 3</SelectItem>
-                                            <SelectItem value="1">Area 1</SelectItem>
-                                            <SelectItem value="O">Area 2 (Office)</SelectItem>
+                                            <SelectItem value="All">{t('all_areas_on_floor_3')}</SelectItem>
+                                            <SelectItem value="1">{t('area')} 1</SelectItem>
+                                            <SelectItem value="O">{t('area')} 2 ({t('office')})</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 )}
@@ -766,7 +765,7 @@ export default function FileDetailPage() {
                               ))}
                             </Pie>
                             <Legend content={() => (
-                                <div className="text-center text-xs text-muted-foreground -mt-2">Inventory Status</div>
+                                <div className="text-center text-xs text-muted-foreground -mt-2">{t('inventory_status')}</div>
                             )} />
                           </PieChart>
                         </ResponsiveContainer>
@@ -796,7 +795,7 @@ export default function FileDetailPage() {
                               ))}
                             </Pie>
                             <Legend content={() => (
-                                <div className="text-center text-xs text-muted-foreground -mt-2">Condition Status</div>
+                                <div className="text-center text-xs text-muted-foreground -mt-2">{t('condition_status')}</div>
                             )} />
                           </PieChart>
                         </ResponsiveContainer>
@@ -808,11 +807,11 @@ export default function FileDetailPage() {
           <Card className="lg:col-span-2">
             <CardHeader className="print:hidden">
               <div className="flex flex-wrap items-center justify-between gap-4">
-                <CardTitle>Items ({sortedItems.length})</CardTitle>
+                <CardTitle>{t('items_count', { count: sortedItems.length })}</CardTitle>
                 <div className="relative w-full max-w-sm">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input 
-                    placeholder="Search by model..."
+                    placeholder={t('search_by_model')}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-10"
@@ -826,14 +825,14 @@ export default function FileDetailPage() {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead onClick={() => requestSort('model')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Model {getSortIcon('model')}</div></TableHead>
-                            <TableHead onClick={() => requestSort('quantity')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Qty {getSortIcon('quantity')}</div></TableHead>
-                            {isEditing && <TableHead>Update Status</TableHead>}
-                            <TableHead onClick={() => requestSort('storageStatus')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Storage Status {getSortIcon('storageStatus')}</div></TableHead>
-                            <TableHead onClick={() => requestSort('modelCondition')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Condition {getSortIcon('modelCondition')}</div></TableHead>
-                            <TableHead onClick={() => requestSort('quantityPerCondition')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Qty / Cond. {getSortIcon('quantityPerCondition')}</div></TableHead>
-                            <TableHead onClick={() => requestSort('locationId')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Location {getSortIcon('locationId')}</div></TableHead>
-                            <TableHead onClick={() => requestSort('notes')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">Notes {getSortIcon('notes')}</div></TableHead>
+                            <TableHead onClick={() => requestSort('model')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">{t('model')} {getSortIcon('model')}</div></TableHead>
+                            <TableHead onClick={() => requestSort('quantity')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">{t('quantity')} {getSortIcon('quantity')}</div></TableHead>
+                            {isEditing && <TableHead>{t('update_status')}</TableHead>}
+                            <TableHead onClick={() => requestSort('storageStatus')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">{t('storage_status')} {getSortIcon('storageStatus')}</div></TableHead>
+                            <TableHead onClick={() => requestSort('modelCondition')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">{t('condition')} {getSortIcon('modelCondition')}</div></TableHead>
+                            <TableHead onClick={() => requestSort('quantityPerCondition')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">{t('qty_per_condition')} {getSortIcon('quantityPerCondition')}</div></TableHead>
+                            <TableHead onClick={() => requestSort('locationId')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">{t('location')} {getSortIcon('locationId')}</div></TableHead>
+                            <TableHead onClick={() => requestSort('notes')} className="cursor-pointer hover:bg-muted"><div className="flex items-center">{t('notes')} {getSortIcon('notes')}</div></TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -855,38 +854,38 @@ export default function FileDetailPage() {
                                 </TableCell>}
                                 <TableCell>{isEditing ? (
                                     <Select value={item.storageStatus || ''} onValueChange={v => handleItemChange(item.id, 'storageStatus', v === 'none' ? '' : v)}>
-                                        <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
+                                        <SelectTrigger><SelectValue placeholder={t('select')} /></SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="none">None</SelectItem>
-                                            <SelectItem value="Correct">Correct</SelectItem>
-                                            <SelectItem value="Less">Less</SelectItem>
-                                            <SelectItem value="More">More</SelectItem>
+                                            <SelectItem value="none">{t('none')}</SelectItem>
+                                            <SelectItem value="Correct">{t('correct')}</SelectItem>
+                                            <SelectItem value="Less">{t('less')}</SelectItem>
+                                            <SelectItem value="More">{t('more')}</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 ) : (
-                                    <span className="flex items-center gap-2">{item.storageStatus || 'N/A'}</span>
+                                    <span className="flex items-center gap-2">{item.storageStatus || t('na')}</span>
                                 )}</TableCell>
                                 <TableCell className={cn("transition-colors", getConditionCellClass(item.modelCondition))}>{isEditing ? (
                                     <Select value={item.modelCondition || ''} onValueChange={v => handleItemChange(item.id, 'modelCondition', v === 'none' ? '' : v)}>
-                                        <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
+                                        <SelectTrigger><SelectValue placeholder={t('select')} /></SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="none">None</SelectItem>
-                                            <SelectItem value="Wrapped">Wrapped</SelectItem>
-                                            <SelectItem value="Damaged">Damaged</SelectItem>
+                                            <SelectItem value="none">{t('none')}</SelectItem>
+                                            <SelectItem value="Wrapped">{t('wrapped')}</SelectItem>
+                                            <SelectItem value="Damaged">{t('damaged')}</SelectItem>
                                         </SelectContent>
                                     </Select>
-                                ) : item.modelCondition || 'N/A'}</TableCell>
+                                ) : item.modelCondition || t('na')}</TableCell>
                                 <TableCell>{isEditing ? 
                                     <Input type="number" value={item.quantityPerCondition ?? ''} onChange={e => handleItemChange(item.id, 'quantityPerCondition', e.target.valueAsNumber)} className="w-24" />
-                                    : item.quantityPerCondition ?? 'N/A'
+                                    : item.quantityPerCondition ?? t('na')
                                 }</TableCell>
                                 <TableCell>{isEditing ? (
                                     <Select value={item.locationId || ''} onValueChange={v => handleItemChange(item.id, 'locationId', v === 'none' ? '' : v)} disabled={!warehouseType}>
                                         <SelectTrigger>
-                                            <SelectValue placeholder={warehouseType ? "Select..." : "N/A"} />
+                                            <SelectValue placeholder={warehouseType ? t('select') : t('na')} />
                                         </SelectTrigger>
                                         <SelectContent>
-                                          <SelectItem value="none">None</SelectItem>
+                                          <SelectItem value="none">{t('none')}</SelectItem>
                                           {filteredLocations.map(loc => (
                                               <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
                                           ))}
@@ -895,18 +894,18 @@ export default function FileDetailPage() {
                                 ) : (
                                     <span className="flex items-center gap-2">
                                         {item.locationId && <MapPin className="w-4 h-4 text-muted-foreground"/>}
-                                        {item.locationId ? getLocationName(item.locationId) : 'N/A'}
+                                        {item.locationId ? getLocationName(item.locationId) : t('na')}
                                     </span>
                                 )}</TableCell>
                                 <TableCell>{isEditing ?
                                     <Textarea value={item.notes ?? ''} onChange={e => handleItemChange(item.id, 'notes', e.target.value)} />
-                                    : item.notes || 'N/A'
+                                    : item.notes || t('na')
                                 }</TableCell>
                             </TableRow>
                         ))}
                         {paginatedItems.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={isEditing ? 8 : 7} className="text-center h-24">No items found.</TableCell>
+                                <TableCell colSpan={isEditing ? 8 : 7} className="text-center h-24">{t('no_items_found')}</TableCell>
                             </TableRow>
                         )}
                     </TableBody>

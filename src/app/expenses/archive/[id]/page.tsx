@@ -107,7 +107,7 @@ export default function ViewExpenseReportPage() {
     if (useKurdish && settings.customFont) doc.setFont(fontName);
     doc.setFontSize(10);
     doc.text("...................................", doc.internal.pageSize.width - 120, signatureY, { align: 'center' });
-    doc.text(shapeText(t('warehouse_manager_signature')), doc.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
+    doc.text(shapeText(t('warehouse_manager_signature')), doc.internal.pageSize.getWidth() - 120, signatureY + 10, { align: 'center' });
 
 
     if (settings.footerText) {
@@ -216,7 +216,7 @@ export default function ViewExpenseReportPage() {
                   <TableBody>
                     {reportItems.map(item => (
                       <TableRow key={item.id}>
-                        <TableCell className="font-medium flex items-center gap-2">
+                        <TableCell className="font-medium flex items-center gap-2" dir={language === 'ku' ? 'rtl' : 'ltr'}>
                           <User className="w-4 h-4 text-muted-foreground" />
                           {getEmployeeName(item.employeeId, language === 'ku')}
                         </TableCell>

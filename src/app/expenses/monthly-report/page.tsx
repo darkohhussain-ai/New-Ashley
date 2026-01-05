@@ -165,7 +165,7 @@ export default function MonthlyExpenseReportPage() {
     const signatureYWithSignature = finalYWithSignature > pageHeightWithSignature - 50 ? 40 : finalYWithSignature;
     if (useKurdish && settings.customFont) doc.setFont(fontName);
     doc.setFontSize(10);
-    doc.text("...................................", doc.internal.pageSize.getWidth() - 120, signatureYWithSignature, { align: 'center' });
+    doc.text("...................................", doc.internal.pageSize.width - 120, signatureYWithSignature, { align: 'center' });
     doc.text(shapeText(t('warehouse_manager_signature')), doc.internal.pageSize.getWidth() - 120, signatureYWithSignature + 10, { align: 'center' });
 
 
