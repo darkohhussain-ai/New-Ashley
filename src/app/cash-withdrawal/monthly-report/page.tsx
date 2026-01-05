@@ -3,9 +3,9 @@
 
 import { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Calendar as CalendarIcon, FileText, BarChart, Printer, Loader2 } from 'lucide-react';
+import { ArrowLeft, Calendar as CalendarIcon, FileText, Printer, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
@@ -18,7 +18,6 @@ import { ReportPdfHeader } from '@/components/reports/report-pdf-header';
 import useLocalStorage from '@/hooks/use-local-storage';
 import { useAppContext } from '@/context/app-provider';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Bar, BarChart as RechartsBarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import type { AllPdfSettings } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { shapeText } from '@/lib/pdf-utils';
@@ -36,7 +35,6 @@ export default function MonthlyWithdrawalReportPage() {
   const { withdrawals, employees } = useAppContext();
   const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {} });
   const pdfHeaderRef = useRef<HTMLDivElement>(null);
-  const chartRef = useRef<HTMLDivElement>(null);
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   useEffect(() => {
@@ -104,32 +102,9 @@ export default function MonthlyWithdrawalReportPage() {
     const finalHeaderHeight = finalHeaderWidth / headerRatio;
     doc.addImage(headerImgData, 'PNG', 0, 0, finalHeaderWidth, finalHeaderHeight);
 
-    let startY = finalHeaderHeight + 10;
-
-    if (chartRef.current) {
-        const chartCanvas = await html2canvas(chartRef.current, { scale: 2, backgroundColor: '#ffffff' });
-        const chartImgData = chartCanvas.toDataURL('image/png');
-        const chartRatio = chartCanvas.width / chartCanvas.height;
-        const chartWidth = pdfWidth - 28;
-        const chartHeight = chartWidth / chartRatio;
-        
-        if (startY + chartHeight > doc.internal.pageSize.getHeight()) {
-            doc.addPage();
-            startY = 20;
-        }
-        doc.addImage(chartImgData, 'PNG', 14, startY, chartWidth, chartHeight);
-        startY += chartHeight + 20;
-    }
+    let startY = finalHeaderHeight + 20;
     
     if(monthlyData.summary.length > 0) {
-        if (startY + 40 > doc.internal.pageSize.getHeight()) {
-            doc.addPage();
-            startY = 20;
-        }
-        if (useKurdish && settings.customFont) doc.setFont(fontName);
-        doc.setFontSize(14);
-        doc.text(t('summary_by_employee'), 14, startY);
-        startY += 10;
         autoTable(doc, {
           startY: startY,
           head: [[shapeText(t('employee')), shapeText(t('total_withdrawn'))]],
@@ -215,65 +190,64 @@ export default function MonthlyWithdrawalReportPage() {
           </div>
         </header>
 
-        {isLoading ? (
-          <div className="space-y-6"><Skeleton className="h-48 w-full" /><Skeleton className="h-64 w-full" /></div>
-        ) : monthlyData.records.length > 0 ? (
-          <div className="space-y-8">
-             <Card>
-                <CardHeader>
-                    <CardTitle>{t('monthly_summary_by_employee')}</CardTitle>
-                </CardHeader>
-                <CardContent ref={chartRef} className="pl-0">
-                    <ResponsiveContainer width="100%" height={300}>
-                        <RechartsBarChart data={monthlyData.summary} layout="vertical" margin={{top: 5, right: 30, left: 20, bottom: 5}}>
-                            <XAxis type="number" tickFormatter={(value) => formatCurrency(value as number)} />
-                            <YAxis dataKey="employeeName" type="category" width={120} />
-                            <Tooltip contentStyle={{backgroundColor: 'hsl(var(--background))'}} formatter={(value) => formatCurrency(value as number)} />
-                            <Bar dataKey="totalAmount" name={t('total_withdrawn')} fill="hsl(var(--primary))" />
-                        </RechartsBarChart>
-                    </ResponsiveContainer>
-                </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('summary_for_month', {month: selectedDate ? format(selectedDate, 'MMMM yyyy') : ''})}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>{t('employee')}</TableHead>
-                                <TableHead className="text-right">{t('total_withdrawn')}</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {monthlyData.summary.map(item => (
-                                <TableRow key={item.employeeId}>
-                                    <TableCell className="font-medium">{item.employeeName}</TableCell>
-                                    <TableCell className="text-right font-semibold">{formatCurrency(item.totalAmount)}</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                        <TableFooter>
-                            <TableRow>
-                                <TableCell className="text-lg font-bold">{t('grand_total')}</TableCell>
-                                <TableCell className="text-right text-lg font-bold text-primary">{formatCurrency(monthlyData.totalAmount)}</TableCell>
-                            </TableRow>
-                        </TableFooter>
-                    </Table>
+        <main className="print:p-8">
+            {isLoading ? (
+            <div className="space-y-6"><Skeleton className="h-64 w-full" /></div>
+            ) : monthlyData.records.length > 0 ? (
+            <div className="space-y-8">
+                <Card className="print:shadow-none print:border-none">
+                    <CardHeader>
+                        <div className="print:hidden">
+                            <CardTitle>{t('summary_for_month', {month: selectedDate ? format(selectedDate, 'MMMM yyyy') : ''})}</CardTitle>
+                        </div>
+                        <div className="hidden print:block text-center">
+                            <h1 className="text-2xl font-bold">{t('monthly_withdrawal_report')}</h1>
+                            <p className="text-muted-foreground">{selectedDate ? format(selectedDate, 'MMMM yyyy') : ''}</p>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="overflow-x-auto">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>{t('employee')}</TableHead>
+                                        <TableHead className="text-right">{t('total_withdrawn')}</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {monthlyData.summary.map(item => (
+                                        <TableRow key={item.employeeId}>
+                                            <TableCell className="font-medium" dir={language === 'ku' ? 'rtl' : 'ltr'}>{item.employeeName}</TableCell>
+                                            <TableCell className="text-right font-semibold">{formatCurrency(item.totalAmount)}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                                <TableFooter>
+                                    <TableRow>
+                                        <TableCell className="text-lg font-bold">{t('grand_total')}</TableCell>
+                                        <TableCell className="text-right text-lg font-bold text-primary">{formatCurrency(monthlyData.totalAmount)}</TableCell>
+                                    </TableRow>
+                                </TableFooter>
+                            </Table>
+                        </div>
+                    </CardContent>
+                </Card>
+                <div className="hidden print:block pt-24">
+                    <div className="flex justify-end">
+                        <div className="w-64 text-center">
+                            <p className="border-t pt-2">{t('warehouse_manager_signature')}</p>
+                        </div>
+                    </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        ) : (
-          <div className="text-center py-16 border-2 border-dashed rounded-lg print:hidden">
-            <BarChart className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-medium">{t('no_withdrawals_found')}</h3>
-            <p className="mt-2 text-sm text-muted-foreground">{t('no_withdrawals_found_for_month', {month: selectedDate ? format(selectedDate, 'MMMM yyyy') : 'the selected month'})}</p>
-          </div>
-        )}
+            </div>
+            ) : (
+            <div className="text-center py-16 border-2 border-dashed rounded-lg print:hidden">
+                <CalendarIcon className="mx-auto h-12 w-12 text-muted-foreground" />
+                <h3 className="mt-4 text-lg font-medium">{t('no_withdrawals_found')}</h3>
+                <p className="mt-2 text-sm text-muted-foreground">{t('no_withdrawals_found_for_month', {month: selectedDate ? format(selectedDate, 'MMMM yyyy') : 'the selected month'})}</p>
+            </div>
+            )}
+        </main>
       </div>
     </>
   );
