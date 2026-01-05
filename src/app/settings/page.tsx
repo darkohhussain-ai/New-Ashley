@@ -121,6 +121,7 @@ function parseHsl(hsl: string): { h: string, s: string, l: string } {
 
 function ColorPicker({ label, value, onChange }: { label: string, value: string, onChange: (value: string) => void }) {
   const { t } = useTranslation();
+  const { h, s, l } = parseHsl(value);
 
   const handleHslChange = (part: 'h' | 's' | 'l', newValue: string) => {
     const current = parseHsl(value);
