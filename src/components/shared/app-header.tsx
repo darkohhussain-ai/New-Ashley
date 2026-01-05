@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -10,6 +11,7 @@ import {
   Clock,
   RefreshCcw,
   Languages,
+  Home,
 } from 'lucide-react';
 import useLocalStorage from '@/hooks/use-local-storage';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -86,6 +88,9 @@ export function AppHeader() {
             )}
           </div>
           <div className="flex items-center justify-end gap-2 w-1/3">
+            <Button variant="ghost" size="icon" asChild>
+                <Link href="/"><Home className="w-5 h-5 text-muted-foreground hover:text-primary" /></Link>
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon">
