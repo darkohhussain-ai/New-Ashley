@@ -16,19 +16,6 @@ const DashboardClient = dynamic(
 function DashboardSkeleton() {
     const { t } = useTranslation();
     return (
-        <div className="min-h-screen bg-background text-foreground">
-         <header className="bg-card border-b top-0 z-10">
-            <div className="container mx-auto px-4">
-            <div className="flex items-center justify-between h-20">
-                <div className="w-1/3"><Skeleton className="h-4 w-48" /></div>
-                <div className="flex justify-center w-1/3"><Skeleton className="h-10 w-48" /></div>
-                <div className="flex justify-end w-1/3"><Skeleton className="h-8 w-24" /></div>
-            </div>
-            <div className="relative w-full mx-auto my-4 max-w-6xl rounded-lg overflow-hidden">
-                <Skeleton className="h-[150px] w-full" />
-            </div>
-            </div>
-        </header>
         <main className="container mx-auto p-4 md:p-8">
             <div className="mb-8">
                 <Skeleton className="h-8 w-64 mb-2" />
@@ -40,7 +27,6 @@ function DashboardSkeleton() {
                 ))}
             </div>
         </main>
-        </div>
     );
 }
 

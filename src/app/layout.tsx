@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { Metadata } from 'next';
@@ -11,6 +10,7 @@ import { FirebaseProvider } from '@/firebase';
 import { LanguageProvider } from '@/context/language-provider';
 import { useState, useEffect } from 'react';
 import { SplashScreen } from '@/components/shared/splash-screen';
+import { AppHeader } from '@/components/shared/app-header';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-body' });
 
@@ -39,6 +39,7 @@ export default function RootLayout({
             <ThemeProvider>
               <AppProvider>
                 <LanguageProvider>
+                  <AppHeader />
                   {children}
                 </LanguageProvider>
               </AppProvider>

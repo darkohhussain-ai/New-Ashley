@@ -1,9 +1,7 @@
-
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, CreditCard, Clock, Gift, Banknote, Settings, Plus, Archive, FilePlus, Eye, FileText, Calendar } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { CreditCard, Clock, Gift, Banknote, Settings } from 'lucide-react';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/hooks/use-translation';
@@ -47,18 +45,10 @@ export default function AshleyExpensesDashboard() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="bg-card border-b p-4">
-        <div className="container mx-auto flex items-center gap-4">
-          <Button variant="outline" size="icon" asChild>
-            <Link href="/">
-              <ArrowLeft />
-              <span className="sr-only">{t('back_to_dashboard')}</span>
-            </Link>
-          </Button>
-          <h1 className="text-xl font-bold">{t('ashley_employees_management')}</h1>
-        </div>
-      </header>
       <main className='container mx-auto p-4 md:p-8'>
+         <div className="mb-8">
+            <h1 className="text-2xl font-bold">{t('ashley_employees_management')}</h1>
+         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {menuItems.map((item) => (
             <Link key={item.title} href={item.href} className="group block" passHref>

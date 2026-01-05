@@ -10,6 +10,8 @@ export function shapeText(text: string | null | undefined): string {
   if (!text) {
     return '';
   }
-  // Reverse the string for correct RTL rendering in jsPDF
+  // This is a basic reversal for RTL text. For full Arabic/Kurdish script shaping,
+  // a more advanced library that handles contextual forms would be needed.
+  // However, for many modern PDF viewers and embedded fonts, this is sufficient.
   return text.split('').reverse().join('');
 }
