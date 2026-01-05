@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -132,8 +131,9 @@ export default function MonthlyWithdrawalReportPage() {
           body: monthlyData.summary.map(item => [item.employeeName, formatCurrency(item.totalAmount)]),
           foot: [[t('grand_total'), formatCurrency(monthlyData.totalAmount)]],
           theme: 'grid',
-          headStyles: { fillColor: settings.reportColors?.withdrawal || settings.themeColor || '#22c55e' },
-          footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
+          headStyles: { fillColor: settings.reportColors?.withdrawal || settings.themeColor || '#22c55e', font: settings.customFont ? 'CustomFont' : 'helvetica' },
+          bodyStyles: { font: settings.customFont ? 'CustomFont' : 'helvetica' },
+          footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', font: settings.customFont ? 'CustomFont' : 'helvetica' },
           didParseCell: (data) => {
             if (settings.customFont) {
                 try {

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -208,8 +207,9 @@ export default function AddOvertimePage() {
         body: overtimeRecords.map(item => [getEmployeeName(item.employeeId), item.hours.toFixed(2), item.notes || t('na'), formatCurrency(item.totalAmount)]),
         foot: [[t('total'), totalHours.toFixed(2), '', formatCurrency(totalAmount)]],
         theme: 'striped',
-        headStyles: { fillColor: settings.reportColors?.overtime || settings.themeColor || '#22c55e' },
-        footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' },
+        headStyles: { fillColor: settings.reportColors?.overtime || settings.themeColor || '#22c55e', font: settings.customFont ? 'CustomFont' : 'helvetica' },
+        bodyStyles: { font: settings.customFont ? 'CustomFont' : 'helvetica' },
+        footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold', font: settings.customFont ? 'CustomFont' : 'helvetica' },
         didParseCell: (data) => {
             if (settings.customFont) {
                 try {
@@ -429,3 +429,4 @@ export default function AddOvertimePage() {
     </>
   );
 }
+

@@ -200,8 +200,9 @@ export default function AddBonusPage() {
         body: dailyBonuses.map(item => [getEmployeeName(item.employeeId), item.loadCount, item.notes || 'N/A', formatCurrency(item.totalAmount)]),
         foot: [[t('total'), totalLoads.toFixed(0), '', formatCurrency(totalAmount)]],
         theme: 'striped',
-        headStyles: { fillColor: settings.reportColors?.bonus || settings.themeColor || '#22c55e' },
-        footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' },
+        headStyles: { fillColor: settings.reportColors?.bonus || settings.themeColor || '#22c55e', font: settings.customFont ? 'CustomFont' : 'helvetica' },
+        bodyStyles: { font: settings.customFont ? 'CustomFont' : 'helvetica' },
+        footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold', font: settings.customFont ? 'CustomFont' : 'helvetica' },
         didParseCell: (data) => {
              if (settings.customFont) {
                 try {

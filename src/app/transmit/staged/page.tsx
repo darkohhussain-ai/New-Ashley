@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo, useState } from 'react';
@@ -58,6 +57,8 @@ export default function StagedItemsPage() {
         startY: 40,
         head: [[t('model'), t('quantity'), t('notes')]],
         body: itemsForSelectedDestination.map(item => [item.model, item.quantity, item.notes || '']),
+        headStyles: { font: customFontBase64 ? 'CustomFont' : 'helvetica' },
+        bodyStyles: { font: customFontBase64 ? 'CustomFont' : 'helvetica' },
         didParseCell: function (data) {
           if (customFontBase64) {
               data.cell.styles.font = "CustomFont";

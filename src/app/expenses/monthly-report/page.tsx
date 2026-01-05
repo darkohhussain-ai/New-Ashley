@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -99,6 +98,7 @@ export default function MonthlyExpenseReportPage() {
             const fontBase64 = settings.customFont.split(',')[1];
             doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
             doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
+            doc.setFont(fontName);
         } catch (e) {
             console.error("Failed to load custom font:", e);
         }
@@ -147,8 +147,9 @@ export default function MonthlyExpenseReportPage() {
           body: monthlyData.summary.map(item => [item.employeeName, formatCurrency(item.totalAmount)]),
           foot: [[t('grand_total'), formatCurrency(monthlyData.total)]],
           theme: 'grid',
-          headStyles: { fillColor: settings.reportColors?.expense || settings.themeColor || '#22c55e' },
-          footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
+          headStyles: { fillColor: settings.reportColors?.expense || settings.themeColor || '#22c55e', font: settings.customFont ? 'CustomFont' : 'helvetica' },
+          bodyStyles: { font: settings.customFont ? 'CustomFont' : 'helvetica' },
+          footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', font: settings.customFont ? 'CustomFont' : 'helvetica' },
           didParseCell: (data) => {
             if (settings.customFont) {
                 try {
@@ -180,7 +181,8 @@ export default function MonthlyExpenseReportPage() {
               formatCurrency(item.amount)
           ]),
           theme: 'striped',
-          headStyles: { fillColor: [40, 40, 40] },
+          headStyles: { fillColor: [40, 40, 40], font: settings.customFont ? 'CustomFont' : 'helvetica' },
+          bodyStyles: { font: settings.customFont ? 'CustomFont' : 'helvetica' },
           didParseCell: (data) => {
              if (settings.customFont) {
                 try {

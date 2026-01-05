@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo, useRef } from 'react';
@@ -68,8 +67,8 @@ export default function ViewTransferPage() {
       head: [[t('model'), t('quantity'), t('notes')]],
       body: items.map(item => [item.model, item.quantity, item.notes || '']),
       theme: 'grid',
-      styles: { fontSize: 8, cellPadding: 2 },
-      headStyles: { fillColor: settings.themeColor || '#3b82f6', textColor: 255, fontStyle: 'bold' },
+      styles: { fontSize: 8, cellPadding: 2, font: settings.customFont ? 'CustomFont' : 'helvetica' },
+      headStyles: { fillColor: settings.themeColor || '#3b82f6', textColor: 255, fontStyle: 'bold', font: settings.customFont ? 'CustomFont' : 'helvetica' },
       didParseCell: function (data) {
         if (settings.customFont) {
             try {

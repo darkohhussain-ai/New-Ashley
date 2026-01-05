@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
@@ -394,7 +393,8 @@ export default function MarketingFeedbackPage() {
                 head: [['Rank', 'Employee', 'Total Score']],
                 body: evaluationSummary.map((item, index) => [index + 1, item.name, item.score]),
                 theme: 'striped',
-                headStyles: { fillColor: [40, 40, 40] },
+                headStyles: { fillColor: [40, 40, 40], font: customFontBase64 ? 'CustomFont' : 'helvetica' },
+                bodyStyles: { font: customFontBase64 ? 'CustomFont' : 'helvetica' },
                 didDrawCell: (data) => {
                     if (data.section === 'body') {
                         if (data.row.index === 0) { doc.setFillColor(255, 251, 204); }
@@ -416,7 +416,8 @@ export default function MarketingFeedbackPage() {
                     head: [['Rank', 'Employee', 'Total Score for Question']],
                     body: q.scores.map((s, rankIndex) => [rankIndex + 1, s.name, s.score]),
                     theme: 'striped',
-                    headStyles: { fillColor: [40, 40, 40] },
+                    headStyles: { fillColor: [40, 40, 40], font: customFontBase64 ? 'CustomFont' : 'helvetica' },
+                    bodyStyles: { font: customFontBase64 ? 'CustomFont' : 'helvetica' },
                     didParseCell: (data) => { if (customFontBase64) data.cell.styles.font = "CustomFont"; }
                 });
             });
