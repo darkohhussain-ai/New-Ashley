@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -36,7 +35,7 @@ export default function SoldItemsCheckPage() {
       setReceiptDate(new Date());
     }, []);
 
-    const isLoading = !savedReceipts;
+    const isLoading = !savedReceipts || !receiptDate;
 
     const fullReceiptNumber = `115-0${receiptNumberDigits}`;
 
@@ -94,7 +93,7 @@ export default function SoldItemsCheckPage() {
         })
     }, [savedReceipts])
     
-    if(!receiptDate) {
+    if(isLoading) {
         return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
 
