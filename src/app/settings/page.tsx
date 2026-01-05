@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from 'react';
@@ -121,7 +120,6 @@ function parseHsl(hsl: string): { h: string, s: string, l: string } {
 }
 
 function ColorPicker({ label, value, onChange }: { label: string, value: string, onChange: (value: string) => void }) {
-  const { h, s, l } = parseHsl(value);
   const { t } = useTranslation();
 
   const handleHslChange = (part: 'h' | 's' | 'l', newValue: string) => {
@@ -191,20 +189,13 @@ function ColorPicker({ label, value, onChange }: { label: string, value: string,
   );
 }
 
-function ReportColorPicker({ label, value, onChange }: { label: string, value: string, onChange: (value: string) => void }) {
-    const { t } = useTranslation();
-    return (
-        <div className="flex items-center justify-between">
-            <Label className="capitalize text-sm">{t(label.toLowerCase())}</Label>
-            <Input
-                type="color"
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                className="w-8 h-8 p-1 rounded-md"
-            />
-        </div>
-    );
-}
+const reportTypes = [
+  { value: 'general', label: 'General' },
+  { value: 'expense', label: 'Expense' },
+  { value: 'overtime', label: 'Overtime' },
+  { value: 'bonus', label: 'Bonus' },
+  { value: 'withdrawal', label: 'Withdrawal' }
+];
 
 export default function SettingsPage() {
   const { toast } = useToast()
@@ -217,15 +208,14 @@ export default function SettingsPage() {
   const [savedDashboardBanner, setSavedDashboardBanner] = useLocalStorage<string | null>('dashboard-banner', null);
   const [savedBannerHeight, setSavedBannerHeight] = useLocalStorage('dashboard-banner-height', 150);
   const [savedPdfSettings, setSavedPdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', defaultPdfSettings);
-  const [savedCustomFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
-
-
+  
   const [lightColors, setLightColors] = useState(savedLightColors);
   const [darkColors, setDarkColors] = useState(savedDarkColors);
   const [dashboardBanner, setDashboardBanner] = useState(savedDashboardBanner);
   const [bannerHeight, setBannerHeight] = useState(savedBannerHeight);
   const [pdfSettings, setPdfSettings] = useState(savedPdfSettings);
   const [activePdfTab, setActivePdfTab] = useState<'report' | 'invoice' | 'card'>('report');
+  const [selectedReportType, setSelectedReportType] = useState<keyof NonNullable<AllPdfSettings['report']['reportColors']>>('general');
   
   const [importFile, setImportFile] = useState<File | null>(null);
 
@@ -258,12 +248,6 @@ export default function SettingsPage() {
           card: { ...defaultCardSettings, ...(savedPdfSettings.card || {})},
       };
       
-      if (savedCustomFontBase64) {
-          mergedPdfSettings.report.customFont = savedCustomFontBase64;
-          mergedPdfSettings.invoice.customFont = savedCustomFontBase64;
-          mergedPdfSettings.card.customFont = savedCustomFontBase64;
-      }
-
       setPdfSettings(mergedPdfSettings);
     
       if (document.documentElement.classList.contains('dark')) {
@@ -273,7 +257,7 @@ export default function SettingsPage() {
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mounted, savedLightColors, savedDarkColors, savedDashboardBanner, savedBannerHeight, savedPdfSettings, savedCustomFontBase64])
+  }, [mounted, savedLightColors, savedDarkColors, savedDashboardBanner, savedBannerHeight, savedPdfSettings])
   
   useEffect(() => {
     if(!mounted) return;
@@ -294,7 +278,7 @@ export default function SettingsPage() {
     }));
   };
   
-   const handleReportColorChange = (reportType: keyof NonNullable<PdfSettings['reportColors']>, color: string) => {
+   const handleReportColorChange = (reportType: keyof NonNullable<AllPdfSettings['report']['reportColors']>, color: string) => {
     setPdfSettings(prev => ({
         ...prev,
         report: {
@@ -591,17 +575,34 @@ export default function SettingsPage() {
                          <Card>
                             <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Palette /> {t('styling')}</CardTitle></CardHeader>
                             <CardContent className="space-y-6">
-                                {activePdfTab === 'report' && (
+                                {activePdfTab === 'report' ? (
                                     <div className="space-y-4">
                                         <CardDescription>{t('report_color_desc')}</CardDescription>
-                                        <ReportColorPicker label="General" value={pdfSettings.report.reportColors?.general || '#000000'} onChange={(c) => handleReportColorChange('general', c)} />
-                                        <ReportColorPicker label="Expense" value={pdfSettings.report.reportColors?.expense || '#000000'} onChange={(c) => handleReportColorChange('expense', c)} />
-                                        <ReportColorPicker label="Overtime" value={pdfSettings.report.reportColors?.overtime || '#000000'} onChange={(c) => handleReportColorChange('overtime', c)} />
-                                        <ReportColorPicker label="Bonus" value={pdfSettings.report.reportColors?.bonus || '#000000'} onChange={(c) => handleReportColorChange('bonus', c)} />
-                                        <ReportColorPicker label="Withdrawal" value={pdfSettings.report.reportColors?.withdrawal || '#000000'} onChange={(c) => handleReportColorChange('withdrawal', c)} />
+                                        <div className="space-y-2">
+                                            <Label htmlFor="report-type-select">{t('report_section')}</Label>
+                                            <Select value={selectedReportType} onValueChange={(v: keyof NonNullable<AllPdfSettings['report']['reportColors']>) => setSelectedReportType(v)}>
+                                                <SelectTrigger id="report-type-select">
+                                                    <SelectValue placeholder="Select a report type" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {reportTypes.map(type => (
+                                                        <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <Label htmlFor="theme-color">{t('theme_color')}</Label>
+                                            <Input 
+                                                id="theme-color" 
+                                                type="color"
+                                                value={pdfSettings.report.reportColors?.[selectedReportType] ?? '#000000'}
+                                                onChange={(e) => handleReportColorChange(selectedReportType, e.target.value)} 
+                                                className="w-10 h-10 p-1" 
+                                            />
+                                        </div>
                                     </div>
-                                )}
-                                {(activePdfTab === 'invoice' || activePdfTab === 'card') && (
+                                ) : (
                                     <div className="flex items-center justify-between">
                                         <Label htmlFor="theme-color">{t('theme_color')}</Label>
                                         <Input id="theme-color" type="color" value={currentPdfSettings.themeColor} onChange={(e) => handlePdfSettingChange('themeColor', e.target.value)} className="w-10 h-10 p-1" />
@@ -629,13 +630,13 @@ export default function SettingsPage() {
                                 <div className="w-full max-w-2xl bg-white shadow-lg transform origin-top overflow-hidden flex flex-col scale-[0.8]" style={{ aspectRatio: '1 / 1.4142' }}>
                                 {activePdfTab === 'report' && (
                                     <>
-                                        <ReportPdfHeader title="Example Report Title" subtitle="This is an example subtitle" logoSrc={currentPdfSettings.logo ?? null} themeColor={pdfSettings.report.reportColors?.general} headerText={currentPdfSettings.headerText} />
+                                        <ReportPdfHeader title="Example Report Title" subtitle="This is an example subtitle" logoSrc={currentPdfSettings.logo ?? null} themeColor={pdfSettings.report.reportColors?.[selectedReportType]} headerText={currentPdfSettings.headerText} />
                                         <div className="p-6 flex-grow" style={{fontFamily: 'CustomPdfFont'}}>
                                             <h3 className="font-bold text-gray-800 mb-2">{t('sample_section')}</h3>
                                             <p className="text-sm text-gray-600 mb-4">{t('sample_body_text')}</p>
                                              <Table className={cn(currentPdfSettings.tableTheme === 'grid' && 'border')}>
                                                 <TableHeader>
-                                                    <TableRow style={{backgroundColor: pdfSettings.report.reportColors?.general, color: 'white'}} className="hover:bg-primary/90">
+                                                    <TableRow style={{backgroundColor: pdfSettings.report.reportColors?.[selectedReportType], color: 'white'}} className="hover:bg-primary/90">
                                                         <TableHead className="text-white">{t('column_1')}</TableHead>
                                                         <TableHead className="text-white">{t('column_2')}</TableHead>
                                                     </TableRow>
