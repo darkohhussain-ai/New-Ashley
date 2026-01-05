@@ -19,11 +19,12 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from '@/hooks/use-toast';
 import { AllPdfSettings } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
+import { shapeText } from '@/lib/pdf-utils';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'IQD', maximumFractionDigits: 0 }).format(amount);
 
 export default function ViewExpenseReportPage() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { id: reportId } = useParams();
   const router = useRouter();
   const { toast } = useToast();
@@ -37,8 +38,10 @@ export default function ViewExpenseReportPage() {
 
   const isLoading = !report || !reportItems || !employees;
 
-  const getEmployeeName = (employeeId: string) => {
-    return employees.find(e => e.id === employeeId)?.name || 'Unknown Employee';
+  const getEmployeeName = (employeeId: string, useKurdish: boolean = false) => {
+    const employee = employees.find(e => e.id === employeeId);
+    if (!employee) return t('unknown');
+    return useKurdish && employee.kurdishName ? employee.kurdishName : employee.name;
   };
 
   const handleDeleteReport = () => {
@@ -54,8 +57,9 @@ export default function ViewExpenseReportPage() {
     
     const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
     const settings = pdfSettings.report || {};
-    
-    if (settings.customFont) {
+    const useKurdish = language === 'ku';
+
+    if (settings.customFont && useKurdish) {
       const fontName = "CustomFont";
       const fontStyle = "normal";
       const fontBase64 = settings.customFont.split(',')[1];
@@ -75,17 +79,19 @@ export default function ViewExpenseReportPage() {
     
     doc.addImage(imgData, 'PNG', 0, 0, finalImgWidth, finalImgHeight);
     
+    const head = [shapeText(t('employee')), shapeText(t('notes')), shapeText(t('amount'))];
+    const body = reportItems.map(item => [shapeText(getEmployeeName(item.employeeId, useKurdish)), shapeText(item.notes || t('na')), formatCurrency(item.amount)]);
+    const foot = [shapeText(t('total')), '', formatCurrency(report.totalAmount)];
+
     autoTable(doc, {
       startY: finalImgHeight + 10,
-      head: [[t('employee'), t('notes'), t('amount')]],
-      body: reportItems.map(item => [getEmployeeName(item.employeeId), item.notes || 'N/A', formatCurrency(item.amount)]),
-      foot: [[t('total'), '', formatCurrency(report.totalAmount)]],
+      head: [head],
+      body: body,
+      foot: [foot],
       theme: 'grid',
+      styles: { font: (settings.customFont && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
       headStyles: { fillColor: settings.reportColors?.expense || settings.themeColor || '#22c55e' },
       footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
-      didParseCell: (data) => {
-        if (settings.customFont) { data.cell.styles.font = "CustomFont"; }
-      }
     });
 
     const finalY = (doc as any).lastAutoTable.finalY + 40;
@@ -96,7 +102,7 @@ export default function ViewExpenseReportPage() {
     const signatureY = finalY > pageHeight - 50 ? 40 : finalY;
     doc.setFontSize(10);
     doc.text("...................................", doc.internal.pageSize.width - 120, signatureY, { align: 'center' });
-    doc.text("Warehouse Manager Signature", doc.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
+    doc.text(shapeText(t('warehouse_manager_signature')), doc.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
 
 
     if (settings.footerText) {
@@ -105,7 +111,7 @@ export default function ViewExpenseReportPage() {
             doc.setPage(i);
             doc.setFontSize(8);
             doc.setTextColor(150);
-            doc.text(settings.footerText, doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
+            doc.text(shapeText(settings.footerText), doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
         }
     }
     
@@ -206,9 +212,9 @@ export default function ViewExpenseReportPage() {
                       <TableRow key={item.id}>
                         <TableCell className="font-medium flex items-center gap-2">
                           <User className="w-4 h-4 text-muted-foreground" />
-                          {getEmployeeName(item.employeeId)}
+                          {getEmployeeName(item.employeeId, language === 'ku')}
                         </TableCell>
-                        <TableCell className="text-muted-foreground">{item.notes || 'N/A'}</TableCell>
+                        <TableCell className="text-muted-foreground">{item.notes || t('na')}</TableCell>
                         <TableCell className="text-right font-semibold">{formatCurrency(item.amount)}</TableCell>
                       </TableRow>
                     ))}

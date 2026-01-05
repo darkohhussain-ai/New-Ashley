@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -25,13 +24,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAppContext } from '@/context/app-provider';
 import type { Transfer, ItemForTransfer, AllPdfSettings } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
+import { shapeText } from '@/lib/pdf-utils';
 
 
 const destinations = ["Erbil", "Baghdad", "Diwan", "Dohuk"];
 
 export default function CreateTransferPage() {
   const { toast } = useToast();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { transferItems, setTransferItems, transfers, setTransfers } = useAppContext();
 
   const [isSaving, setIsSaving] = useState(false);
@@ -126,61 +126,59 @@ export default function CreateTransferPage() {
   const handleDownloadPdf = async () => {
     if (!pdfCardRef.current || !lastTransfer || !lastTransferItems) return;
     
-    const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
+    const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
     const settings = pdfSettings.invoice || {};
+    const useKurdish = language === 'ku';
 
-    if (settings.customFont) {
+    if (settings.customFont && useKurdish) {
         const fontName = "CustomFont";
         const fontStyle = "normal";
         const fontBase64 = settings.customFont.split(',')[1];
-        pdf.addFileToVFS(`${fontName}.ttf`, fontBase64);
-        pdf.addFont(`${fontName}.ttf`, fontName, fontStyle);
+        doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
+        doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
+        doc.setFont(fontName);
     }
     
     const canvas = await html2canvas(pdfCardRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
     const imgData = canvas.toDataURL('image/png');
-    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfWidth = doc.internal.pageSize.getWidth();
     const imgWidth = canvas.width;
     const imgHeight = canvas.height;
     const ratio = imgWidth / imgHeight;
     const finalImgWidth = pdfWidth - 28;
     const finalImgHeight = finalImgWidth / ratio;
     
-    pdf.addImage(imgData, 'PNG', 14, 14, finalImgWidth, finalImgHeight);
+    doc.addImage(imgData, 'PNG', 14, 14, finalImgWidth, finalImgHeight);
     
-    autoTable(pdf, {
+    const head = [shapeText(t('model')), shapeText(t('quantity')), shapeText(t('notes'))];
+    const body = lastTransferItems.map(item => [shapeText(item.model), item.quantity, shapeText(item.notes || '')]);
+
+    autoTable(doc, {
       startY: finalImgHeight + 30,
-      head: [[t('model'), t('quantity'), t('notes')]],
-      body: lastTransferItems.map(item => [item.model, item.quantity, item.notes || '']),
+      head: [head],
+      body: body,
       theme: 'grid',
-      styles: { fontSize: 8, cellPadding: 2 },
+      styles: { font: (settings.customFont && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
       headStyles: { fillColor: settings.themeColor || '#3b82f6', textColor: 255, fontStyle: 'bold' },
-      didParseCell: function (data) {
-        if (settings.customFont) {
-          try {
-            data.cell.styles.font = "CustomFont";
-          } catch(e) { console.error(e) }
-        }
-      }
     });
 
-    let finalY = (pdf as any).lastAutoTable.finalY + 20;
+    let finalY = (doc as any).lastAutoTable.finalY + 20;
 
-    pdf.setFontSize(10);
-    pdf.text(`${t('driver')}: ${lastTransfer.driverName}`, 14, finalY);
-    pdf.text(`${t('warehouse_manager')}: ${lastTransfer.warehouseManagerName}`, 14, finalY + 10);
+    doc.setFontSize(10);
+    doc.text(`${shapeText(t('driver'))}: ${shapeText(lastTransfer.driverName)}`, useKurdish ? doc.internal.pageSize.width - 14 : 14, finalY, { align: useKurdish ? 'right' : 'left' });
+    doc.text(`${shapeText(t('warehouse_manager'))}: ${shapeText(lastTransfer.warehouseManagerName)}`, useKurdish ? doc.internal.pageSize.width - 14 : 14, finalY + 15, { align: useKurdish ? 'right' : 'left' });
 
     finalY += 40;
-    const pageHeight = pdf.internal.pageSize.height;
+    const pageHeight = doc.internal.pageSize.height;
     if (finalY > pageHeight - 30) {
-        pdf.addPage();
+        doc.addPage();
     }
     const signatureY = finalY > pageHeight - 50 ? 40 : finalY;
-    pdf.setFontSize(10);
-    pdf.text("...................................", pdf.internal.pageSize.width - 120, signatureY, { align: 'center' });
-    pdf.text("Warehouse Manager Signature", pdf.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
+    doc.setFontSize(10);
+    doc.text(shapeText(t('warehouse_manager_signature')), doc.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
+    doc.text("...................................", doc.internal.pageSize.width - 120, signatureY, { align: 'center' });
 
-    pdf.save(`${lastTransfer.cargoName}.pdf`);
+    doc.save(`${lastTransfer.cargoName}.pdf`);
   };
 
   return (
@@ -234,7 +232,7 @@ export default function CreateTransferPage() {
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !transferDate && "text-muted-foreground")}>
-                                    <Calendar className="mr-2 h-4 w-4" />
+                                    <CalendarComponent className="mr-2 h-4 w-4" />
                                     {transferDate ? format(transferDate, 'PPP') : <span>{t('pick_a_date')}</span>}
                                 </Button>
                             </PopoverTrigger>

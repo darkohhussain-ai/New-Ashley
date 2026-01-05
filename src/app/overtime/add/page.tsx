@@ -23,6 +23,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
 import { useTranslation } from '@/hooks/use-translation';
+import { shapeText } from '@/lib/pdf-utils';
 
 
 const OVERTIME_RATE = 5000; // Default: 5,000 IQD per hour
@@ -94,10 +95,10 @@ export default function AddOvertimePage() {
     return [...warehouseEmployees].sort((a, b) => a.name.localeCompare(b.name));
   }, [warehouseEmployees]);
 
-  const getEmployeeName = (id: string) => {
+  const getEmployeeName = (id: string, useKurdish: boolean = false) => {
     const employee = employees?.find(e => e.id === id);
     if (!employee) return t('unknown');
-    return language === 'ku' && employee.kurdishName ? employee.kurdishName : employee.name;
+    return useKurdish && employee.kurdishName ? employee.kurdishName : employee.name;
   };
   
   const resetForm = () => {
@@ -178,8 +179,9 @@ export default function AddOvertimePage() {
     
     const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
     const settings = pdfSettings.report || {};
-    
-    if (settings.customFont) {
+    const useKurdish = language === 'ku';
+
+    if (settings.customFont && useKurdish) {
         try {
             const fontName = "CustomFont";
             const fontStyle = "normal";
@@ -201,22 +203,20 @@ export default function AddOvertimePage() {
     
     doc.addImage(imgData, 'PNG', 0, 0, finalImgWidth, finalImgHeight);
 
+    const body = overtimeRecords.map(item => [shapeText(getEmployeeName(item.employeeId, useKurdish)), item.hours.toFixed(2), shapeText(item.notes || t('na')), formatCurrency(item.totalAmount)]);
+    const head = [shapeText(t('employee')), shapeText(t('overtime_hours')), shapeText(t('notes')), shapeText(t('amount'))];
+    const foot = [shapeText(t('total')), totalHours.toFixed(2), '', formatCurrency(totalAmount)];
+    
+
     autoTable(doc, {
         startY: finalImgHeight + 10,
-        head: [[t('employee'), t('overtime_hours'), t('notes'), t('amount')]],
-        body: overtimeRecords.map(item => [getEmployeeName(item.employeeId), item.hours.toFixed(2), item.notes || t('na'), formatCurrency(item.totalAmount)]),
-        foot: [[t('total'), totalHours.toFixed(2), '', formatCurrency(totalAmount)]],
+        head: [head],
+        body: body,
+        foot: [foot],
         theme: 'striped',
-        headStyles: { fillColor: settings.reportColors?.overtime || settings.themeColor || '#22c55e', font: settings.customFont ? 'CustomFont' : 'helvetica' },
-        bodyStyles: { font: settings.customFont ? 'CustomFont' : 'helvetica' },
-        footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold', font: settings.customFont ? 'CustomFont' : 'helvetica' },
-        didParseCell: (data) => {
-            if (settings.customFont) {
-                try {
-                    data.cell.styles.font = "CustomFont";
-                } catch(e) { console.error(e) }
-            }
-        }
+        styles: { font: (settings.customFont && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
+        headStyles: { fillColor: settings.reportColors?.overtime || settings.themeColor || '#22c55e' },
+        footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' },
     });
     
     const finalY = (doc as any).lastAutoTable.finalY + 40;
@@ -226,8 +226,8 @@ export default function AddOvertimePage() {
     }
     const signatureY = finalY > pageHeight - 50 ? 40 : finalY;
     doc.setFontSize(10);
+    doc.text(shapeText(t('warehouse_manager_signature')), doc.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
     doc.text("...................................", doc.internal.pageSize.width - 120, signatureY, { align: 'center' });
-    doc.text(t('warehouse_manager_signature'), doc.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
 
     doc.save(`overtime-report-${format(selectedDate, 'yyyy-MM-dd')}.pdf`);
   };
@@ -305,7 +305,7 @@ export default function AddOvertimePage() {
                             <SelectItem value="loading" disabled>{t('loading')}...</SelectItem>
                             ) : (
                             sortedEmployees.map(emp => (
-                                <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>
+                                <SelectItem key={emp.id} value={emp.id} dir={language === 'ku' ? 'rtl' : 'ltr'}>{getEmployeeName(emp.id, language === 'ku')}</SelectItem>
                             ))
                             )}
                         </SelectContent>
@@ -351,7 +351,7 @@ export default function AddOvertimePage() {
                         <div key={record.id} className="py-3 flex justify-between items-start gap-4">
                             {editingRecord?.id === record.id ? (
                             <div className="flex-1 space-y-2 print:hidden">
-                                <p className="font-bold">{getEmployeeName(record.employeeId)}</p>
+                                <p className="font-bold" dir={language === 'ku' ? 'rtl' : 'ltr'}>{getEmployeeName(record.employeeId, language==='ku')}</p>
                                 <Input 
                                     type="number" 
                                     value={editingRecord.hours}
@@ -366,7 +366,7 @@ export default function AddOvertimePage() {
                             </div>
                             ) : (
                             <div className="flex-1">
-                                <p className="font-semibold flex items-center gap-2"><User className="h-4 w-4 text-primary" /> {getEmployeeName(record.employeeId)}</p>
+                                <p className="font-semibold flex items-center gap-2" dir={language === 'ku' ? 'rtl' : 'ltr'}><User className="h-4 w-4 text-primary" /> {getEmployeeName(record.employeeId, language === 'ku')}</p>
                                 <p className="text-sm text-muted-foreground">{record.hours} {t('hours_short')}</p>
                                 {record.notes && <p className="text-sm mt-1">{record.notes}</p>}
                             </div>
@@ -393,7 +393,7 @@ export default function AddOvertimePage() {
                                                 <AlertDialogHeader>
                                                     <AlertDialogTitle>{t('delete_this_record')}</AlertDialogTitle>
                                                     <AlertDialogDescription>
-                                                    {t('confirm_delete_overtime', {employeeName: getEmployeeName(record.employeeId)})}
+                                                    {t('confirm_delete_overtime', {employeeName: getEmployeeName(record.employeeId, language === 'ku')})}
                                                     </AlertDialogDescription>
                                                 </AlertDialogHeader>
                                                 <AlertDialogFooter>
@@ -429,4 +429,5 @@ export default function AddOvertimePage() {
     </>
   );
 }
+
 

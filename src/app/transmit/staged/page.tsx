@@ -13,12 +13,13 @@ import { useAppContext } from '@/context/app-provider';
 import { ItemForTransfer } from '@/lib/types';
 import useLocalStorage from '@/hooks/use-local-storage';
 import { useTranslation } from '@/hooks/use-translation';
+import { shapeText } from '@/lib/pdf-utils';
 
 
 const destinations = ["Erbil", "Baghdad", "Diwan", "Dohuk"];
 
 export default function StagedItemsPage() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { transferItems } = useAppContext();
   const [selectedDestination, setSelectedDestination] = useState<string | null>(null);
   const [customFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
@@ -38,7 +39,9 @@ export default function StagedItemsPage() {
   const handleDownloadPdf = () => {
     if (!itemsForSelectedDestination || itemsForSelectedDestination.length === 0 || !selectedDestination) return;
     const doc = new jsPDF();
-    if (customFontBase64) {
+    const useKurdish = language === 'ku';
+
+    if (customFontBase64 && useKurdish) {
       const fontName = "CustomFont";
       const fontStyle = "normal";
       const fontBase64 = customFontBase64.split(',')[1];
@@ -48,22 +51,19 @@ export default function StagedItemsPage() {
     }
 
     doc.setFontSize(18);
-    doc.text(`Staged Items for ${selectedDestination}`, 14, 22);
+    doc.text(shapeText(`${t('staged_items_for')} ${selectedDestination}`), 14, 22);
     doc.setFontSize(11);
     doc.setTextColor(100);
-    doc.text(`Report generated on: ${format(new Date(), 'PPP')}`, 14, 30);
+    doc.text(shapeText(`${t('report_date')}: ${format(new Date(), 'PPP')}`), 14, 30);
     
+    const head = [shapeText(t('model')), shapeText(t('quantity')), shapeText(t('notes'))];
+    const body = itemsForSelectedDestination.map(item => [shapeText(item.model), item.quantity, shapeText(item.notes || '')]);
+
     autoTable(doc, {
         startY: 40,
-        head: [[t('model'), t('quantity'), t('notes')]],
-        body: itemsForSelectedDestination.map(item => [item.model, item.quantity, item.notes || '']),
-        headStyles: { font: customFontBase64 ? 'CustomFont' : 'helvetica' },
-        bodyStyles: { font: customFontBase64 ? 'CustomFont' : 'helvetica' },
-        didParseCell: function (data) {
-          if (customFontBase64) {
-              data.cell.styles.font = "CustomFont";
-          }
-        }
+        head: [head],
+        body: body,
+        styles: { font: (customFontBase64 && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
     });
 
     const finalY = (doc as any).lastAutoTable.finalY + 40;
@@ -74,7 +74,7 @@ export default function StagedItemsPage() {
     const signatureY = finalY > pageHeight - 50 ? 40 : finalY;
     doc.setFontSize(10);
     doc.text("...................................", doc.internal.pageSize.width - 120, signatureY, { align: 'center' });
-    doc.text("Warehouse Manager Signature", doc.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
+    doc.text(shapeText(t('warehouse_manager_signature')), doc.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
 
     doc.save(`staged-items-${selectedDestination}-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
   };
@@ -178,3 +178,4 @@ export default function StagedItemsPage() {
     </div>
   );
 }
+

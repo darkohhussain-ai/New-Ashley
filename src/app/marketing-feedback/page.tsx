@@ -26,6 +26,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import html2canvas from 'html2canvas';
 import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { useTranslation } from '@/hooks/use-translation';
+import { shapeText } from '@/lib/pdf-utils';
 
 
 function AddMarketingEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean, onOpenChange: (open: boolean) => void, addEmployee: (employee: Omit<Employee, 'id'>) => void }) {
@@ -229,6 +231,7 @@ function EditSubmissionDialog({ feedback, onOpenChange, open }: { feedback: Mark
 
 export default function MarketingFeedbackPage() {
     const { toast } = useToast();
+    const { t, language } = useTranslation();
     const { 
         employees, setEmployees, 
         marketingFeedbacks, setMarketingFeedbacks,
@@ -329,11 +332,11 @@ export default function MarketingFeedbackPage() {
         const summary = marketingEmployees.map(emp => {
             const empEvals = marketingFeedbacks.filter(e => e.employeeId === emp.id);
             const totalScore = empEvals.reduce((sum, currentEval) => sum + currentEval.totalScore, 0);
-            return { employeeId: emp.id, name: emp.name, score: totalScore };
+            return { employeeId: emp.id, name: language === 'ku' && emp.kurdishName ? emp.kurdishName : emp.name, score: totalScore };
         });
 
         return summary.sort((a, b) => b.score - a.score);
-    }, [marketingFeedbacks, marketingEmployees]);
+    }, [marketingFeedbacks, marketingEmployees, language]);
     
     const perQuestionRankings = useMemo(() => {
         if (!marketingFeedbacks.length || !marketingEmployees.length || !evaluationQuestions.length) return [];
@@ -347,16 +350,16 @@ export default function MarketingFeedbackPage() {
                     return sum + (response ? response.answer : 0);
                 }, 0);
 
-                return { name: employee.name, score: totalScoreForQuestion };
+                return { name: language === 'ku' && employee.kurdishName ? employee.kurdishName : employee.name, score: totalScoreForQuestion };
             });
 
             return {
                 questionId: question.id,
-                questionText: question.text,
+                questionText: t(question.id) || question.text,
                 scores: employeeScores.sort((a, b) => b.score - a.score),
             };
         });
-    }, [marketingFeedbacks, marketingEmployees, evaluationQuestions]);
+    }, [marketingFeedbacks, marketingEmployees, evaluationQuestions, t, language]);
 
     const handleDownloadPdf = async () => {
         if (!marketingFeedbacks.length) {
@@ -365,7 +368,9 @@ export default function MarketingFeedbackPage() {
         }
 
         const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
-        if (customFontBase64) {
+        const useKurdish = language === 'ku';
+
+        if (customFontBase64 && useKurdish) {
             const fontName = "CustomFont";
             const fontStyle = "normal";
             const fontBase64 = customFontBase64.split(',')[1];
@@ -387,14 +392,14 @@ export default function MarketingFeedbackPage() {
         doc.addPage();
         if (evaluationSummary.length > 0) {
             doc.setFontSize(16);
-            doc.text("Overall Employee Rankings", 14, 22);
+            doc.text(shapeText(t('employee_performance')), useKurdish ? doc.internal.pageSize.width - 14 : 14, 22, { align: useKurdish ? 'right' : 'left' });
             autoTable(doc, {
                 startY: 30,
-                head: [['Rank', 'Employee', 'Total Score']],
-                body: evaluationSummary.map((item, index) => [index + 1, item.name, item.score]),
+                head: [[shapeText(t('rank') || 'Rank'), shapeText(t('employee')), shapeText(t('total_score'))]],
+                body: evaluationSummary.map((item, index) => [index + 1, shapeText(item.name), item.score]),
                 theme: 'striped',
-                headStyles: { fillColor: [40, 40, 40], font: customFontBase64 ? 'CustomFont' : 'helvetica' },
-                bodyStyles: { font: customFontBase64 ? 'CustomFont' : 'helvetica' },
+                styles: { font: (customFontBase64 && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
+                headStyles: { fillColor: [40, 40, 40] },
                 didDrawCell: (data) => {
                     if (data.section === 'body') {
                         if (data.row.index === 0) { doc.setFillColor(255, 251, 204); }
@@ -402,7 +407,6 @@ export default function MarketingFeedbackPage() {
                         else if (data.row.index === 2) { doc.setFillColor(255, 237, 213); }
                     }
                 },
-                didParseCell: (data) => { if (customFontBase64) data.cell.styles.font = "CustomFont"; }
             });
         }
         
@@ -410,15 +414,14 @@ export default function MarketingFeedbackPage() {
             perQuestionRankings.forEach((q) => {
                 doc.addPage();
                 doc.setFontSize(16);
-                doc.text(q.questionText, 14, 22, { maxWidth: doc.internal.pageSize.getWidth() - 28 });
+                doc.text(shapeText(q.questionText), useKurdish ? doc.internal.pageSize.width - 14 : 14, 22, { maxWidth: doc.internal.pageSize.getWidth() - 28, align: useKurdish ? 'right' : 'left' });
                 autoTable(doc, {
-                    startY: (doc as any).lastAutoTable.finalY ? (doc as any).lastAutoTable.finalY + 30 : 30,
-                    head: [['Rank', 'Employee', 'Total Score for Question']],
-                    body: q.scores.map((s, rankIndex) => [rankIndex + 1, s.name, s.score]),
+                    startY: 40,
+                    head: [[shapeText(t('rank') || 'Rank'), shapeText(t('employee')), shapeText(t('total_score'))]],
+                    body: q.scores.map((s, rankIndex) => [rankIndex + 1, shapeText(s.name), s.score]),
                     theme: 'striped',
-                    headStyles: { fillColor: [40, 40, 40], font: customFontBase64 ? 'CustomFont' : 'helvetica' },
-                    bodyStyles: { font: customFontBase64 ? 'CustomFont' : 'helvetica' },
-                    didParseCell: (data) => { if (customFontBase64) data.cell.styles.font = "CustomFont"; }
+                    styles: { font: (customFontBase64 && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
+                    headStyles: { fillColor: [40, 40, 40] },
                 });
             });
         }
@@ -457,12 +460,12 @@ export default function MarketingFeedbackPage() {
             const employee = employees.find(e => e.id === fb.employeeId);
             const base: Record<string, any> = {
                 Date: format(parseISO(fb.date), 'yyyy-MM-dd'),
-                Employee: employee?.name || 'Unknown',
+                Employee: employee ? (language === 'ku' && employee.kurdishName ? employee.kurdishName : employee.name) : 'Unknown',
                 'Total Score': fb.totalScore,
             };
             fb.responses.forEach(res => {
                 const question = evaluationQuestions.find(q => q.id === res.questionId);
-                base[question?.text || res.questionId] = res.answer;
+                base[question ? (t(question.id) || question.text) : res.questionId] = res.answer;
             });
             return base;
         });
@@ -502,22 +505,22 @@ export default function MarketingFeedbackPage() {
                     <Button variant="outline" size="icon" asChild>
                         <Link href="/"><ArrowLeft /></Link>
                     </Button>
-                    <h1 className="text-2xl md:text-3xl font-bold">Marketing Feedback</h1>
+                    <h1 className="text-2xl md:text-3xl font-bold">{t('marketing_feedback')}</h1>
                 </div>
                 <div className='flex items-center gap-2'>
                     <Button variant="outline" onClick={() => setManageQuestionsOpen(true)}>
-                        <Settings className="mr-2 h-4 w-4" /> Manage Questions
+                        <Settings className="mr-2 h-4 w-4" /> {t('manage_questions')}
                     </Button>
                     <Button onClick={() => setAddDialogOpen(true)}>
-                        <Plus className="mr-2 h-4 w-4" /> Add Employee
+                        <Plus className="mr-2 h-4 w-4" /> {t('add_employee')}
                     </Button>
                 </div>
             </header>
             
             <Tabs defaultValue="dashboard">
                 <TabsList className="mb-6">
-                    <TabsTrigger value="dashboard"><LayoutDashboard className="mr-2" />Dashboard</TabsTrigger>
-                    <TabsTrigger value="form"><FileText className="mr-2" />Feedback Form</TabsTrigger>
+                    <TabsTrigger value="dashboard"><LayoutDashboard className="mr-2" />{t('dashboard')}</TabsTrigger>
+                    <TabsTrigger value="form"><FileText className="mr-2" />{t('feedback_form')}</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="dashboard">
@@ -528,13 +531,13 @@ export default function MarketingFeedbackPage() {
                     <div className="space-y-8">
                         <Card>
                             <CardHeader>
-                                <CardTitle>Overall Employee Rankings</CardTitle>
-                                <CardDescription>Based on the sum of all feedback scores. Max Score per evaluation: {maxScore}</CardDescription>
+                                <CardTitle>{t('employee_performance')}</CardTitle>
+                                <CardDescription>{t('employee_performance_desc', {maxScore})}</CardDescription>
                             </CardHeader>
                             <CardContent className="max-h-[300px] overflow-y-auto">
                             {isLoading ? <Loader2 className="animate-spin" /> : (
                                 <Table>
-                                    <TableHeader><TableRow><TableHead>Rank</TableHead><TableHead>Employee</TableHead><TableHead className="text-right">Total Score</TableHead></TableRow></TableHeader>
+                                    <TableHeader><TableRow><TableHead>{t('rank')}</TableHead><TableHead>{t('employee')}</TableHead><TableHead className="text-right">{t('total_score')}</TableHead></TableRow></TableHeader>
                                     <TableBody>
                                         {evaluationSummary.map((item, index) => (
                                             <TableRow key={item.employeeId} className={cn(getRowClass(index))}>
@@ -550,8 +553,8 @@ export default function MarketingFeedbackPage() {
                         </Card>
                          <Card>
                             <CardHeader>
-                                <CardTitle>Per-Question Employee Rankings</CardTitle>
-                                <CardDescription>See how employees rank on each specific question based on the sum of their scores.</CardDescription>
+                                <CardTitle>{t('per_question_rankings')}</CardTitle>
+                                <CardDescription>{t('per_question_rankings_desc')}</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <Accordion type="single" collapsible className="w-full">
@@ -563,9 +566,9 @@ export default function MarketingFeedbackPage() {
                                                     <Table>
                                                         <TableHeader>
                                                             <TableRow>
-                                                                <TableHead>Rank</TableHead>
-                                                                <TableHead>Employee</TableHead>
-                                                                <TableHead className="text-right">Total Score</TableHead>
+                                                                <TableHead>{t('rank')}</TableHead>
+                                                                <TableHead>{t('employee')}</TableHead>
+                                                                <TableHead className="text-right">{t('total_score')}</TableHead>
                                                             </TableRow>
                                                         </TableHeader>
                                                         <TableBody>
@@ -593,13 +596,13 @@ export default function MarketingFeedbackPage() {
                         <div className="lg:col-span-2">
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Feedback Form</CardTitle>
-                                    <CardDescription>Select an employee and answer the questions below.</CardDescription>
+                                    <CardTitle>{t('feedback_form')}</CardTitle>
+                                    <CardDescription>{t('feedback_form_desc')}</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-6">
                                     <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
                                         <SelectTrigger className="w-full">
-                                            <SelectValue placeholder="Select an employee to evaluate..." />
+                                            <SelectValue placeholder={t('select_employee_to_evaluate')} />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {isLoading ? (
@@ -615,13 +618,13 @@ export default function MarketingFeedbackPage() {
                                     <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-4">
                                         {evaluationQuestions.map((q, index) => (
                                             <div key={q.id} className="p-4 border rounded-lg">
-                                                <p className="font-medium mb-3">{index + 1}. {q.text}</p>
+                                                <p className="font-medium mb-3">{index + 1}. {t(q.id) || q.text}</p>
                                                 <RadioGroup onValueChange={(value) => handleResponseChange(q.id, value)} value={String(responses[q.id] || '')}>
                                                     <div className="flex flex-wrap gap-4">
                                                         {q.answers.sort((a,b) => b.value - a.value).map(opt => (
                                                             <div key={opt.value} className="flex items-center space-x-2">
                                                                 <RadioGroupItem value={String(opt.value)} id={`${q.id}-${opt.value}`} />
-                                                                <Label htmlFor={`${q.id}-${opt.value}`}>{opt.label}</Label>
+                                                                <Label htmlFor={`${q.id}-${opt.value}`}>{t(opt.label.toLowerCase().replace(/ /g, '_')) || opt.label}</Label>
                                                             </div>
                                                         ))}
                                                     </div>
@@ -631,7 +634,7 @@ export default function MarketingFeedbackPage() {
                                     </div>
                                     <Button onClick={handleSubmit} disabled={isSubmitting} className="w-full">
                                         {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <ChevronsRight className="mr-2"/>}
-                                        Submit Feedback
+                                        {t('submit_feedback')}
                                     </Button>
                                 </CardContent>
                             </Card>
@@ -639,8 +642,8 @@ export default function MarketingFeedbackPage() {
                         <div className="lg:col-span-1 space-y-8">
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Submissions for {marketingEmployees.find(e => e.id === selectedEmployee)?.name || '...'}</CardTitle>
-                                    <CardDescription>View, edit or delete past evaluations for the selected employee.</CardDescription>
+                                    <CardTitle>{t('submissions_for')} {marketingEmployees.find(e => e.id === selectedEmployee)?.name || '...'}</CardTitle>
+                                    <CardDescription>{t('submissions_for_desc')}</CardDescription>
                                 </CardHeader>
                                 <CardContent className="max-h-[70vh] overflow-y-auto">
                                     {isLoading ? <Loader2 className="animate-spin" /> : employeeSubmissions.length > 0 ? (
@@ -649,7 +652,7 @@ export default function MarketingFeedbackPage() {
                                                 <div key={fb.id} className="border p-3 rounded-lg flex justify-between items-center">
                                                     <div>
                                                         <p className="font-semibold text-sm">{format(parseISO(fb.date), 'PPP')}</p>
-                                                        <p className="text-xs text-muted-foreground">Score: {fb.totalScore} / {maxScore}</p>
+                                                        <p className="text-xs text-muted-foreground">{t('score_colon')} {fb.totalScore} / {maxScore}</p>
                                                     </div>
                                                     <div className="flex gap-1">
                                                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingFeedback(fb)}>
@@ -663,14 +666,14 @@ export default function MarketingFeedbackPage() {
                                                             </AlertDialogTrigger>
                                                             <AlertDialogContent>
                                                                 <AlertDialogHeader>
-                                                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                                    <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
                                                                     <AlertDialogDescription>
-                                                                        This will permanently delete the submission from {format(parseISO(fb.date), 'PPP')}.
+                                                                        {t('confirm_delete_submission_date', {date: format(parseISO(fb.date), 'PPP')})}
                                                                     </AlertDialogDescription>
                                                                 </AlertDialogHeader>
                                                                 <AlertDialogFooter>
-                                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                    <AlertDialogAction onClick={() => handleDeleteSubmission(fb.id)}>Delete</AlertDialogAction>
+                                                                    <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                                                                    <AlertDialogAction onClick={() => handleDeleteSubmission(fb.id)}>{t('delete')}</AlertDialogAction>
                                                                 </AlertDialogFooter>
                                                             </AlertDialogContent>
                                                         </AlertDialog>
@@ -679,7 +682,7 @@ export default function MarketingFeedbackPage() {
                                             ))}
                                         </div>
                                     ): (
-                                        <p className="text-center text-sm text-muted-foreground py-8">No submissions found for this employee.</p>
+                                        <p className="text-center text-sm text-muted-foreground py-8">{t('no_submissions_found')}</p>
                                     )}
                                 </CardContent>
                             </Card>

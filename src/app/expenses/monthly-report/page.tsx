@@ -20,6 +20,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Bar, BarChart as RechartsBarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import type { AllPdfSettings } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
+import { shapeText } from '@/lib/pdf-utils';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -30,7 +31,7 @@ const formatCurrency = (amount: number) => {
 };
 
 export default function MonthlyExpenseReportPage() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { expenses, employees, expenseReports } = useAppContext();
 
   const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {} });
@@ -45,8 +46,10 @@ export default function MonthlyExpenseReportPage() {
 
   const isLoading = !expenses || !employees || !expenseReports || !selectedDate;
 
-  const getEmployeeName = (employeeId: string) => {
-    return employees.find(e => e.id === employeeId)?.name || 'Unknown';
+  const getEmployeeName = (employeeId: string, useKurdish: boolean = false) => {
+    const employee = employees.find(e => e.id === employeeId);
+    if (!employee) return t('unknown');
+    return useKurdish && employee.kurdishName ? employee.kurdishName : employee.name;
   };
   
   const getReportName = (reportId: string) => {
@@ -76,22 +79,23 @@ export default function MonthlyExpenseReportPage() {
 
     const summary = Array.from(employeeTotals.entries()).map(([employeeId, totals]) => ({
       employeeId,
-      employeeName: getEmployeeName(employeeId),
+      employeeName: getEmployeeName(employeeId, language === 'ku'),
       ...totals
     })).sort((a,b) => b.totalAmount - a.totalAmount);
     
     const total = summary.reduce((sum, item) => sum + item.totalAmount, 0);
 
     return { expenses: filteredExpenses, summary, total };
-  }, [expenses, employees, expenseReports, selectedDate]);
+  }, [expenses, employees, expenseReports, selectedDate, language, getEmployeeName]);
 
   const handleDownloadPdf = async () => {
     if (!pdfHeaderRef.current || !selectedDate) return;
     
     const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
     const settings = pdfSettings.report || {};
-    
-    if (settings.customFont) {
+    const useKurdish = language === 'ku';
+
+    if (settings.customFont && useKurdish) {
         try {
             const fontName = "CustomFont";
             const fontStyle = "normal";
@@ -139,24 +143,17 @@ export default function MonthlyExpenseReportPage() {
             startY = 20;
         }
         doc.setFontSize(14);
-        doc.text(t('summary_by_employee'), 14, startY);
+        doc.text(shapeText(t('summary_by_employee')), useKurdish ? doc.internal.pageSize.width -14 : 14, startY, { align: useKurdish ? 'right' : 'left' });
         startY += 10;
         autoTable(doc, {
           startY: startY,
-          head: [[t('employee'), t('total_amount')]],
-          body: monthlyData.summary.map(item => [item.employeeName, formatCurrency(item.totalAmount)]),
-          foot: [[t('grand_total'), formatCurrency(monthlyData.total)]],
+          head: [[shapeText(t('employee')), shapeText(t('total_amount'))]],
+          body: monthlyData.summary.map(item => [shapeText(item.employeeName), formatCurrency(item.totalAmount)]),
+          foot: [[shapeText(t('grand_total')), formatCurrency(monthlyData.total)]],
           theme: 'grid',
-          headStyles: { fillColor: settings.reportColors?.expense || settings.themeColor || '#22c55e', font: settings.customFont ? 'CustomFont' : 'helvetica' },
-          bodyStyles: { font: settings.customFont ? 'CustomFont' : 'helvetica' },
-          footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', font: settings.customFont ? 'CustomFont' : 'helvetica' },
-          didParseCell: (data) => {
-            if (settings.customFont) {
-                try {
-                    data.cell.styles.font = "CustomFont";
-                } catch(e) { console.error(e) }
-            }
-          }
+          styles: { font: (settings.customFont && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
+          headStyles: { fillColor: settings.reportColors?.expense || settings.themeColor || '#22c55e' },
+          footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
         });
         startY = (doc as any).lastAutoTable.finalY + 20;
     }
@@ -168,28 +165,21 @@ export default function MonthlyExpenseReportPage() {
             startY = 20;
         }
         doc.setFontSize(14);
-        doc.text(t('all_transactions'), 14, startY);
+        doc.text(shapeText(t('all_transactions')), useKurdish ? doc.internal.pageSize.width - 14 : 14, startY, { align: useKurdish ? 'right' : 'left' });
         startY += 10;
         autoTable(doc, {
           startY: startY,
-          head: [[t('date'), t('report'), t('employee'), t('notes'), t('amount')]],
+          head: [[shapeText(t('date')), shapeText(t('report')), shapeText(t('employee')), shapeText(t('notes')), shapeText(t('amount'))]],
           body: monthlyData.expenses.map(item => [
               format(parseISO(expenseReports.find(r=>r.id === item.expenseReportId)!.reportDate), 'PP'),
-              getReportName(item.expenseReportId),
-              getEmployeeName(item.employeeId),
-              item.notes || 'N/A',
+              shapeText(getReportName(item.expenseReportId)),
+              shapeText(getEmployeeName(item.employeeId, useKurdish)),
+              shapeText(item.notes || t('na')),
               formatCurrency(item.amount)
           ]),
           theme: 'striped',
-          headStyles: { fillColor: [40, 40, 40], font: settings.customFont ? 'CustomFont' : 'helvetica' },
-          bodyStyles: { font: settings.customFont ? 'CustomFont' : 'helvetica' },
-          didParseCell: (data) => {
-             if (settings.customFont) {
-                try {
-                    data.cell.styles.font = "CustomFont";
-                } catch(e) { console.error(e) }
-             }
-          }
+          styles: { font: (settings.customFont && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
+          headStyles: { fillColor: [40, 40, 40] },
         });
     }
 
@@ -201,7 +191,7 @@ export default function MonthlyExpenseReportPage() {
     const signatureYWithSignature = finalYWithSignature > pageHeightWithSignature - 50 ? 40 : finalYWithSignature;
     doc.setFontSize(10);
     doc.text("...................................", doc.internal.pageSize.getWidth() - 120, signatureYWithSignature, { align: 'center' });
-    doc.text("Warehouse Manager Signature", doc.internal.pageSize.getWidth() - 120, signatureYWithSignature + 10, { align: 'center' });
+    doc.text(shapeText(t('warehouse_manager_signature')), doc.internal.pageSize.getWidth() - 120, signatureYWithSignature + 10, { align: 'center' });
 
 
     if (settings.footerText) {
@@ -210,7 +200,7 @@ export default function MonthlyExpenseReportPage() {
             doc.setPage(i);
             doc.setFontSize(8);
             doc.setTextColor(150);
-            doc.text(settings.footerText, doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
+            doc.text(shapeText(settings.footerText), doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
         }
     }
     
@@ -277,7 +267,7 @@ export default function MonthlyExpenseReportPage() {
                     <ResponsiveContainer width="100%" height={300}>
                         <RechartsBarChart data={monthlyData.summary} layout="vertical" margin={{top: 5, right: 30, left: 20, bottom: 5}}>
                             <XAxis type="number" tickFormatter={(value) => formatCurrency(value as number)} />
-                            <YAxis dataKey="employeeName" type="category" width={120} />
+                            <YAxis dataKey="employeeName" type="category" width={120} tick={{direction: language === 'ku' ? 'rtl' : 'ltr'}} />
                             <Tooltip contentStyle={{backgroundColor: 'hsl(var(--background))'}} formatter={(value) => formatCurrency(value as number)} />
                             <Bar dataKey="totalAmount" name={t('total_expenses')} fill="hsl(var(--primary))" />
                         </RechartsBarChart>
@@ -302,7 +292,7 @@ export default function MonthlyExpenseReportPage() {
                         <TableBody>
                             {monthlyData.summary.map(item => (
                                 <TableRow key={item.employeeId}>
-                                    <TableCell className="font-medium">{item.employeeName}</TableCell>
+                                    <TableCell className="font-medium" dir={language === 'ku' ? 'rtl' : 'ltr'}>{item.employeeName}</TableCell>
                                     <TableCell className="text-right font-semibold">{formatCurrency(item.totalAmount)}</TableCell>
                                 </TableRow>
                             ))}
@@ -340,8 +330,8 @@ export default function MonthlyExpenseReportPage() {
                             <TableRow key={item.id}>
                             <TableCell>{format(parseISO(expenseReports.find(r=>r.id === item.expenseReportId)!.reportDate), 'PP')}</TableCell>
                             <TableCell>{getReportName(item.expenseReportId)}</TableCell>
-                            <TableCell>{getEmployeeName(item.employeeId)}</TableCell>
-                            <TableCell className="text-muted-foreground">{item.notes || 'N/A'}</TableCell>
+                            <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{getEmployeeName(item.employeeId, language === 'ku')}</TableCell>
+                            <TableCell className="text-muted-foreground">{item.notes || t('na')}</TableCell>
                             <TableCell className="text-right font-semibold">{formatCurrency(item.amount)}</TableCell>
                             </TableRow>
                         ))}

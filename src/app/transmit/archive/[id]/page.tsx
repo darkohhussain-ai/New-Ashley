@@ -17,11 +17,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAppContext } from '@/context/app-provider';
 import type { Transfer, ItemForTransfer, AllPdfSettings } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
+import { shapeText } from '@/lib/pdf-utils';
 
 
 export default function ViewTransferPage() {
   const { id: transferId } = useParams();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { transfers, transferItems } = useAppContext();
 
   const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {}, card: {} });
@@ -35,17 +36,18 @@ export default function ViewTransferPage() {
   const handleDownloadPdf = async () => {
     if (!pdfCardRef.current || !transfer || !items) return;
     
-    const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
+    const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
     const settings = pdfSettings.invoice || {};
+    const useKurdish = language === 'ku';
 
-    if (settings.customFont) {
+    if (settings.customFont && useKurdish) {
         try {
             const fontName = "CustomFont";
             const fontStyle = "normal";
             const fontBase64 = settings.customFont.split(',')[1];
-            pdf.addFileToVFS(`${fontName}.ttf`, fontBase64);
-            pdf.addFont(`${fontName}.ttf`, fontName, fontStyle);
-            pdf.setFont(fontName);
+            doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
+            doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
+            doc.setFont(fontName);
         } catch(e) {
             console.error("Could not add custom font to PDF", e);
         }
@@ -53,48 +55,44 @@ export default function ViewTransferPage() {
     
     const canvas = await html2canvas(pdfCardRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
     const imgData = canvas.toDataURL('image/png');
-    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfWidth = doc.internal.pageSize.getWidth();
     const imgWidth = canvas.width;
     const imgHeight = canvas.height;
     const ratio = imgWidth / imgHeight;
     const finalImgWidth = pdfWidth - 28;
     const finalImgHeight = finalImgWidth / ratio;
     
-    pdf.addImage(imgData, 'PNG', 14, 14, finalImgWidth, finalImgHeight);
+    doc.addImage(imgData, 'PNG', 14, 14, finalImgWidth, finalImgHeight);
     
-    autoTable(pdf, {
+    const head = [shapeText(t('model')), shapeText(t('quantity')), shapeText(t('notes'))];
+    const body = items.map(item => [shapeText(item.model), item.quantity, shapeText(item.notes || '')]);
+
+    autoTable(doc, {
       startY: finalImgHeight + 30,
-      head: [[t('model'), t('quantity'), t('notes')]],
-      body: items.map(item => [item.model, item.quantity, item.notes || '']),
+      head: [head],
+      body: body,
       theme: 'grid',
-      styles: { fontSize: 8, cellPadding: 2, font: settings.customFont ? 'CustomFont' : 'helvetica' },
-      headStyles: { fillColor: settings.themeColor || '#3b82f6', textColor: 255, fontStyle: 'bold', font: settings.customFont ? 'CustomFont' : 'helvetica' },
-      didParseCell: function (data) {
-        if (settings.customFont) {
-            try {
-                data.cell.styles.font = "CustomFont";
-            } catch(e) { console.error(e) }
-        }
-      }
+      styles: { font: (settings.customFont && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
+      headStyles: { fillColor: settings.themeColor || '#3b82f6', textColor: 255, fontStyle: 'bold' },
     });
 
-    let finalY = (pdf as any).lastAutoTable.finalY + 20;
+    let finalY = (doc as any).lastAutoTable.finalY + 20;
 
-    pdf.setFontSize(10);
-    pdf.text(`${t('driver')}: ${transfer.driverName}`, 14, finalY);
-    pdf.text(`${t('warehouse_manager')}: ${transfer.warehouseManagerName}`, 14, finalY + 10);
+    doc.setFontSize(10);
+    doc.text(`${shapeText(t('driver'))}: ${shapeText(transfer.driverName)}`, useKurdish ? doc.internal.pageSize.width - 14 : 14, finalY, { align: useKurdish ? 'right' : 'left' });
+    doc.text(`${shapeText(t('warehouse_manager'))}: ${shapeText(transfer.warehouseManagerName)}`, useKurdish ? doc.internal.pageSize.width - 14 : 14, finalY + 15, { align: useKurdish ? 'right' : 'left' });
     
     finalY += 40;
-    const pageHeight = pdf.internal.pageSize.height;
+    const pageHeight = doc.internal.pageSize.height;
     if (finalY > pageHeight - 30) {
-        pdf.addPage();
+        doc.addPage();
     }
     const signatureY = finalY > pageHeight - 50 ? 40 : finalY;
-    pdf.setFontSize(10);
-    pdf.text("...................................", pdf.internal.pageSize.width - 120, signatureY, { align: 'center' });
-    pdf.text("Warehouse Manager Signature", pdf.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
+    doc.setFontSize(10);
+    doc.text(shapeText(t('warehouse_manager_signature')), doc.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
+    doc.text("...................................", doc.internal.pageSize.width - 120, signatureY, { align: 'center' });
     
-    pdf.save(`${transfer.cargoName}.pdf`);
+    doc.save(`${transfer.cargoName}.pdf`);
   };
 
   const handlePrint = () => {
