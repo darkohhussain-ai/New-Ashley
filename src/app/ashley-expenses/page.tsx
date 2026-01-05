@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { CreditCard, Clock, Gift, Banknote, Settings } from 'lucide-react';
+import { CreditCard, Clock, Gift, Banknote, Settings, FileText } from 'lucide-react';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/hooks/use-translation';
