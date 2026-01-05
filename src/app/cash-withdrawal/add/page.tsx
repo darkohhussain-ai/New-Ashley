@@ -405,7 +405,3 @@ export default function AddCashWithdrawalPage() {
     </>
   );
 }
-
-    
-
-    
