@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -177,14 +178,13 @@ export default function AddBonusPage() {
     const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
     const settings = pdfSettings.report || {};
     const useKurdish = language === 'ku';
+    const fontName = "CustomFont";
 
     if (settings.customFont && useKurdish) {
         try {
-            const fontName = "CustomFont";
-            const fontStyle = "normal";
             const fontBase64 = settings.customFont.split(',')[1];
             doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
-            doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
+            doc.addFont(`${fontName}.ttf`, fontName, "normal");
             doc.setFont(fontName);
         } catch(e) {
             console.error("Could not add custom font to PDF", e);
@@ -216,14 +216,9 @@ export default function AddBonusPage() {
         body: body,
         foot: [foot],
         theme: 'striped',
-        styles: { font: (settings.customFont && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
-        headStyles: { fillColor: settings.reportColors?.bonus || settings.themeColor || '#22c55e' },
-        footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' },
-         didParseCell: (data) => {
-            if (useKurdish && settings.customFont) {
-                try { data.cell.styles.font = "CustomFont"; } catch(e) { console.error(e) }
-            }
-        }
+        styles: { font: (useKurdish && settings.customFont) ? fontName : 'helvetica', halign: useKurdish ? 'right' : 'left' },
+        headStyles: { font: (useKurdish && settings.customFont) ? fontName : 'helvetica', fillColor: settings.reportColors?.bonus || settings.themeColor || '#22c55e' },
+        footStyles: { font: (useKurdish && settings.customFont) ? fontName : 'helvetica', fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' },
     });
     
     const finalY = (doc as any).lastAutoTable.finalY + 40;
@@ -232,7 +227,7 @@ export default function AddBonusPage() {
         doc.addPage();
     }
     const signatureY = finalY > pageHeight - 50 ? 40 : finalY;
-    if (useKurdish && settings.customFont) doc.setFont('CustomFont');
+    if (useKurdish && settings.customFont) doc.setFont(fontName);
     doc.setFontSize(10);
     doc.text(shapeText(t('warehouse_manager_signature')), doc.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
     doc.text("...................................", doc.internal.pageSize.width - 120, signatureY, { align: 'center' });

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useRef } from 'react';
@@ -58,14 +59,17 @@ export default function ViewExpenseReportPage() {
     const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
     const settings = pdfSettings.report || {};
     const useKurdish = language === 'ku';
+    const fontName = "CustomFont";
 
     if (settings.customFont && useKurdish) {
-      const fontName = "CustomFont";
-      const fontStyle = "normal";
-      const fontBase64 = settings.customFont.split(',')[1];
-      doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
-      doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
-      doc.setFont(fontName);
+      try {
+          const fontBase64 = settings.customFont.split(',')[1];
+          doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
+          doc.addFont(`${fontName}.ttf`, fontName, "normal");
+          doc.setFont(fontName);
+      } catch(e) {
+          console.error("Could not add custom font to PDF", e);
+      }
     }
     
     const canvas = await html2canvas(pdfHeaderRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
@@ -89,9 +93,9 @@ export default function ViewExpenseReportPage() {
       body: body,
       foot: [foot],
       theme: 'grid',
-      styles: { font: (settings.customFont && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
-      headStyles: { fillColor: settings.reportColors?.expense || settings.themeColor || '#22c55e' },
-      footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
+      styles: { font: (useKurdish && settings.customFont) ? fontName : 'helvetica', halign: useKurdish ? 'right' : 'left' },
+      headStyles: { font: (useKurdish && settings.customFont) ? fontName : 'helvetica', fillColor: settings.reportColors?.expense || settings.themeColor || '#22c55e' },
+      footStyles: { font: (useKurdish && settings.customFont) ? fontName : 'helvetica', fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
     });
 
     const finalY = (doc as any).lastAutoTable.finalY + 40;
@@ -100,6 +104,7 @@ export default function ViewExpenseReportPage() {
         doc.addPage();
     }
     const signatureY = finalY > pageHeight - 50 ? 40 : finalY;
+    if (useKurdish && settings.customFont) doc.setFont(fontName);
     doc.setFontSize(10);
     doc.text("...................................", doc.internal.pageSize.width - 120, signatureY, { align: 'center' });
     doc.text(shapeText(t('warehouse_manager_signature')), doc.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
@@ -109,6 +114,7 @@ export default function ViewExpenseReportPage() {
         const pageCount = (doc as any).internal.getNumberOfPages();
         for (let i = 1; i <= pageCount; i++) {
             doc.setPage(i);
+            if (useKurdish && settings.customFont) doc.setFont(fontName);
             doc.setFontSize(8);
             doc.setTextColor(150);
             doc.text(shapeText(settings.footerText), doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });

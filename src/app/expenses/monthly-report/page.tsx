@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -94,14 +95,13 @@ export default function MonthlyExpenseReportPage() {
     const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
     const settings = pdfSettings.report || {};
     const useKurdish = language === 'ku';
+    const fontName = "CustomFont";
 
     if (settings.customFont && useKurdish) {
         try {
-            const fontName = "CustomFont";
-            const fontStyle = "normal";
             const fontBase64 = settings.customFont.split(',')[1];
             doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
-            doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
+            doc.addFont(`${fontName}.ttf`, fontName, "normal");
             doc.setFont(fontName);
         } catch (e) {
             console.error("Failed to load custom font:", e);
@@ -142,6 +142,7 @@ export default function MonthlyExpenseReportPage() {
             doc.addPage();
             startY = 20;
         }
+        if (useKurdish && settings.customFont) doc.setFont(fontName);
         doc.setFontSize(14);
         doc.text(shapeText(t('summary_by_employee')), useKurdish ? doc.internal.pageSize.width -14 : 14, startY, { align: useKurdish ? 'right' : 'left' });
         startY += 10;
@@ -151,9 +152,9 @@ export default function MonthlyExpenseReportPage() {
           body: monthlyData.summary.map(item => [shapeText(item.employeeName), formatCurrency(item.totalAmount)]),
           foot: [[shapeText(t('grand_total')), formatCurrency(monthlyData.total)]],
           theme: 'grid',
-          styles: { font: (settings.customFont && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
-          headStyles: { fillColor: settings.reportColors?.expense || settings.themeColor || '#22c55e' },
-          footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
+          styles: { font: (useKurdish && settings.customFont) ? fontName : 'helvetica', halign: useKurdish ? 'right' : 'left' },
+          headStyles: { font: (useKurdish && settings.customFont) ? fontName : 'helvetica', fillColor: settings.reportColors?.expense || settings.themeColor || '#22c55e' },
+          footStyles: { font: (useKurdish && settings.customFont) ? fontName : 'helvetica', fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
         });
         startY = (doc as any).lastAutoTable.finalY + 20;
     }
@@ -164,6 +165,7 @@ export default function MonthlyExpenseReportPage() {
             doc.addPage();
             startY = 20;
         }
+        if (useKurdish && settings.customFont) doc.setFont(fontName);
         doc.setFontSize(14);
         doc.text(shapeText(t('all_transactions')), useKurdish ? doc.internal.pageSize.width - 14 : 14, startY, { align: useKurdish ? 'right' : 'left' });
         startY += 10;
@@ -178,8 +180,8 @@ export default function MonthlyExpenseReportPage() {
               formatCurrency(item.amount)
           ]),
           theme: 'striped',
-          styles: { font: (settings.customFont && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
-          headStyles: { fillColor: [40, 40, 40] },
+          styles: { font: (useKurdish && settings.customFont) ? fontName : 'helvetica', halign: useKurdish ? 'right' : 'left' },
+          headStyles: { font: (useKurdish && settings.customFont) ? fontName : 'helvetica', fillColor: [40, 40, 40] },
         });
     }
 
@@ -189,6 +191,7 @@ export default function MonthlyExpenseReportPage() {
         doc.addPage();
     }
     const signatureYWithSignature = finalYWithSignature > pageHeightWithSignature - 50 ? 40 : finalYWithSignature;
+    if (useKurdish && settings.customFont) doc.setFont(fontName);
     doc.setFontSize(10);
     doc.text("...................................", doc.internal.pageSize.getWidth() - 120, signatureYWithSignature, { align: 'center' });
     doc.text(shapeText(t('warehouse_manager_signature')), doc.internal.pageSize.getWidth() - 120, signatureYWithSignature + 10, { align: 'center' });
@@ -198,6 +201,7 @@ export default function MonthlyExpenseReportPage() {
         const pageCount = (doc as any).internal.getNumberOfPages();
         for (let i = 1; i <= pageCount; i++) {
             doc.setPage(i);
+            if (useKurdish && settings.customFont) doc.setFont(fontName);
             doc.setFontSize(8);
             doc.setTextColor(150);
             doc.text(shapeText(settings.footerText), doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
