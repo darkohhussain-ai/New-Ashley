@@ -3,7 +3,7 @@
 
 import { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Calendar as CalendarIcon, FileText, User, BarChart, Printer } from 'lucide-react';
+import { ArrowLeft, Calendar as CalendarIcon, FileText, User, BarChart, Printer, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -44,7 +44,7 @@ export default function MonthlyExpenseReportPage() {
     setSelectedDate(new Date());
   }, []);
 
-  const isLoading = !expenses || !employees || !expenseReports;
+  const isLoading = !expenses || !employees || !expenseReports || !selectedDate;
 
   const getEmployeeName = (employeeId: string) => {
     return employees.find(e => e.id === employeeId)?.name || 'Unknown';
@@ -55,7 +55,7 @@ export default function MonthlyExpenseReportPage() {
   }
 
   const monthlyData = useMemo(() => {
-    if (isLoading || !selectedDate) return { expenses: [], summary: [], total: 0 };
+    if (!expenses || !employees || !expenseReports || !selectedDate) return { expenses: [], summary: [], total: 0 };
 
     const start = startOfMonth(selectedDate);
     const end = endOfMonth(selectedDate);
@@ -84,7 +84,7 @@ export default function MonthlyExpenseReportPage() {
     const total = summary.reduce((sum, item) => sum + item.totalAmount, 0);
 
     return { expenses: filteredExpenses, summary, total };
-  }, [isLoading, selectedDate, expenses, employees, expenseReports]);
+  }, [expenses, employees, expenseReports, selectedDate]);
 
   const handleDownloadPdf = async () => {
     if (!pdfHeaderRef.current || !selectedDate) return;
@@ -218,6 +218,10 @@ export default function MonthlyExpenseReportPage() {
   const handlePrint = () => {
     window.print();
   };
+  
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
 
   return (
     <>
@@ -356,3 +360,5 @@ export default function MonthlyExpenseReportPage() {
     </>
   );
 }
+
+    

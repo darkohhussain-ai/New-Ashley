@@ -3,7 +3,7 @@
 
 import { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Calendar as CalendarIcon, FileText, BarChart, Printer } from 'lucide-react';
+import { ArrowLeft, Calendar as CalendarIcon, FileText, BarChart, Printer, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -42,14 +42,14 @@ export default function MonthlyWithdrawalReportPage() {
     setSelectedDate(new Date());
   }, []);
   
-  const isLoading = !withdrawals || !employees;
+  const isLoading = !withdrawals || !employees || !selectedDate;
 
   const getEmployeeName = (employeeId: string) => {
     return employees.find(e => e.id === employeeId)?.name || 'Unknown';
   };
 
   const monthlyData = useMemo(() => {
-    if (isLoading || !selectedDate) return { records: [], summary: [], totalAmount: 0 };
+    if (!withdrawals || !employees || !selectedDate) return { records: [], summary: [], totalAmount: 0 };
 
     const start = startOfMonth(selectedDate);
     const end = endOfMonth(selectedDate);
@@ -72,7 +72,7 @@ export default function MonthlyWithdrawalReportPage() {
     const totalAmount = summary.reduce((sum, item) => sum + item.totalAmount, 0);
 
     return { records: filteredRecords, summary, totalAmount };
-  }, [isLoading, selectedDate, withdrawals, employees]);
+  }, [withdrawals, employees, selectedDate]);
 
   const handleDownloadPdf = async () => {
     if (!pdfHeaderRef.current || !selectedDate) return;
@@ -170,6 +170,10 @@ export default function MonthlyWithdrawalReportPage() {
   const handlePrint = () => {
     window.print();
   };
+  
+  if(isLoading) {
+      return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
 
   return (
     <>
@@ -274,3 +278,5 @@ export default function MonthlyWithdrawalReportPage() {
     </>
   );
 }
+
+    

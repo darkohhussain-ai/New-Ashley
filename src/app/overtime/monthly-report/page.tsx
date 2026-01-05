@@ -3,7 +3,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Calendar as CalendarIcon, Printer } from 'lucide-react';
+import { ArrowLeft, Calendar as CalendarIcon, Printer, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -33,14 +33,14 @@ export default function MonthlyOvertimeReportPage() {
     setSelectedDate(new Date());
   }, []);
   
-  const isLoading = !overtime || !employees;
+  const isLoading = !overtime || !employees || !selectedDate;
 
   const getEmployeeName = (employeeId: string) => {
     return employees.find(e => e.id === employeeId)?.name || 'Unknown';
   };
 
   const monthlyData = useMemo(() => {
-    if (isLoading || !selectedDate) return { records: [], summary: [], totalAmount: 0, totalHours: 0 };
+    if (!overtime || !employees || !selectedDate) return { records: [], summary: [], totalAmount: 0, totalHours: 0 };
 
     const start = startOfMonth(selectedDate);
     const end = endOfMonth(selectedDate);
@@ -65,11 +65,15 @@ export default function MonthlyOvertimeReportPage() {
     const totalHours = summary.reduce((sum, item) => sum + item.totalHours, 0);
 
     return { records: filteredRecords, summary, totalAmount, totalHours };
-  }, [isLoading, selectedDate, overtime, employees]);
+  }, [overtime, employees, selectedDate]);
 
   const handlePrint = () => {
     window.print();
   };
+  
+  if (isLoading) {
+      return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>
+  }
 
   return (
     <>
@@ -147,3 +151,5 @@ export default function MonthlyOvertimeReportPage() {
     </>
   );
 }
+
+    

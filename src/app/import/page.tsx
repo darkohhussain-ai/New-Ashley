@@ -4,14 +4,14 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Loader2, File, CheckCircle, Save } from 'lucide-react';
+import { ArrowLeft, Loader2, File, CheckCircle, Save, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { format, formatISO } from 'date-fns';
 import * as XLSX from 'xlsx';
@@ -118,6 +118,10 @@ export default function ImportPage() {
     }
   };
   
+  if (!date) {
+    return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
+  
 
   return (
     <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
@@ -191,12 +195,12 @@ export default function ImportPage() {
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}>
-                  <Calendar className="mr-2 h-4 w-4" />
+                  <CalendarComponent className="mr-2 h-4 w-4" />
                   {date ? format(date, 'PPP') : <span>Pick a date</span>}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
-                <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
+                <CalendarComponent mode="single" selected={date} onSelect={setDate} initialFocus />
               </PopoverContent>
             </Popover>
           </div>
@@ -210,3 +214,5 @@ export default function ImportPage() {
     </div>
   );
 }
+
+    

@@ -3,7 +3,6 @@
 
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton';
-import Link from 'next/link';
 
 const DashboardClient = dynamic(
   () => import('@/components/dashboard/dashboard-client').then((mod) => mod.DashboardClient),
@@ -42,3 +41,5 @@ const DashboardClient = dynamic(
 export default function Home() {
   return <DashboardClient />;
 }
+
+    

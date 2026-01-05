@@ -93,6 +93,10 @@ export default function SoldItemsCheckPage() {
             return b.receiptNumber.localeCompare(a.receiptNumber);
         })
     }, [savedReceipts])
+    
+    if(!receiptDate) {
+        return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+    }
 
     return (
         <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
@@ -216,3 +220,5 @@ export default function SoldItemsCheckPage() {
         </div>
     );
 }
+
+    

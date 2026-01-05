@@ -131,6 +131,9 @@ export default function NewFilePage() {
 
   }, [locations, warehouseType, filterHuanaWarehouse, filterHuanaFloor, filterAshleyFloor, filterAshleyArea]);
 
+  if (!date) {
+    return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
@@ -189,7 +192,7 @@ export default function NewFilePage() {
                         <Popover>
                             <PopoverTrigger asChild>
                             <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}>
-                                <Calendar className="mr-2 h-4 w-4" />
+                                <CalendarComponent className="mr-2 h-4 w-4" />
                                 {date ? format(date, 'PPP') : <span>{t('pick_a_date')}</span>}
                             </Button>
                             </PopoverTrigger>
@@ -325,6 +328,5 @@ export default function NewFilePage() {
     </div>
   );
 }
-    
 
     

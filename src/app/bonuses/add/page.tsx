@@ -228,6 +228,10 @@ export default function AddBonusPage() {
   const handlePrint = () => {
     window.print();
   };
+  
+  if (!selectedDate) {
+    return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
 
   return (
     <>
@@ -418,3 +422,5 @@ export default function AddBonusPage() {
     </>
   );
 }
+
+    
