@@ -217,7 +217,7 @@ export default function SettingsPage() {
   const [savedDashboardBanner, setSavedDashboardBanner] = useLocalStorage<string | null>('dashboard-banner', null);
   const [savedBannerHeight, setSavedBannerHeight] = useLocalStorage('dashboard-banner-height', 150);
   const [savedPdfSettings, setSavedPdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', defaultPdfSettings);
-  const [savedCustomFontBase64, setSavedCustomFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
+  const [savedCustomFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
 
 
   const [lightColors, setLightColors] = useState(savedLightColors);
@@ -225,7 +225,6 @@ export default function SettingsPage() {
   const [dashboardBanner, setDashboardBanner] = useState(savedDashboardBanner);
   const [bannerHeight, setBannerHeight] = useState(savedBannerHeight);
   const [pdfSettings, setPdfSettings] = useState(savedPdfSettings);
-  const [previewFontBase64, setPreviewFontBase64] = useState<string | null>(null);
   const [activePdfTab, setActivePdfTab] = useState<'report' | 'invoice' | 'card'>('report');
   
   const [importFile, setImportFile] = useState<File | null>(null);
@@ -252,7 +251,6 @@ export default function SettingsPage() {
       setDarkColors(savedDarkColors);
       setDashboardBanner(savedDashboardBanner);
       setBannerHeight(savedBannerHeight);
-      setPreviewFontBase64(savedCustomFontBase64);
       
       const mergedPdfSettings: AllPdfSettings = {
           report: { ...defaultReportSettings, ...(savedPdfSettings.report || {})},
@@ -308,43 +306,6 @@ export default function SettingsPage() {
         }
     }));
    };
-
-  const handleCustomFontUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const validExtensions = ['.ttf', '.otf', '.woff', '.woff2'];
-      const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
-      
-      if (!validExtensions.includes(fileExtension)) {
-        toast({ variant: 'destructive', title: t('invalid_file_type'), description: t('invalid_font_file_type') });
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const result = event.target?.result as string;
-        setPreviewFontBase64(result);
-        toast({ title: t('font_selected'), description: t('font_selected_desc') });
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleApplyFont = () => {
-    if (previewFontBase64) {
-      setSavedCustomFontBase64(previewFontBase64); // This will trigger the useEffect in ThemeProvider
-      toast({ title: t('font_applied_for_preview') });
-    }
-  };
-  
-  const handleSaveFolder = () => {
-      if (previewFontBase64) {
-          setSavedCustomFontBase64(previewFontBase64);
-          toast({ title: t('font_saved'), description: t('font_saved_desc') });
-      } else {
-          toast({ variant: 'destructive', title: t('no_font_selected'), description: t('no_font_selected_desc') });
-      }
-  };
-
   
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, setter: (value: string | null) => void, toastTitle: string) => {
     const file = e.target.files?.[0]
@@ -381,14 +342,12 @@ export default function SettingsPage() {
     setDashboardBanner(null);
     setBannerHeight(150);
     setPdfSettings(defaultPdfSettings);
-    setPreviewFontBase64(null);
     
     setSavedLightColors(defaultLightColors);
     setSavedDarkColors(defaultDarkColors);
     setSavedDashboardBanner(null);
     setSavedBannerHeight(150);
     setSavedPdfSettings(defaultPdfSettings);
-    setSavedCustomFontBase64(null);
     
     toast({ title: t('settings_reset'), description: t('settings_reset_desc') });
   }
@@ -577,23 +536,11 @@ export default function SettingsPage() {
                            <h3 className="font-semibold">{t('custom_app_font')}</h3>
                            <div className="p-4 border rounded-lg space-y-4">
                                 <div>
-                                    <Label htmlFor="font-upload" className="text-sm font-medium">{t('upload_font_file')}</Label>
-                                    <Input id="font-upload" type="file" accept=".ttf,.otf,.woff,.woff2" className="mt-2" onChange={handleCustomFontUpload} />
-                                </div>
-                                <div className="flex gap-2">
-                                  <Button onClick={handleApplyFont} variant="outline" className="w-full" disabled={!previewFontBase64}>{t('apply_font')}</Button>
-                                  <Button onClick={handleSaveFolder} className="w-full" disabled={!previewFontBase64}>{t('save_font')}</Button>
+                                    <p className='text-sm text-muted-foreground mb-2'>
+                                        The app is now configured to automatically use the Speda font for Kurdish. You do not need to upload a font file anymore.
+                                    </p>
                                 </div>
                            </div>
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>{t('font_preview')}</CardTitle>
-                                </CardHeader>
-                                <CardContent style={{ fontFamily: previewFontBase64 ? 'CustomAppFont' : 'inherit' }}>
-                                    <p className="text-lg">English: The quick brown fox jumps over the lazy dog.</p>
-                                    <p className="text-lg" dir="rtl">کوردی: ڕێوی ڕەساسی خێرا باز دەدات بەسەر سەگی تەمبەڵدا.</p>
-                                </CardContent>
-                            </Card>
                        </div>
                     </CardContent>
                 </Card>

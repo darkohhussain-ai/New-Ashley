@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode, useEffect } from 'react';
 import useLocalStorage from '@/hooks/use-local-storage';
 import { 
     Employee, 
@@ -57,6 +57,33 @@ interface AppState {
 
 const AppContext = createContext<AppState | undefined>(undefined);
 
+// Function to fetch the font and convert it to a base64 data URI
+async function fetchAndStoreFont(url: string, storageKey: string) {
+    // Check if the font is already in localStorage to avoid re-fetching
+    const existingFont = localStorage.getItem(storageKey);
+    if (existingFont) {
+        return;
+    }
+
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch font: ${response.statusText}`);
+        }
+        const blob = await response.blob();
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const base64data = reader.result;
+            localStorage.setItem(storageKey, base64data as string);
+            console.log("Custom font fetched and stored.");
+        };
+        reader.readAsDataURL(blob);
+    } catch (error) {
+        console.error("Could not fetch or store the custom font:", error);
+    }
+}
+
+
 export function AppProvider({ children }: { children: ReactNode }) {
 
     const [employees, setEmployees] = useLocalStorage<Employee[]>('employees', initialData.employees);
@@ -73,6 +100,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const [transferItems, setTransferItems] = useLocalStorage<ItemForTransfer[]>('transfer_items', initialData.transferItems);
     const [marketingFeedbacks, setMarketingFeedbacks] = useLocalStorage<MarketingFeedback[]>('marketing-feedbacks', initialData.marketingFeedbacks);
     const [evaluationQuestions, setEvaluationQuestions] = useLocalStorage<EvaluationQuestion[]>('evaluation_questions', initialData.evaluationQuestions);
+
+    useEffect(() => {
+        // The URL for the Speda font
+        const fontUrl = 'https://www.kurdfonts.com/dl/tmp/2911124/Speda.ttf';
+        const storageKey = 'custom-font-base64';
+        
+        // Fetch the font when the app loads
+        fetchAndStoreFont(fontUrl, storageKey);
+    }, []);
 
     const value: AppState = {
         employees, setEmployees,
