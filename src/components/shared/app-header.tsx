@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -25,21 +24,58 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-export function AppHeader() {
+function DateTimeDisplay() {
   const [time, setTime] = useState<Date | null>(null);
-  const { t, setLanguage, language } = useTranslation();
 
+  useEffect(() => {
+    // This code runs only on the client, after the component has mounted.
+    setTime(new Date());
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []); // The empty dependency array ensures this effect runs only once on mount.
+
+  if (!time) {
+    // On the server and during initial client render, show a placeholder.
+    return (
+      <>
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4" />
+          <span>...</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Clock className="w-4 h-4" />
+          <span>...</span>
+        </div>
+      </>
+    );
+  }
+
+  // Once mounted on the client, render the actual time.
+  return (
+    <>
+      <div className="flex items-center gap-2">
+        <Calendar className="w-4 h-4" />
+        <span>{format(time, 'MMMM d, yyyy')}</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <Clock className="w-4 h-4" />
+        <span>{format(time, 'h:mm:ss a')}</span>
+      </div>
+    </>
+  );
+}
+
+
+export function AppHeader() {
+  const { t, setLanguage, language } = useTranslation();
   const [savedLogo] = useLocalStorage(
     'app-logo',
     'https://picsum.photos/seed/ashley-logo/300/100'
   );
-
   const [isMounted, setIsMounted] = useState(false);
+  
   useEffect(() => {
     setIsMounted(true);
-    setTime(new Date());
-    const timer = setInterval(() => setTime(new Date()), 1000);
-    return () => clearInterval(timer);
   }, []);
 
   const handleRefresh = () => {
@@ -63,14 +99,7 @@ export function AppHeader() {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20">
           <div className="hidden md:flex items-center gap-4 text-sm text-muted-foreground w-1/3">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              <span suppressHydrationWarning>{time ? format(time, 'MMMM d, yyyy') : '...'}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4" />
-              <span suppressHydrationWarning>{time ? format(time, 'h:mm:ss a') : '...'}</span>
-            </div>
+            <DateTimeDisplay />
           </div>
           <div className="flex items-center justify-center w-1/3">
             {savedLogo && (

@@ -1,9 +1,8 @@
-
 'use client';
 
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useTranslation } from '@/hooks/use-translation';
+import { DashboardClient as DashboardClientComponent } from '@/components/dashboard/dashboard-client';
 
 const DashboardClient = dynamic(
   () => import('@/components/dashboard/dashboard-client').then((mod) => mod.DashboardClient),
@@ -14,7 +13,6 @@ const DashboardClient = dynamic(
 );
 
 function DashboardSkeleton() {
-    const { t } = useTranslation();
     return (
         <main className="container mx-auto p-4 md:p-8">
             <div className="mb-8">
