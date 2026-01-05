@@ -73,25 +73,13 @@ const ChartWithSummary = ({ title, data, config }: { title: string, data: ChartD
 }
 
 export function FilePdfCard({ file, employee, logoSrc, statusData, conditionData }: FilePdfCardProps) {
-  const [formattedDate, setFormattedDate] = useState('N/A');
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  useEffect(() => {
-    if (isMounted) {
-      const safeDate = (dateValue: string | undefined): Date | null => {
-        if (!dateValue) return null;
-        const parsed = parseISO(dateValue);
-        return isNaN(parsed.getTime()) ? null : parsed;
-      };
-      
-      const safeFileDate = safeDate(file.date);
-      setFormattedDate(safeFileDate ? format(safeFileDate, 'MMMM d, yyyy') : 'N/A');
-    }
-  }, [file.date, isMounted]);
+  const formattedDate = isMounted && file.date ? format(parseISO(file.date), 'MMMM d, yyyy') : 'N/A';
 
   return (
     <div className="bg-white text-black w-full p-4 font-sans border-2 border-gray-200 rounded-xl" style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" }}>
@@ -126,7 +114,7 @@ export function FilePdfCard({ file, employee, logoSrc, statusData, conditionData
           <Calendar className="w-4 h-4 text-gray-500" />
           <div>
             <p className="text-xs text-gray-500">Date</p>
-            <p className="font-semibold">{isMounted ? formattedDate : '...'}</p>
+            <p className="font-semibold">{formattedDate}</p>
           </div>
         </div>
       </div>

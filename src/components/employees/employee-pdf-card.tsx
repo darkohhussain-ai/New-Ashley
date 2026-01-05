@@ -16,30 +16,14 @@ type EmployeePdfCardProps = {
 
 export function EmployeePdfCard({ employee, settings }: EmployeePdfCardProps) {
   const { t } = useTranslation();
-  const [formattedDob, setFormattedDob] = useState('N/A');
-  const [formattedJoinedDate, setFormattedJoinedDate] = useState('N/A');
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  useEffect(() => {
-    if (isMounted) {
-      const safeDate = (dateValue: string | undefined): Date | null => {
-        if (!dateValue) return null;
-        const parsed = parseISO(dateValue);
-        return isNaN(parsed.getTime()) ? null : parsed;
-      };
-
-      const safeDateOfBirth = safeDate(employee.dateOfBirth);
-      setFormattedDob(safeDateOfBirth ? format(safeDateOfBirth, 'dd/MM/yyyy') : 'N/A');
-
-      const safeJoinedDate = safeDate(employee.employmentStartDate);
-      setFormattedJoinedDate(safeJoinedDate ? format(safeJoinedDate, 'dd/MM/yyyy') : 'N/A');
-    }
-  }, [employee.dateOfBirth, employee.employmentStartDate, isMounted]);
-
+  const formattedDob = isMounted && employee.dateOfBirth ? format(parseISO(employee.dateOfBirth), 'dd/MM/yyyy') : 'N/A';
+  const formattedJoinedDate = isMounted && employee.employmentStartDate ? format(parseISO(employee.employmentStartDate), 'dd/MM/yyyy') : 'N/A';
 
   return (
     <div className="bg-white text-gray-800 w-[600px] h-[360px] font-sans rounded-lg shadow-lg overflow-hidden border border-gray-200 flex" style={{ fontFamily: settings.font === 'CustomFont' ? 'CustomPdfFont' : (settings.font || 'sans-serif') }}>
@@ -94,8 +78,8 @@ export function EmployeePdfCard({ employee, settings }: EmployeePdfCardProps) {
               {/* Details Grid */}
               <div className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm mt-4">
                   <div><p className="text-gray-500 text-xs">{t('id_no')}</p><p className="font-semibold">{employee.employeeId || 'N/A'}</p></div>
-                  <div><p className="text-gray-500 text-xs">{t('joined_date')}</p><p className="font-semibold">{isMounted ? formattedJoinedDate : '...'}</p></div>
-                  <div><p className="text-gray-500 text-xs">{t('dob')}</p><p className="font-semibold">{isMounted ? formattedDob : '...'}</p></div>
+                  <div><p className="text-gray-500 text-xs">{t('joined_date')}</p><p className="font-semibold">{formattedJoinedDate}</p></div>
+                  <div><p className="text-gray-500 text-xs">{t('dob')}</p><p className="font-semibold">{formattedDob}</p></div>
                   <div><p className="text-gray-500 text-xs">{t('expire_date')}</p><p className="font-semibold">N/A</p></div>
               </div>
               

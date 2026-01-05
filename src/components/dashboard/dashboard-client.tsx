@@ -48,9 +48,10 @@ export function DashboardClient() {
     'app-logo',
     'https://picsum.photos/seed/ashley-logo/300/100'
   );
-
+  
+  const [isMounted, setIsMounted] = useState(false);
   useEffect(() => {
-    // Set the initial date and start the timer only on the client
+    setIsMounted(true);
     setTime(new Date());
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
@@ -104,6 +105,10 @@ export function DashboardClient() {
       color: 'bg-gray-500',
     },
   ];
+  
+  if (!isMounted) {
+      return null;
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
