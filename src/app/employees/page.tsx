@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useMemo, useEffect, useRef } from "react"
@@ -65,8 +66,8 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
     const employee = useMemo(() => employees.find(e => e.id === employeeId), [employees, employeeId]);
     const employeeExpenses = useMemo(() => expenses.filter(e => e.employeeId === employeeId), [expenses, employeeId]);
     const employeeOvertime = useMemo(() => overtime.filter(e => e.employeeId === employeeId), [overtime, employeeId]);
-    const employeeBonuses = useMemo(() => bonuses.filter(e => e.employeeId === employeeId), [bonuses, employeeId]);
-    const employeeWithdrawals = useMemo(() => withdrawals.filter(e => e.employeeId === employeeId), [withdrawals, employeeId]);
+    const employeeBonuses = useMemo(() => bonuses.filter(b => b.employeeId === employeeId), [bonuses, employeeId]);
+    const employeeWithdrawals = useMemo(() => withdrawals.filter(w => w.employeeId === employeeId), [withdrawals, employeeId]);
 
 
     const [isEditing, setIsEditing] = useState(false);
@@ -78,7 +79,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
     const [dateOfBirth, setDateOfBirth] = useState<Date | undefined>(undefined);
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
-    const [photoUrl, setPhotoUrl] = useState('');
+    const [photoUrl, setPhotoUrl] = useState<string | undefined>(undefined);
     const [notes, setNotes] = useState('');
     
     const cardPdfRef = useRef<HTMLDivElement>(null);
@@ -95,7 +96,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
             setDateOfBirth(safeDate(employee.dateOfBirth) || undefined);
             setEmail(employee.email || '');
             setPhone(employee.phone || '');
-            setPhotoUrl(employee.photoUrl || '');
+            setPhotoUrl(employee.photoUrl || undefined);
             setNotes(employee.notes || '');
         }
     }, [employee]);
@@ -156,7 +157,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
             dateOfBirth: dateOfBirth ? dateOfBirth.toISOString() : undefined,
             email,
             phone,
-            photoUrl,
+            photoUrl: photoUrl || undefined,
             notes,
         };
 
