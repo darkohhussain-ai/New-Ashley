@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -23,7 +24,7 @@ const formatCurrency = (amount: number) => {
 };
 
 export default function MonthlyOvertimeReportPage() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { overtime, employees } = useAppContext();
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
@@ -35,7 +36,9 @@ export default function MonthlyOvertimeReportPage() {
   const isLoading = !overtime || !employees || !selectedDate;
 
   const getEmployeeName = (employeeId: string) => {
-    return employees.find(e => e.id === employeeId)?.name || 'Unknown';
+    const employee = employees.find(e => e.id === employeeId);
+    if (!employee) return t('unknown');
+    return language === 'ku' && employee.kurdishName ? employee.kurdishName : employee.name;
   };
 
   const monthlyData = useMemo(() => {
@@ -64,7 +67,7 @@ export default function MonthlyOvertimeReportPage() {
     const totalHours = summary.reduce((sum, item) => sum + item.totalHours, 0);
 
     return { records: filteredRecords, summary, totalAmount, totalHours };
-  }, [overtime, employees, selectedDate]);
+  }, [overtime, employees, selectedDate, t, language]);
 
   const handlePrint = () => {
     window.print();
@@ -121,7 +124,7 @@ export default function MonthlyOvertimeReportPage() {
                         <TableBody>
                             {monthlyData.summary.map(item => (
                                 <TableRow key={item.employeeId}>
-                                    <TableCell className="font-medium">{item.employeeName}</TableCell>
+                                    <TableCell className="font-medium" dir={language === 'ku' ? 'rtl' : 'ltr'}>{item.employeeName}</TableCell>
                                     <TableCell className="text-right font-semibold">{item.totalHours.toFixed(2)}</TableCell>
                                     <TableCell className="text-right font-semibold">{formatCurrency(item.totalAmount)}</TableCell>
                                 </TableRow>
@@ -150,5 +153,3 @@ export default function MonthlyOvertimeReportPage() {
     </>
   );
 }
-
-    

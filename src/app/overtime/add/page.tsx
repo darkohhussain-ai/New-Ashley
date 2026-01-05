@@ -37,7 +37,7 @@ const formatCurrency = (amount: number) => {
 };
 
 export default function AddOvertimePage() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { toast } = useToast();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -95,7 +95,11 @@ export default function AddOvertimePage() {
     return [...warehouseEmployees].sort((a, b) => a.name.localeCompare(b.name));
   }, [warehouseEmployees]);
 
-  const getEmployeeName = (id: string) => employees?.find(e => e.id === id)?.name || '...';
+  const getEmployeeName = (id: string) => {
+    const employee = employees?.find(e => e.id === id);
+    if (!employee) return t('unknown');
+    return language === 'ku' && employee.kurdishName ? employee.kurdishName : employee.name;
+  };
   
   const resetForm = () => {
     setSelectedEmployee('');
@@ -122,7 +126,7 @@ export default function AddOvertimePage() {
     };
     
     setAllOvertimeRecords(allOvertimeRecords.map(rec => rec.id === updatedData.id ? updatedData : rec));
-    toast({ title: 'Success', description: 'Overtime record updated.' });
+    toast({ title: t('save_changes'), description: t('overtime_record_updated') });
     setEditingRecord(null);
     setIsSaving(false);
   };
@@ -131,7 +135,7 @@ export default function AddOvertimePage() {
   const handleAddOvertime = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedEmployee || !hours || !selectedDate) {
-      toast({ variant: 'destructive', title: 'Missing Fields', description: 'Please select an employee and enter the hours.' });
+      toast({ variant: 'destructive', title: t('missing_information'), description: t('add_overtime_validation_error') });
       return;
     }
     
@@ -147,14 +151,14 @@ export default function AddOvertimePage() {
     };
 
     setAllOvertimeRecords([...allOvertimeRecords, overtimeData]);
-    toast({ title: 'Overtime Added', description: 'The record has been added.' });
+    toast({ title: t('overtime_added'), description: t('overtime_added_desc') });
     resetForm();
     setIsSaving(false);
   };
 
   const handleDelete = (record: Overtime) => {
     setAllOvertimeRecords(allOvertimeRecords.filter(rec => rec.id !== record.id));
-    toast({ title: 'Record Deleted', description: 'The overtime record has been removed.' });
+    toast({ title: t('record_deleted'), description: t('overtime_record_deleted') });
   };
   
   const { totalHours, totalAmount } = useMemo(() => {
@@ -200,9 +204,9 @@ export default function AddOvertimePage() {
 
     autoTable(doc, {
         startY: finalImgHeight + 10,
-        head: [['Employee', 'Hours', 'Notes', 'Amount']],
-        body: overtimeRecords.map(item => [getEmployeeName(item.employeeId), item.hours.toFixed(2), item.notes || 'N/A', formatCurrency(item.totalAmount)]),
-        foot: [['Total', totalHours.toFixed(2), '', formatCurrency(totalAmount)]],
+        head: [[t('employee'), t('overtime_hours'), t('notes'), t('amount')]],
+        body: overtimeRecords.map(item => [getEmployeeName(item.employeeId), item.hours.toFixed(2), item.notes || t('na'), formatCurrency(item.totalAmount)]),
+        foot: [[t('total'), totalHours.toFixed(2), '', formatCurrency(totalAmount)]],
         theme: 'striped',
         headStyles: { fillColor: settings.reportColors?.overtime || settings.themeColor || '#22c55e' },
         footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' },
@@ -223,7 +227,7 @@ export default function AddOvertimePage() {
     const signatureY = finalY > pageHeight - 50 ? 40 : finalY;
     doc.setFontSize(10);
     doc.text("...................................", doc.internal.pageSize.width - 120, signatureY, { align: 'center' });
-    doc.text("Warehouse Manager Signature", doc.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
+    doc.text(t('warehouse_manager_signature'), doc.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
 
     doc.save(`overtime-report-${format(selectedDate, 'yyyy-MM-dd')}.pdf`);
   };
@@ -242,7 +246,7 @@ export default function AddOvertimePage() {
       {selectedDate && (
          <div ref={pdfHeaderRef} style={{ width: '700px', background: 'white', color: 'black' }}>
             <ReportPdfHeader
-              title="Daily Overtime Report"
+              title={t('daily_overtime_report')}
               subtitle={format(selectedDate, 'PPP')}
               logoSrc={pdfSettings.report?.logo ?? null}
               themeColor={pdfSettings.report?.reportColors?.overtime ?? pdfSettings.report?.themeColor}
@@ -267,15 +271,15 @@ export default function AddOvertimePage() {
               <PopoverTrigger asChild>
                 <Button variant={"outline"} className={cn("w-48 justify-start text-left font-normal", !selectedDate && "text-muted-foreground")}>
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
+                  {selectedDate ? format(selectedDate, "PPP") : <span>{t('pick_a_date')}</span>}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="end">
                 <Calendar mode="single" selected={selectedDate} onSelect={(date) => { setSelectedDate(date); if (dateParam) router.push('/overtime/add'); }} initialFocus captionLayout="dropdown-nav" fromYear={2020} toYear={2040} />
               </PopoverContent>
             </Popover>
-            <Button variant="outline" onClick={handleDownloadPdf} disabled={!overtimeRecords || overtimeRecords.length === 0}><FileText className="mr-2 h-4 w-4" />PDF</Button>
-            <Button variant="outline" onClick={handlePrint} disabled={!overtimeRecords || overtimeRecords.length === 0}><Printer className="mr-2 h-4 w-4" />Print</Button>
+            <Button variant="outline" onClick={handleDownloadPdf} disabled={!overtimeRecords || overtimeRecords.length === 0}><FileText className="mr-2 h-4 w-4" />{t('download_pdf')}</Button>
+            <Button variant="outline" onClick={handlePrint} disabled={!overtimeRecords || overtimeRecords.length === 0}><Printer className="mr-2 h-4 w-4" />{t('print')}</Button>
           </div>
         </div>
       </header>
@@ -294,11 +298,11 @@ export default function AddOvertimePage() {
                         <label htmlFor="employee">{t('employee')}</label>
                         <Select onValueChange={setSelectedEmployee} value={selectedEmployee} disabled={isSaving}>
                         <SelectTrigger id="employee">
-                            <SelectValue placeholder="Select an employee" />
+                            <SelectValue placeholder={t('select_an_employee')} />
                         </SelectTrigger>
                         <SelectContent>
                             {isLoading ? (
-                            <SelectItem value="loading" disabled>Loading...</SelectItem>
+                            <SelectItem value="loading" disabled>{t('loading')}...</SelectItem>
                             ) : (
                             sortedEmployees.map(emp => (
                                 <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>
@@ -316,7 +320,7 @@ export default function AddOvertimePage() {
                     </div>
                     <div className="space-y-2">
                         <label htmlFor="notes">{t('notes')}</label>
-                        <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Optional notes about the overtime" disabled={isSaving}/>
+                        <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder={t('notes_optional_overtime')} disabled={isSaving}/>
                     </div>
                     <p className="text-sm text-muted-foreground">
                         {t('overtime_rate')}: {formatCurrency(OVERTIME_RATE)} / {t('hour')}
@@ -357,7 +361,7 @@ export default function AddOvertimePage() {
                                 <Textarea 
                                     value={editingRecord.notes}
                                     onChange={(e) => setEditingRecord({...editingRecord, notes: e.target.value})}
-                                    placeholder="Notes..."
+                                    placeholder={t('notes_optional')}
                                 />
                             </div>
                             ) : (
@@ -425,5 +429,3 @@ export default function AddOvertimePage() {
     </>
   );
 }
-
-    

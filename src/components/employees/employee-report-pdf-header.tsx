@@ -14,7 +14,8 @@ type EmployeeReportPdfHeaderProps = {
 };
 
 export function EmployeeReportPdfHeader({ employee, settings }: EmployeeReportPdfHeaderProps) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
+  const displayName = language === 'ku' && employee.kurdishName ? employee.kurdishName : employee.name;
 
   const safeDate = (dateValue: string | undefined): Date | null => {
     if (!dateValue) return null;
@@ -50,7 +51,7 @@ export function EmployeeReportPdfHeader({ employee, settings }: EmployeeReportPd
           <AvatarFallback><User className="w-12 h-12" /></AvatarFallback>
         </Avatar>
         <div className="flex-1">
-          <h2 className="text-xl font-bold text-gray-900">{employee.name}</h2>
+          <h2 className="text-xl font-bold text-gray-900" dir={language === 'ku' ? 'rtl' : 'ltr'}>{displayName}</h2>
           <div className="mt-2 grid grid-cols-2 gap-x-6 gap-y-2 text-sm text-gray-700">
             {employee.role && (
               <p className="flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-gray-500" /> <strong>{t('role')}:</strong> {employee.role}</p>

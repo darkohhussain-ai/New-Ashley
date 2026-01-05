@@ -15,33 +15,34 @@ type EmployeePdfCardProps = {
 };
 
 export function EmployeePdfCard({ employee, settings }: EmployeePdfCardProps) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  const formattedDob = isMounted && employee.dateOfBirth ? format(parseISO(employee.dateOfBirth), 'dd/MM/yyyy') : 'N/A';
-  const formattedJoinedDate = isMounted && employee.employmentStartDate ? format(parseISO(employee.employmentStartDate), 'dd/MM/yyyy') : 'N/A';
+  const formattedDob = isMounted && employee.dateOfBirth ? format(parseISO(employee.dateOfBirth), 'dd/MM/yyyy') : t('na');
+  const formattedJoinedDate = isMounted && employee.employmentStartDate ? format(parseISO(employee.employmentStartDate), 'dd/MM/yyyy') : t('na');
+  const displayName = language === 'ku' && employee.kurdishName ? employee.kurdishName : employee.name;
 
   return (
     <div className="bg-white text-gray-800 w-[600px] h-[360px] font-sans rounded-lg shadow-lg overflow-hidden border border-gray-200 flex" style={{ fontFamily: settings.font === 'CustomFont' ? 'CustomPdfFont' : (settings.font || 'sans-serif') }}>
       {/* Left Section - Photo and Details */}
       <div className="w-1/3 bg-gray-50 flex flex-col items-center justify-center p-4 border-r">
           <Avatar className="w-28 h-28 border-4 border-white shadow-lg rounded-md bg-gray-100 mb-4">
-            <AvatarImage src={employee.photoUrl} alt={employee.name} className="rounded-md" />
+            <AvatarImage src={employee.photoUrl} alt={displayName} className="rounded-md" />
             <AvatarFallback className="text-4xl bg-gray-200 text-gray-700 rounded-md">
               <User />
             </AvatarFallback>
           </Avatar>
           <div className="text-center">
-            <h2 className="text-lg font-bold text-gray-900">{employee.name}</h2>
+            <h2 className="text-lg font-bold text-gray-900" dir={language === 'ku' ? 'rtl' : 'ltr'}>{displayName}</h2>
             <p className="text-sm text-gray-500">{employee.role || t('employee')}</p>
           </div>
            <div className="mt-4 text-xs text-left w-full space-y-2">
-                <p className="flex items-center gap-2 truncate"><Mail className="w-3 h-3 shrink-0"/>{employee.email || 'N/A'}</p>
-                <p className="flex items-center gap-2"><Phone className="w-3 h-3 shrink-0"/>{employee.phone || 'N/A'}</p>
+                <p className="flex items-center gap-2 truncate"><Mail className="w-3 h-3 shrink-0"/>{employee.email || t('na')}</p>
+                <p className="flex items-center gap-2"><Phone className="w-3 h-3 shrink-0"/>{employee.phone || t('na')}</p>
            </div>
       </div>
       
@@ -77,10 +78,10 @@ export function EmployeePdfCard({ employee, settings }: EmployeePdfCardProps) {
           <div className="relative bg-white p-4 flex-grow flex flex-col">
               {/* Details Grid */}
               <div className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm mt-4">
-                  <div><p className="text-gray-500 text-xs">{t('id_no')}</p><p className="font-semibold">{employee.employeeId || 'N/A'}</p></div>
+                  <div><p className="text-gray-500 text-xs">{t('id_no')}</p><p className="font-semibold">{employee.employeeId || t('na')}</p></div>
                   <div><p className="text-gray-500 text-xs">{t('joined_date')}</p><p className="font-semibold">{formattedJoinedDate}</p></div>
                   <div><p className="text-gray-500 text-xs">{t('dob')}</p><p className="font-semibold">{formattedDob}</p></div>
-                  <div><p className="text-gray-500 text-xs">{t('expire_date')}</p><p className="font-semibold">N/A</p></div>
+                  <div><p className="text-gray-500 text-xs">{t('expire_date')}</p><p className="font-semibold">{t('na')}</p></div>
               </div>
               
               {/* Signature & QR Area */}
