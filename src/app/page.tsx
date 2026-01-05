@@ -1,14 +1,21 @@
+
 'use client';
 
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton';
-import Link from 'next/link';
+import { useTranslation } from '@/hooks/use-translation';
 
 const DashboardClient = dynamic(
   () => import('@/components/dashboard/dashboard-client').then((mod) => mod.DashboardClient),
   {
     ssr: false,
-    loading: () => (
+    loading: () => <DashboardSkeleton />,
+  }
+);
+
+function DashboardSkeleton() {
+    const { t } = useTranslation();
+    return (
         <div className="min-h-screen bg-background text-foreground">
          <header className="bg-card border-b top-0 z-10">
             <div className="container mx-auto px-4">
@@ -34,12 +41,10 @@ const DashboardClient = dynamic(
             </div>
         </main>
         </div>
-    ),
-  }
-);
+    );
+}
+
 
 export default function Home() {
   return <DashboardClient />;
 }
-
-    

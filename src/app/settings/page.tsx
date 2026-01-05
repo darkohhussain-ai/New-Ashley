@@ -122,6 +122,7 @@ function parseHsl(hsl: string): { h: string, s: string, l: string } {
 
 function ColorPicker({ label, value, onChange }: { label: string, value: string, onChange: (value: string) => void }) {
   const { h, s, l } = parseHsl(value);
+  const { t } = useTranslation();
 
   const handleHslChange = (part: 'h' | 's' | 'l', newValue: string) => {
     const current = parseHsl(value);
@@ -172,7 +173,7 @@ function ColorPicker({ label, value, onChange }: { label: string, value: string,
 
   return (
     <div className="flex items-center justify-between">
-      <Label className="capitalize text-sm">{label}</Label>
+      <Label className="capitalize text-sm">{t(label.toLowerCase())}</Label>
       <div className='flex items-center gap-2'>
         <Input 
           type="color" 
@@ -191,9 +192,10 @@ function ColorPicker({ label, value, onChange }: { label: string, value: string,
 }
 
 function ReportColorPicker({ label, value, onChange }: { label: string, value: string, onChange: (value: string) => void }) {
+    const { t } = useTranslation();
     return (
         <div className="flex items-center justify-between">
-            <Label className="capitalize text-sm">{label}</Label>
+            <Label className="capitalize text-sm">{t(label.toLowerCase())}</Label>
             <Input
                 type="color"
                 value={value}
@@ -314,14 +316,14 @@ export default function SettingsPage() {
       const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
       
       if (!validExtensions.includes(fileExtension)) {
-        toast({ variant: 'destructive', title: 'Invalid File Type', description: 'Please upload a .ttf, .otf, .woff, or .woff2 file.' });
+        toast({ variant: 'destructive', title: t('invalid_file_type'), description: t('invalid_font_file_type') });
         return;
       }
       const reader = new FileReader();
       reader.onload = (event) => {
         const result = event.target?.result as string;
         setPreviewFontBase64(result);
-        toast({ title: 'Font selected!', description: 'Click "Apply Font" to preview it across the app.' });
+        toast({ title: t('font_selected'), description: t('font_selected_desc') });
       };
       reader.readAsDataURL(file);
     }
@@ -330,16 +332,16 @@ export default function SettingsPage() {
   const handleApplyFont = () => {
     if (previewFontBase64) {
       setSavedCustomFontBase64(previewFontBase64); // This will trigger the useEffect in ThemeProvider
-      toast({ title: 'Font applied for preview.' });
+      toast({ title: t('font_applied_for_preview') });
     }
   };
   
   const handleSaveFolder = () => {
       if (previewFontBase64) {
           setSavedCustomFontBase64(previewFontBase64);
-          toast({ title: 'Font saved!', description: 'The new font will be used across the application.' });
+          toast({ title: t('font_saved'), description: t('font_saved_desc') });
       } else {
-          toast({ variant: 'destructive', title: 'No font selected', description: 'Please upload a font before saving.' });
+          toast({ variant: 'destructive', title: t('no_font_selected'), description: t('no_font_selected_desc') });
       }
   };
 
@@ -352,7 +354,7 @@ export default function SettingsPage() {
         const result = loadEvent.target?.result
         if (typeof result === 'string') {
           setter(result)
-          toast({ title: toastTitle, description: 'Click "Save All Changes" to apply.' })
+          toast({ title: t(toastTitle), description: t('save_changes_to_apply') })
         }
       }
       reader.readAsDataURL(file)
@@ -364,12 +366,12 @@ export default function SettingsPage() {
     setSavedDarkColors(darkColors);
     setSavedDashboardBanner(dashboardBanner);
     setSavedBannerHeight(bannerHeight);
-    toast({ title: 'Settings saved!', description: 'Your appearance settings have been updated.' });
+    toast({ title: t('settings_saved'), description: t('appearance_settings_updated') });
   }
 
   const handleSavePdfSettings = () => {
     setSavedPdfSettings(pdfSettings);
-    toast({ title: 'PDF & Report settings saved!', description: 'Your design changes have been updated.' });
+    toast({ title: t('pdf_settings_saved'), description: t('pdf_design_updated') });
   };
 
 
@@ -388,7 +390,7 @@ export default function SettingsPage() {
     setSavedPdfSettings(defaultPdfSettings);
     setSavedCustomFontBase64(null);
     
-    toast({ title: 'Settings Reset', description: 'All settings have been reset to their default values.' });
+    toast({ title: t('settings_reset'), description: t('settings_reset_desc') });
   }
   
   const handleExport = async () => {
@@ -403,11 +405,11 @@ export default function SettingsPage() {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        toast({ title: 'Data exported successfully!' });
+        toast({ title: t('data_exported_successfully') });
 
     } catch (error) {
         console.error("Export failed:", error);
-        toast({ variant: 'destructive', title: 'Export failed', description: 'Could not export all application data.' });
+        toast({ variant: 'destructive', title: t('export_failed'), description: t('export_failed_desc') });
     }
   }
 
@@ -426,12 +428,12 @@ export default function SettingsPage() {
           const backupData = JSON.parse(event.target?.result as string);
           await importData(backupData);
 
-          toast({ title: 'Data imported successfully!', description: 'The page will now reload to apply changes.' });
+          toast({ title: t('data_imported_successfully'), description: t('page_will_reload') });
           setTimeout(() => window.location.reload(), 2000);
 
         } catch (error) {
           console.error("Import failed:", error);
-          toast({ variant: 'destructive', title: 'Import failed', description: 'Invalid or corrupted file.' });
+          toast({ variant: 'destructive', title: t('import_failed'), description: t('invalid_or_corrupted_file') });
         } finally {
             setImportFile(null);
             if(importInputRef.current) importInputRef.current.value = "";
@@ -503,10 +505,10 @@ export default function SettingsPage() {
       <main className="p-4 md:p-6 container mx-auto">
         <Tabs defaultValue="design" className="w-full">
             <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="design">{t('design')}</TabsTrigger>
-                <TabsTrigger value="language">{t('language_text')}</TabsTrigger>
-                <TabsTrigger value="pdf">{t('pdf_reports')}</TabsTrigger>
-                <TabsTrigger value="data">{t('data_management')}</TabsTrigger>
+                <TabsTrigger value="design"><Palette className="mr-2" />{t('design')}</TabsTrigger>
+                <TabsTrigger value="language"><Languages className="mr-2" />{t('language_text')}</TabsTrigger>
+                <TabsTrigger value="pdf"><FileText className="mr-2" />{t('pdf_reports')}</TabsTrigger>
+                <TabsTrigger value="data"><ShieldCheck className="mr-2" />{t('data_management')}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="design" className="pt-6">

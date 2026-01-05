@@ -165,7 +165,7 @@ export function DashboardClient() {
                 variant="ghost"
                 size="icon"
                 onClick={handleRefresh}
-                aria-label="Refresh page"
+                aria-label={t('refresh_page')}
               >
                 <RefreshCcw className="w-5 h-5 text-muted-foreground hover:text-primary" />
               </Button>

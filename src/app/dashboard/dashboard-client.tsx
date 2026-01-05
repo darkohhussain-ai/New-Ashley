@@ -202,23 +202,13 @@ export function DashboardClient() {
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {menuItems.map((item) => (
-             <Link key={item.title} href={item.href} className="group block">
-              <Card 
-                className={cn(
-                  "bg-card transition-all duration-300 transform hover:-translate-y-1 shadow-lg hover:shadow-2xl text-white h-48",
-                  item.color
-                )}
-              >
-                <CardContent className="flex flex-col items-center justify-center p-6 text-center h-full">
-                  <div className="p-4 bg-white/20 rounded-full mb-4">
-                    <item.icon 
-                      className="text-white transition-transform duration-300 group-hover:scale-110 w-10 h-10"
-                    />
-                  </div>
-                  <h3 className="text-lg font-semibold text-white">{item.title}</h3>
-                </CardContent>
-              </Card>
-            </Link>
+            <DashboardCard
+              key={item.title}
+              title={item.title}
+              icon={item.icon}
+              href={item.href}
+              color={item.color}
+            />
           ))}
         </div>
       </main>
