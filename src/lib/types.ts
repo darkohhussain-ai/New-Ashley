@@ -3,6 +3,7 @@
 export type Employee = {
   id: string;
   name: string;
+  kurdishName?: string;
   employeeId?: string; // New field for unique ID
   role?: 'Super Manager' | 'Manager' | 'IT' | 'Employee Supervisor' | 'Transport Supervisor' | 'Employee' | 'Marketing'; // New field for role
   employmentStartDate?: string;

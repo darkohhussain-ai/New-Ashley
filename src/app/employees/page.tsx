@@ -50,7 +50,7 @@ const employeeRoles = ["Super Manager", "Manager", "IT", "Employee Supervisor", 
 
 
 function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, onDeselect: () => void }) {
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
     const { toast } = useToast();
     const { 
         employees, setEmployees,
@@ -71,6 +71,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
 
     const [isEditing, setIsEditing] = useState(false);
     const [name, setName] = useState('');
+    const [kurdishName, setKurdishName] = useState('');
     const [uniqueId, setUniqueId] = useState('');
     const [role, setRole] = useState<Employee['role']>();
     const [employmentStartDate, setEmploymentStartDate] = useState<Date | undefined>(undefined);
@@ -87,6 +88,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
     useEffect(() => {
         if (employee) {
             setName(employee.name);
+            setKurdishName(employee.kurdishName || '');
             setUniqueId(employee.employeeId || '');
             setRole(employee.role);
             setEmploymentStartDate(safeDate(employee.employmentStartDate) || undefined);
@@ -147,6 +149,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
         
         const updatedData: Partial<Employee> = {
             name,
+            kurdishName,
             employeeId: uniqueId,
             role,
             employmentStartDate: employmentStartDate ? employmentStartDate.toISOString() : undefined,
@@ -271,6 +274,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
 
     const safeEmploymentStartDate = safeDate(employee.employmentStartDate);
     const safeDateOfBirth = safeDate(employee.dateOfBirth);
+    const displayName = language === 'ku' && employee.kurdishName ? employee.kurdishName : employee.name;
 
     return (
         <>
@@ -330,6 +334,8 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                                 {isEditing ? (
                                     <div className='space-y-4'>
                                         <Input className="text-2xl font-bold h-12" value={name} onChange={e => setName(e.target.value)} placeholder={t('employee_name')} />
+                                        <Input dir="rtl" className="text-2xl font-bold h-12" value={kurdishName} onChange={e => setKurdishName(e.target.value)} placeholder="ناو بە کوردی" />
+
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <Input value={uniqueId} onChange={e => setUniqueId(e.target.value)} placeholder={t('employee_id_optional')} />
                                             <Select value={role} onValueChange={(v: Employee['role']) => setRole(v)}>
@@ -362,7 +368,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                                     </div>
                                 ) : (
                                     <>
-                                        <CardTitle className="text-3xl md:text-4xl font-bold">{employee.name}</CardTitle>
+                                        <CardTitle className="text-3xl md:text-4xl font-bold" dir={language === 'ku' ? 'rtl': 'ltr'}>{displayName}</CardTitle>
                                         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-2">
                                             {employee.role && <CardDescription className="text-lg md:text-xl flex items-center gap-2">{employee.role}</CardDescription>}
                                         </div>
@@ -484,6 +490,7 @@ function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean,
     const { toast } = useToast();
     
     const [name, setName] = useState("");
+    const [kurdishName, setKurdishName] = useState("");
     const [uniqueId, setUniqueId] = useState("");
     const [role, setRole] = useState<Employee['role']>();
     const [employmentStartDate, setEmploymentStartDate] = useState<Date | undefined>();
@@ -494,7 +501,7 @@ function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean,
     const [notes, setNotes] = useState("");
 
     const resetForm = () => {
-        setName(""); setUniqueId(""); setRole(undefined); setEmploymentStartDate(undefined); setDateOfBirth(undefined);
+        setName(""); setKurdishName(""); setUniqueId(""); setRole(undefined); setEmploymentStartDate(undefined); setDateOfBirth(undefined);
         setEmail(""); setPhone(""); setPhotoUrl(undefined); setNotes("");
         onOpenChange(false);
     };
@@ -513,6 +520,7 @@ function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean,
 
         const employeeData: Omit<Employee, 'id'> = { 
           name,
+          kurdishName: kurdishName || undefined,
           employeeId: uniqueId || undefined,
           role: role,
           photoUrl: photoUrl || `https://picsum.photos/seed/${name.replace(/\s/g, '-')}/400`,
@@ -547,6 +555,7 @@ function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean,
                         <Input id="photo" type="file" onChange={handlePhotoUpload} accept="image/*" />
                     </div>
                     <div className="space-y-2"><Label htmlFor="name">{t('employee_name')}</Label><Input id="name" value={name} onChange={e => setName(e.target.value)} required placeholder="e.g. John Doe" /></div>
+                    <div className="space-y-2"><Label htmlFor="kurdishName">ناو بە کوردی</Label><Input id="kurdishName" value={kurdishName} onChange={e => setKurdishName(e.target.value)} dir="rtl" placeholder="بۆ نموونە، جۆن دۆ" /></div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2"><Label htmlFor="employeeId">{t('employee_id_optional')}</Label><Input id="employeeId" value={uniqueId} onChange={e => setUniqueId(e.target.value)} placeholder="e.g. 10234" /></div>
                         <div className="space-y-2"><Label htmlFor="role">{t('role_optional')}</Label>
@@ -575,7 +584,7 @@ function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean,
 }
 
 export default function EmployeesPage() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { employees, setEmployees } = useAppContext();
   const [isLoading, setIsLoading] = useState(true);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
@@ -602,6 +611,7 @@ export default function EmployeesPage() {
 
     const filtered = employees.filter(emp =>
         emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        emp.kurdishName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         emp.employeeId?.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
@@ -651,22 +661,25 @@ export default function EmployeesPage() {
         <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{title}</h2>
         <Separator className="mt-1"/>
       </div>
-      {list.map(emp => (
-        <button key={emp.id} onClick={() => setSelectedEmployeeId(emp.id)} className={cn("w-full text-left p-3 rounded-lg transition-colors flex items-center gap-4",
-            selectedEmployeeId === emp.id ? "bg-primary text-primary-foreground" : "hover:bg-muted"
-        )}>
-            <Avatar className="w-10 h-10"><AvatarImage src={emp.photoUrl} /><AvatarFallback>{emp.name.charAt(0)}</AvatarFallback></Avatar>
-            <div>
-                <p className="font-semibold">{emp.name}</p>
-                <p className={cn("text-xs flex items-center gap-1.5", selectedEmployeeId === emp.id ? "text-primary-foreground/80" : "text-muted-foreground")}>
-                   {emp.employeeId && <span className='font-mono'>ID: {emp.employeeId}</span>}
-                   {emp.employeeId && emp.role && <span>&middot;</span>}
-                   {emp.role && <span>{emp.role}</span>}
-                   {!emp.employeeId && !emp.role && <span>No Role</span>}
-                </p>
-            </div>
-        </button>
-      ))}
+      {list.map(emp => {
+        const displayName = language === 'ku' && emp.kurdishName ? emp.kurdishName : emp.name;
+        return (
+          <button key={emp.id} onClick={() => setSelectedEmployeeId(emp.id)} className={cn("w-full text-left p-3 rounded-lg transition-colors flex items-center gap-4",
+              selectedEmployeeId === emp.id ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+          )}>
+              <Avatar className="w-10 h-10"><AvatarImage src={emp.photoUrl} /><AvatarFallback>{emp.name.charAt(0)}</AvatarFallback></Avatar>
+              <div>
+                  <p className="font-semibold" dir={language === 'ku' ? 'rtl' : 'ltr'}>{displayName}</p>
+                  <p className={cn("text-xs flex items-center gap-1.5", selectedEmployeeId === emp.id ? "text-primary-foreground/80" : "text-muted-foreground")}>
+                    {emp.employeeId && <span className='font-mono'>ID: {emp.employeeId}</span>}
+                    {emp.employeeId && emp.role && <span>&middot;</span>}
+                    {emp.role && <span>{emp.role}</span>}
+                    {!emp.employeeId && !emp.role && <span>No Role</span>}
+                  </p>
+              </div>
+          </button>
+        )
+      })}
     </>
   )
 
