@@ -4,7 +4,8 @@ import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Archive, Calendar as CalendarIcon, Clock, Eye, Loader2, Plus, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { format, parseISO, isSameMonth } from 'date-fns';
 import { useAppContext } from '@/context/app-provider';
 import type { Overtime } from '@/lib/types';
@@ -88,38 +89,49 @@ export default function OvertimeArchivePage() {
         </div>
       </header>
       <main>
-        {isLoading ? (
-          <div className="flex justify-center p-8"><Loader2 className="animate-spin text-primary h-8 w-8"/></div>
-        ) : monthlyReports.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {monthlyReports.map(({ date, totalHours, totalAmount }) => (
-              <Card key={date} className="hover:border-primary/50 hover:shadow-lg transition-all h-full flex flex-col">
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <CalendarIcon className="w-5 h-5 text-primary"/>
-                    {format(parseISO(date), 'PPP')}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="flex-grow space-y-3 text-sm">
-                  <p className="flex items-center gap-2 text-muted-foreground"><Clock className="w-4 h-4"/> {t('total_hours')}: <span className="text-foreground">{totalHours.toFixed(2)}</span></p>
-                  <p className="text-lg text-primary">{formatCurrency(totalAmount)}</p>
-                </CardContent>
-                <CardContent>
-                  <Button asChild className="w-full">
-                    <Link href={`/overtime/add?date=${date}`}><Eye className="mr-2"/>{t('view_edit_details')}</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-16 border-2 border-dashed rounded-lg">
-            <Archive className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg">{t('no_overtime_records_found')}</h3>
-            <p className="mt-2 text-sm text-muted-foreground">{t('no_overtime_found_for_month', {month: selectedMonth ? format(selectedMonth, 'MMMM yyyy') : t('the_selected_month')})}</p>
-             <Button asChild className="mt-4"><Link href="/overtime/add">{t('add_overtime')}</Link></Button>
-          </div>
-        )}
+        <Card>
+            <CardHeader>
+                <CardTitle>{t('daily_overtime_summary')}</CardTitle>
+                <CardDescription>{t('overtime_summary_desc', {month: selectedMonth ? format(selectedMonth, 'MMMM yyyy') : '...'})}</CardDescription>
+            </CardHeader>
+            <CardContent>
+                {isLoading ? (
+                <div className="flex justify-center p-8"><Loader2 className="animate-spin text-primary h-8 w-8"/></div>
+                ) : monthlyReports.length > 0 ? (
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>{t('date')}</TableHead>
+                            <TableHead className="text-center">{t('total_hours')}</TableHead>
+                            <TableHead className="text-center">{t('total_amount')}</TableHead>
+                            <TableHead className="text-right"></TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                    {monthlyReports.map(({ date, totalHours, totalAmount }) => (
+                        <TableRow key={date}>
+                            <TableCell>{format(parseISO(date), 'PPP')}</TableCell>
+                            <TableCell className="text-center">{totalHours.toFixed(2)}</TableCell>
+                            <TableCell className="text-center">{formatCurrency(totalAmount)}</TableCell>
+                            <TableCell className="text-right">
+                                <Button asChild size="sm">
+                                    <Link href={`/overtime/add?date=${date}`}><Eye className="mr-2"/>{t('view_details')}</Link>
+                                </Button>
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                    </TableBody>
+                </Table>
+                ) : (
+                <div className="text-center py-16 border-2 border-dashed rounded-lg">
+                    <Archive className="mx-auto h-12 w-12 text-muted-foreground" />
+                    <h3 className="mt-4 text-lg">{t('no_overtime_records_found')}</h3>
+                    <p className="mt-2 text-sm text-muted-foreground">{t('no_overtime_found_for_month', {month: selectedMonth ? format(selectedMonth, 'MMMM yyyy') : t('the_selected_month')})}</p>
+                    <Button asChild className="mt-4"><Link href="/overtime/add">{t('add_overtime')}</Link></Button>
+                </div>
+                )}
+            </CardContent>
+        </Card>
       </main>
     </div>
   );
