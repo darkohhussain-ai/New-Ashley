@@ -266,6 +266,8 @@ export default function MarketingFeedbackPage() {
     const [currentSetIndex, setCurrentSetIndex] = useState(0);
     const questionsPerSet = 6;
     
+    const [selectedEmployeeForHistory, setSelectedEmployeeForHistory] = useState<string | null>(null);
+
     const pdfCardRef = useRef<HTMLDivElement>(null);
 
     const marketingEmployees = useMemo(() => {
@@ -422,8 +424,8 @@ export default function MarketingFeedbackPage() {
         Promise.all(updatePromises).then(() => {
             toast({ title: t('progress_saved'), description: t('feedback_for_current_set_saved') });
             if (currentSetIndex < questionSets.length - 1) {
+                // Do not change employee index here, just move to the next set.
                 setCurrentSetIndex(prev => prev + 1);
-                setCurrentEmployeeIndex(0);
             } else {
                  toast({ title: t('evaluation_complete'), description: t('all_feedback_has_been_saved') });
             }
@@ -475,9 +477,12 @@ export default function MarketingFeedbackPage() {
         });
     }, [marketingFeedbacks, marketingEmployees, evaluationQuestions, language]);
     
-    const allSubmissions = useMemo(() => {
-      return [...marketingFeedbacks].sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
-    }, [marketingFeedbacks]);
+    const employeeHistory = useMemo(() => {
+      if (!selectedEmployeeForHistory) return [];
+      return marketingFeedbacks
+          .filter(fb => fb.employeeId === selectedEmployeeForHistory)
+          .sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
+    }, [marketingFeedbacks, selectedEmployeeForHistory]);
 
     const handleDownloadPdf = async () => {
         if (!marketingFeedbacks.length) {
@@ -717,56 +722,69 @@ export default function MarketingFeedbackPage() {
                             </CardContent>
                         </Card>
                         <Card>
-                          <CardHeader>
-                              <CardTitle>{t('historical_submissions')}</CardTitle>
-                              <CardDescription>{t('historical_submissions_desc')}</CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                              <div className="max-h-[400px] overflow-y-auto">
-                                  <Table>
-                                      <TableHeader>
-                                          <TableRow>
-                                              <TableHead>{t('date')}</TableHead>
-                                              <TableHead>{t('employee')}</TableHead>
-                                              <TableHead className='text-right'>{t('total_score')}</TableHead>
-                                              <TableHead className="text-right"></TableHead>
-                                          </TableRow>
-                                      </TableHeader>
-                                      <TableBody>
-                                          {allSubmissions.map(fb => {
-                                              const employee = employees.find(e => e.id === fb.employeeId);
-                                              return (
-                                                  <TableRow key={fb.id}>
-                                                      <TableCell>{format(parseISO(fb.date), 'PPP')}</TableCell>
-                                                      <TableCell>{employee ? (language === 'ku' && employee.kurdishName ? employee.kurdishName : employee.name) : 'Unknown'}</TableCell>
-                                                      <TableCell className="text-right">{fb.totalScore}</TableCell>
-                                                      <TableCell className="text-right">
-                                                        <div className="flex justify-end gap-2">
-                                                            <Button variant="ghost" size="icon" onClick={() => setEditingFeedback(fb)}><Edit className="h-4 w-4" /></Button>
-                                                            <AlertDialog>
-                                                              <AlertDialogTrigger asChild>
-                                                                <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                                              </AlertDialogTrigger>
-                                                              <AlertDialogContent>
+                            <CardHeader>
+                                <CardTitle>{t('historical_submissions')}</CardTitle>
+                                <CardDescription>{t('historical_submissions_desc')}</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="mb-4">
+                                    <Select onValueChange={setSelectedEmployeeForHistory} value={selectedEmployeeForHistory || ''}>
+                                        <SelectTrigger className="w-[300px]">
+                                            <SelectValue placeholder="Select an employee to view history..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {marketingEmployees.map(emp => (
+                                                <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                {selectedEmployeeForHistory && (
+                                <div className="max-h-[400px] overflow-y-auto">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>{t('date')}</TableHead>
+                                                <TableHead className='text-right'>{t('total_score')}</TableHead>
+                                                <TableHead className="text-right"></TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {employeeHistory.length > 0 ? employeeHistory.map(fb => (
+                                                <TableRow key={fb.id}>
+                                                    <TableCell>{format(parseISO(fb.date), 'PPP')}</TableCell>
+                                                    <TableCell className="text-right">{fb.totalScore}</TableCell>
+                                                    <TableCell className="text-right">
+                                                    <div className="flex justify-end gap-2">
+                                                        <Button variant="ghost" size="icon" onClick={() => setEditingFeedback(fb)}><Edit className="h-4 w-4" /></Button>
+                                                        <AlertDialog>
+                                                            <AlertDialogTrigger asChild>
+                                                            <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                                            </AlertDialogTrigger>
+                                                            <AlertDialogContent>
                                                                 <AlertDialogHeader>
-                                                                  <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
-                                                                  <AlertDialogDescription>{t('confirm_delete_submission', {employeeName: employee?.name, date: format(parseISO(fb.date), 'PPP')})}</AlertDialogDescription>
+                                                                <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
+                                                                <AlertDialogDescription>{t('confirm_delete_submission', {employeeName: employees.find(e => e.id === fb.employeeId)?.name, date: format(parseISO(fb.date), 'PPP')})}</AlertDialogDescription>
                                                                 </AlertDialogHeader>
                                                                 <AlertDialogFooter>
-                                                                  <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-                                                                  <AlertDialogAction onClick={() => handleDeleteSubmission(fb.id)}>{t('delete')}</AlertDialogAction>
+                                                                <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                                                                <AlertDialogAction onClick={() => handleDeleteSubmission(fb.id)}>{t('delete')}</AlertDialogAction>
                                                                 </AlertDialogFooter>
-                                                              </AlertDialogContent>
-                                                            </AlertDialog>
-                                                        </div>
-                                                      </TableCell>
-                                                  </TableRow>
-                                              )
-                                          })}
-                                      </TableBody>
-                                  </Table>
-                              </div>
-                          </CardContent>
+                                                            </AlertDialogContent>
+                                                        </AlertDialog>
+                                                    </div>
+                                                    </TableCell>
+                                                </TableRow>
+                                            )) : (
+                                                <TableRow>
+                                                    <TableCell colSpan={3} className="text-center h-24">{t('no_history_for_employee')}</TableCell>
+                                                </TableRow>
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                                )}
+                            </CardContent>
                         </Card>
                     </div>
                 </TabsContent>
@@ -792,52 +810,66 @@ export default function MarketingFeedbackPage() {
                                     </Button>
                                 </div>
                             ) : (
-                            <>
-                                <div className="p-4 border rounded-lg bg-muted/30 flex justify-between items-center">
-                                  <div>
-                                    <h3 className="font-bold text-lg text-primary">{currentEmployee.name}</h3>
-                                    <p className="text-sm text-muted-foreground">{t('question_set', {
-                                        start: (currentSetIndex * questionsPerSet) + 1,
-                                        end: (currentSetIndex * questionsPerSet) + currentQuestionSet.length
-                                    })}</p>
-                                  </div>
-                                  <div className='flex items-center gap-2'>
-                                    <Button onClick={handlePrevSet} disabled={currentSetIndex === 0}>{t('prev_set')}</Button>
-                                    <Button onClick={handleNextSet} disabled={currentSetIndex === questionSets.length - 1}>{t('next_set')}</Button>
-                                  </div>
-                                </div>
-                                <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-4">
-                                    {currentQuestionSet.map((q, index) => (
-                                        <div key={q.id} className="p-4 border rounded-lg">
-                                            <p className="font-medium mb-3">{(currentSetIndex * questionsPerSet) + index + 1}. {q.text}</p>
-                                            <RadioGroup 
-                                                onValueChange={(value) => handleResponseChange(q.id, value)} 
-                                                value={String(responses[currentEmployee.id]?.[q.id] || '')}
-                                            >
-                                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                                                    {q.answers.sort((a,b) => b.value - a.value).map(opt => (
-                                                        <Label key={opt.value} htmlFor={`${q.id}-${opt.value}-${currentEmployee.id}`} className="flex items-center space-x-2 p-3 rounded-md hover:bg-muted cursor-pointer flex-1 justify-center border has-[:checked]:bg-primary/10 has-[:checked]:border-primary transition-colors">
-                                                            <RadioGroupItem value={String(opt.value)} id={`${q.id}-${opt.value}-${currentEmployee.id}`} />
-                                                            <span>{t(opt.label.toLowerCase().replace(/ /g, '_')) || opt.label}</span>
-                                                        </Label>
-                                                    ))}
-                                                </div>
-                                            </RadioGroup>
+                            <div className="grid grid-cols-1 md:grid-cols-[1fr_250px] gap-6">
+                                <div className="space-y-4">
+                                    <div className="p-4 border rounded-lg bg-muted/30 flex justify-between items-center">
+                                        <div>
+                                            <h3 className="font-bold text-lg text-primary">{currentEmployee.name}</h3>
+                                            <p className="text-sm text-muted-foreground">{t('question_set', {
+                                                start: (currentSetIndex * questionsPerSet) + 1,
+                                                end: (currentSetIndex * questionsPerSet) + currentQuestionSet.length
+                                            })}</p>
                                         </div>
-                                    ))}
+                                        <div className='flex items-center gap-2'>
+                                            <Button onClick={handlePrevSet} disabled={currentSetIndex === 0}>{t('prev_set')}</Button>
+                                            <Button onClick={handleNextSet} disabled={currentSetIndex === questionSets.length - 1}>{t('next_set')}</Button>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-4">
+                                        {currentQuestionSet.map((q, index) => (
+                                            <div key={q.id} className="p-4 border rounded-lg">
+                                                <p className="font-medium mb-3">{(currentSetIndex * questionsPerSet) + index + 1}. {q.text}</p>
+                                                <RadioGroup 
+                                                    onValueChange={(value) => handleResponseChange(q.id, value)} 
+                                                    value={String(responses[currentEmployee.id]?.[q.id] || '')}
+                                                >
+                                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                                        {q.answers.sort((a,b) => b.value - a.value).map(opt => (
+                                                            <Label key={opt.value} htmlFor={`${q.id}-${opt.value}-${currentEmployee.id}`} className="flex items-center space-x-2 p-3 rounded-md hover:bg-muted cursor-pointer flex-1 justify-center border has-[:checked]:bg-primary/10 has-[:checked]:border-primary transition-colors">
+                                                                <RadioGroupItem value={String(opt.value)} id={`${q.id}-${opt.value}-${currentEmployee.id}`} />
+                                                                <span>{t(opt.label.toLowerCase().replace(/ /g, '_')) || opt.label}</span>
+                                                            </Label>
+                                                        ))}
+                                                    </div>
+                                                </RadioGroup>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
-                                <div className="flex justify-between items-center">
-                                    <Button onClick={handlePrevEmployee} disabled={currentEmployeeIndex === 0}>{t('previous_employee')}</Button>
-                                    <span>{currentEmployee.name} ({currentEmployeeIndex + 1} / {marketingEmployees.length})</span>
-                                    <Button onClick={handleNextEmployee} disabled={currentEmployeeIndex === marketingEmployees.length - 1}>{t('next_employee')}</Button>
+                                <div className="flex flex-col gap-4">
+                                    <div className="flex flex-col items-center justify-center p-4 border rounded-lg h-full">
+                                        <h4 className="font-semibold mb-2">Employees</h4>
+                                        <div className="space-y-1 w-full text-center">
+                                            {marketingEmployees.map((emp, idx) => (
+                                                <Button 
+                                                    key={emp.id}
+                                                    variant={currentEmployeeIndex === idx ? 'default' : 'ghost'}
+                                                    onClick={() => setCurrentEmployeeIndex(idx)}
+                                                    className="w-full justify-center"
+                                                >
+                                                    {emp.name}
+                                                </Button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    {isCurrentSetAnsweredForAllEmployees && (
+                                        <Button onClick={handleSaveAndContinue} disabled={isSubmitting} className="w-full bg-green-600 hover:bg-green-700">
+                                            {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <ChevronsRight className="mr-2"/>}
+                                            {currentSetIndex < questionSets.length - 1 ? t('save_and_continue') : t('save_and_finish')}
+                                        </Button>
+                                    )}
                                 </div>
-                                {isCurrentSetAnsweredForAllEmployees && (
-                                     <Button onClick={handleSaveAndContinue} disabled={isSubmitting} className="w-full bg-green-600 hover:bg-green-700">
-                                        {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <ChevronsRight className="mr-2"/>}
-                                        {currentSetIndex < questionSets.length - 1 ? t('save_and_continue') : t('save_and_finish')}
-                                    </Button>
-                                )}
-                            </>
+                            </div>
                             )}
                         </CardContent>
                     </Card>
@@ -846,5 +878,6 @@ export default function MarketingFeedbackPage() {
         </div>
     );
 }
+
 
     
