@@ -505,6 +505,12 @@ export default function FileDetailPage() {
           textColor: 255,
           fontStyle: 'bold',
       },
+      didParseCell: (data) => {
+        if (useKurdish && customFontBase64) {
+          data.cell.styles.font = "CustomFont";
+          data.cell.styles.halign = 'right';
+        }
+      }
     });
 
     const finalY = (pdf as any).lastAutoTable.finalY + 40;

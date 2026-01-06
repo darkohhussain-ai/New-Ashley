@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useState } from 'react';
@@ -13,7 +14,6 @@ import { useAppContext } from '@/context/app-provider';
 import { ItemForTransfer } from '@/lib/types';
 import useLocalStorage from '@/hooks/use-local-storage';
 import { useTranslation } from '@/hooks/use-translation';
-import { shapeText } from '@/lib/pdf-utils';
 
 
 const destinations = ["Erbil", "Baghdad", "Diwan", "Dohuk"];
@@ -51,13 +51,13 @@ export default function StagedItemsPage() {
     }
 
     doc.setFontSize(18);
-    doc.text(shapeText(`${t('staged_items_for')} ${selectedDestination}`), 14, 22);
+    doc.text(`${t('staged_items_for')} ${selectedDestination}`, 14, 22, { align: useKurdish ? 'right' : 'left' });
     doc.setFontSize(11);
     doc.setTextColor(100);
-    doc.text(shapeText(`${t('report_date')}: ${format(new Date(), 'PPP')}`), 14, 30);
+    doc.text(`${t('report_date')}: ${format(new Date(), 'PPP')}`, 14, 30, { align: useKurdish ? 'right' : 'left' });
     
-    const head = [shapeText(t('model')), shapeText(t('quantity')), shapeText(t('notes'))];
-    const body = itemsForSelectedDestination.map(item => [shapeText(item.model), item.quantity, shapeText(item.notes || '')]);
+    const head = [t('model'), t('quantity'), t('notes')];
+    const body = itemsForSelectedDestination.map(item => [item.model, item.quantity, item.notes || '']);
 
     autoTable(doc, {
         startY: 40,
@@ -74,7 +74,7 @@ export default function StagedItemsPage() {
     const signatureY = finalY > pageHeight - 50 ? 40 : finalY;
     doc.setFontSize(10);
     doc.text("...................................", doc.internal.pageSize.width - 120, signatureY, { align: 'center' });
-    doc.text(shapeText(t('warehouse_manager_signature')), doc.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
+    doc.text(t('warehouse_manager_signature'), doc.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
 
     doc.save(`staged-items-${selectedDestination}-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
   };
@@ -179,3 +179,4 @@ export default function StagedItemsPage() {
   );
 }
 
+    

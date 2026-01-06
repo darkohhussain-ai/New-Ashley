@@ -21,7 +21,6 @@ import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from 'recha
 import { useAppContext } from '@/context/app-provider';
 import type { Employee, ExcelFile, Item, StorageLocation } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
-import { shapeText } from '@/lib/pdf-utils';
 
 
 const statusChartConfig = {
@@ -127,15 +126,15 @@ export default function PdfViewPage() {
     
     autoTable(pdf, {
       startY: finalImgHeight + 30,
-      head: [[shapeText(t('model')), t('quantity'), shapeText(t('storage_status')), shapeText(t('condition')), t('qty_per_condition'), shapeText(t('location')), shapeText(t('notes'))]],
+      head: [[t('model'), t('quantity'), t('storage_status'), t('condition'), t('qty_per_condition'), t('location'), t('notes')]],
       body: fileItems.map(item => [
-        shapeText(item.model),
+        item.model,
         item.quantity,
-        shapeText(t(item.storageStatus?.toLowerCase() || '') || item.storageStatus || ''),
-        shapeText(t(item.modelCondition?.toLowerCase() || '') || item.modelCondition || ''),
+        t(item.storageStatus?.toLowerCase() || '') || item.storageStatus || '',
+        t(item.modelCondition?.toLowerCase() || '') || item.modelCondition || '',
         item.quantityPerCondition ?? '',
-        shapeText(item.locationId ? getLocationName(item.locationId) : ''),
-        shapeText(item.notes || '')
+        item.locationId ? getLocationName(item.locationId) : '',
+        item.notes || ''
       ]),
       theme: 'grid',
       styles: {
@@ -149,6 +148,12 @@ export default function PdfViewPage() {
         textColor: 255,
         fontStyle: 'bold',
       },
+      didParseCell: (data) => {
+        if (useKurdish && customFontBase64) {
+          data.cell.styles.font = "CustomFont";
+          data.cell.styles.halign = 'right';
+        }
+      }
     });
     
     pdf.save(`${file.storageName}.pdf`);

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useRef } from 'react';
@@ -17,7 +18,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAppContext } from '@/context/app-provider';
 import type { Transfer, ItemForTransfer, AllPdfSettings } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
-import { shapeText } from '@/lib/pdf-utils';
 
 
 export default function ViewTransferPage() {
@@ -64,8 +64,8 @@ export default function ViewTransferPage() {
     
     doc.addImage(imgData, 'PNG', 14, 14, finalImgWidth, finalImgHeight);
     
-    const head = [shapeText(t('model')), shapeText(t('quantity')), shapeText(t('notes'))];
-    const body = items.map(item => [shapeText(item.model), item.quantity, shapeText(item.notes || '')]);
+    const head = [t('model'), t('quantity'), t('notes')];
+    const body = items.map(item => [item.model, item.quantity, item.notes || '']);
 
     autoTable(doc, {
       startY: finalImgHeight + 30,
@@ -79,8 +79,8 @@ export default function ViewTransferPage() {
     let finalY = (doc as any).lastAutoTable.finalY + 20;
 
     doc.setFontSize(10);
-    doc.text(`${shapeText(t('driver'))}: ${shapeText(transfer.driverName)}`, useKurdish ? doc.internal.pageSize.width - 14 : 14, finalY, { align: useKurdish ? 'right' : 'left' });
-    doc.text(`${shapeText(t('warehouse_manager'))}: ${shapeText(transfer.warehouseManagerName)}`, useKurdish ? doc.internal.pageSize.width - 14 : 14, finalY + 15, { align: useKurdish ? 'right' : 'left' });
+    doc.text(`${t('driver')}: ${transfer.driverName}`, useKurdish ? doc.internal.pageSize.width - 14 : 14, finalY, { align: useKurdish ? 'right' : 'left' });
+    doc.text(`${t('warehouse_manager')}: ${transfer.warehouseManagerName}`, useKurdish ? doc.internal.pageSize.width - 14 : 14, finalY + 15, { align: useKurdish ? 'right' : 'left' });
     
     finalY += 40;
     const pageHeight = doc.internal.pageSize.height;
@@ -89,7 +89,7 @@ export default function ViewTransferPage() {
     }
     const signatureY = finalY > pageHeight - 50 ? 40 : finalY;
     doc.setFontSize(10);
-    doc.text(shapeText(t('warehouse_manager_signature')), doc.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
+    doc.text(t('warehouse_manager_signature'), doc.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
     doc.text("...................................", doc.internal.pageSize.width - 120, signatureY, { align: 'center' });
     
     doc.save(`${transfer.cargoName}.pdf`);
@@ -186,3 +186,5 @@ export default function ViewTransferPage() {
     </>
   );
 }
+
+    

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
@@ -15,7 +16,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslation } from '@/hooks/use-translation';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { shapeText } from '@/lib/pdf-utils';
 import useLocalStorage from '@/hooks/use-local-storage';
 import { AllPdfSettings } from '@/lib/types';
 
@@ -99,12 +99,12 @@ export default function MonthlyOvertimeReportPage() {
     }
     
     doc.setFontSize(18);
-    doc.text(shapeText(`${t('monthly_overtime_report')} - ${format(selectedDate, 'MMMM yyyy')}`), 14, 22);
+    doc.text(`${t('monthly_overtime_report')} - ${format(selectedDate, 'MMMM yyyy')}`, 14, 22, { align: useKurdish ? 'right' : 'left' });
     doc.setFontSize(11);
     
-    const head = [[shapeText(t('employee')), shapeText(t('total_hours')), shapeText(t('total_amount'))]];
+    const head = [[t('employee'), t('total_hours'), t('total_amount')]];
     const body = monthlyData.summary.map(item => [
-        shapeText(item.employeeName),
+        item.employeeName,
         item.totalHours.toFixed(2),
         formatCurrency(item.totalAmount)
     ]);
@@ -113,7 +113,7 @@ export default function MonthlyOvertimeReportPage() {
       startY: 30,
       head,
       body,
-      foot: [[shapeText(t('grand_total')), monthlyData.totalHours.toFixed(2), formatCurrency(monthlyData.totalAmount)]],
+      foot: [[t('grand_total'), monthlyData.totalHours.toFixed(2), formatCurrency(monthlyData.totalAmount)]],
       theme: 'striped',
       styles: { font: (customFontBase64 && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
       headStyles: { fillColor: pdfSettings.report.reportColors?.overtime || '#f97316' },
@@ -128,7 +128,7 @@ export default function MonthlyOvertimeReportPage() {
     const signatureY = finalY > pageHeight - 50 ? 40 : finalY;
     doc.setFontSize(10);
     doc.text("...................................", doc.internal.pageSize.width - 120, signatureY, { align: 'center' });
-    doc.text(shapeText(t('warehouse_manager_signature')), doc.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
+    doc.text(t('warehouse_manager_signature'), doc.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
 
 
     doc.save(`monthly-overtime-report-${format(selectedDate, 'yyyy-MM')}.pdf`);
@@ -230,3 +230,5 @@ export default function MonthlyOvertimeReportPage() {
     </>
   );
 }
+
+    
