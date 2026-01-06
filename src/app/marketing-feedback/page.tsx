@@ -28,7 +28,6 @@ import html2canvas from 'html2canvas';
 import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useTranslation } from '@/hooks/use-translation';
-import { shapeText } from '@/lib/pdf-utils';
 import { Progress } from '@/components/ui/progress';
 
 
@@ -434,11 +433,11 @@ export default function MarketingFeedbackPage() {
         doc.addPage();
         if (evaluationSummary.length > 0) {
             doc.setFontSize(16);
-            doc.text(shapeText(t('employee_performance')), useKurdish ? doc.internal.pageSize.width - 14 : 14, 22, { align: useKurdish ? 'right' : 'left' });
+            doc.text(t('employee_performance'), useKurdish ? doc.internal.pageSize.width - 14 : 14, 22, { align: useKurdish ? 'right' : 'left' });
             autoTable(doc, {
                 startY: 30,
-                head: [[shapeText(t('rank')), shapeText(t('employee')), shapeText(t('total_score'))]],
-                body: evaluationSummary.map((item, index) => [index + 1, shapeText(item.name), item.score]),
+                head: [[t('rank'), t('employee'), t('total_score')]],
+                body: evaluationSummary.map((item, index) => [index + 1, item.name, item.score]),
                 theme: 'striped',
                 styles: { font: (customFontBase64 && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
                 headStyles: { fillColor: [40, 40, 40] },
@@ -456,11 +455,11 @@ export default function MarketingFeedbackPage() {
             perQuestionRankings.forEach((q) => {
                 doc.addPage();
                 doc.setFontSize(16);
-                doc.text(shapeText(q.questionText), useKurdish ? doc.internal.pageSize.width - 14 : 14, 22, { maxWidth: doc.internal.pageSize.getWidth() - 28, align: useKurdish ? 'right' : 'left' });
+                doc.text(q.questionText, useKurdish ? doc.internal.pageSize.width - 14 : 14, 22, { maxWidth: doc.internal.pageSize.getWidth() - 28, align: useKurdish ? 'right' : 'left' });
                 autoTable(doc, {
                     startY: 40,
-                    head: [[shapeText(t('rank')), shapeText(t('employee')), shapeText(t('total_score'))]],
-                    body: q.scores.map((s, rankIndex) => [rankIndex + 1, shapeText(s.name), s.score]),
+                    head: [[t('rank'), t('employee'), t('total_score')]],
+                    body: q.scores.map((s, rankIndex) => [rankIndex + 1, s.name, s.score]),
                     theme: 'striped',
                     styles: { font: (customFontBase64 && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
                     headStyles: { fillColor: [40, 40, 40] },
