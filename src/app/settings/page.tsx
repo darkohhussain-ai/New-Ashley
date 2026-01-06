@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowLeft, Download, Upload, Save, Palette, Type, ShieldCheck, ImageIcon, LayoutDashboard, RefreshCcw, Play, Newspaper, Building, FileText, Receipt, CreditCard, Languages } from 'lucide-react'
+import { ArrowLeft, Download, Upload, Save, Palette, Type, ShieldCheck, ImageIcon, LayoutDashboard, RefreshCcw, Play, Newspaper, Building, FileText, Receipt, CreditCard, Languages, Search } from 'lucide-react'
 import useLocalStorage, { getAllDataForExport, importData } from '@/hooks/use-local-storage'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -25,6 +25,7 @@ import { format, formatISO } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
+import { LanguageContext, Translations } from '@/context/language-provider';
 
 
 const defaultReportColors = {
@@ -121,7 +122,7 @@ function parseHsl(hsl: string): { h: string, s: string, l: string } {
 
 function ColorPicker({ label, value, onChange }: { label: string, value: string, onChange: (value: string) => void }) {
   const { t } = useTranslation();
-  const { h, s, l } = parseHsl(value);
+  const {h, s, l} = parseHsl(value);
 
   const handleHslChange = (part: 'h' | 's' | 'l', newValue: string) => {
     const current = parseHsl(value);
@@ -197,6 +198,88 @@ const reportTypes = [
   { value: 'bonus', label: 'Bonus' },
   { value: 'withdrawal', label: 'Withdrawal' }
 ];
+
+function TranslationEditor() {
+    const { t } = useTranslation();
+    const langContext = React.useContext(LanguageContext);
+    const { toast } = useToast();
+
+    const [enTranslations, setEnTranslations] = React.useState<Translations>(langContext?.translations.en || {});
+    const [kuTranslations, setKuTranslations] = React.useState<Translations>(langContext?.translations.ku || {});
+    const [search, setSearch] = React.useState('');
+
+    useEffect(() => {
+        if (langContext) {
+            setEnTranslations(langContext.translations.en);
+            setKuTranslations(langContext.translations.ku);
+        }
+    }, [langContext]);
+
+    const handleSaveTranslations = () => {
+        if (langContext) {
+            langContext.setTranslations('en', enTranslations);
+            langContext.setTranslations('ku', kuTranslations);
+            toast({
+                title: 'Translations Saved',
+                description: 'Your text changes have been saved successfully.',
+            });
+        }
+    };
+    
+    const filteredKeys = Object.keys(enTranslations).filter(key => 
+        key.toLowerCase().includes(search.toLowerCase()) || 
+        enTranslations[key].toLowerCase().includes(search.toLowerCase()) ||
+        (kuTranslations[key] && kuTranslations[key].toLowerCase().includes(search.toLowerCase()))
+    ).sort();
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Languages /> {t('language_text')}</CardTitle>
+                <CardDescription>{t('language_text_desc')}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                 <div className="flex gap-4">
+                     <div className="relative flex-grow">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input 
+                            placeholder="Search keys or values..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="pl-10"
+                        />
+                    </div>
+                    <Button onClick={handleSaveTranslations}><Save className="mr-2 h-4 w-4" /> Save Translations</Button>
+                </div>
+                 <div className="max-h-[60vh] overflow-y-auto border rounded-lg p-4">
+                    <div className="grid grid-cols-[1fr_2fr_2fr] gap-x-4 gap-y-2 sticky top-0 bg-background pb-2 border-b mb-2">
+                        <Label className="font-semibold">Key</Label>
+                        <Label className="font-semibold">English</Label>
+                        <Label className="font-semibold">Kurdish</Label>
+                    </div>
+                    <div className="space-y-3">
+                    {filteredKeys.map(key => (
+                        <div key={key} className="grid grid-cols-[1fr_2fr_2fr] gap-x-4 items-center">
+                            <Label htmlFor={`key-${key}`} className="text-xs text-muted-foreground truncate">{key}</Label>
+                            <Input
+                                id={`en-${key}`}
+                                value={enTranslations[key] || ''}
+                                onChange={(e) => setEnTranslations(p => ({...p, [key]: e.target.value}))}
+                            />
+                             <Input
+                                id={`ku-${key}`}
+                                value={kuTranslations[key] || ''}
+                                onChange={(e) => setKuTranslations(p => ({...p, [key]: e.target.value}))}
+                                dir="rtl"
+                            />
+                        </div>
+                    ))}
+                    </div>
+                 </div>
+            </CardContent>
+        </Card>
+    );
+}
 
 export default function SettingsPage() {
   const { toast } = useToast()
@@ -418,7 +501,7 @@ export default function SettingsPage() {
             <Button variant="outline" size="icon" asChild>
               <Link href="/"> <ArrowLeft /> </Link>
             </Button>
-            <h1 className="text-xl font-bold">{t('settings')}</h1>
+            <h1 className="text-xl">{t('settings')}</h1>
           </div>
           <div className="ml-auto flex items-center gap-4">
              <AlertDialog>
@@ -511,24 +594,7 @@ export default function SettingsPage() {
             </TabsContent>
 
             <TabsContent value="language" className="pt-6">
-                 <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Languages /> {t('language_text')}</CardTitle>
-                        <CardDescription>{t('language_text_desc')}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                       <div className="space-y-4">
-                           <h3 className="font-semibold">{t('custom_app_font')}</h3>
-                           <div className="p-4 border rounded-lg space-y-4">
-                                <div>
-                                    <p className='text-sm text-muted-foreground mb-2'>
-                                        The app is now configured to automatically use the Speda font for Kurdish. You do not need to upload a font file anymore.
-                                    </p>
-                                </div>
-                           </div>
-                       </div>
-                    </CardContent>
-                </Card>
+                 <TranslationEditor />
             </TabsContent>
 
             <TabsContent value="pdf" className="pt-6">
@@ -698,11 +764,11 @@ export default function SettingsPage() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="p-4 border rounded-lg flex flex-col sm:flex-row items-center justify-between gap-4">
-                            <p className="font-medium">{t('export_data_desc')}</p>
+                            <p className="">{t('export_data_desc')}</p>
                             <Button onClick={handleExport} variant="outline"><Download className="mr-2 h-4 w-4" /> {t('export_data')}</Button>
                         </div>
                         <div className="p-4 border rounded-lg space-y-4">
-                            <p className="font-medium">{t('import_data_title')}</p>
+                            <p className="">{t('import_data_title')}</p>
                             <p className="text-sm text-destructive">{t('import_data_warning')}</p>
                             <div className="flex flex-col sm:flex-row items-center gap-4">
                                 <Input type="file" ref={importInputRef} className="max-w-xs" accept=".json" onChange={handleImportFileSelect} />
