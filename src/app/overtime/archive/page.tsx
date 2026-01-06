@@ -1,15 +1,17 @@
-
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Archive, Calendar as CalendarIcon, Clock, Eye, Loader2, Plus, Printer } from 'lucide-react';
+import { ArrowLeft, Archive, Calendar as CalendarIcon, Clock, Eye, Loader2, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { format, parseISO } from 'date-fns';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { format, parseISO, isSameMonth } from 'date-fns';
 import { useAppContext } from '@/context/app-provider';
 import type { Overtime } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -22,14 +24,24 @@ const formatCurrency = (amount: number) => {
 export default function OvertimeArchivePage() {
   const { t } = useTranslation();
   const { overtime: allOvertimeRecords } = useAppContext();
-  const isLoading = !allOvertimeRecords;
+  const [selectedMonth, setSelectedMonth] = useState<Date | undefined>(undefined);
 
-  const groupedByDay = useMemo(() => {
-    if (!allOvertimeRecords) return [];
+  useEffect(() => {
+    setSelectedMonth(new Date());
+  }, []);
+  
+  const isLoading = !allOvertimeRecords || !selectedMonth;
+
+  const monthlyReports = useMemo(() => {
+    if (!allOvertimeRecords || !selectedMonth) return [];
     
     const groups: Record<string, { records: Overtime[], totalHours: number, totalAmount: number }> = {};
     
-    allOvertimeRecords.forEach(record => {
+    const monthRecords = allOvertimeRecords.filter(record => 
+        isSameMonth(parseISO(record.date), selectedMonth)
+    );
+
+    monthRecords.forEach(record => {
       const day = format(parseISO(record.date), 'yyyy-MM-dd');
       if (!groups[day]) {
         groups[day] = { records: [], totalHours: 0, totalAmount: 0 };
@@ -42,7 +54,7 @@ export default function OvertimeArchivePage() {
     return Object.entries(groups)
       .map(([date, data]) => ({ date, ...data }))
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [allOvertimeRecords]);
+  }, [allOvertimeRecords, selectedMonth]);
 
   return (
     <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
@@ -51,18 +63,31 @@ export default function OvertimeArchivePage() {
           <Button variant="outline" size="icon" asChild>
             <Link href="/overtime"><ArrowLeft /></Link>
           </Button>
-          <h1 className="text-2xl">{t('overtime_archive')}</h1>
+          <h1 className="text-xl">{t('overtime_archive')}</h1>
         </div>
-         <Button asChild>
-            <Link href="/overtime/add"><Plus className="mr-2"/> {t('add_overtime')}</Link>
-        </Button>
+        <div className="flex items-center gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant={"outline"} className={cn("w-48 justify-start text-left", !selectedMonth && "text-muted-foreground")}>
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {selectedMonth ? format(selectedMonth, "MMMM yyyy") : <span>{t('pick_a_month')}</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar mode="single" selected={selectedMonth} onSelect={setSelectedMonth} captionLayout="dropdown-nav" fromYear={2020} toYear={2040} />
+              </PopoverContent>
+            </Popover>
+            <Button asChild>
+                <Link href="/overtime/add"><Plus className="mr-2"/> {t('add_overtime')}</Link>
+            </Button>
+        </div>
       </header>
       <main>
         {isLoading ? (
           <div className="flex justify-center p-8"><Loader2 className="animate-spin text-primary h-8 w-8"/></div>
-        ) : groupedByDay.length > 0 ? (
+        ) : monthlyReports.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {groupedByDay.map(({ date, totalHours, totalAmount }) => (
+            {monthlyReports.map(({ date, totalHours, totalAmount }) => (
               <Card key={date} className="hover:border-primary/50 hover:shadow-lg transition-all h-full flex flex-col">
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
@@ -86,7 +111,7 @@ export default function OvertimeArchivePage() {
           <div className="text-center py-16 border-2 border-dashed rounded-lg">
             <Archive className="mx-auto h-12 w-12 text-muted-foreground" />
             <h3 className="mt-4 text-lg">{t('no_overtime_records_found')}</h3>
-            <p className="mt-2 text-sm text-muted-foreground">{t('no_overtime_records_found_desc')}</p>
+            <p className="mt-2 text-sm text-muted-foreground">{t('no_overtime_found_for_month', {month: selectedMonth ? format(selectedMonth, 'MMMM yyyy') : t('the_selected_month')})}</p>
              <Button asChild className="mt-4"><Link href="/overtime/add">{t('add_overtime')}</Link></Button>
           </div>
         )}

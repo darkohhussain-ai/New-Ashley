@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -36,6 +35,12 @@ export default function AshleyExpensesDashboard() {
       color: "bg-rose-500",
     },
     {
+        title: t('monthly_reports'),
+        icon: Calendar,
+        href: "/monthly-report",
+        color: "bg-teal-500",
+    },
+    {
       title: t('settings'),
       icon: Settings,
       href: "/ashley-expenses-settings",
@@ -48,7 +53,7 @@ export default function AshleyExpensesDashboard() {
     <div className="min-h-screen bg-background text-foreground">
       <main className='container mx-auto p-4 md:p-8'>
          <div className="mb-8">
-            <h1 className="text-2xl">{t('ashley_employees_management')}</h1>
+            <h1 className="text-xl">{t('ashley_employees_management')}</h1>
          </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {menuItems.map((item) => (

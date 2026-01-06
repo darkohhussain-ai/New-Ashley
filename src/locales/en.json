@@ -1,4 +1,3 @@
-
 {
   "welcome_back": "Welcome Back",
   "select_service": "Select a service to continue.",
@@ -432,7 +431,7 @@
   "striped": "Striped",
   "grid": "Grid",
   "live_preview": "Live Preview",
-  "live_preview_desc": "A preview of your {type} design.",
+"live_preview_desc": "A preview of your {type} design.",
   "sample_section": "Sample Section",
   "sample_body_text": "This is sample body text. The quick brown fox jumps over the lazy dog.",
   "column_1": "Column 1",
@@ -443,5 +442,9 @@
   "import_data_warning": "Warning: Importing data will overwrite all existing data in the application. This action cannot be undone.",
   "run_import": "Run Import",
   "print": "Print",
-  "salary": "Salary"
+  "salary": "Salary",
+  "no_records_found": "No records found",
+  "no_records_found_for_month": "No records for {month} were found.",
+  "monthly_reports": "Monthly Reports",
+  "total_loads": "Total Loads"
 }
