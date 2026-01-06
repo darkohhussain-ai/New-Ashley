@@ -207,7 +207,7 @@ function EditSubmissionDialog({ feedback, onOpenChange, open }: { feedback: Mark
                 <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-4 pt-4">
                     {evaluationQuestions.map((q, index) => (
                         <div key={q.id} className="p-4 border rounded-lg">
-                            <p className="font-medium mb-3">{index + 1}. {t(q.id) || q.text}</p>
+                            <p className="font-medium mb-3">{index + 1}. {q.text}</p>
                             <RadioGroup onValueChange={(value) => handleLocalResponseChange(q.id, value)} value={String(localResponses[q.id] || '')}>
                                 <div className="flex flex-wrap gap-4">
                                     {q.answers.sort((a,b) => b.value - a.value).map(opt => (
@@ -359,11 +359,11 @@ export default function MarketingFeedbackPage() {
 
             return {
                 questionId: question.id,
-                questionText: t(question.id) || question.text,
+                questionText: question.text,
                 scores: employeeScores.sort((a, b) => b.score - a.score),
             };
         });
-    }, [marketingFeedbacks, marketingEmployees, evaluationQuestions, t, language]);
+    }, [marketingFeedbacks, marketingEmployees, evaluationQuestions, language]);
 
     const handleDownloadPdf = async () => {
         if (!marketingFeedbacks.length) {
@@ -469,7 +469,7 @@ export default function MarketingFeedbackPage() {
             };
             fb.responses.forEach(res => {
                 const question = evaluationQuestions.find(q => q.id === res.questionId);
-                base[question ? (t(question.id) || question.text) : res.questionId] = res.answer;
+                base[question ? (question.text) : res.questionId] = res.answer;
             });
             return base;
         });
@@ -622,7 +622,7 @@ export default function MarketingFeedbackPage() {
                                     <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-4">
                                         {evaluationQuestions.map((q, index) => (
                                             <div key={q.id} className="p-4 border rounded-lg">
-                                                <p className="font-medium mb-3">{index + 1}. {t(q.id) || q.text}</p>
+                                                <p className="font-medium mb-3">{index + 1}. {q.text}</p>
                                                 <RadioGroup onValueChange={(value) => handleResponseChange(q.id, value)} value={String(responses[q.id] || '')}>
                                                     <div className="flex flex-wrap gap-2 sm:gap-4">
                                                         {q.answers.sort((a,b) => b.value - a.value).map(opt => (
@@ -697,5 +697,3 @@ export default function MarketingFeedbackPage() {
         </div>
     );
 }
-
-    
