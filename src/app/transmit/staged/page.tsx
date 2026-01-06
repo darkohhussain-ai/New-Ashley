@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo, useState } from 'react';
@@ -11,7 +10,6 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import { useAppContext } from '@/context/app-provider';
-import { ItemForTransfer } from '@/lib/types';
 import useLocalStorage from '@/hooks/use-local-storage';
 import { useTranslation } from '@/hooks/use-translation';
 
@@ -44,17 +42,21 @@ export default function StagedItemsPage() {
     if (customFontBase64 && useKurdish) {
       const fontName = "CustomFont";
       const fontStyle = "normal";
-      const fontBase64 = customFontBase64.split(',')[1];
-      doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
-      doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
-      doc.setFont(fontName);
+      try {
+        const fontBase64 = customFontBase64.split(',')[1];
+        doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
+        doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
+        doc.setFont(fontName);
+      } catch (e) {
+        console.error("Failed to load custom font for PDF:", e);
+      }
     }
 
     doc.setFontSize(18);
-    doc.text(`${t('staged_items_for')} ${selectedDestination}`, 14, 22, { align: useKurdish ? 'right' : 'left' });
+    doc.text(`${t('staged_items_for')} ${selectedDestination}`, doc.internal.pageSize.getWidth() / 2, 22, { align: 'center' });
     doc.setFontSize(11);
     doc.setTextColor(100);
-    doc.text(`${t('report_date')}: ${format(new Date(), 'PPP')}`, 14, 30, { align: useKurdish ? 'right' : 'left' });
+    doc.text(`${t('report_date')}: ${format(new Date(), 'PPP')}`, doc.internal.pageSize.getWidth() / 2, 30, { align: 'center' });
     
     const head = [t('model'), t('quantity'), t('notes')];
     const body = itemsForSelectedDestination.map(item => [item.model, item.quantity, item.notes || '']);
@@ -64,6 +66,12 @@ export default function StagedItemsPage() {
         head: [head],
         body: body,
         styles: { font: (customFontBase64 && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
+         didParseCell: (data) => {
+            if (useKurdish && customFontBase64) {
+              data.cell.styles.font = "CustomFont";
+              data.cell.styles.halign = 'right';
+            }
+          }
     });
 
     const finalY = (doc as any).lastAutoTable.finalY + 40;
@@ -178,5 +186,3 @@ export default function StagedItemsPage() {
     </div>
   );
 }
-
-    

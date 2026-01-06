@@ -68,15 +68,18 @@ function DateTimeDisplay() {
 
 export function AppHeader() {
   const { t, setLanguage, language } = useTranslation();
-  const [savedLogo] = useLocalStorage(
+  const [savedLogo, setSavedLogo] = useLocalStorage<string | null>(
     'app-logo',
-    'https://picsum.photos/seed/ashley-logo/300/100'
+    null
   );
   const [isMounted, setIsMounted] = useState(false);
   
   useEffect(() => {
     setIsMounted(true);
-  }, []);
+    if (!savedLogo) {
+      setSavedLogo('https://picsum.photos/seed/ashley-logo/300/100');
+    }
+  }, [savedLogo, setSavedLogo]);
 
   const handleRefresh = () => {
     window.location.reload();

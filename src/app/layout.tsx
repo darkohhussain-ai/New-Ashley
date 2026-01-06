@@ -34,7 +34,7 @@ export default function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${notoNaskhArabic.variable} font-body antialiased`}>
+      <body className={`${notoNaskhArabic.variable} font-sans antialiased`}>
         {showSplash ? (
           <SplashScreen />
         ) : (

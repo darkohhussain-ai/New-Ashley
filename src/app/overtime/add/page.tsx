@@ -212,7 +212,13 @@ export default function AddOvertimePage() {
       theme: 'striped',
       styles: { font: (customFontBase64 && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
       headStyles: { fillColor: pdfSettings.report.reportColors?.overtime || '#f97316' },
-      footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' }
+      footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' },
+      didParseCell: (data) => {
+        if (useKurdish && customFontBase64) {
+          data.cell.styles.font = "CustomFont";
+          data.cell.styles.halign = 'right';
+        }
+      }
     });
 
     doc.save(`overtime-report-${format(selectedDate, 'yyyy-MM-dd')}.pdf`);

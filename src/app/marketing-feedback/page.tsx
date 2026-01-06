@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
@@ -414,23 +413,28 @@ export default function MarketingFeedbackPage() {
         if (customFontBase64 && useKurdish) {
             const fontName = "CustomFont";
             const fontStyle = "normal";
-            const fontBase64 = customFontBase64.split(',')[1];
-            doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
-            doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
-            doc.setFont(fontName);
+            try {
+                const fontBase64 = customFontBase64.split(',')[1];
+                doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
+                doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
+                doc.setFont(fontName);
+            } catch(e) {
+                console.error("Could not add custom font to PDF:", e);
+            }
         }
-
-        if (pdfCardRef.current) {
-            const headerCanvas = await html2canvas(pdfCardRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
-            const headerImgData = headerCanvas.toDataURL('image/png');
-            const pdfWidth = doc.internal.pageSize.getWidth();
-            const headerRatio = headerCanvas.width / headerCanvas.height;
-            const finalHeaderWidth = pdfWidth;
-            const finalHeaderHeight = finalHeaderWidth / headerRatio;
-            doc.addImage(headerImgData, 'PNG', 0, 0, finalHeaderWidth, finalHeaderHeight);
-        }
-
+        
+        const canvas = await html2canvas(pdfCardRef.current!, { scale: 2, useCORS: true, backgroundColor: 'white' });
+        const imgData = canvas.toDataURL('image/png');
+        const pdfWidth = doc.internal.pageSize.getWidth();
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
+        const ratio = imgWidth / imgHeight;
+        const finalImgWidth = pdfWidth;
+        const finalImgHeight = finalImgWidth / ratio;
+        
+        doc.addImage(imgData, 'PNG', 0, 0, finalImgWidth, finalImgHeight);
         doc.addPage();
+        
         if (evaluationSummary.length > 0) {
             doc.setFontSize(16);
             doc.text(t('employee_performance'), useKurdish ? doc.internal.pageSize.width - 14 : 14, 22, { align: useKurdish ? 'right' : 'left' });
@@ -448,6 +452,12 @@ export default function MarketingFeedbackPage() {
                         else if (data.row.index === 2) { doc.setFillColor(255, 237, 213); }
                     }
                 },
+                 didParseCell: (data) => {
+                    if (useKurdish && customFontBase64) {
+                      data.cell.styles.font = "CustomFont";
+                      data.cell.styles.halign = 'right';
+                    }
+                  }
             });
         }
         
@@ -463,6 +473,12 @@ export default function MarketingFeedbackPage() {
                     theme: 'striped',
                     styles: { font: (customFontBase64 && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
                     headStyles: { fillColor: [40, 40, 40] },
+                    didParseCell: (data) => {
+                        if (useKurdish && customFontBase64) {
+                          data.cell.styles.font = "CustomFont";
+                          data.cell.styles.halign = 'right';
+                        }
+                    }
                 });
             });
         }
@@ -763,5 +779,3 @@ export default function MarketingFeedbackPage() {
         </div>
     );
 }
-
-    

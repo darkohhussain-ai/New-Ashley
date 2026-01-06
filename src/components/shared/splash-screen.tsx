@@ -1,4 +1,3 @@
-
 'use client';
 
 import Image from 'next/image';
@@ -8,20 +7,21 @@ import useLocalStorage from '@/hooks/use-local-storage';
 export function SplashScreen() {
   // Start with a guaranteed valid, non-null default URL.
   const defaultLogo = "https://picsum.photos/seed/ashley-logo/300/100";
-  const [logo, setLogo] = useState(defaultLogo);
-  const [savedLogo] = useLocalStorage('app-logo', defaultLogo);
+  const [savedLogo, setSavedLogo] = useLocalStorage<string | null>('app-logo', null);
+  const [logo, setLogo] = useState('');
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
-    // After mounting on the client, if there's a saved logo, use it.
-    // Ensure savedLogo is a non-empty string before setting.
     if (savedLogo) {
       setLogo(savedLogo);
+    } else {
+        setLogo(defaultLogo);
+        setSavedLogo(defaultLogo);
     }
-  }, [savedLogo]);
+  }, [savedLogo, setSavedLogo]);
 
-  if (!isMounted) {
+  if (!isMounted || !logo) {
     // Render a consistent placeholder on the server to avoid hydration mismatch
     return (
         <div className="fixed inset-0 flex items-center justify-center bg-background z-50">

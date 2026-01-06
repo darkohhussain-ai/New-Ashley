@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo, useRef } from 'react';
@@ -26,6 +25,7 @@ export default function ViewTransferPage() {
   const { transfers, transferItems } = useAppContext();
 
   const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {}, card: {} });
+  const [customFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
   const pdfCardRef = useRef<HTMLDivElement>(null);
   
   const transfer = useMemo(() => transfers.find(t => t.id === transferId), [transfers, transferId]);
@@ -40,12 +40,11 @@ export default function ViewTransferPage() {
     const settings = pdfSettings.invoice || {};
     const useKurdish = language === 'ku';
 
-    if (settings.customFont && useKurdish) {
+    if (customFontBase64 && useKurdish) {
         try {
             const fontName = "CustomFont";
             const fontStyle = "normal";
-            const fontBase64 = settings.customFont.split(',')[1];
-            doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
+            doc.addFileToVFS(`${fontName}.ttf`, customFontBase64.split(',')[1]);
             doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
             doc.setFont(fontName);
         } catch(e) {
@@ -72,8 +71,14 @@ export default function ViewTransferPage() {
       head: [head],
       body: body,
       theme: 'grid',
-      styles: { font: (settings.customFont && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
+      styles: { font: (customFontBase64 && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
       headStyles: { fillColor: settings.themeColor || '#3b82f6', textColor: 255, fontStyle: 'bold' },
+      didParseCell: (data) => {
+        if (useKurdish && customFontBase64) {
+          data.cell.styles.font = "CustomFont";
+          data.cell.styles.halign = 'right';
+        }
+      }
     });
 
     let finalY = (doc as any).lastAutoTable.finalY + 20;
@@ -186,5 +191,3 @@ export default function ViewTransferPage() {
     </>
   );
 }
-
-    

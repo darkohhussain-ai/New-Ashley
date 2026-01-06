@@ -1,4 +1,3 @@
-
 'use client';
 
 import Image from 'next/image';
@@ -27,7 +26,7 @@ export function EmployeeReportPdfHeader({ employee, settings }: EmployeeReportPd
   const formattedJoinedDate = safeJoinedDate ? format(safeJoinedDate, 'MMMM d, yyyy') : t('na');
 
   return (
-    <div className="bg-white text-black w-full p-6 font-sans border-b-2 border-gray-200" style={{ fontFamily: settings.font === 'CustomFont' ? 'CustomPdfFont' : (settings.font || 'sans-serif') }}>
+    <div className="bg-white text-black w-full p-6 font-sans border-b-2 border-gray-200" style={{ fontFamily: (settings.customFont && language === 'ku') ? 'CustomPdfFont' : (settings.font || 'sans-serif') }}>
        {settings.headerText && (
         <div className="text-center text-xs text-gray-500 pb-2 border-b mb-4">
           {settings.headerText}
@@ -35,7 +34,7 @@ export function EmployeeReportPdfHeader({ employee, settings }: EmployeeReportPd
       )}
       {/* Main Header */}
       <div className="flex justify-between items-center pb-4">
-        <div>
+        <div dir={language === 'ku' ? 'rtl' : 'ltr'}>
           <h1 className="text-2xl font-bold text-gray-800">{t('employee_report')}</h1>
           <p className="text-sm text-gray-500">{t('as_of')} {format(new Date(), 'MMMM d, yyyy')}</p>
         </div>
@@ -45,13 +44,13 @@ export function EmployeeReportPdfHeader({ employee, settings }: EmployeeReportPd
       </div>
 
       {/* Employee Info Section */}
-      <div className="flex items-start gap-6 pt-4 border-t-2 border-gray-100">
+      <div className="flex items-start gap-6 pt-4 border-t-2 border-gray-100" dir={language === 'ku' ? 'rtl' : 'ltr'}>
         <Avatar className="w-24 h-24 rounded-md border-2 border-gray-200">
           <AvatarImage src={employee.photoUrl} alt={employee.name} />
           <AvatarFallback><User className="w-12 h-12" /></AvatarFallback>
         </Avatar>
         <div className="flex-1">
-          <h2 className="text-xl font-bold text-gray-900" dir={language === 'ku' ? 'rtl' : 'ltr'}>{displayName}</h2>
+          <h2 className="text-xl font-bold text-gray-900">{displayName}</h2>
           <div className="mt-2 grid grid-cols-2 gap-x-6 gap-y-2 text-sm text-gray-700">
             {employee.role && (
               <p className="flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-gray-500" /> <strong>{t('role')}:</strong> {employee.role}</p>

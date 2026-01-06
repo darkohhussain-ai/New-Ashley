@@ -20,14 +20,17 @@ export function DashboardClient() {
   const { t } = useTranslation();
 
   const [savedBannerHeight] = useLocalStorage('dashboard-banner-height', 150);
-  const [savedDashboardBanner] = useLocalStorage(
+  const [savedDashboardBanner, setSavedDashboardBanner] = useLocalStorage<string | null>(
     'dashboard-banner',
-    'https://i.ibb.co/6Wp2t1Y/image.png'
+    null
   );
   
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => {
     setIsMounted(true);
+    if (!savedDashboardBanner) {
+      setSavedDashboardBanner('https://i.ibb.co/6Wp2t1Y/image.png')
+    }
   }, []);
 
   const menuItems = [

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -53,6 +52,7 @@ export default function CreateTransferPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   
   const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {}, card: {} });
+  const [customFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
   const pdfCardRef = useRef<HTMLDivElement>(null);
   
   const stagedItems = useMemo(() => transferItems.filter(item => !item.transferId), [transferItems]);
@@ -130,10 +130,10 @@ export default function CreateTransferPage() {
     const settings = pdfSettings.invoice || {};
     const useKurdish = language === 'ku';
 
-    if (settings.customFont && useKurdish) {
+    if (customFontBase64 && useKurdish) {
         const fontName = "CustomFont";
         const fontStyle = "normal";
-        const fontBase64 = settings.customFont.split(',')[1];
+        const fontBase64 = customFontBase64.split(',')[1];
         try {
             doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
             doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
@@ -162,10 +162,10 @@ export default function CreateTransferPage() {
       head: [head],
       body: body,
       theme: 'grid',
-      styles: { font: (settings.customFont && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
+      styles: { font: (customFontBase64 && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
       headStyles: { fillColor: settings.themeColor || '#3b82f6', textColor: 255, fontStyle: 'bold' },
       didParseCell: (data) => {
-        if (useKurdish && settings.customFont) {
+        if (useKurdish && customFontBase64) {
           data.cell.styles.font = "CustomFont";
           data.cell.styles.halign = 'right';
         }

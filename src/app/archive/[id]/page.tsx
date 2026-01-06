@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -133,6 +132,7 @@ export default function FileDetailPage() {
 
   const defaultLogo = "https://picsum.photos/seed/1/300/100";
   const [logoSrc] = useLocalStorage('app-logo', defaultLogo);
+  const [customFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
   
   const updateFileInputRef = useRef<HTMLInputElement>(null);
   const pdfCardRef = useRef<HTMLDivElement>(null);
@@ -448,6 +448,20 @@ export default function FileDetailPage() {
     if (!file || !sortedItems || !pdfCardRef.current) return;
     
     const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
+    const useKurdish = language === 'ku';
+
+    if (customFontBase64 && useKurdish) {
+        try {
+            const fontName = "CustomFont";
+            pdf.addFileToVFS(`${fontName}.ttf`, customFontBase64.split(',')[1]);
+            pdf.addFont(`${fontName}.ttf`, fontName, "normal");
+            pdf.setFont(fontName);
+        } catch (e) {
+            console.error("Could not add custom font to PDF", e);
+        }
+    } else {
+        pdf.setFont('helvetica');
+    }
     
     const canvas = await html2canvas(pdfCardRef.current, {
         scale: 2, 
@@ -479,7 +493,8 @@ export default function FileDetailPage() {
       ]),
       theme: 'grid',
       styles: {
-          font: 'Helvetica',
+          font: (useKurdish && customFontBase64) ? 'CustomFont' : 'helvetica',
+          halign: useKurdish ? 'right' : 'left',
           fontSize: 8,
           cellPadding: 2,
       },
@@ -488,6 +503,12 @@ export default function FileDetailPage() {
           textColor: 255,
           fontStyle: 'bold',
       },
+       didParseCell: (data) => {
+        if (useKurdish && customFontBase64) {
+          data.cell.styles.font = "CustomFont";
+          data.cell.styles.halign = 'right';
+        }
+      }
     });
 
     const finalY = (pdf as any).lastAutoTable.finalY + 40;

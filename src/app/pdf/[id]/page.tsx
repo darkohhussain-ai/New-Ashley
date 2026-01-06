@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo, useRef } from 'react';
@@ -91,7 +90,11 @@ export default function PdfViewPage() {
 
   const isLoading = !file || !fileItems || !employees || !locations;
 
-  const getEmployeeName = (id: string) => employees?.find(e => e.id === id)?.name || '...';
+  const getEmployeeName = (id: string, useKurdish: boolean = false) => {
+    const employee = employees?.find(e => e.id === id);
+    if (!employee) return t('unknown');
+    return useKurdish && employee.kurdishName ? employee.kurdishName : employee.name;
+  };
   const getLocationName = (id?: string) => locations?.find(l => l.id === id)?.name || 'N/A';
 
   const handleDownloadPdf = async () => {
@@ -240,7 +243,7 @@ export default function PdfViewPage() {
                         <Badge variant={file.type === 'imported' ? 'default' : 'secondary'}>{file.type}</Badge>
                     </div>
                     <CardDescription className="grid grid-cols-2 md:flex md:items-center gap-x-6 gap-y-2 text-sm pt-2">
-                        <span className="flex items-center gap-2"><User className="w-4 h-4"/>{getEmployeeName(file.storekeeperId)}</span>
+                        <span className="flex items-center gap-2"><User className="w-4 h-4"/>{getEmployeeName(file.storekeeperId, language === 'ku')}</span>
                         <span className="flex items-center gap-2"><Building className="w-4 h-4"/>{file.source}</span>
                         <span className="flex items-center gap-2"><CalendarIcon className="w-4 h-4"/>{file.date ? format(parseISO(file.date), 'PPP') : 'Invalid Date'}</span>
                     </CardDescription>
@@ -337,5 +340,3 @@ export default function PdfViewPage() {
     </>
   );
 }
-
-    

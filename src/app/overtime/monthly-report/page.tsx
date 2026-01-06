@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
@@ -43,10 +42,10 @@ export default function MonthlyOvertimeReportPage() {
   
   const isLoading = !overtime || !employees || !selectedDate;
 
-  const getEmployeeName = (employeeId: string) => {
+  const getEmployeeName = (employeeId: string, useKurdish: boolean = false) => {
     const employee = employees.find(e => e.id === employeeId);
     if (!employee) return t('unknown');
-    return language === 'ku' && employee.kurdishName ? employee.kurdishName : employee.name;
+    return useKurdish && employee.kurdishName ? employee.kurdishName : employee.name;
   };
 
   const monthlyData = useMemo(() => {
@@ -68,7 +67,7 @@ export default function MonthlyOvertimeReportPage() {
 
     const summary = Array.from(employeeTotals.entries()).map(([employeeId, totals]) => ({
       employeeId,
-      employeeName: getEmployeeName(employeeId),
+      employeeName: getEmployeeName(employeeId, language === 'ku'),
       ...totals
     })).sort((a,b) => b.totalAmount - a.totalAmount);
     
@@ -99,8 +98,9 @@ export default function MonthlyOvertimeReportPage() {
     }
     
     doc.setFontSize(18);
-    doc.text(`${t('monthly_overtime_report')} - ${format(selectedDate, 'MMMM yyyy')}`, 14, 22, { align: useKurdish ? 'right' : 'left' });
-    doc.setFontSize(11);
+    doc.text(t('monthly_overtime_report'), doc.internal.pageSize.getWidth() / 2, 22, { align: 'center' });
+    doc.setFontSize(12);
+    doc.text(format(selectedDate, 'MMMM yyyy'), doc.internal.pageSize.getWidth() / 2, 32, { align: 'center' });
     
     const head = [[t('employee'), t('total_hours'), t('total_amount')]];
     const body = monthlyData.summary.map(item => [
@@ -110,14 +110,20 @@ export default function MonthlyOvertimeReportPage() {
     ]);
 
     autoTable(doc, {
-      startY: 30,
+      startY: 40,
       head,
       body,
       foot: [[t('grand_total'), monthlyData.totalHours.toFixed(2), formatCurrency(monthlyData.totalAmount)]],
       theme: 'striped',
       styles: { font: (customFontBase64 && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
       headStyles: { fillColor: pdfSettings.report.reportColors?.overtime || '#f97316' },
-      footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' }
+      footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' },
+       didParseCell: (data) => {
+        if (useKurdish && customFontBase64) {
+          data.cell.styles.font = "CustomFont";
+          data.cell.styles.halign = 'right';
+        }
+      }
     });
 
     let finalY = (doc as any).lastAutoTable.finalY + 40;
@@ -172,10 +178,7 @@ export default function MonthlyOvertimeReportPage() {
             <div className="space-y-8">
                 <Card className="print:shadow-none print:border-none">
                 <CardHeader>
-                    <div className="print:hidden">
-                        <CardTitle>{t('summary_for_month', {month: selectedDate ? format(selectedDate, 'MMMM yyyy') : ''})}</CardTitle>
-                    </div>
-                    <div className="hidden print:block text-center">
+                    <div className="text-center">
                          <h1 className="text-2xl">{t('monthly_overtime_report')}</h1>
                          <p className="text-muted-foreground">{selectedDate ? format(selectedDate, 'MMMM yyyy') : ''}</p>
                     </div>
@@ -230,5 +233,3 @@ export default function MonthlyOvertimeReportPage() {
     </>
   );
 }
-
-    
