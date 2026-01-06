@@ -516,8 +516,10 @@ export default function FileDetailPage() {
     const signatureY = finalY > pageHeight - 50 ? 40 : finalY;
     if (useKurdish && customFontBase64) pdf.setFont("CustomFont");
     pdf.setFontSize(10);
-    pdf.text("...................................", pdf.internal.pageSize.width - 120, signatureY, { align: 'center' });
-    pdf.text(shapeText(t('warehouse_manager_signature')), pdf.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
+    const signatureX = useKurdish ? 14 : pdf.internal.pageSize.width - 120;
+    pdf.text("...................................", signatureX, signatureY, { align: useKurdish ? 'right' : 'center' });
+    pdf.text(shapeText(t('warehouse_manager_signature')), signatureX, signatureY + 10, { align: useKurdish ? 'right' : 'center' });
+
 
     pdf.save(`${file.storageName}.pdf`);
   };
@@ -921,3 +923,5 @@ export default function FileDetailPage() {
     </div>
   );
 }
+
+    
