@@ -254,20 +254,15 @@ export default function MarketingFeedbackPage() {
     const [logoSrc] = useLocalStorage('app-logo', defaultLogo);
     const [customFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
 
-
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [isAddDialogOpen, setAddDialogOpen] = useState(false);
     const [isManageQuestionsOpen, setManageQuestionsOpen] = useState(false);
     const [editingFeedback, setEditingFeedback] = useState<MarketingFeedback | null>(null);
 
-    const [responses, setResponses] = useState<Record<string, Record<string, number>>>({});
-    const [currentEmployeeIndex, setCurrentEmployeeIndex] = useState(0);
-    const [currentSetIndex, setCurrentSetIndex] = useState(0);
-    const questionsPerSet = 6;
+    const [responses, setResponses] = useState<Record<string, number>>({});
+    const [currentEmployeeId, setCurrentEmployeeId] = useState<string | null>(null);
     
     const [selectedEmployeeForHistory, setSelectedEmployeeForHistory] = useState<string | null>(null);
-
     const pdfCardRef = useRef<HTMLDivElement>(null);
 
     const marketingEmployees = useMemo(() => {
@@ -278,20 +273,11 @@ export default function MarketingFeedbackPage() {
         });
     }, [employees]);
     
-    const questionSets = useMemo(() => {
-        const sets = [];
-        for (let i = 0; i < evaluationQuestions.length; i += questionsPerSet) {
-            sets.push(evaluationQuestions.slice(i, i + questionsPerSet));
+    useEffect(() => {
+        if(marketingEmployees.length > 0 && !currentEmployeeId) {
+            setCurrentEmployeeId(marketingEmployees[0].id);
         }
-        return sets;
-    }, [evaluationQuestions]);
-
-    const currentQuestionSet = questionSets[currentSetIndex] || [];
-    const currentEmployee = marketingEmployees[currentEmployeeIndex];
-
-    const totalSteps = marketingEmployees.length * questionSets.length;
-    const currentStep = (currentSetIndex * marketingEmployees.length) + currentEmployeeIndex + 1;
-    const progressPercentage = totalSteps > 0 ? (currentStep / totalSteps) * 100 : 0;
+    }, [marketingEmployees, currentEmployeeId]);
 
     useEffect(() => {
         if(employees && marketingFeedbacks && evaluationQuestions) {
@@ -299,6 +285,23 @@ export default function MarketingFeedbackPage() {
         }
     }, [employees, marketingFeedbacks, evaluationQuestions]);
     
+     useEffect(() => {
+        if (!currentEmployeeId) {
+            setResponses({});
+            return;
+        }
+        const todaysFeedback = marketingFeedbacks.find(fb => fb.employeeId === currentEmployeeId && isToday(parseISO(fb.date)));
+        if (todaysFeedback) {
+            const initialResponses = todaysFeedback.responses.reduce((acc, res) => {
+                acc[res.questionId] = res.answer;
+                return acc;
+            }, {} as Record<string, number>);
+            setResponses(initialResponses);
+        } else {
+            setResponses({});
+        }
+    }, [currentEmployeeId, marketingFeedbacks]);
+
     const addMarketingEmployee = (employeeData: Omit<Employee, 'id'>) => {
         const newEmployee: Employee = {
           id: crypto.randomUUID(),
@@ -308,96 +311,46 @@ export default function MarketingFeedbackPage() {
     };
 
     const handleResponseChange = (questionId: string, value: string) => {
-        if (!currentEmployee) return;
-        setResponses(prev => ({
-            ...prev,
-            [currentEmployee.id]: {
-                ...prev[currentEmployee.id],
-                [questionId]: parseInt(value)
-            }
-        }));
-    };
+        if (!currentEmployeeId) return;
 
-    const handleNextSet = () => {
-      if (currentSetIndex < questionSets.length - 1) {
-        setCurrentSetIndex(prev => prev + 1);
-      }
-    };
-
-    const handlePrevSet = () => {
-      if (currentSetIndex > 0) {
-        setCurrentSetIndex(prev => prev - 1);
-      }
-    };
-
-    const handleSaveAndContinue = () => {
-        if (isSubmitting) return;
-        setIsSubmitting(true);
-        const today = new Date();
-
-        marketingEmployees.forEach(employee => {
-            const employeeResponses = responses[employee.id];
-            if (!employeeResponses) return;
-
-            const existingFeedbackIndex = marketingFeedbacks.findIndex(fb => fb.employeeId === employee.id && isToday(parseISO(fb.date)));
-            
-            const newResponsesForSet = currentQuestionSet
-                .map(q => ({ questionId: q.id, answer: employeeResponses[q.id] }))
-                .filter(r => r.answer !== undefined);
-
-            if (newResponsesForSet.length === 0) return;
-
-            if (existingFeedbackIndex > -1) {
-                // Update existing feedback
-                setMarketingFeedbacks(prevFeedbacks => {
-                    const newFeedbacks = [...prevFeedbacks];
-                    const existing = newFeedbacks[existingFeedbackIndex];
-                    const updatedResponses = [
-                        ...existing.responses.filter(r => !newResponsesForSet.some(nr => nr.questionId === r.questionId)),
-                        ...newResponsesForSet
-                    ];
-                    const newTotalScore = updatedResponses.reduce((sum, r) => sum + r.answer, 0);
-
-                    newFeedbacks[existingFeedbackIndex] = {
-                        ...existing,
-                        responses: updatedResponses,
-                        totalScore: newTotalScore,
-                    };
-                    return newFeedbacks;
-                });
-            } else {
-                // Create new feedback
-                const totalScore = newResponsesForSet.reduce((sum, r) => sum + r.answer, 0);
-                const feedbackData: MarketingFeedback = {
-                    id: crypto.randomUUID(),
-                    employeeId: employee.id,
-                    date: formatISO(today, { representation: 'date' }),
-                    responses: newResponsesForSet,
-                    totalScore,
-                };
-                setMarketingFeedbacks(prev => [...prev, feedbackData]);
-            }
-        });
-        
-        toast({ title: t('progress_saved'), description: t('feedback_for_current_set_saved') });
-
-        // Clear responses for the current set for all employees to allow fresh entry if needed
-        const newResponses = { ...responses };
-        marketingEmployees.forEach(emp => {
-            currentQuestionSet.forEach(q => {
-                if (newResponses[emp.id]) {
-                    delete newResponses[emp.id][q.id];
-                }
-            });
-        });
+        const numericValue = parseInt(value);
+        const newResponses = { ...responses, [questionId]: numericValue };
         setResponses(newResponses);
 
-        if (currentSetIndex < questionSets.length - 1) {
-            setCurrentSetIndex(prev => prev + 1);
+        const today = new Date();
+        const existingFeedbackIndex = marketingFeedbacks.findIndex(fb => fb.employeeId === currentEmployeeId && isToday(parseISO(fb.date)));
+
+        if (existingFeedbackIndex > -1) {
+            // Update existing feedback for today
+            setMarketingFeedbacks(prevFeedbacks => {
+                const newFeedbacks = [...prevFeedbacks];
+                const existing = newFeedbacks[existingFeedbackIndex];
+                
+                const updatedResponseList = existing.responses.filter(r => r.questionId !== questionId);
+                updatedResponseList.push({ questionId, answer: numericValue });
+                
+                const newTotalScore = updatedResponseList.reduce((sum, r) => sum + r.answer, 0);
+
+                newFeedbacks[existingFeedbackIndex] = {
+                    ...existing,
+                    responses: updatedResponseList,
+                    totalScore: newTotalScore,
+                };
+                return newFeedbacks;
+            });
         } else {
-             toast({ title: t('evaluation_complete'), description: t('all_feedback_has_been_saved') });
+            // Create new feedback for today
+            const totalScore = numericValue;
+            const feedbackData: MarketingFeedback = {
+                id: crypto.randomUUID(),
+                employeeId: currentEmployeeId,
+                date: formatISO(today, { representation: 'date' }),
+                responses: [{ questionId, answer: numericValue }],
+                totalScore,
+            };
+            setMarketingFeedbacks(prev => [...prev, feedbackData]);
         }
-        setIsSubmitting(false);
+        toast({ title: t('saved'), description: `Answer for ${evaluationQuestions.find(q=>q.id === questionId)?.text.substring(0, 20)}... saved.` });
     };
 
     const handleDeleteSubmission = (feedbackId: string) => {
@@ -573,16 +526,8 @@ export default function MarketingFeedbackPage() {
             default: return "";
         }
     };
-
-    const isCurrentSetAnsweredForAllEmployees = useMemo(() => {
-        if (!currentQuestionSet.length || !marketingEmployees.length) return false;
-        
-        return marketingEmployees.every(emp => 
-            currentQuestionSet.every(q => 
-                responses[emp.id] && responses[emp.id][q.id] !== undefined
-            )
-        );
-    }, [responses, currentQuestionSet, marketingEmployees]);
+    
+    const currentEmployee = marketingEmployees.find(emp => emp.id === currentEmployeeId);
 
 
     return (
@@ -695,16 +640,12 @@ export default function MarketingFeedbackPage() {
                    <Card>
                         <CardHeader>
                             <CardTitle>{t('feedback_form')}</CardTitle>
-                            <div className="flex justify-between items-center">
-                                <CardDescription>{t('feedback_form_batch_desc')}</CardDescription>
-                                <span className="text-sm text-muted-foreground">{currentStep} / {totalSteps}</span>
-                            </div>
-                            <Progress value={progressPercentage} className="w-full" />
+                            <CardDescription>{t('feedback_form_batch_desc')}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
                             {isLoading ? (
                                 <div className="flex justify-center items-center h-48"><Loader2 className="animate-spin" /></div>
-                            ) : !currentEmployee ? (
+                            ) : marketingEmployees.length === 0 ? (
                                 <div className="text-center py-10">
                                     <p>{t('no_marketing_employees')}</p>
                                     <Button onClick={() => setAddDialogOpen(true)} className="mt-4">
@@ -712,64 +653,40 @@ export default function MarketingFeedbackPage() {
                                     </Button>
                                 </div>
                             ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-[1fr_250px] gap-6">
-                                <div className="space-y-4">
-                                    <div className="p-4 border rounded-lg bg-muted/30 flex justify-between items-center">
-                                        <div>
-                                            <h3 className="font-bold text-lg text-primary">{currentEmployee.name}</h3>
-                                            <p className="text-sm text-muted-foreground">{t('question_set', {
-                                                start: (currentSetIndex * questionsPerSet) + 1,
-                                                end: (currentSetIndex * questionsPerSet) + currentQuestionSet.length
-                                            })}</p>
-                                        </div>
-                                        <div className='flex items-center gap-2'>
-                                            <Button onClick={handlePrevSet} disabled={currentSetIndex === 0}>{t('prev_set')}</Button>
-                                            <Button onClick={handleNextSet} disabled={currentSetIndex === questionSets.length - 1}>{t('next_set')}</Button>
-                                        </div>
+                            <div className="space-y-4">
+                               <div className="p-4 border rounded-lg bg-muted/30 flex-col md:flex-row flex justify-between items-center">
+                                    <div className="space-y-2 mb-4 md:mb-0">
+                                        <Label htmlFor="employee-select">{t('select_an_employee')}</Label>
+                                        <Select onValueChange={setCurrentEmployeeId} value={currentEmployeeId || ''}>
+                                            <SelectTrigger id="employee-select" className="w-[300px]">
+                                                <SelectValue placeholder="Select an employee..." />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {marketingEmployees.map(emp => <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
                                     </div>
-                                    <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-4">
-                                        {currentQuestionSet.map((q, index) => (
-                                            <div key={q.id} className="p-4 border rounded-lg">
-                                                <p className="font-medium mb-3">{q.text}</p>
-                                                <RadioGroup 
-                                                    onValueChange={(value) => handleResponseChange(q.id, value)} 
-                                                    value={String(responses[currentEmployee.id]?.[q.id] || '')}
-                                                >
-                                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                                                        {q.answers.sort((a,b) => b.value - a.value).map(opt => (
-                                                            <Label key={opt.value} htmlFor={`${q.id}-${opt.value}-${currentEmployee.id}`} className="flex items-center space-x-2 p-3 rounded-md hover:bg-muted cursor-pointer flex-1 justify-center border has-[:checked]:bg-primary/10 has-[:checked]:border-primary transition-colors">
-                                                                <RadioGroupItem value={String(opt.value)} id={`${q.id}-${opt.value}-${currentEmployee.id}`} />
-                                                                <span>{t(opt.label.toLowerCase().replace(/ /g, '_')) || opt.label}</span>
-                                                            </Label>
-                                                        ))}
-                                                    </div>
-                                                </RadioGroup>
-                                            </div>
-                                        ))}
-                                    </div>
+                                    {currentEmployee && <p className="text-sm text-muted-foreground">{t('showing_questions_for', { employeeName: currentEmployee.name })}</p>}
                                 </div>
-                                <div className="flex flex-col gap-4">
-                                    <div className="flex flex-col items-center justify-center p-4 border rounded-lg h-full">
-                                        <h4 className="font-semibold mb-2">Employees</h4>
-                                        <div className="space-y-1 w-full text-center">
-                                            {marketingEmployees.map((emp, idx) => (
-                                                <Button 
-                                                    key={emp.id}
-                                                    variant={currentEmployeeIndex === idx ? 'default' : 'ghost'}
-                                                    onClick={() => setCurrentEmployeeIndex(idx)}
-                                                    className="w-full justify-center"
-                                                >
-                                                    {emp.name}
-                                                </Button>
-                                            ))}
+                                <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-4">
+                                    {evaluationQuestions.map((q) => (
+                                        <div key={q.id} className="p-4 border rounded-lg">
+                                            <p className="font-medium mb-3">{q.text}</p>
+                                            <RadioGroup 
+                                                onValueChange={(value) => handleResponseChange(q.id, value)} 
+                                                value={String(responses[q.id] || '')}
+                                            >
+                                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                                    {q.answers.sort((a,b) => b.value - a.value).map(opt => (
+                                                        <Label key={opt.value} htmlFor={`${q.id}-${opt.value}-${currentEmployeeId}`} className="flex items-center space-x-2 p-3 rounded-md hover:bg-muted cursor-pointer flex-1 justify-center border has-[:checked]:bg-primary/10 has-[:checked]:border-primary transition-colors">
+                                                            <RadioGroupItem value={String(opt.value)} id={`${q.id}-${opt.value}-${currentEmployeeId}`} />
+                                                            <span>{t(opt.label.toLowerCase().replace(/ /g, '_')) || opt.label}</span>
+                                                        </Label>
+                                                    ))}
+                                                </div>
+                                            </RadioGroup>
                                         </div>
-                                    </div>
-                                    {isCurrentSetAnsweredForAllEmployees && (
-                                        <Button onClick={handleSaveAndContinue} disabled={isSubmitting} className="w-full bg-green-600 hover:bg-green-700">
-                                            {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <ChevronsRight className="mr-2"/>}
-                                            {currentSetIndex < questionSets.length - 1 ? t('save_and_continue') : t('save_and_finish')}
-                                        </Button>
-                                    )}
+                                    ))}
                                 </div>
                             </div>
                             )}
@@ -845,3 +762,5 @@ export default function MarketingFeedbackPage() {
         </div>
     );
 }
+
+    
