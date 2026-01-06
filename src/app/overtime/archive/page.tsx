@@ -3,7 +3,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Archive, Calendar as CalendarIcon, Clock, Eye, Loader2, Plus } from 'lucide-react';
+import { ArrowLeft, Archive, Calendar as CalendarIcon, Clock, Eye, Loader2, Plus, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { format, parseISO } from 'date-fns';
@@ -51,7 +51,7 @@ export default function OvertimeArchivePage() {
           <Button variant="outline" size="icon" asChild>
             <Link href="/overtime"><ArrowLeft /></Link>
           </Button>
-          <h1 className="text-2xl md:text-3xl font-bold">{t('overtime_archive')}</h1>
+          <h1 className="text-2xl">{t('overtime_archive')}</h1>
         </div>
          <Button asChild>
             <Link href="/overtime/add"><Plus className="mr-2"/> {t('add_overtime')}</Link>
@@ -65,14 +65,14 @@ export default function OvertimeArchivePage() {
             {groupedByDay.map(({ date, totalHours, totalAmount }) => (
               <Card key={date} className="hover:border-primary/50 hover:shadow-lg transition-all h-full flex flex-col">
                 <CardHeader>
-                  <CardTitle className="text-lg leading-tight flex items-center gap-2">
+                  <CardTitle className="text-lg flex items-center gap-2">
                     <CalendarIcon className="w-5 h-5 text-primary"/>
                     {format(parseISO(date), 'PPP')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="flex-grow space-y-3 text-sm">
-                  <p className="flex items-center gap-2 text-muted-foreground"><Clock className="w-4 h-4"/> Total Hours: <span className="font-bold text-foreground">{totalHours.toFixed(2)}</span></p>
-                  <p className="text-lg font-bold text-primary">{formatCurrency(totalAmount)}</p>
+                  <p className="flex items-center gap-2 text-muted-foreground"><Clock className="w-4 h-4"/> Total Hours: <span className="text-foreground">{totalHours.toFixed(2)}</span></p>
+                  <p className="text-lg text-primary">{formatCurrency(totalAmount)}</p>
                 </CardContent>
                 <CardContent>
                   <Button asChild className="w-full">
@@ -85,7 +85,7 @@ export default function OvertimeArchivePage() {
         ) : (
           <div className="text-center py-16 border-2 border-dashed rounded-lg">
             <Archive className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-medium">{t('no_overtime_records_found')}</h3>
+            <h3 className="mt-4 text-lg">{t('no_overtime_records_found')}</h3>
             <p className="mt-2 text-sm text-muted-foreground">{t('no_overtime_records_found_desc')}</p>
              <Button asChild className="mt-4"><Link href="/overtime/add">{t('add_overtime')}</Link></Button>
           </div>

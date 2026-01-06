@@ -14,13 +14,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { useAppContext } from '@/context/app-provider';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslation } from '@/hooks/use-translation';
-import { shapeText } from '@/lib/pdf-utils';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import useLocalStorage from '@/hooks/use-local-storage';
-import type { AllPdfSettings } from '@/lib/types';
-import { Bar, BarChart as RechartsBarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
-import { FileText } from 'lucide-react';
 
 
 const formatCurrency = (amount: number) => {
@@ -94,7 +87,7 @@ export default function MonthlyOvertimeReportPage() {
             <Button variant="outline" size="icon" asChild>
               <Link href="/overtime"><ArrowLeft /></Link>
             </Button>
-            <h1 className="text-2xl">{t('monthly_overtime_report')}</h1>
+            <h1 className="text-xl">{t('monthly_overtime_report')}</h1>
           </div>
           <div className="flex items-center gap-2">
             <Popover>
@@ -148,9 +141,9 @@ export default function MonthlyOvertimeReportPage() {
                             </TableBody>
                             <TableFooter>
                                 <TableRow>
-                                    <TableCell className="text-lg">{t('grand_total')}</TableCell>
-                                    <TableCell className="text-right text-lg">{monthlyData.totalHours.toFixed(2)}</TableCell>
-                                    <TableCell className="text-right text-lg text-primary">{formatCurrency(monthlyData.totalAmount)}</TableCell>
+                                    <TableCell>{t('grand_total')}</TableCell>
+                                    <TableCell className="text-right">{monthlyData.totalHours.toFixed(2)}</TableCell>
+                                    <TableCell className="text-right text-primary">{formatCurrency(monthlyData.totalAmount)}</TableCell>
                                 </TableRow>
                             </TableFooter>
                         </Table>
@@ -168,7 +161,7 @@ export default function MonthlyOvertimeReportPage() {
             ) : (
             <div className="text-center py-16 border-2 border-dashed rounded-lg print:hidden">
                 <CalendarIcon className="mx-auto h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-4 text-lg font-medium">{t('no_overtime_found')}</h3>
+                <h3 className="mt-4 text-lg">{t('no_overtime_found')}</h3>
                 <p className="mt-2 text-sm text-muted-foreground">{t('no_overtime_found_for_month', {month: selectedDate ? format(selectedDate, 'MMMM yyyy') : t('the_selected_month')})}</p>
             </div>
             )}

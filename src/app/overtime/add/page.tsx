@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -18,8 +17,9 @@ import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import useLocalStorage from '@/hooks/use-local-storage';
 import { useAppContext } from '@/context/app-provider';
-import type { Overtime } from '@/lib/types';
+import type { Overtime, AllPdfSettings } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 
 const formatCurrency = (amount: number) => {
@@ -262,81 +262,95 @@ export default function AddOvertimePage() {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="divide-y">
                     {isLoading ? (
                         <div className="p-8 text-center text-muted-foreground">{t('loading_records')}...</div>
                     ) : overtimeRecords && overtimeRecords.length > 0 ? (
-                        overtimeRecords.map(record => (
-                        <div key={record.id} className="py-3 flex justify-between items-start gap-4">
-                            {editingRecord?.id === record.id ? (
-                            <div className="flex-1 space-y-2 print:hidden">
-                                <p dir={language === 'ku' ? 'rtl' : 'ltr'}>{getEmployeeName(record.employeeId, language==='ku')}</p>
-                                <Input 
-                                    type="number" 
-                                    value={editingRecord.hours}
-                                    onChange={(e) => setEditingRecord({...editingRecord, hours: parseFloat(e.target.value) || 0})}
-                                    className="h-8"
-                                />
-                                <Textarea 
-                                    value={editingRecord.notes}
-                                    onChange={(e) => setEditingRecord({...editingRecord, notes: e.target.value})}
-                                    placeholder={t('notes_optional')}
-                                />
-                            </div>
-                            ) : (
-                            <div className="flex-1">
-                                <p className="flex items-center gap-2" dir={language === 'ku' ? 'rtl' : 'ltr'}><User className="h-4 w-4 text-primary" /> {getEmployeeName(record.employeeId, language === 'ku')}</p>
-                                <p className="text-sm text-muted-foreground">{record.hours} {t('hours_short')}</p>
-                                {record.notes && <p className="text-sm mt-1">{record.notes}</p>}
-                            </div>
-                            )}
-                            <div className='flex flex-col items-end'>
-                                <p className="font-semibold text-primary">{formatCurrency(record.totalAmount)}</p>
-                                {editingRecord?.id === record.id ? (
-                                    <div className="flex gap-1 mt-2 print:hidden">
-                                        <Button size="icon" className="h-8 w-8" onClick={handleUpdateRecord} disabled={isSaving}><Save className="h-4 w-4"/></Button>
-                                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={cancelEditing}><X className="h-4 w-4"/></Button>
-                                    </div>
-                                ) : (
-                                    <div className="flex gap-1 mt-1 print:hidden">
-                                        <Button size="icon" variant="ghost" className="text-muted-foreground hover:text-primary h-8 w-8" onClick={() => startEditing(record)}>
-                                            <Edit className="h-4 w-4"/>
-                                        </Button>
-                                        <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8">
-                                                    <Trash2 className="h-4 w-4"/>
-                                                </Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle>{t('delete_this_record')}</AlertDialogTitle>
-                                                    <AlertDialogDescription>
-                                                    {t('confirm_delete_overtime', {employeeName: getEmployeeName(record.employeeId, language === 'ku')})}
-                                                    </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                    <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => handleDelete(record)}>{t('delete')}</AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                        ))
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>{t('employee')}</TableHead>
+                                    <TableHead className="text-center">{t('overtime_hours')}</TableHead>
+                                    <TableHead className="text-center">{t('salary')}</TableHead>
+                                    <TableHead>{t('notes')}</TableHead>
+                                    <TableHead className="w-24 print:hidden"></TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {overtimeRecords.map(record => (
+                                    editingRecord?.id === record.id ? (
+                                        <TableRow key={record.id}>
+                                            <TableCell>{getEmployeeName(record.employeeId, language==='ku')}</TableCell>
+                                            <TableCell>
+                                                <Input 
+                                                    type="number" 
+                                                    value={editingRecord.hours}
+                                                    onChange={(e) => setEditingRecord({...editingRecord, hours: parseFloat(e.target.value) || 0})}
+                                                    className="h-8 w-24 mx-auto text-center"
+                                                />
+                                            </TableCell>
+                                            <TableCell className='text-center'>{formatCurrency(editingRecord.hours * editingRecord.rate)}</TableCell>
+                                            <TableCell>
+                                                <Textarea 
+                                                    value={editingRecord.notes}
+                                                    onChange={(e) => setEditingRecord({...editingRecord, notes: e.target.value})}
+                                                    placeholder={t('notes_optional')}
+                                                    className="h-8"
+                                                />
+                                            </TableCell>
+                                            <TableCell className="text-right print:hidden">
+                                                <div className="flex gap-1">
+                                                    <Button size="icon" className="h-8 w-8" onClick={handleUpdateRecord} disabled={isSaving}><Save className="h-4 w-4"/></Button>
+                                                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={cancelEditing}><X className="h-4 w-4"/></Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ) : (
+                                        <TableRow key={record.id}>
+                                            <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{getEmployeeName(record.employeeId, language === 'ku')}</TableCell>
+                                            <TableCell className="text-center">{record.hours.toFixed(2)}</TableCell>
+                                            <TableCell className="text-center">{formatCurrency(record.totalAmount)}</TableCell>
+                                            <TableCell>{record.notes || t('na')}</TableCell>
+                                            <TableCell className="text-right print:hidden">
+                                                <div className="flex gap-1">
+                                                    <Button size="icon" variant="ghost" className="text-muted-foreground hover:text-primary h-8 w-8" onClick={() => startEditing(record)}>
+                                                        <Edit className="h-4 w-4"/>
+                                                    </Button>
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8">
+                                                                <Trash2 className="h-4 w-4"/>
+                                                            </Button>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>{t('delete_this_record')}</AlertDialogTitle>
+                                                                <AlertDialogDescription>
+                                                                {t('confirm_delete_overtime', {employeeName: getEmployeeName(record.employeeId, language === 'ku')})}
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                                                                <AlertDialogAction onClick={() => handleDelete(record)}>{t('delete')}</AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    )
+                                ))}
+                            </TableBody>
+                        </Table>
                     ) : (
                         <div className="py-8 text-center text-muted-foreground">{t('no_overtime_records_for_date')}</div>
                     )}
-                    </div>
                 </CardContent>
                 {overtimeRecords && overtimeRecords.length > 0 && (
-                    <CardFooter className="flex justify-between bg-muted/50 py-4 rounded-b-lg">
-                        <span>{t('total')}</span>
+                    <CardFooter className="justify-between bg-muted/50 py-4 rounded-b-lg">
+                        <span className="font-semibold">{t('total')}</span>
                         <div className='text-right'>
                             <p>{totalHours.toFixed(2)} {t('hours_short')}</p>
-                            <p className="text-primary">{formatCurrency(totalAmount)}</p>
+                            <p className="font-semibold text-primary">{formatCurrency(totalAmount)}</p>
                         </div>
                     </CardFooter>
                 )}
@@ -348,6 +362,4 @@ export default function AddOvertimePage() {
     </>
   );
 }
-
-
 
