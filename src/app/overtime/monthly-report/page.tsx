@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Calendar as CalendarIcon, Printer, Loader2 } from 'lucide-react';
+import { ArrowLeft, Calendar as CalendarIcon, Printer, Loader2, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -14,6 +13,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { useAppContext } from '@/context/app-provider';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslation } from '@/hooks/use-translation';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { shapeText } from '@/lib/pdf-utils';
+import useLocalStorage from '@/hooks/use-local-storage';
+import { AllPdfSettings } from '@/lib/types';
 
 
 const formatCurrency = (amount: number) => {
@@ -27,6 +31,9 @@ const formatCurrency = (amount: number) => {
 export default function MonthlyOvertimeReportPage() {
   const { t, language } = useTranslation();
   const { overtime, employees } = useAppContext();
+  const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {}, card: {} });
+  const [customFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
+
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   
@@ -74,6 +81,58 @@ export default function MonthlyOvertimeReportPage() {
   const handlePrint = () => {
     window.print();
   };
+
+  const handleDownloadPdf = async () => {
+    if (!selectedDate || monthlyData.summary.length === 0) return;
+    const doc = new jsPDF();
+    const useKurdish = language === 'ku';
+
+    if (customFontBase64 && useKurdish) {
+        try {
+            const fontName = "CustomFont";
+            doc.addFileToVFS(`${fontName}.ttf`, customFontBase64.split(',')[1]);
+            doc.addFont(`${fontName}.ttf`, fontName, "normal");
+            doc.setFont(fontName);
+        } catch (e) {
+            console.error("Could not add custom font to PDF", e);
+        }
+    }
+    
+    doc.setFontSize(18);
+    doc.text(shapeText(`${t('monthly_overtime_report')} - ${format(selectedDate, 'MMMM yyyy')}`), 14, 22);
+    doc.setFontSize(11);
+    
+    const head = [[shapeText(t('employee')), shapeText(t('total_hours')), shapeText(t('total_amount'))]];
+    const body = monthlyData.summary.map(item => [
+        shapeText(item.employeeName),
+        item.totalHours.toFixed(2),
+        formatCurrency(item.totalAmount)
+    ]);
+
+    autoTable(doc, {
+      startY: 30,
+      head,
+      body,
+      foot: [[shapeText(t('grand_total')), monthlyData.totalHours.toFixed(2), formatCurrency(monthlyData.totalAmount)]],
+      theme: 'striped',
+      styles: { font: (customFontBase64 && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
+      headStyles: { fillColor: pdfSettings.report.reportColors?.overtime || '#f97316' },
+      footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' }
+    });
+
+    let finalY = (doc as any).lastAutoTable.finalY + 40;
+    const pageHeight = doc.internal.pageSize.height;
+    if (finalY > pageHeight - 30) {
+        doc.addPage();
+    }
+    const signatureY = finalY > pageHeight - 50 ? 40 : finalY;
+    doc.setFontSize(10);
+    doc.text("...................................", doc.internal.pageSize.width - 120, signatureY, { align: 'center' });
+    doc.text(shapeText(t('warehouse_manager_signature')), doc.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
+
+
+    doc.save(`monthly-overtime-report-${format(selectedDate, 'yyyy-MM')}.pdf`);
+  };
   
   if (isLoading) {
       return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>
@@ -101,7 +160,8 @@ export default function MonthlyOvertimeReportPage() {
                 <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} captionLayout="dropdown-buttons" fromYear={2020} toYear={2040} />
               </PopoverContent>
             </Popover>
-            <Button onClick={handlePrint} disabled={isLoading || monthlyData.records.length === 0}><Printer className="mr-2"/>{t('print')}</Button>
+            <Button variant="outline" onClick={handlePrint} disabled={isLoading || monthlyData.records.length === 0}><Printer className="mr-2"/>{t('print')}</Button>
+            <Button variant="outline" onClick={handleDownloadPdf} disabled={isLoading || monthlyData.records.length === 0}><FileDown className="mr-2"/>PDF</Button>
           </div>
         </header>
 

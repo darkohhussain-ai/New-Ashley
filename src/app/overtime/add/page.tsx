@@ -3,7 +3,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, Trash2, Calendar as CalendarIcon, Clock, User, Edit, Save, X, FileText, Printer, Loader2 } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Calendar as CalendarIcon, Clock, User, Edit, Save, X, Printer, Loader2, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -20,6 +20,9 @@ import { useAppContext } from '@/context/app-provider';
 import type { Overtime, AllPdfSettings } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { shapeText } from '@/lib/pdf-utils';
 
 
 const formatCurrency = (amount: number) => {
@@ -38,6 +41,9 @@ export default function AddOvertimePage() {
 
   const { employees, overtime: allOvertimeRecords, setOvertime: setAllOvertimeRecords } = useAppContext();
   const [salarySettings] = useLocalStorage('ashley-salary-settings', { overtimeRate: 5000 });
+  const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {}, card: {} });
+  const [customFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
+
 
   const dateParam = searchParams.get('date');
 
@@ -168,13 +174,54 @@ export default function AddOvertimePage() {
   const handlePrint = () => {
     window.print();
   };
+
+  const handleDownloadPdf = async () => {
+    if (!selectedDate || overtimeRecords.length === 0) return;
+    const doc = new jsPDF();
+    const useKurdish = language === 'ku';
+
+    if (customFontBase64 && useKurdish) {
+        try {
+            const fontName = "CustomFont";
+            doc.addFileToVFS(`${fontName}.ttf`, customFontBase64.split(',')[1]);
+            doc.addFont(`${fontName}.ttf`, fontName, "normal");
+            doc.setFont(fontName);
+        } catch (e) {
+            console.error("Could not add custom font to PDF", e);
+        }
+    }
+    
+    doc.setFontSize(18);
+    doc.text(shapeText(`${t('daily_overtime_report')} - ${format(selectedDate, 'PPP')}`), 14, 22);
+    doc.setFontSize(11);
+    
+    const head = [[shapeText(t('employee')), shapeText(t('overtime_hours')), shapeText(t('salary')), shapeText(t('notes'))]];
+    const body = overtimeRecords.map(r => [
+        shapeText(getEmployeeName(r.employeeId, useKurdish)),
+        r.hours.toFixed(2),
+        formatCurrency(r.totalAmount),
+        shapeText(r.notes || '')
+    ]);
+
+    autoTable(doc, {
+      startY: 30,
+      head,
+      body,
+      foot: [[shapeText(t('total')), totalHours.toFixed(2), formatCurrency(totalAmount), '']],
+      theme: 'striped',
+      styles: { font: (customFontBase64 && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
+      headStyles: { fillColor: pdfSettings.report.reportColors?.overtime || '#f97316' },
+      footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' }
+    });
+
+    doc.save(`overtime-report-${format(selectedDate, 'yyyy-MM-dd')}.pdf`);
+  };
   
   if (!selectedDate) {
     return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
   return (
-    <>
     <div className="min-h-screen bg-background text-foreground">
       <header className="bg-card border-b p-4 print:hidden">
         <div className="container mx-auto flex items-center justify-between">
@@ -198,6 +245,8 @@ export default function AddOvertimePage() {
                 <Calendar mode="single" selected={selectedDate} onSelect={(date) => { setSelectedDate(date); if (dateParam) router.push('/overtime/add'); }} initialFocus captionLayout="dropdown-nav" fromYear={2020} toYear={2040} />
               </PopoverContent>
             </Popover>
+             <Button variant="outline" onClick={handlePrint} disabled={isLoading || overtimeRecords.length === 0}><Printer className="mr-2"/>{t('print')}</Button>
+             <Button variant="outline" onClick={handleDownloadPdf} disabled={isLoading || overtimeRecords.length === 0}><FileDown className="mr-2"/>PDF</Button>
           </div>
         </div>
       </header>
@@ -358,7 +407,5 @@ export default function AddOvertimePage() {
             </div>
       </main>
     </div>
-    </>
   );
 }
-

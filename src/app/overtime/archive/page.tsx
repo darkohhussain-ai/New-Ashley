@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Archive, Calendar as CalendarIcon, Clock, Eye, Loader2, Plus } from 'lucide-react';
+import { ArrowLeft, Archive, Calendar as CalendarIcon, Clock, Eye, Loader2, Plus, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { format, parseISO, isSameMonth } from 'date-fns';
@@ -56,9 +56,13 @@ export default function OvertimeArchivePage() {
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [allOvertimeRecords, selectedMonth]);
 
+  const handlePrint = () => {
+    window.print();
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
-      <header className="flex items-center justify-between gap-4 mb-8">
+      <header className="flex items-center justify-between gap-4 mb-8 print:hidden">
         <div className="flex items-center gap-4">
           <Button variant="outline" size="icon" asChild>
             <Link href="/overtime"><ArrowLeft /></Link>
@@ -77,6 +81,7 @@ export default function OvertimeArchivePage() {
                 <Calendar mode="single" selected={selectedMonth} onSelect={setSelectedMonth} captionLayout="dropdown-nav" fromYear={2020} toYear={2040} />
               </PopoverContent>
             </Popover>
+            <Button onClick={handlePrint} variant="outline" disabled={isLoading || monthlyReports.length === 0}><Printer className="mr-2"/>{t('print')}</Button>
             <Button asChild>
                 <Link href="/overtime/add"><Plus className="mr-2"/> {t('add_overtime')}</Link>
             </Button>
@@ -96,7 +101,7 @@ export default function OvertimeArchivePage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="flex-grow space-y-3 text-sm">
-                  <p className="flex items-center gap-2 text-muted-foreground"><Clock className="w-4 h-4"/> Total Hours: <span className="text-foreground">{totalHours.toFixed(2)}</span></p>
+                  <p className="flex items-center gap-2 text-muted-foreground"><Clock className="w-4 h-4"/> {t('total_hours')}: <span className="text-foreground">{totalHours.toFixed(2)}</span></p>
                   <p className="text-lg text-primary">{formatCurrency(totalAmount)}</p>
                 </CardContent>
                 <CardContent>
