@@ -267,7 +267,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
         return (
             <div className="flex flex-col items-center justify-center h-full text-center p-8">
                 <User className="w-16 h-16 text-muted-foreground mb-4" />
-                <h2 className="text-xl font-bold">{t('employee_not_found')}</h2>
+                <h2 className="text-xl">{t('employee_not_found')}</h2>
                 <p className="text-muted-foreground">{t('employee_not_found_desc')}</p>
             </div>
         )
@@ -334,8 +334,8 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                             <div className="w-full">
                                 {isEditing ? (
                                     <div className='space-y-4'>
-                                        <Input className="text-2xl font-bold h-12" value={name} onChange={e => setName(e.target.value)} placeholder={t('employee_name')} />
-                                        <Input dir="rtl" className="text-2xl font-bold h-12" value={kurdishName} onChange={e => setKurdishName(e.target.value)} placeholder="ناو بە کوردی" />
+                                        <Input className="text-2xl h-12" value={name} onChange={e => setName(e.target.value)} placeholder={t('employee_name')} />
+                                        <Input dir="rtl" className="text-2xl h-12" value={kurdishName} onChange={e => setKurdishName(e.target.value)} placeholder="ناو بە کوردی" />
 
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <Input value={uniqueId} onChange={e => setUniqueId(e.target.value)} placeholder={t('employee_id_optional')} />
@@ -349,7 +349,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <Popover>
                                                 <PopoverTrigger asChild>
-                                                    <Button variant="outline" className={cn("justify-start text-left font-normal", !employmentStartDate && "text-muted-foreground")}>
+                                                    <Button variant="outline" className={cn("justify-start text-left", !employmentStartDate && "text-muted-foreground")}>
                                                         <CalendarIcon className="mr-2 h-4 w-4" />
                                                         {employmentStartDate ? `${t('start_date_optional')}: ${format(employmentStartDate, 'PPP')}` : <span>{t('pick_a_date')}</span>}
                                                     </Button>
@@ -358,7 +358,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                                             </Popover>
                                             <Popover>
                                                 <PopoverTrigger asChild>
-                                                    <Button variant="outline" className={cn("justify-start text-left font-normal", !dateOfBirth && "text-muted-foreground")}>
+                                                    <Button variant="outline" className={cn("justify-start text-left", !dateOfBirth && "text-muted-foreground")}>
                                                         <Cake className="mr-2 h-4 w-4" />
                                                         {dateOfBirth ? `${t('dob_optional')}: ${format(dateOfBirth, 'PPP')}` : <span>{t('pick_a_date')}</span>}
                                                     </Button>
@@ -369,7 +369,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                                     </div>
                                 ) : (
                                     <>
-                                        <CardTitle className="text-3xl md:text-4xl font-bold" dir={language === 'ku' ? 'rtl': 'ltr'}>{displayName}</CardTitle>
+                                        <CardTitle className="text-3xl md:text-4xl" dir={language === 'ku' ? 'rtl': 'ltr'}>{displayName}</CardTitle>
                                         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-2">
                                             {employee.role && <CardDescription className="text-lg md:text-xl flex items-center gap-2">{employee.role}</CardDescription>}
                                         </div>
@@ -420,7 +420,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                                     </Table>
                                 ) : <p className="text-sm text-center text-muted-foreground py-4">{t('no_expenses')}</p>}
                             </CardContent>
-                            {sortedExpenses.length > 0 && <CardFooter className="justify-end gap-2 bg-muted/50 font-bold text-sm"><span className="text-muted-foreground">{t('total_colon')}</span><span className="text-blue-500">{formatCurrency(totalExpenses)}</span></CardFooter>}
+                            {sortedExpenses.length > 0 && <CardFooter className="justify-end gap-2 bg-muted/50 text-sm"><span className="text-muted-foreground">{t('total_colon')}</span><span className="text-blue-500">{formatCurrency(totalExpenses)}</span></CardFooter>}
                         </Card>
 
                         <Card>
@@ -442,7 +442,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                                 ) : <p className="text-sm text-center text-muted-foreground py-4">{t('no_overtime_this_month')}</p>}
                             </CardContent>
                             {sortedOvertime.length > 0 && 
-                                <CardFooter className="justify-end gap-2 bg-muted/50 font-bold text-sm">
+                                <CardFooter className="justify-end gap-2 bg-muted/50 text-sm">
                                     <span className="text-muted-foreground">{t('months_total_colon')}</span>
                                     <span className="text-orange-500">{formatCurrency(totalOvertimeAmount)}</span>
                                 </CardFooter>
@@ -461,7 +461,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                                     </Table>
                                 ) : <p className="text-sm text-center text-muted-foreground py-4">{t('no_bonuses')}</p>}
                             </CardContent>
-                            {sortedBonuses.length > 0 && <CardFooter className="justify-end gap-2 bg-muted/50 font-bold text-sm"><span className="text-muted-foreground">{t('total_colon')}</span><span className="text-green-500">{formatCurrency(totalBonuses)}</span></CardFooter>}
+                            {sortedBonuses.length > 0 && <CardFooter className="justify-end gap-2 bg-muted/50 text-sm"><span className="text-muted-foreground">{t('total_colon')}</span><span className="text-green-500">{formatCurrency(totalBonuses)}</span></CardFooter>}
                         </Card>
 
                         <Card>
@@ -476,7 +476,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                                     </Table>
                                 ) : <p className="text-sm text-center text-muted-foreground py-4">{t('no_withdrawals')}</p>}
                             </CardContent>
-                            {sortedWithdrawals.length > 0 && <CardFooter className="justify-end gap-2 bg-muted/50 font-bold text-sm"><span className="text-muted-foreground">{t('total_colon')}</span><span className="text-rose-500">{formatCurrency(totalWithdrawals)}</span></CardFooter>}
+                            {sortedWithdrawals.length > 0 && <CardFooter className="justify-end gap-2 bg-muted/50 text-sm"><span className="text-muted-foreground">{t('total_colon')}</span><span className="text-rose-500">{formatCurrency(totalWithdrawals)}</span></CardFooter>}
                         </Card>
                     </div>
 
@@ -573,8 +573,8 @@ function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean,
                         <div className="space-y-2"><Label>{t('phone_optional')}</Label><div className="relative"><Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/><Input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="0000-000-000" className="pl-10"/></div></div>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-2"><Label>{t('start_date_optional')}</Label><Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!employmentStartDate && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{employmentStartDate ? format(employmentStartDate, "PPP") : <span>{t('pick_a_date')}</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={employmentStartDate} onSelect={setEmploymentStartDate} captionLayout="dropdown-nav" fromYear={1990} toYear={2040} initialFocus/></PopoverContent></Popover></div>
-                        <div className="space-y-2"><Label>{t('dob_optional')}</Label><Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!dateOfBirth && "text-muted-foreground")}><Cake className="mr-2 h-4 w-4" />{dateOfBirth ? format(dateOfBirth, "PPP") : <span>{t('pick_a_date')}</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={dateOfBirth} onSelect={setDateOfBirth} captionLayout="dropdown-nav" fromYear={1950} toYear={new Date().getFullYear()} initialFocus/></PopoverContent></Popover></div>
+                        <div className="space-y-2"><Label>{t('start_date_optional')}</Label><Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left",!employmentStartDate && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{employmentStartDate ? format(employmentStartDate, "PPP") : <span>{t('pick_a_date')}</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={employmentStartDate} onSelect={setEmploymentStartDate} captionLayout="dropdown-nav" fromYear={1990} toYear={2040} initialFocus/></PopoverContent></Popover></div>
+                        <div className="space-y-2"><Label>{t('dob_optional')}</Label><Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left",!dateOfBirth && "text-muted-foreground")}><Cake className="mr-2 h-4 w-4" />{dateOfBirth ? format(dateOfBirth, "PPP") : <span>{t('pick_a_date')}</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={dateOfBirth} onSelect={setDateOfBirth} captionLayout="dropdown-nav" fromYear={1950} toYear={new Date().getFullYear()} initialFocus/></PopoverContent></Popover></div>
                     </div>
                     <div className="space-y-2"><Label htmlFor="notes">{t('notes_optional')}</Label><Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder={t('notes_optional_long')} /></div>
                     <DialogFooter className="pt-4"><DialogClose asChild><Button type="button" variant="secondary">{t('cancel')}</Button></DialogClose><Button type="submit">{t('add_employee')}</Button></DialogFooter>
@@ -691,7 +691,7 @@ export default function EmployeesPage() {
             <div className="container mx-auto flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <Button variant="outline" size="icon" asChild><Link href="/"><ArrowLeft /></Link></Button>
-                    <h1 className="text-xl font-bold">{t('employees')}</h1>
+                    <h1 className="text-xl">{t('employees')}</h1>
                 </div>
             </div>
         </header>
@@ -730,7 +730,7 @@ export default function EmployeesPage() {
                     !isLoading && (
                         <div className="text-center">
                             <Building className="mx-auto h-16 w-16 text-muted-foreground" />
-                            <h2 className="mt-2 text-2xl font-bold">{t('employees')}</h2>
+                            <h2 className="mt-2 text-2xl">{t('employees')}</h2>
                             <p className="text-muted-foreground">{t('select_an_employee_to_view')}</p>
                         </div>
                     )

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -15,18 +16,11 @@ import { format, startOfDay, endOfDay, isWithinInterval, parseISO } from 'date-f
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { ReportPdfHeader } from '@/components/reports/report-pdf-header';
 import useLocalStorage from '@/hooks/use-local-storage';
 import { useAppContext } from '@/context/app-provider';
-import type { Overtime, AllPdfSettings } from '@/lib/types';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import html2canvas from 'html2canvas';
+import type { Overtime } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
-import { shapeText } from '@/lib/pdf-utils';
 
-
-const OVERTIME_RATE = 5000; // Default: 5,000 IQD per hour
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -43,7 +37,7 @@ export default function AddOvertimePage() {
   const router = useRouter();
 
   const { employees, overtime: allOvertimeRecords, setOvertime: setAllOvertimeRecords } = useAppContext();
-  const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {}, card: {} });
+  const [salarySettings] = useLocalStorage('ashley-salary-settings', { overtimeRate: 5000 });
 
   const dateParam = searchParams.get('date');
 
@@ -71,9 +65,6 @@ export default function AddOvertimePage() {
   // Editing state
   const [editingRecord, setEditingRecord] = useState<Overtime | null>(null);
   
-  const pdfHeaderRef = useRef<HTMLDivElement>(null);
-
-
   const warehouseEmployees = useMemo(() => {
     if (!employees) return [];
     return employees.filter(e => e.role !== 'Marketing');
@@ -145,8 +136,8 @@ export default function AddOvertimePage() {
       employeeId: selectedEmployee,
       date: selectedDate.toISOString(),
       hours: parseFloat(hours),
-      rate: OVERTIME_RATE,
-      totalAmount: parseFloat(hours) * OVERTIME_RATE,
+      rate: salarySettings.overtimeRate,
+      totalAmount: parseFloat(hours) * salarySettings.overtimeRate,
       notes,
     };
 
@@ -174,64 +165,6 @@ export default function AddOvertimePage() {
 
   const isLoading = !employees || !allOvertimeRecords;
 
-  const handleDownloadPdf = async () => {
-    if (!pdfHeaderRef.current || !selectedDate || !overtimeRecords) return;
-    
-    const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
-    const settings = pdfSettings.report || {};
-    const useKurdish = language === 'ku';
-
-    if (settings.customFont && useKurdish) {
-        try {
-            const fontName = "CustomFont";
-            const fontStyle = "normal";
-            const fontBase64 = settings.customFont.split(',')[1];
-            doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
-            doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
-            doc.setFont(fontName);
-        } catch(e) {
-            console.error("Could not add custom font to PDF", e);
-        }
-    }
-
-    const canvas = await html2canvas(pdfHeaderRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
-    const imgData = canvas.toDataURL('image/png');
-    const pdfWidth = doc.internal.pageSize.getWidth();
-    const ratio = canvas.width / canvas.height;
-    const finalImgWidth = pdfWidth;
-    const finalImgHeight = finalImgWidth / ratio;
-    
-    doc.addImage(imgData, 'PNG', 0, 0, finalImgWidth, finalImgHeight);
-
-    const body = overtimeRecords.map(item => [shapeText(getEmployeeName(item.employeeId, useKurdish)), item.hours.toFixed(2), shapeText(item.notes || t('na')), formatCurrency(item.totalAmount)]);
-    const head = [shapeText(t('employee')), shapeText(t('overtime_hours')), shapeText(t('notes')), shapeText(t('amount'))];
-    const foot = [shapeText(t('total')), totalHours.toFixed(2), '', formatCurrency(totalAmount)];
-    
-
-    autoTable(doc, {
-        startY: finalImgHeight + 10,
-        head: [head],
-        body: body,
-        foot: [foot],
-        theme: 'striped',
-        styles: { font: (settings.customFont && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
-        headStyles: { fillColor: settings.reportColors?.overtime || settings.themeColor || '#22c55e' },
-        footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' },
-    });
-    
-    const finalY = (doc as any).lastAutoTable.finalY + 40;
-    const pageHeight = doc.internal.pageSize.height;
-    if (finalY > pageHeight - 30) {
-        doc.addPage();
-    }
-    const signatureY = finalY > pageHeight - 50 ? 40 : finalY;
-    doc.setFontSize(10);
-    doc.text(shapeText(t('warehouse_manager_signature')), doc.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
-    doc.text("...................................", doc.internal.pageSize.width - 120, signatureY, { align: 'center' });
-
-    doc.save(`overtime-report-${format(selectedDate, 'yyyy-MM-dd')}.pdf`);
-  };
-
   const handlePrint = () => {
     window.print();
   };
@@ -242,19 +175,6 @@ export default function AddOvertimePage() {
 
   return (
     <>
-    <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-      {selectedDate && (
-         <div ref={pdfHeaderRef} style={{ width: '700px', background: 'white', color: 'black' }}>
-            <ReportPdfHeader
-              title={t('daily_overtime_report')}
-              subtitle={format(selectedDate, 'PPP')}
-              logoSrc={pdfSettings.report?.logo ?? null}
-              themeColor={pdfSettings.report?.reportColors?.overtime ?? pdfSettings.report?.themeColor}
-              headerText={pdfSettings.report?.headerText}
-            />
-          </div>
-      )}
-    </div>
     <div className="min-h-screen bg-background text-foreground">
       <header className="bg-card border-b p-4 print:hidden">
         <div className="container mx-auto flex items-center justify-between">
@@ -264,12 +184,12 @@ export default function AddOvertimePage() {
                 <ArrowLeft />
               </Link>
             </Button>
-            <h1 className="text-xl font-bold">{t('daily_overtime')}</h1>
+            <h1 className="text-xl">{t('daily_overtime')}</h1>
           </div>
           <div className="flex items-center gap-2">
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant={"outline"} className={cn("w-48 justify-start text-left font-normal", !selectedDate && "text-muted-foreground")}>
+                <Button variant={"outline"} className={cn("w-48 justify-start text-left", !selectedDate && "text-muted-foreground")}>
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {selectedDate ? format(selectedDate, "PPP") : <span>{t('pick_a_date')}</span>}
                 </Button>
@@ -278,7 +198,6 @@ export default function AddOvertimePage() {
                 <Calendar mode="single" selected={selectedDate} onSelect={(date) => { setSelectedDate(date); if (dateParam) router.push('/overtime/add'); }} initialFocus captionLayout="dropdown-nav" fromYear={2020} toYear={2040} />
               </PopoverContent>
             </Popover>
-            <Button variant="outline" onClick={handleDownloadPdf} disabled={!overtimeRecords || overtimeRecords.length === 0}><FileText className="mr-2 h-4 w-4" />{t('download_pdf')}</Button>
             <Button variant="outline" onClick={handlePrint} disabled={!overtimeRecords || overtimeRecords.length === 0}><Printer className="mr-2 h-4 w-4" />{t('print')}</Button>
           </div>
         </div>
@@ -323,7 +242,7 @@ export default function AddOvertimePage() {
                         <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder={t('notes_optional_overtime')} disabled={isSaving}/>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                        {t('overtime_rate')}: {formatCurrency(OVERTIME_RATE)} / {t('hour')}
+                        {t('overtime_rate')}: {formatCurrency(salarySettings.overtimeRate)} / {t('hour')}
                     </p>
                     </CardContent>
                     <CardFooter>
@@ -351,7 +270,7 @@ export default function AddOvertimePage() {
                         <div key={record.id} className="py-3 flex justify-between items-start gap-4">
                             {editingRecord?.id === record.id ? (
                             <div className="flex-1 space-y-2 print:hidden">
-                                <p className="font-bold" dir={language === 'ku' ? 'rtl' : 'ltr'}>{getEmployeeName(record.employeeId, language==='ku')}</p>
+                                <p dir={language === 'ku' ? 'rtl' : 'ltr'}>{getEmployeeName(record.employeeId, language==='ku')}</p>
                                 <Input 
                                     type="number" 
                                     value={editingRecord.hours}
@@ -366,7 +285,7 @@ export default function AddOvertimePage() {
                             </div>
                             ) : (
                             <div className="flex-1">
-                                <p className="font-semibold flex items-center gap-2" dir={language === 'ku' ? 'rtl' : 'ltr'}><User className="h-4 w-4 text-primary" /> {getEmployeeName(record.employeeId, language === 'ku')}</p>
+                                <p className="flex items-center gap-2" dir={language === 'ku' ? 'rtl' : 'ltr'}><User className="h-4 w-4 text-primary" /> {getEmployeeName(record.employeeId, language === 'ku')}</p>
                                 <p className="text-sm text-muted-foreground">{record.hours} {t('hours_short')}</p>
                                 {record.notes && <p className="text-sm mt-1">{record.notes}</p>}
                             </div>
@@ -413,7 +332,7 @@ export default function AddOvertimePage() {
                     </div>
                 </CardContent>
                 {overtimeRecords && overtimeRecords.length > 0 && (
-                    <CardFooter className="flex justify-between font-bold bg-muted/50 py-4 rounded-b-lg">
+                    <CardFooter className="flex justify-between bg-muted/50 py-4 rounded-b-lg">
                         <span>{t('total')}</span>
                         <div className='text-right'>
                             <p>{totalHours.toFixed(2)} {t('hours_short')}</p>
@@ -429,5 +348,6 @@ export default function AddOvertimePage() {
     </>
   );
 }
+
 
 

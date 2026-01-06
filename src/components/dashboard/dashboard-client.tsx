@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -100,7 +99,7 @@ export function DashboardClient() {
       )}
       <main className="container mx-auto p-4 md:p-8">
         <div className="mb-8">
-          <h2 className="text-2xl font-bold">{t('welcome_back')}</h2>
+          <h2 className="text-2xl">{t('welcome_back')}</h2>
           <p className="text-muted-foreground">{t('select_service')}</p>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">

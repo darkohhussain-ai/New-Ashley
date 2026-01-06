@@ -183,7 +183,7 @@ export default function AddCashWithdrawalPage() {
           <div className="flex items-center gap-2">
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant={"outline"} className={cn("w-48 justify-start text-left font-normal", !selectedDate && "text-muted-foreground")}>
+                <Button variant={"outline"} className={cn("w-48 justify-start text-left", !selectedDate && "text-muted-foreground")}>
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {selectedDate ? format(selectedDate, "PPP") : <span>{t('pick_a_date')}</span>}
                 </Button>
@@ -261,7 +261,7 @@ export default function AddCashWithdrawalPage() {
                         <div key={record.id} className="py-3 flex justify-between items-start gap-4">
                             {editingRecord?.id === record.id ? (
                             <div className="flex-1 space-y-2 print:hidden">
-                                <p className="font-semibold" dir={language === 'ku' ? 'rtl' : 'ltr'}>{getEmployeeName(record.employeeId, language === 'ku')}</p>
+                                <p dir={language === 'ku' ? 'rtl' : 'ltr'}>{getEmployeeName(record.employeeId, language === 'ku')}</p>
                                 <Input 
                                     type="number" 
                                     value={editingRecord.amount}
@@ -322,7 +322,7 @@ export default function AddCashWithdrawalPage() {
                     </div>
                 </CardContent>
                 {dailyWithdrawals && dailyWithdrawals.length > 0 && (
-                    <CardFooter className="flex justify-between font-bold bg-muted/50 py-4 rounded-b-lg">
+                    <CardFooter className="flex justify-between bg-muted/50 py-4 rounded-b-lg">
                         <span>{t('total')}</span>
                         <p className="text-primary">{formatCurrency(totalAmount)}</p>
                     </CardFooter>

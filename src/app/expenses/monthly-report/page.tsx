@@ -90,12 +90,12 @@ export default function MonthlyExpenseReportPage() {
             <Button variant="outline" size="icon" asChild>
               <Link href="/expenses"><ArrowLeft /></Link>
             </Button>
-            <h1 className="text-2xl md:text-3xl">{t('monthly_expense_report')}</h1>
+            <h1 className="text-2xl">{t('monthly_expense_report')}</h1>
           </div>
           <div className="flex items-center gap-2">
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" className={cn("w-[280px] justify-start text-left font-normal", !selectedDate && "text-muted-foreground")}>
+                <Button variant="outline" className={cn("w-[280px] justify-start text-left", !selectedDate && "text-muted-foreground")}>
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {selectedDate ? format(selectedDate, 'MMMM yyyy') : <span>{t('pick_a_month')}</span>}
                 </Button>
@@ -119,7 +119,7 @@ export default function MonthlyExpenseReportPage() {
                         <CardTitle>{t('summary_for_month', {month: selectedDate ? format(selectedDate, 'MMMM yyyy') : ''})}</CardTitle>
                     </div>
                     <div className="hidden print:block text-center">
-                        <h1 className="text-2xl font-bold">{t('monthly_expense_report')}</h1>
+                        <h1 className="text-2xl">{t('monthly_expense_report')}</h1>
                         <p className="text-muted-foreground">{selectedDate ? format(selectedDate, 'MMMM yyyy') : ''}</p>
                     </div>
                 </CardHeader>
@@ -142,8 +142,8 @@ export default function MonthlyExpenseReportPage() {
                             </TableBody>
                             <TableFooter>
                                 <TableRow>
-                                    <TableCell className="text-lg font-bold">{t('grand_total')}</TableCell>
-                                    <TableCell className="text-right text-lg font-bold text-primary">{formatCurrency(monthlyData.total)}</TableCell>
+                                    <TableCell className="text-lg">{t('grand_total')}</TableCell>
+                                    <TableCell className="text-right text-lg text-primary">{formatCurrency(monthlyData.total)}</TableCell>
                                 </TableRow>
                             </TableFooter>
                         </Table>

@@ -574,7 +574,7 @@ export default function FileDetailPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center p-8">
         <FileText className="w-24 h-24 text-muted-foreground mb-4" />
-        <h2 className="text-2xl font-bold mb-2">{t('file_not_found')}</h2>
+        <h2 className="text-2xl">{t('file_not_found')}</h2>
         <p className="text-muted-foreground mb-6">{t('file_not_found_desc')}</p>
         <Button asChild>
           <Link href="/archive">
@@ -673,7 +673,7 @@ export default function FileDetailPage() {
                                     ) : (
                                         <CardTitle className="text-2xl md:text-3xl">{file.storageName}</CardTitle>
                                     )}
-                                    <CardDescription className="text-primary">{file.categoryName}</CardDescription>
+                                    <CardDescription>{file.categoryName}</CardDescription>
                                 </div>
                                 <Badge variant={file.type === 'imported' ? 'default' : 'secondary'}>{file.type}</Badge>
                             </div>

@@ -284,7 +284,7 @@ export default function LocationsPage() {
                 <ArrowLeft />
               </Link>
             </Button>
-            <h1 className="text-2xl md:text-3xl font-bold">{t('manage_locations')}</h1>
+            <h1 className="text-2xl md:text-3xl">{t('manage_locations')}</h1>
           </div>
           <div className="flex items-center gap-2 flex-wrap justify-end">
             <Button variant="outline" asChild><Link href="/ashley-map"><Map className="mr-2"/>{t('ashley_map')}</Link></Button>
@@ -437,7 +437,7 @@ export default function LocationsPage() {
             {generatedCode && (
               <div className="space-y-2 p-3 border rounded-md bg-green-50 dark:bg-green-900/20">
                 <Label className="text-sm text-green-700 dark:text-green-300">{t('generated_code')}</Label>
-                <p className="font-mono font-bold text-lg text-green-800 dark:text-green-200">{generatedCode}</p>
+                <p className="font-mono text-lg text-green-800 dark:text-green-200">{generatedCode}</p>
               </div>
             )}
 
@@ -484,7 +484,7 @@ export default function LocationsPage() {
                             <TableBody>
                                 {searchResults.map((item) => (
                                     <TableRow key={item.id}>
-                                        <TableCell className="font-medium">
+                                        <TableCell>
                                           <Link href={`/archive/${item.fileId}#${item.id}`} className="hover:underline text-primary">
                                             {item.model}
                                           </Link>
@@ -602,7 +602,7 @@ export default function LocationsPage() {
                                <AlertDialog>
                                   <AlertDialogTrigger asChild>
                                     <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
-                                      <Trash2 className="h-4 w-4"/>
+                                      <Trash2 className="h-4 h-4"/>
                                     </Button>
                                   </AlertDialogTrigger>
                                   <AlertDialogContent>
@@ -638,7 +638,7 @@ export default function LocationsPage() {
                                <AlertDialog>
                                   <AlertDialogTrigger asChild>
                                     <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
-                                      <Trash2 className="h-4 w-4"/>
+                                      <Trash2 className="h-4 h-4"/>
                                     </Button>
                                   </AlertDialogTrigger>
                                   <AlertDialogContent>

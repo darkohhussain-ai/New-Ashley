@@ -50,7 +50,7 @@ export default function ArchivePage() {
                 <span className="sr-only">{t('back_to_placement_storage')}</span>
               </Link>
             </Button>
-            <h1 className="text-xl font-bold">{t('excel_archive')}</h1>
+            <h1 className="text-xl">{t('excel_archive')}</h1>
           </div>
         </header>
         <main className="container mx-auto p-4 md:p-8">
@@ -84,7 +84,7 @@ export default function ArchivePage() {
               <span className="sr-only">{t('back_to_placement_storage')}</span>
             </Link>
           </Button>
-          <h1 className="text-xl font-bold">{t('excel_archive')}</h1>
+          <h1 className="text-xl">{t('excel_archive')}</h1>
         </div>
       </header>
       <main className="container mx-auto p-4 md:p-8">
