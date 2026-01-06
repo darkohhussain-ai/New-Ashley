@@ -498,7 +498,7 @@ export default function MarketingFeedbackPage() {
             const fontStyle = "normal";
             const fontBase64 = customFontBase64.split(',')[1];
             doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
-            doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
+            doc.addFont(`${fontName}.ttf`, fontName, "normal");
             doc.setFont(fontName);
         }
 
@@ -721,75 +721,10 @@ export default function MarketingFeedbackPage() {
                                 </Accordion>
                             </CardContent>
                         </Card>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>{t('historical_submissions')}</CardTitle>
-                                <CardDescription>{t('historical_submissions_desc')}</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="mb-4">
-                                    <Select onValueChange={setSelectedEmployeeForHistory} value={selectedEmployeeForHistory || ''}>
-                                        <SelectTrigger className="w-[300px]">
-                                            <SelectValue placeholder="Select an employee to view history..." />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {marketingEmployees.map(emp => (
-                                                <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                {selectedEmployeeForHistory && (
-                                <div className="max-h-[400px] overflow-y-auto">
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>{t('date')}</TableHead>
-                                                <TableHead className='text-right'>{t('total_score')}</TableHead>
-                                                <TableHead className="text-right"></TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {employeeHistory.length > 0 ? employeeHistory.map(fb => (
-                                                <TableRow key={fb.id}>
-                                                    <TableCell>{format(parseISO(fb.date), 'PPP')}</TableCell>
-                                                    <TableCell className="text-right">{fb.totalScore}</TableCell>
-                                                    <TableCell className="text-right">
-                                                    <div className="flex justify-end gap-2">
-                                                        <Button variant="ghost" size="icon" onClick={() => setEditingFeedback(fb)}><Edit className="h-4 w-4" /></Button>
-                                                        <AlertDialog>
-                                                            <AlertDialogTrigger asChild>
-                                                            <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                                            </AlertDialogTrigger>
-                                                            <AlertDialogContent>
-                                                                <AlertDialogHeader>
-                                                                <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
-                                                                <AlertDialogDescription>{t('confirm_delete_submission', {employeeName: employees.find(e => e.id === fb.employeeId)?.name, date: format(parseISO(fb.date), 'PPP')})}</AlertDialogDescription>
-                                                                </AlertDialogHeader>
-                                                                <AlertDialogFooter>
-                                                                <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-                                                                <AlertDialogAction onClick={() => handleDeleteSubmission(fb.id)}>{t('delete')}</AlertDialogAction>
-                                                                </AlertDialogFooter>
-                                                            </AlertDialogContent>
-                                                        </AlertDialog>
-                                                    </div>
-                                                    </TableCell>
-                                                </TableRow>
-                                            )) : (
-                                                <TableRow>
-                                                    <TableCell colSpan={3} className="text-center h-24">{t('no_history_for_employee')}</TableCell>
-                                                </TableRow>
-                                            )}
-                                        </TableBody>
-                                    </Table>
-                                </div>
-                                )}
-                            </CardContent>
-                        </Card>
                     </div>
                 </TabsContent>
                 
-                <TabsContent value="form">
+                <TabsContent value="form" className="space-y-6">
                    <Card>
                         <CardHeader>
                             <CardTitle>{t('feedback_form')}</CardTitle>
@@ -873,11 +808,73 @@ export default function MarketingFeedbackPage() {
                             )}
                         </CardContent>
                     </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{t('historical_submissions')}</CardTitle>
+                            <CardDescription>{t('historical_submissions_desc')}</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="mb-4">
+                                <Select onValueChange={setSelectedEmployeeForHistory} value={selectedEmployeeForHistory || ''}>
+                                    <SelectTrigger className="w-[300px]">
+                                        <SelectValue placeholder="Select an employee to view history..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {marketingEmployees.map(emp => (
+                                            <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            {selectedEmployeeForHistory && (
+                            <div className="max-h-[400px] overflow-y-auto">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>{t('date')}</TableHead>
+                                            <TableHead className='text-right'>{t('total_score')}</TableHead>
+                                            <TableHead className="text-right"></TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {employeeHistory.length > 0 ? employeeHistory.map(fb => (
+                                            <TableRow key={fb.id}>
+                                                <TableCell>{format(parseISO(fb.date), 'PPP')}</TableCell>
+                                                <TableCell className="text-right">{fb.totalScore}</TableCell>
+                                                <TableCell className="text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    <Button variant="ghost" size="icon" onClick={() => setEditingFeedback(fb)}><Edit className="h-4 w-4" /></Button>
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                        <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader>
+                                                            <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
+                                                            <AlertDialogDescription>{t('confirm_delete_submission', {employeeName: employees.find(e => e.id === fb.employeeId)?.name, date: format(parseISO(fb.date), 'PPP')})}</AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => handleDeleteSubmission(fb.id)}>{t('delete')}</AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        )) : (
+                                            <TableRow>
+                                                <TableCell colSpan={3} className="text-center h-24">{t('no_history_for_employee')}</TableCell>
+                                            </TableRow>
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                            )}
+                        </CardContent>
+                    </Card>
                 </TabsContent>
             </Tabs>
         </div>
     );
 }
-
-
-    
