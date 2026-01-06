@@ -174,29 +174,15 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
         onDeselect();
     }
 
-    const setupPdf = async () => {
+    const handlePrintCard = async () => {
+        if (!cardPdfRef.current || !employee) return;
+
         const pdf = new jsPDF({ 
             orientation: 'landscape',
             unit: 'px', 
             format: [600, 360]
         });
-        
-        const settings = pdfSettings.card || {};
 
-        if (settings.customFont) {
-            const fontName = "CustomFont";
-            const fontStyle = "normal";
-            const fontBase64 = settings.customFont.split(',')[1];
-            pdf.addFileToVFS(`${fontName}.ttf`, fontBase64);
-            pdf.addFont(`${fontName}.ttf`, fontName, fontStyle);
-            pdf.setFont(fontName);
-        }
-        return pdf;
-    }
-
-    const handlePrintCard = async () => {
-        if (!cardPdfRef.current || !employee) return;
-        const pdf = await setupPdf();
         const canvas = await html2canvas(cardPdfRef.current, { scale: 3, useCORS: true, backgroundColor: null });
         const imgData = canvas.toDataURL('image/png');
         
@@ -208,17 +194,6 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
         if (!reportPdfRef.current || !employee) return;
         
         const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
-        const settings = pdfSettings.report || {};
-        const useKurdish = language === 'ku';
-
-        if (settings.customFont && useKurdish) {
-            const fontName = "CustomFont";
-            const fontStyle = "normal";
-            const fontBase64 = settings.customFont.split(',')[1];
-            pdf.addFileToVFS(`${fontName}.ttf`, fontBase64);
-            pdf.addFont(`${fontName}.ttf`, fontName, fontStyle);
-            pdf.setFont(fontName);
-        }
         
         // 1. Add Header from the new component
         const headerCanvas = await html2canvas(reportPdfRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
@@ -241,7 +216,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
             }
 
             pdf.setFontSize(14);
-            pdf.text(title, useKurdish ? pdf.internal.pageSize.width - 14 : 14, startY, { align: useKurdish ? 'right' : 'left' });
+            pdf.text(title, 14, startY);
             startY += 10;
             autoTable(pdf, {
                 startY,
@@ -249,9 +224,8 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                 body: data.map(bodyMapper),
                 foot: [['Total', '', formatCurrency(total)]],
                 theme: 'striped',
-                headStyles: { fillColor: settings.themeColor || '#22c55e', font: 'helvetica' },
+                headStyles: { fillColor: pdfSettings.report.themeColor || '#22c55e', font: 'helvetica' },
                 footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold', font: 'helvetica' },
-                didParseCell: (data) => { if (settings.customFont && useKurdish) { data.cell.styles.font = "CustomFont"; data.cell.styles.halign = 'right' } }
             });
             startY = (pdf as any).lastAutoTable.finalY + 20;
         }
