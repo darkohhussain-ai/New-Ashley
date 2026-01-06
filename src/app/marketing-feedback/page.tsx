@@ -33,6 +33,7 @@ import { shapeText } from '@/lib/pdf-utils';
 
 function AddMarketingEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean, onOpenChange: (open: boolean) => void, addEmployee: (employee: Omit<Employee, 'id'>) => void }) {
     const { toast } = useToast();
+    const { t } = useTranslation();
     const [name, setName] = useState("");
 
     const resetForm = () => {
@@ -46,8 +47,8 @@ function AddMarketingEmployeeDialog({ open, onOpenChange, addEmployee }: { open:
         if (!name.trim()) {
             toast({
                 variant: 'destructive',
-                title: 'Name is required',
-                description: 'Please enter a name for the employee.',
+                title: t('name_is_required'),
+                description: t('please_enter_name'),
             });
             return;
         }
@@ -58,22 +59,22 @@ function AddMarketingEmployeeDialog({ open, onOpenChange, addEmployee }: { open:
         };
         
         addEmployee(employeeData);
-        toast({ title: "Employee Added", description: `${name} has been added as a Marketing employee.` });
+        toast({ title: t('employee_added'), description: t('employee_added_desc', { employeeName: name }) });
         resetForm();
     };
     
     return (
         <Dialog open={open} onOpenChange={(isOpen) => { onOpenChange(isOpen); if (!isOpen) resetForm(); }}>
             <DialogContent className="sm:max-w-md">
-                <DialogHeader><DialogTitle>Add Marketing Employee</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>{t('add_employee')}</DialogTitle></DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 pt-4">
                     <div className="space-y-2">
-                        <Label htmlFor="name">Employee Name</Label>
+                        <Label htmlFor="name">{t('employee_name')}</Label>
                         <Input id="name" value={name} onChange={e => setName(e.target.value)} required placeholder="e.g. Jane Smith" />
                     </div>
                     <DialogFooter>
-                        <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
-                        <Button type="submit">Add Employee</Button>
+                        <DialogClose asChild><Button type="button" variant="secondary">{t('cancel')}</Button></DialogClose>
+                        <Button type="submit">{t('add_employee')}</Button>
                     </DialogFooter>
                 </form>
             </DialogContent>
@@ -83,6 +84,7 @@ function AddMarketingEmployeeDialog({ open, onOpenChange, addEmployee }: { open:
 
 function ManageQuestionsDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void }) {
     const { evaluationQuestions, setEvaluationQuestions } = useAppContext();
+    const { t } = useTranslation();
     const { toast } = useToast();
     const [localQuestions, setLocalQuestions] = useState<EvaluationQuestion[]>([]);
 
@@ -114,7 +116,7 @@ function ManageQuestionsDialog({ open, onOpenChange }: { open: boolean, onOpenCh
 
     const handleSaveChanges = () => {
         setEvaluationQuestions(localQuestions);
-        toast({ title: "Saved!", description: "Questions and answers have been updated." });
+        toast({ title: t('saved'), description: t('questions_updated') });
         onOpenChange(false);
     };
 
@@ -122,20 +124,20 @@ function ManageQuestionsDialog({ open, onOpenChange }: { open: boolean, onOpenCh
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-3xl">
                 <DialogHeader>
-                    <DialogTitle>Manage Questions & Answers</DialogTitle>
-                    <CardDescription>Edit the question text and the custom answers for each.</CardDescription>
+                    <DialogTitle>{t('manage_questions_answers')}</DialogTitle>
+                    <CardDescription>{t('manage_questions_answers_desc')}</CardDescription>
                 </DialogHeader>
                 <div className="space-y-6 max-h-[70vh] overflow-y-auto p-1 pr-4">
                     {localQuestions.map((q, index) => (
                         <div key={q.id} className="p-4 border rounded-lg space-y-4">
                             <div className="space-y-2">
-                                <Label className="font-semibold">Question {index + 1}</Label>
+                                <Label className="font-semibold">{t('question')} {index + 1}</Label>
                                 <Textarea value={q.text} onChange={(e) => handleQuestionTextChange(q.id, e.target.value)} />
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 {q.answers.sort((a, b) => b.value - a.value).map(opt => (
                                     <div key={opt.value} className="space-y-2">
-                                        <Label>Answer for Score {opt.value}</Label>
+                                        <Label>{t('answer_for_score', { score: opt.value })}</Label>
                                         <Input value={opt.label} onChange={(e) => handleAnswerChange(q.id, opt.value, e.target.value)} />
                                     </div>
                                 ))}
@@ -144,8 +146,8 @@ function ManageQuestionsDialog({ open, onOpenChange }: { open: boolean, onOpenCh
                     ))}
                 </div>
                 <DialogFooter>
-                    <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
-                    <Button onClick={handleSaveChanges}>Save Changes</Button>
+                    <DialogClose asChild><Button type="button" variant="secondary">{t('cancel')}</Button></DialogClose>
+                    <Button onClick={handleSaveChanges}>{t('save_changes')}</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -154,6 +156,7 @@ function ManageQuestionsDialog({ open, onOpenChange }: { open: boolean, onOpenCh
 
 function EditSubmissionDialog({ feedback, onOpenChange, open }: { feedback: MarketingFeedback | null, open: boolean, onOpenChange: (open: boolean) => void }) {
     const { toast } = useToast();
+    const { t } = useTranslation();
     const { evaluationQuestions, marketingFeedbacks, setMarketingFeedbacks } = useAppContext();
     const [isSaving, setIsSaving] = useState(false);
     const [localResponses, setLocalResponses] = useState<Record<string, number>>({});
@@ -185,7 +188,7 @@ function EditSubmissionDialog({ feedback, onOpenChange, open }: { feedback: Mark
         };
         
         setMarketingFeedbacks(current => current.map(fb => fb.id === updatedFeedback.id ? updatedFeedback : fb));
-        toast({ title: "Success!", description: "The feedback submission has been updated." });
+        toast({ title: t('success'), description: t('feedback_submission_updated') });
         setIsSaving(false);
         onOpenChange(false);
     };
@@ -196,21 +199,21 @@ function EditSubmissionDialog({ feedback, onOpenChange, open }: { feedback: Mark
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-2xl">
                 <DialogHeader>
-                    <DialogTitle>Edit Feedback Submission</DialogTitle>
+                    <DialogTitle>{t('edit_feedback_submission')}</DialogTitle>
                     <CardDescription>
-                        Editing submission from {format(parseISO(feedback.date), 'PPP')}
+                        {t('editing_submission_from', { date: format(parseISO(feedback.date), 'PPP') })}
                     </CardDescription>
                 </DialogHeader>
                 <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-4 pt-4">
                     {evaluationQuestions.map((q, index) => (
                         <div key={q.id} className="p-4 border rounded-lg">
-                            <p className="font-medium mb-3">{index + 1}. {q.text}</p>
+                            <p className="font-medium mb-3">{index + 1}. {t(q.id) || q.text}</p>
                             <RadioGroup onValueChange={(value) => handleLocalResponseChange(q.id, value)} value={String(localResponses[q.id] || '')}>
                                 <div className="flex flex-wrap gap-4">
                                     {q.answers.sort((a,b) => b.value - a.value).map(opt => (
                                         <Label key={opt.value} htmlFor={`edit-${q.id}-${opt.value}`} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted cursor-pointer">
                                             <RadioGroupItem value={String(opt.value)} id={`edit-${q.id}-${opt.value}`} />
-                                            <span>{opt.label}</span>
+                                            <span>{t(opt.label.toLowerCase().replace(/ /g, '_')) || opt.label}</span>
                                         </Label>
                                     ))}
                                 </div>
@@ -219,10 +222,10 @@ function EditSubmissionDialog({ feedback, onOpenChange, open }: { feedback: Mark
                     ))}
                 </div>
                 <DialogFooter>
-                    <DialogClose asChild><Button variant="secondary">Cancel</Button></DialogClose>
+                    <DialogClose asChild><Button variant="secondary">{t('cancel')}</Button></DialogClose>
                     <Button onClick={handleSave} disabled={isSaving}>
                         {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Save Changes
+                        {t('save_changes')}
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -292,16 +295,16 @@ export default function MarketingFeedbackPage() {
 
     const handleDeleteSubmission = (feedbackId: string) => {
         setMarketingFeedbacks(current => current.filter(fb => fb.id !== feedbackId));
-        toast({ title: 'Deleted', description: 'The feedback submission has been removed.' });
+        toast({ title: t('deleted'), description: t('feedback_submission_removed') });
     };
     
     const handleSubmit = async () => {
         if (!selectedEmployee) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Please select an employee.' });
+            toast({ variant: 'destructive', title: t('error'), description: t('please_select_employee') });
             return;
         }
         if (Object.keys(responses).length !== evaluationQuestions.length) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Please answer all questions.' });
+            toast({ variant: 'destructive', title: t('error'), description: t('please_answer_all_questions') });
             return;
         }
 
@@ -317,7 +320,7 @@ export default function MarketingFeedbackPage() {
         };
 
         setMarketingFeedbacks([...marketingFeedbacks, feedbackData]);
-        toast({ title: 'Success', description: 'Feedback submitted successfully.' });
+        toast({ title: t('success'), description: t('feedback_submitted_successfully') });
         // Don't reset selected employee
         setResponses({});
         setIsSubmitting(false);
@@ -364,7 +367,7 @@ export default function MarketingFeedbackPage() {
 
     const handleDownloadPdf = async () => {
         if (!marketingFeedbacks.length) {
-            toast({ title: "No Data", description: "There is no data to export." });
+            toast({ title: t('no_data'), description: t('no_data_to_export') });
             return;
         }
 
@@ -396,7 +399,7 @@ export default function MarketingFeedbackPage() {
             doc.text(shapeText(t('employee_performance')), useKurdish ? doc.internal.pageSize.width - 14 : 14, 22, { align: useKurdish ? 'right' : 'left' });
             autoTable(doc, {
                 startY: 30,
-                head: [[shapeText(t('rank') || 'Rank'), shapeText(t('employee')), shapeText(t('total_score'))]],
+                head: [[shapeText(t('rank')), shapeText(t('employee')), shapeText(t('total_score'))]],
                 body: evaluationSummary.map((item, index) => [index + 1, shapeText(item.name), item.score]),
                 theme: 'striped',
                 styles: { font: (customFontBase64 && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
@@ -418,7 +421,7 @@ export default function MarketingFeedbackPage() {
                 doc.text(shapeText(q.questionText), useKurdish ? doc.internal.pageSize.width - 14 : 14, 22, { maxWidth: doc.internal.pageSize.getWidth() - 28, align: useKurdish ? 'right' : 'left' });
                 autoTable(doc, {
                     startY: 40,
-                    head: [[shapeText(t('rank') || 'Rank'), shapeText(t('employee')), shapeText(t('total_score'))]],
+                    head: [[shapeText(t('rank')), shapeText(t('employee')), shapeText(t('total_score'))]],
                     body: q.scores.map((s, rankIndex) => [rankIndex + 1, shapeText(s.name), s.score]),
                     theme: 'striped',
                     styles: { font: (customFontBase64 && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
@@ -432,7 +435,7 @@ export default function MarketingFeedbackPage() {
 
     const handleDownloadExcel = () => {
         if (!marketingFeedbacks.length) {
-             toast({ title: "No Data", description: "There is no data to export."});
+             toast({ title: t('no_data'), description: t('no_data_to_export') });
             return;
         }
         const wb = XLSX.utils.book_new();
@@ -461,7 +464,7 @@ export default function MarketingFeedbackPage() {
             const employee = employees.find(e => e.id === fb.employeeId);
             const base: Record<string, any> = {
                 Date: format(parseISO(fb.date), 'yyyy-MM-dd'),
-                Employee: employee ? (language === 'ku' && employee.kurdishName ? employee.kurdishName : employee.name) : 'Unknown',
+                Employee: employee ? (language === 'ku' && employee.kurdishName ? employee.kurdishName : employee.name) : t('unknown'),
                 'Total Score': fb.totalScore,
             };
             fb.responses.forEach(res => {
@@ -533,7 +536,7 @@ export default function MarketingFeedbackPage() {
                         <Card>
                             <CardHeader>
                                 <CardTitle>{t('employee_performance')}</CardTitle>
-                                <CardDescription>{t('employee_performance_desc', {maxScore})}</CardDescription>
+                                <CardDescription>{t('employee_performance_desc', { maxScore })}</CardDescription>
                             </CardHeader>
                             <CardContent className="max-h-[300px] overflow-y-auto">
                             {isLoading ? <Loader2 className="animate-spin" /> : (
@@ -607,7 +610,7 @@ export default function MarketingFeedbackPage() {
                                         </SelectTrigger>
                                         <SelectContent>
                                             {isLoading ? (
-                                                <SelectItem value="loading" disabled>Loading employees...</SelectItem>
+                                                <SelectItem value="loading" disabled>{t('loading_employees')}</SelectItem>
                                             ) : (
                                                 marketingEmployees?.map(emp => (
                                                     <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>
@@ -623,7 +626,7 @@ export default function MarketingFeedbackPage() {
                                                 <RadioGroup onValueChange={(value) => handleResponseChange(q.id, value)} value={String(responses[q.id] || '')}>
                                                     <div className="flex flex-wrap gap-2 sm:gap-4">
                                                         {q.answers.sort((a,b) => b.value - a.value).map(opt => (
-                                                            <Label key={opt.value} htmlFor={`${q.id}-${opt.value}`} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted cursor-pointer flex-1 justify-center border">
+                                                            <Label key={opt.value} htmlFor={`${q.id}-${opt.value}`} className="flex items-center space-x-2 p-3 rounded-md hover:bg-muted cursor-pointer flex-1 justify-center border">
                                                                 <RadioGroupItem value={String(opt.value)} id={`${q.id}-${opt.value}`} />
                                                                 <span>{t(opt.label.toLowerCase().replace(/ /g, '_')) || opt.label}</span>
                                                             </Label>
@@ -669,7 +672,7 @@ export default function MarketingFeedbackPage() {
                                                                 <AlertDialogHeader>
                                                                     <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
                                                                     <AlertDialogDescription>
-                                                                        {t('confirm_delete_submission_date', {date: format(parseISO(fb.date), 'PPP')})}
+                                                                        {t('confirm_delete_submission_date', { date: format(parseISO(fb.date), 'PPP') })}
                                                                     </AlertDialogDescription>
                                                                 </AlertDialogHeader>
                                                                 <AlertDialogFooter>
@@ -694,3 +697,5 @@ export default function MarketingFeedbackPage() {
         </div>
     );
 }
+
+    
