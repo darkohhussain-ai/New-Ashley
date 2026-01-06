@@ -9,18 +9,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { format, parseISO } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import html2canvas from 'html2canvas';
-import { ReportPdfHeader } from '@/components/reports/report-pdf-header';
-import useLocalStorage from '@/hooks/use-local-storage';
 import { useAppContext } from '@/context/app-provider';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { AllPdfSettings } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
-import { shapeText } from '@/lib/pdf-utils';
+
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'IQD', maximumFractionDigits: 0 }).format(amount);
 
@@ -30,9 +24,6 @@ export default function ViewExpenseReportPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { expenseReports, setExpenseReports, expenses, setExpenses, employees } = useAppContext();
-
-  const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {} });
-  const pdfHeaderRef = useRef<HTMLDivElement>(null);
 
   const report = useMemo(() => expenseReports.find(r => r.id === reportId), [expenseReports, reportId]);
   const reportItems = useMemo(() => expenses.filter(i => i.expenseReportId === reportId), [expenses, reportId]);
@@ -51,77 +42,6 @@ export default function ViewExpenseReportPage() {
     setExpenses(prev => prev.filter(e => e.expenseReportId !== reportId));
     toast({ title: t('report_deleted'), description: t('report_deleted_desc') });
     router.push('/expenses/archive');
-  };
-
-  const handleDownloadPdf = async () => {
-    if (!pdfHeaderRef.current || !report || !reportItems) return;
-    
-    const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
-    const settings = pdfSettings.report || {};
-    const useKurdish = language === 'ku';
-    const fontName = "CustomFont";
-
-    if (settings.customFont && useKurdish) {
-      try {
-          const fontBase64 = settings.customFont.split(',')[1];
-          doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
-          doc.addFont(`${fontName}.ttf`, fontName, "normal");
-          doc.setFont(fontName);
-      } catch(e) {
-          console.error("Could not add custom font to PDF", e);
-      }
-    }
-    
-    const canvas = await html2canvas(pdfHeaderRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
-    const imgData = canvas.toDataURL('image/png');
-    const pdfWidth = doc.internal.pageSize.getWidth();
-    const imgWidth = canvas.width;
-    const imgHeight = canvas.height;
-    const ratio = imgWidth / imgHeight;
-    const finalImgWidth = pdfWidth;
-    const finalImgHeight = finalImgWidth / ratio;
-    
-    doc.addImage(imgData, 'PNG', 0, 0, finalImgWidth, finalImgHeight);
-    
-    const head = [shapeText(t('employee')), shapeText(t('notes')), shapeText(t('amount'))];
-    const body = reportItems.map(item => [shapeText(getEmployeeName(item.employeeId, useKurdish)), shapeText(item.notes || t('na')), formatCurrency(item.amount)]);
-    const foot = [shapeText(t('total')), '', formatCurrency(report.totalAmount)];
-
-    autoTable(doc, {
-      startY: finalImgHeight + 10,
-      head: [head],
-      body: body,
-      foot: [foot],
-      theme: 'grid',
-      styles: { font: (useKurdish && settings.customFont) ? fontName : 'helvetica', halign: useKurdish ? 'right' : 'left' },
-      headStyles: { font: (useKurdish && settings.customFont) ? fontName : 'helvetica', fillColor: settings.reportColors?.expense || settings.themeColor || '#22c55e' },
-      footStyles: { font: (useKurdish && settings.customFont) ? fontName : 'helvetica', fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
-    });
-
-    const finalY = (doc as any).lastAutoTable.finalY + 40;
-    const pageHeight = doc.internal.pageSize.height;
-    if (finalY > pageHeight - 30) {
-        doc.addPage();
-    }
-    const signatureY = finalY > pageHeight - 50 ? 40 : finalY;
-    if (useKurdish && settings.customFont) doc.setFont(fontName);
-    doc.setFontSize(10);
-    doc.text("...................................", doc.internal.pageSize.width - 120, signatureY, { align: 'center' });
-    doc.text(shapeText(t('warehouse_manager_signature')), doc.internal.pageSize.getWidth() - 120, signatureY + 10, { align: 'center' });
-
-
-    if (settings.footerText) {
-        const pageCount = (doc as any).internal.getNumberOfPages();
-        for (let i = 1; i <= pageCount; i++) {
-            doc.setPage(i);
-            if (useKurdish && settings.customFont) doc.setFont(fontName);
-            doc.setFontSize(8);
-            doc.setTextColor(150);
-            doc.text(shapeText(settings.footerText), doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
-        }
-    }
-    
-    doc.save(`${report.reportName}.pdf`);
   };
 
   if (isLoading) {
@@ -148,27 +68,15 @@ export default function ViewExpenseReportPage() {
 
   return (
     <>
-      <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-        <div ref={pdfHeaderRef} style={{ width: '700px', background: 'white', color: 'black' }}>
-          <ReportPdfHeader 
-            title={report.reportName} 
-            subtitle={`${t('report_date')}: ${format(parseISO(report.reportDate), 'PPP')}`} 
-            logoSrc={pdfSettings.report?.logo ?? null} 
-            themeColor={pdfSettings.report?.reportColors?.expense ?? pdfSettings.report?.themeColor}
-            headerText={pdfSettings.report?.headerText}
-          />
-        </div>
-      </div>
       <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
         <header className="flex items-center justify-between gap-4 mb-8">
           <div className="flex items-center gap-4">
             <Button variant="outline" size="icon" asChild>
               <Link href="/expenses/archive"><ArrowLeft /></Link>
             </Button>
-            <h1 className="text-2xl md:text-3xl font-bold">{t('expense_report_details')}</h1>
+            <h1 className="text-2xl md:text-3xl">{t('expense_report_details')}</h1>
           </div>
           <div className="flex items-center gap-2">
-            <Button onClick={handleDownloadPdf} variant="outline"><FileDown className="mr-2"/>{t('download_pdf')}</Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive"><Trash2 className="mr-2"/>{t('delete_report')}</Button>
@@ -216,12 +124,12 @@ export default function ViewExpenseReportPage() {
                   <TableBody>
                     {reportItems.map(item => (
                       <TableRow key={item.id}>
-                        <TableCell className="font-medium flex items-center gap-2" dir={language === 'ku' ? 'rtl' : 'ltr'}>
+                        <TableCell className="flex items-center gap-2" dir={language === 'ku' ? 'rtl' : 'ltr'}>
                           <User className="w-4 h-4 text-muted-foreground" />
                           {getEmployeeName(item.employeeId, language === 'ku')}
                         </TableCell>
                         <TableCell className="text-muted-foreground">{item.notes || t('na')}</TableCell>
-                        <TableCell className="text-right font-semibold">{formatCurrency(item.amount)}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(item.amount)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

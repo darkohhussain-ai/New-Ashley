@@ -51,7 +51,7 @@ export default function BonusArchivePage() {
           <Button variant="outline" size="icon" asChild>
             <Link href="/bonuses"><ArrowLeft /></Link>
           </Button>
-          <h1 className="text-2xl md:text-3xl font-bold">{t('bonuses_archive')}</h1>
+          <h1 className="text-2xl md:text-3xl">{t('bonuses_archive')}</h1>
         </div>
          <Button asChild>
             <Link href="/bonuses/add"><Plus className="mr-2"/> {t('add_bonus')}</Link>
@@ -71,8 +71,8 @@ export default function BonusArchivePage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="flex-grow space-y-3 text-sm">
-                  <p className="flex items-center gap-2 text-muted-foreground"><Truck className="w-4 h-4"/> Total Loads: <span className="font-bold text-foreground">{totalLoads.toFixed(0)}</span></p>
-                  <p className="text-lg font-bold text-primary">{formatCurrency(totalAmount)}</p>
+                  <p className="flex items-center gap-2 text-muted-foreground"><Truck className="w-4 h-4"/> Total Loads: <span className="font-semibold text-foreground">{totalLoads.toFixed(0)}</span></p>
+                  <p className="text-lg text-primary">{formatCurrency(totalAmount)}</p>
                 </CardContent>
                 <CardContent>
                   <Button asChild className="w-full">

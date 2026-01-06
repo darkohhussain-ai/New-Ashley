@@ -16,15 +16,10 @@ import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO, startOfDa
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { ReportPdfHeader } from '@/components/reports/report-pdf-header';
-import useLocalStorage from '@/hooks/use-local-storage';
 import { useAppContext } from '@/context/app-provider';
 import type { CashWithdrawal, AllPdfSettings } from '@/lib/types';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import html2canvas from 'html2canvas';
 import { useTranslation } from '@/hooks/use-translation';
-import { shapeText } from '@/lib/pdf-utils';
+
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -48,7 +43,6 @@ export default function AddCashWithdrawalPage() {
   const router = useRouter();
 
   const { employees, withdrawals, setWithdrawals } = useAppContext();
-  const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {}, card: {} });
 
   const dateParam = searchParams.get('date');
 
@@ -76,8 +70,6 @@ export default function AddCashWithdrawalPage() {
   // Editing state
   const [editingRecord, setEditingRecord] = useState<CashWithdrawal | null>(null);
   
-  const pdfHeaderRef = useRef<HTMLDivElement>(null);
-
   const warehouseEmployees = useMemo(() => {
     if (!employees) return [];
     return employees.filter(e => e.role !== 'Marketing');
@@ -166,63 +158,6 @@ export default function AddCashWithdrawalPage() {
 
   const isLoading = !employees || !withdrawals;
 
-  const handleDownloadPdf = async () => {
-    if (!pdfHeaderRef.current || !selectedDate || !dailyWithdrawals) return;
-    
-    const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
-    const settings = pdfSettings.report || {};
-    const useKurdish = language === 'ku';
-    const fontName = "CustomFont";
-
-    if (settings.customFont && useKurdish) {
-        try {
-            const fontBase64 = settings.customFont.split(',')[1];
-            doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
-            doc.addFont(`${fontName}.ttf`, fontName, "normal");
-            doc.setFont(fontName);
-        } catch(e) {
-            console.error("Could not add custom font to PDF", e);
-        }
-    }
-
-    const canvas = await html2canvas(pdfHeaderRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
-    const imgData = canvas.toDataURL('image/png');
-    const pdfWidth = doc.internal.pageSize.getWidth();
-    const ratio = canvas.width / canvas.height;
-    const finalImgWidth = pdfWidth;
-    const finalImgHeight = finalImgWidth / ratio;
-    
-    doc.addImage(imgData, 'PNG', 0, 0, finalImgWidth, finalImgHeight);
-    
-    const body = dailyWithdrawals.map(item => [shapeText(getEmployeeName(item.employeeId, useKurdish)), shapeText(item.notes || t('na')), formatCurrencyForPdf(item.amount)]);
-    const head = [shapeText(t('employee')), shapeText(t('notes')), shapeText(t('amount'))];
-    const foot = [shapeText(t('total')), '', formatCurrencyForPdf(totalAmount)];
-
-
-    autoTable(doc, {
-        startY: finalImgHeight + 10,
-        head: [head],
-        body: body,
-        foot: [foot],
-        theme: 'striped',
-        styles: { font: (useKurdish && settings.customFont) ? fontName : 'helvetica', halign: useKurdish ? 'right' : 'left' },
-        headStyles: { font: (useKurdish && settings.customFont) ? fontName : 'helvetica', fillColor: settings.reportColors?.withdrawal || settings.themeColor || '#22c55e' },
-        footStyles: { font: (useKurdish && settings.customFont) ? fontName : 'helvetica', fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' },
-    });
-    
-    const finalY = (doc as any).lastAutoTable.finalY + 40;
-    const pageHeight = doc.internal.pageSize.height;
-    if (finalY > pageHeight - 30) {
-        doc.addPage();
-    }
-    const signatureY = finalY > pageHeight - 50 ? 40 : finalY;
-    if (useKurdish && settings.customFont) doc.setFont(fontName);
-    doc.setFontSize(10);
-    doc.text(shapeText(t('warehouse_manager_signature')), doc.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
-    doc.text("...................................", doc.internal.pageSize.width - 120, signatureY, { align: 'center' });
-
-    doc.save(`cash-withdrawal-report-${format(selectedDate, 'yyyy-MM-dd')}.pdf`);
-  };
 
   const handlePrint = () => {
     window.print();
@@ -234,19 +169,6 @@ export default function AddCashWithdrawalPage() {
 
   return (
     <>
-    <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-      {selectedDate && (
-         <div ref={pdfHeaderRef} style={{ width: '700px', background: 'white', color: 'black' }}>
-            <ReportPdfHeader
-              title={t('daily_cash_withdrawal_report')}
-              subtitle={format(selectedDate, 'PPP')}
-              logoSrc={pdfSettings.report?.logo ?? null}
-              themeColor={pdfSettings.report?.reportColors?.withdrawal ?? pdfSettings.report?.themeColor}
-              headerText={pdfSettings.report?.headerText}
-            />
-          </div>
-      )}
-    </div>
     <div className="min-h-screen bg-background text-foreground">
       <header className="bg-card border-b p-4 print:hidden">
         <div className="container mx-auto flex items-center justify-between">
@@ -256,7 +178,7 @@ export default function AddCashWithdrawalPage() {
                 <ArrowLeft />
               </Link>
             </Button>
-            <h1 className="text-xl font-bold">{t('daily_cash_withdrawals')}</h1>
+            <h1 className="text-xl">{t('daily_cash_withdrawals')}</h1>
           </div>
           <div className="flex items-center gap-2">
             <Popover>
@@ -270,8 +192,7 @@ export default function AddCashWithdrawalPage() {
                  <Calendar mode="single" selected={selectedDate} onSelect={(date) => { setSelectedDate(date); if (dateParam) router.push('/cash-withdrawal/add'); }} initialFocus captionLayout="dropdown-nav" fromYear={2020} toYear={2040} />
               </PopoverContent>
             </Popover>
-            <Button variant="outline" onClick={handleDownloadPdf} disabled={!dailyWithdrawals || dailyWithdrawals.length === 0}><FileText className="mr-2 h-4 w-4" />PDF</Button>
-            <Button variant="outline" onClick={handlePrint} disabled={!dailyWithdrawals || dailyWithdrawals.length === 0}><Printer className="mr-2 h-4 w-4" />Print</Button>
+            <Button variant="outline" onClick={handlePrint} disabled={!dailyWithdrawals || dailyWithdrawals.length === 0}><Printer className="mr-2 h-4 w-4" />{t('print')}</Button>
           </div>
         </div>
       </header>
@@ -340,7 +261,7 @@ export default function AddCashWithdrawalPage() {
                         <div key={record.id} className="py-3 flex justify-between items-start gap-4">
                             {editingRecord?.id === record.id ? (
                             <div className="flex-1 space-y-2 print:hidden">
-                                <p className="font-bold" dir={language === 'ku' ? 'rtl' : 'ltr'}>{getEmployeeName(record.employeeId, language === 'ku')}</p>
+                                <p className="font-semibold" dir={language === 'ku' ? 'rtl' : 'ltr'}>{getEmployeeName(record.employeeId, language === 'ku')}</p>
                                 <Input 
                                     type="number" 
                                     value={editingRecord.amount}
@@ -355,7 +276,7 @@ export default function AddCashWithdrawalPage() {
                             </div>
                             ) : (
                             <div className="flex-1">
-                                <p className="font-semibold flex items-center gap-2" dir={language === 'ku' ? 'rtl' : 'ltr'}><User className="h-4 w-4 text-primary" /> {getEmployeeName(record.employeeId, language === 'ku')}</p>
+                                <p className="flex items-center gap-2" dir={language === 'ku' ? 'rtl' : 'ltr'}><User className="h-4 w-4 text-primary" /> {getEmployeeName(record.employeeId, language === 'ku')}</p>
                                 {record.notes && <p className="text-sm mt-1">{record.notes}</p>}
                             </div>
                             )}
@@ -414,5 +335,3 @@ export default function AddCashWithdrawalPage() {
     </>
   );
 }
-
-    

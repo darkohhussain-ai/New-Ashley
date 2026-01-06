@@ -36,7 +36,6 @@ import { DashboardCard } from './dashboard-card';
 
 
 export function DashboardClient() {
-  const [time, setTime] = useState<Date | null>(null);
   const { t, setLanguage, language } = useTranslation();
 
   const [savedBannerHeight] = useLocalStorage('dashboard-banner-height', 150);
@@ -44,22 +43,11 @@ export function DashboardClient() {
     'dashboard-banner',
     'https://i.ibb.co/6Wp2t1Y/image.png'
   );
-  const [savedLogo] = useLocalStorage(
-    'app-logo',
-    'https://picsum.photos/seed/ashley-logo/300/100'
-  );
   
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => {
     setIsMounted(true);
-    setTime(new Date());
-    const timer = setInterval(() => setTime(new Date()), 1000);
-    return () => clearInterval(timer);
   }, []);
-
-  const handleRefresh = () => {
-    window.location.reload();
-  };
 
   const menuItems = [
     {
@@ -111,93 +99,26 @@ export function DashboardClient() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="bg-card border-b top-0 z-10">
+    <>
+      {savedDashboardBanner && (
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-20">
-            <div className="hidden md:flex items-center gap-4 text-sm text-muted-foreground w-1/3">
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                <span suppressHydrationWarning>{time ? format(time, 'MMMM d, yyyy') : '...'}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4" />
-                <span suppressHydrationWarning>{time ? format(time, 'h:mm:ss a') : '...'}</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-center w-1/3">
-              {savedLogo && (
-                <div className="relative w-full max-w-[240px] aspect-[3/1]">
-                  <Image
-                    src={savedLogo}
-                    alt="App Logo"
-                    fill
-                    className="object-contain"
-                    data-ai-hint="logo"
-                  />
-                </div>
-              )}
-            </div>
-            <div className="flex items-center justify-end gap-2 w-1/3">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <Languages className="w-5 h-5 text-muted-foreground hover:text-primary" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onSelect={() => setLanguage('en')}
-                    disabled={language === 'en'}
-                  >
-                    English
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onSelect={() => setLanguage('ku')}
-                    disabled={language === 'ku'}
-                  >
-                    Kurdish (Soranî)
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleRefresh}
-                aria-label="Refresh page"
-              >
-                <RefreshCcw className="w-5 h-5 text-muted-foreground hover:text-primary" />
-              </Button>
-              <Bell className="w-6 h-6 text-muted-foreground hover:text-primary cursor-pointer" />
-              <div className="flex items-center gap-2 cursor-pointer">
-                <Avatar className="w-10 h-10">
-                  <AvatarImage src={undefined} />
-                  <AvatarFallback>{'A'}</AvatarFallback>
-                </Avatar>
-                <ChevronDown className="w-4 h-4 text-muted-foreground" />
-              </div>
-            </div>
-          </div>
-          {savedDashboardBanner && (
             <div
-              className="relative w-full mx-auto my-4 max-w-6xl rounded-lg overflow-hidden"
-              style={{ height: `${savedBannerHeight}px` }}
+            className="relative w-full mx-auto my-4 max-w-6xl rounded-lg overflow-hidden"
+            style={{ height: `${savedBannerHeight}px` }}
             >
-              <Image
+            <Image
                 src={savedDashboardBanner}
                 alt="Dashboard Banner"
                 fill
                 className="object-contain"
                 data-ai-hint="banner abstract"
-              />
+            />
             </div>
-          )}
         </div>
-      </header>
+      )}
       <main className="container mx-auto p-4 md:p-8">
         <div className="mb-8">
-          <h2 className="text-2xl font-bold">{t('welcome_back')}</h2>
+          <h2 className="text-2xl">{t('welcome_back')}</h2>
           <p className="text-muted-foreground">{t('select_service')}</p>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -212,6 +133,6 @@ export function DashboardClient() {
           ))}
         </div>
       </main>
-    </div>
+    </>
   );
 }

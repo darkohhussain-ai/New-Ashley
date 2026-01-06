@@ -50,7 +50,7 @@ export default function WithdrawalArchivePage() {
           <Button variant="outline" size="icon" asChild>
             <Link href="/cash-withdrawal"><ArrowLeft /></Link>
           </Button>
-          <h1 className="text-2xl md:text-3xl font-bold">{t('withdrawal_archive')}</h1>
+          <h1 className="text-2xl md:text-3xl">{t('withdrawal_archive')}</h1>
         </div>
          <Button asChild>
             <Link href="/cash-withdrawal/add"><Plus className="mr-2"/> {t('add_withdrawal')}</Link>
@@ -70,7 +70,7 @@ export default function WithdrawalArchivePage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="flex-grow space-y-3 text-sm">
-                  <p className="text-lg font-bold text-primary">{formatCurrency(totalAmount)}</p>
+                  <p className="text-lg text-primary">{formatCurrency(totalAmount)}</p>
                 </CardContent>
                 <CardContent>
                   <Button asChild className="w-full">

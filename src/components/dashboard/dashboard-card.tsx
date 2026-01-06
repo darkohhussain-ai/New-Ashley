@@ -2,7 +2,7 @@
 'use client';
 
 import Link from "next/link"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import type { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -28,7 +28,7 @@ export function DashboardCard({ title, icon: Icon, href, color }: DashboardCardP
               className="text-white transition-transform duration-300 group-hover:scale-110 w-10 h-10"
             />
           </div>
-          <h3 className="text-lg font-semibold text-white">{title}</h3>
+          <CardTitle className="text-lg">{title}</CardTitle>
         </CardContent>
       </Card>
     </Link>

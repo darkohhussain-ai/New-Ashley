@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -47,7 +48,7 @@ export default function AshleyExpensesDashboard() {
     <div className="min-h-screen bg-background text-foreground">
       <main className='container mx-auto p-4 md:p-8'>
          <div className="mb-8">
-            <h1 className="text-2xl font-bold">{t('ashley_employees_management')}</h1>
+            <h1 className="text-2xl">{t('ashley_employees_management')}</h1>
          </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {menuItems.map((item) => (
@@ -57,7 +58,7 @@ export default function AshleyExpensesDashboard() {
                     <div className="p-4 bg-white/20 rounded-full mb-4">
                         <item.icon className="w-8 h-8" />
                     </div>
-                    <CardTitle className="text-lg font-semibold">{item.title}</CardTitle>
+                    <CardTitle className="text-lg">{item.title}</CardTitle>
                   </CardContent>
                 </Card>
             </Link>

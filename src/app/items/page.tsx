@@ -98,7 +98,7 @@ export default function ItemsPage() {
               <span className="sr-only">{t('back_to_dashboard')}</span>
             </Link>
           </Button>
-          <h1 className="text-xl font-bold">{t('placement_storage')}</h1>
+          <h1 className="text-xl">{t('placement_storage')}</h1>
         </div>
       </header>
       <main className='container mx-auto p-4 md:p-8'>
@@ -110,7 +110,7 @@ export default function ItemsPage() {
                     <div className="p-4 bg-white/20 rounded-full mb-4">
                         <item.icon className="w-8 h-8" />
                     </div>
-                    <CardTitle className="text-lg font-semibold">{item.title}</CardTitle>
+                    <CardTitle className="text-lg">{item.title}</CardTitle>
                   </CardContent>
                 </Card>
             </Link>

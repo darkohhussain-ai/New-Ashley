@@ -11,16 +11,10 @@ import { Calendar } from '@/components/ui/calendar';
 import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import html2canvas from 'html2canvas';
-import { ReportPdfHeader } from '@/components/reports/report-pdf-header';
-import useLocalStorage from '@/hooks/use-local-storage';
 import { useAppContext } from '@/context/app-provider';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { AllPdfSettings } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
-import { shapeText } from '@/lib/pdf-utils';
+
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -33,8 +27,6 @@ const formatCurrency = (amount: number) => {
 export default function MonthlyWithdrawalReportPage() {
   const { t, language } = useTranslation();
   const { withdrawals, employees } = useAppContext();
-  const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {} });
-  const pdfHeaderRef = useRef<HTMLDivElement>(null);
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   useEffect(() => {
@@ -75,73 +67,6 @@ export default function MonthlyWithdrawalReportPage() {
     return { records: filteredRecords, summary, totalAmount };
   }, [withdrawals, employees, selectedDate, getEmployeeName, language]);
 
-  const handleDownloadPdf = async () => {
-    if (!pdfHeaderRef.current || !selectedDate) return;
-    
-    const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
-    const settings = pdfSettings.report || {};
-    const useKurdish = language === 'ku';
-    const fontName = "CustomFont";
-    
-    if (settings.customFont && useKurdish) {
-        try {
-            const fontBase64 = settings.customFont.split(',')[1];
-            doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
-            doc.addFont(`${fontName}.ttf`, fontName, "normal");
-            doc.setFont(fontName);
-        } catch (e) {
-            console.error("Failed to load custom font:", e);
-        }
-    }
-    
-    const headerCanvas = await html2canvas(pdfHeaderRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
-    const headerImgData = headerCanvas.toDataURL('image/png');
-    const pdfWidth = doc.internal.pageSize.getWidth();
-    const headerRatio = headerCanvas.width / headerCanvas.height;
-    const finalHeaderWidth = pdfWidth;
-    const finalHeaderHeight = finalHeaderWidth / headerRatio;
-    doc.addImage(headerImgData, 'PNG', 0, 0, finalHeaderWidth, finalHeaderHeight);
-
-    let startY = finalHeaderHeight + 20;
-    
-    if(monthlyData.summary.length > 0) {
-        autoTable(doc, {
-          startY: startY,
-          head: [[shapeText(t('employee')), shapeText(t('total_withdrawn'))]],
-          body: monthlyData.summary.map(item => [shapeText(item.employeeName), formatCurrency(item.totalAmount)]),
-          foot: [[shapeText(t('grand_total')), formatCurrency(monthlyData.totalAmount)]],
-          theme: 'grid',
-          styles: { font: (useKurdish && settings.customFont) ? fontName : 'helvetica', halign: useKurdish ? 'right' : 'left' },
-          headStyles: { font: (useKurdish && settings.customFont) ? fontName : 'helvetica', fillColor: settings.reportColors?.withdrawal || settings.themeColor || '#22c55e' },
-          footStyles: { font: (useKurdish && settings.customFont) ? fontName : 'helvetica', fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold'},
-        });
-    }
-
-    const finalY = (doc as any).lastAutoTable.finalY + 40;
-    const pageHeight = doc.internal.pageSize.height;
-    if (finalY > pageHeight - 30) {
-        doc.addPage();
-    }
-    const signatureY = finalY > pageHeight - 50 ? 40 : finalY;
-    if (useKurdish && settings.customFont) doc.setFont(fontName);
-    doc.setFontSize(10);
-    doc.text("...................................", doc.internal.pageSize.width - 120, signatureY, { align: 'center' });
-    doc.text(shapeText("Warehouse Manager Signature"), doc.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
-    
-    if (settings.footerText) {
-        const pageCount = (doc as any).internal.getNumberOfPages();
-        for (let i = 1; i <= pageCount; i++) {
-            doc.setPage(i);
-            if (useKurdish && settings.customFont) doc.setFont(fontName);
-            doc.setFontSize(8);
-            doc.setTextColor(150);
-            doc.text(settings.footerText, doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
-        }
-    }
-    
-    doc.save(`monthly-withdrawal-report-${format(selectedDate, 'yyyy-MM')}.pdf`);
-  };
-
   const handlePrint = () => {
     window.print();
   };
@@ -152,26 +77,13 @@ export default function MonthlyWithdrawalReportPage() {
 
   return (
     <>
-      <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-        {selectedDate && (
-          <div ref={pdfHeaderRef} style={{ width: '700px', background: 'white', color: 'black' }}>
-            <ReportPdfHeader 
-                title={t('monthly_withdrawal_report')}
-                subtitle={format(selectedDate, 'MMMM yyyy')} 
-                logoSrc={pdfSettings.report?.logo ?? null}
-                themeColor={pdfSettings.report?.reportColors?.withdrawal ?? pdfSettings.report?.themeColor}
-                headerText={pdfSettings.report?.headerText}
-            />
-          </div>
-        )}
-      </div>
       <div className="min-h-screen bg-background text-foreground p-4 md:p-8 print:p-0">
         <header className="flex items-center justify-between gap-4 mb-8 print:hidden">
           <div className="flex items-center gap-4">
             <Button variant="outline" size="icon" asChild>
               <Link href="/cash-withdrawal"><ArrowLeft /></Link>
             </Button>
-            <h1 className="text-2xl md:text-3xl font-bold">{t('monthly_withdrawal_report')}</h1>
+            <h1 className="text-2xl md:text-3xl">{t('monthly_withdrawal_report')}</h1>
           </div>
           <div className="flex items-center gap-2">
             <Popover>
@@ -185,7 +97,6 @@ export default function MonthlyWithdrawalReportPage() {
                 <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} captionLayout="dropdown-buttons" fromYear={2020} toYear={2040} />
               </PopoverContent>
             </Popover>
-            <Button onClick={handleDownloadPdf} disabled={isLoading || monthlyData.records.length === 0}><FileText className="mr-2"/>{t('download_pdf')}</Button>
             <Button variant="outline" onClick={handlePrint} disabled={isLoading || monthlyData.records.length === 0}><Printer className="mr-2"/>{t('print')}</Button>
           </div>
         </header>
@@ -217,8 +128,8 @@ export default function MonthlyWithdrawalReportPage() {
                                 <TableBody>
                                     {monthlyData.summary.map(item => (
                                         <TableRow key={item.employeeId}>
-                                            <TableCell className="font-medium" dir={language === 'ku' ? 'rtl' : 'ltr'}>{item.employeeName}</TableCell>
-                                            <TableCell className="text-right font-semibold">{formatCurrency(item.totalAmount)}</TableCell>
+                                            <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{item.employeeName}</TableCell>
+                                            <TableCell className="text-right">{formatCurrency(item.totalAmount)}</TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>

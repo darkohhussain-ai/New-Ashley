@@ -131,7 +131,7 @@ export default function AshleyMapPage() {
               <span className="sr-only">{t('back_to_dashboard')}</span>
             </Link>
           </Button>
-          <h1 className="text-2xl md:text-3xl font-bold">{t('ashley_warehouse_map')}</h1>
+          <h1 className="text-2xl md:text-3xl">{t('ashley_warehouse_map')}</h1>
         </header>
         <main className="space-y-8">
           {isLoading ? (
@@ -237,7 +237,7 @@ export default function AshleyMapPage() {
                 <TableBody>
                     {itemsInLocation.map(item => (
                         <TableRow key={item.id}>
-                            <TableCell className="font-medium">{item.model}</TableCell>
+                            <TableCell>{item.model}</TableCell>
                             <TableCell className="text-right">{item.quantity}</TableCell>
                         </TableRow>
                     ))}

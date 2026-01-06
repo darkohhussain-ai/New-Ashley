@@ -1,8 +1,8 @@
+
 'use client';
 
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton';
-import { DashboardClient as DashboardClientComponent } from '@/components/dashboard/dashboard-client';
 
 const DashboardClient = dynamic(
   () => import('@/components/dashboard/dashboard-client').then((mod) => mod.DashboardClient),

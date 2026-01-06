@@ -16,17 +16,11 @@ import { format, startOfDay, endOfDay, isWithinInterval, parseISO } from 'date-f
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { ReportPdfHeader } from '@/components/reports/report-pdf-header';
 import useLocalStorage from '@/hooks/use-local-storage';
 import { useAppContext } from '@/context/app-provider';
 import type { Bonus, AllPdfSettings } from '@/lib/types';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import html2canvas from 'html2canvas';
 import { useTranslation } from '@/hooks/use-translation';
-import { shapeText } from '@/lib/pdf-utils';
 
-const BONUS_RATE = 5000; // 5,000 IQD per load
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -44,7 +38,7 @@ export default function AddBonusPage() {
   const router = useRouter();
 
   const { employees, bonuses, setBonuses } = useAppContext();
-  const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {}, card: {} });
+  const [salarySettings] = useLocalStorage('ashley-salary-settings', { bonusRate: 5000 });
 
   const dateParam = searchParams.get('date');
 
@@ -72,8 +66,6 @@ export default function AddBonusPage() {
   // Editing state
   const [editingRecord, setEditingRecord] = useState<Bonus | null>(null);
   
-  const pdfHeaderRef = useRef<HTMLDivElement>(null);
-
   const warehouseEmployees = useMemo(() => {
     if (!employees) return [];
     return employees.filter(e => e.role !== 'Marketing');
@@ -143,8 +135,8 @@ export default function AddBonusPage() {
       employeeId: selectedEmployee,
       date: selectedDate.toISOString(),
       loadCount: parseInt(loadCount),
-      rate: BONUS_RATE,
-      totalAmount: parseInt(loadCount) * BONUS_RATE,
+      rate: salarySettings.bonusRate,
+      totalAmount: parseInt(loadCount) * salarySettings.bonusRate,
       notes,
     };
 
@@ -172,69 +164,6 @@ export default function AddBonusPage() {
 
   const isLoading = !employees || !bonuses;
 
-  const handleDownloadPdf = async () => {
-    if (!pdfHeaderRef.current || !selectedDate || !dailyBonuses) return;
-    
-    const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
-    const settings = pdfSettings.report || {};
-    const useKurdish = language === 'ku';
-    
-    if (settings.customFont && useKurdish) {
-        const fontName = "CustomFont";
-        try {
-            const fontBase64 = settings.customFont.split(',')[1];
-            doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
-            doc.addFont(`${fontName}.ttf`, fontName, "normal");
-            doc.setFont(fontName);
-        } catch(e) {
-            console.error("Could not add custom font to PDF", e);
-        }
-    }
-
-    const canvas = await html2canvas(pdfHeaderRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
-    const imgData = canvas.toDataURL('image/png');
-    const pdfWidth = doc.internal.pageSize.getWidth();
-    const ratio = canvas.width / canvas.height;
-    const finalImgWidth = pdfWidth;
-    const finalImgHeight = finalImgWidth / ratio;
-    
-    doc.addImage(imgData, 'PNG', 0, 0, finalImgWidth, finalImgHeight);
-    
-    const body = dailyBonuses.map(item => [
-        shapeText(getEmployeeName(item.employeeId, useKurdish)), 
-        item.loadCount, 
-        shapeText(item.notes || t('na')), 
-        formatCurrency(item.totalAmount)
-    ]);
-    const head = [shapeText(t('employee')), shapeText(t('loads')), shapeText(t('notes')), shapeText(t('amount'))];
-    const foot = [shapeText(t('total')), totalLoads.toFixed(0), '', formatCurrency(totalAmount)];
-
-
-    autoTable(doc, {
-        startY: finalImgHeight + 10,
-        head: [head],
-        body: body,
-        foot: [foot],
-        theme: 'striped',
-        styles: { font: (useKurdish && settings.customFont) ? "CustomFont" : 'helvetica', halign: useKurdish ? 'right' : 'left' },
-        headStyles: { font: (useKurdish && settings.customFont) ? "CustomFont" : 'helvetica', fillColor: settings.reportColors?.bonus || settings.themeColor || '#22c55e' },
-        footStyles: { font: (useKurdish && settings.customFont) ? "CustomFont" : 'helvetica', fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' },
-    });
-    
-    const finalY = (doc as any).lastAutoTable.finalY + 40;
-    const pageHeight = doc.internal.pageSize.height;
-    if (finalY > pageHeight - 30) {
-        doc.addPage();
-    }
-    const signatureY = finalY > pageHeight - 50 ? 40 : finalY;
-    if (useKurdish && settings.customFont) doc.setFont("CustomFont");
-    doc.setFontSize(10);
-    doc.text(shapeText(t('warehouse_manager_signature')), doc.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
-    doc.text("...................................", doc.internal.pageSize.width - 120, signatureY, { align: 'center' });
-
-    doc.save(`bonus-report-${format(selectedDate, 'yyyy-MM-dd')}.pdf`);
-  };
-
   const handlePrint = () => {
     window.print();
   };
@@ -245,19 +174,6 @@ export default function AddBonusPage() {
 
   return (
     <>
-    <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-      {selectedDate && (
-         <div ref={pdfHeaderRef} style={{ width: '700px', background: 'white', color: 'black' }}>
-            <ReportPdfHeader
-              title={t('daily_bonus_report')}
-              subtitle={format(selectedDate, 'PPP')}
-              logoSrc={pdfSettings.report?.logo ?? null}
-              themeColor={pdfSettings.report?.reportColors?.bonus ?? pdfSettings.report?.themeColor}
-              headerText={pdfSettings.report?.headerText}
-            />
-          </div>
-      )}
-    </div>
     <div className="min-h-screen bg-background text-foreground">
       <header className="bg-card border-b p-4 print:hidden">
         <div className="container mx-auto flex items-center justify-between">
@@ -267,7 +183,7 @@ export default function AddBonusPage() {
                 <ArrowLeft />
               </Link>
             </Button>
-            <h1 className="text-xl font-bold">{t('daily_bonuses')}</h1>
+            <h1 className="text-xl">{t('daily_bonuses')}</h1>
           </div>
           <div className="flex items-center gap-2">
             <Popover>
@@ -281,8 +197,7 @@ export default function AddBonusPage() {
                 <Calendar mode="single" selected={selectedDate} onSelect={(date) => { setSelectedDate(date); if (dateParam) router.push('/bonuses/add'); }} initialFocus captionLayout="dropdown-nav" fromYear={2020} toYear={2040} />
               </PopoverContent>
             </Popover>
-            <Button variant="outline" onClick={handleDownloadPdf} disabled={!dailyBonuses || dailyBonuses.length === 0}><FileText className="mr-2 h-4 w-4" />PDF</Button>
-            <Button variant="outline" onClick={handlePrint} disabled={!dailyBonuses || dailyBonuses.length === 0}><Printer className="mr-2 h-4 w-4" />Print</Button>
+            <Button variant="outline" onClick={handlePrint} disabled={!dailyBonuses || dailyBonuses.length === 0}><Printer className="mr-2 h-4 w-4" />{t('print')}</Button>
           </div>
         </div>
       </header>
@@ -326,7 +241,7 @@ export default function AddBonusPage() {
                         <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder={t('notes_optional')} disabled={isSaving}/>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                        {t('bonus_rate', {rate: formatCurrency(BONUS_RATE)})}
+                        {t('bonus_rate', {rate: formatCurrency(salarySettings.bonusRate)})}
                     </p>
                     </CardContent>
                     <CardFooter>
@@ -354,7 +269,7 @@ export default function AddBonusPage() {
                         <div key={record.id} className="py-3 flex justify-between items-start gap-4">
                             {editingRecord?.id === record.id ? (
                             <div className="flex-1 space-y-2 print:hidden">
-                                <p className="font-bold" dir={language === 'ku' ? 'rtl' : 'ltr'}>{getEmployeeName(record.employeeId, language==='ku')}</p>
+                                <p className="font-semibold" dir={language === 'ku' ? 'rtl' : 'ltr'}>{getEmployeeName(record.employeeId, language==='ku')}</p>
                                 <Input 
                                     type="number" 
                                     value={editingRecord.loadCount}
@@ -369,7 +284,7 @@ export default function AddBonusPage() {
                             </div>
                             ) : (
                             <div className="flex-1">
-                                <p className="font-semibold flex items-center gap-2" dir={language === 'ku' ? 'rtl' : 'ltr'}><User className="h-4 w-4 text-primary" /> {getEmployeeName(record.employeeId, language === 'ku')}</p>
+                                <p className="flex items-center gap-2" dir={language === 'ku' ? 'rtl' : 'ltr'}><User className="h-4 w-4 text-primary" /> {getEmployeeName(record.employeeId, language === 'ku')}</p>
                                 <p className="text-sm text-muted-foreground">{record.loadCount} {t('loads')}</p>
                                 {record.notes && <p className="text-sm mt-1">{record.notes}</p>}
                             </div>

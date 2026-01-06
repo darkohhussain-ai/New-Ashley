@@ -106,7 +106,7 @@ export default function AddExpenseReportPage() {
           <Button variant="outline" size="icon" asChild>
             <Link href="/expenses"><ArrowLeft /></Link>
           </Button>
-          <h1 className="text-2xl md:text-3xl font-bold">{t('new_expense_report')}</h1>
+          <h1 className="text-2xl md:text-3xl">{t('new_expense_report')}</h1>
         </div>
         <Button onClick={handleSaveReport} disabled={isSaving}>
           {isSaving ? <Loader2 className="animate-spin mr-2" /> : <Save className="mr-2" />}

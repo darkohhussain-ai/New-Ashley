@@ -618,7 +618,7 @@ export default function FileDetailPage() {
                     <ArrowLeft />
                     </Link>
                 </Button>
-                <h1 className="text-xl font-bold">{t('file_details')}</h1>
+                <h1 className="text-xl">{t('file_details')}</h1>
             </div>
             <div className='flex items-center gap-2 flex-wrap justify-end'>
                 {isEditing ? (
@@ -667,13 +667,13 @@ export default function FileDetailPage() {
                                         <Input 
                                             value={editableFile.storageName || ''} 
                                             onChange={(e) => setEditableFile(prev => ({...prev, storageName: e.target.value}))}
-                                            className="text-2xl md:text-3xl font-bold h-auto p-0 border-0 shadow-none focus-visible:ring-0"
+                                            className="text-2xl md:text-3xl h-auto p-0 border-0 shadow-none focus-visible:ring-0"
                                             placeholder={t('enter_file_name')}
                                         />
                                     ) : (
-                                        <CardTitle className="text-2xl md:text-3xl font-bold">{file.storageName}</CardTitle>
+                                        <CardTitle className="text-2xl md:text-3xl">{file.storageName}</CardTitle>
                                     )}
-                                    <CardDescription className="font-semibold text-primary">{file.categoryName}</CardDescription>
+                                    <CardDescription className="text-primary">{file.categoryName}</CardDescription>
                                 </div>
                                 <Badge variant={file.type === 'imported' ? 'default' : 'secondary'}>{file.type}</Badge>
                             </div>
@@ -754,7 +754,7 @@ export default function FileDetailPage() {
                                   const total = statusChartData.reduce((acc, curr) => acc + curr.value, 0);
                                   return (
                                     <div className="p-2 text-sm bg-background/80 backdrop-blur-sm rounded-lg border shadow-sm">
-                                      <p className="font-bold">{`${name}: ${((value / total) * 100).toFixed(0)}% (${value})`}</p>
+                                      <p>{`${name}: ${((value / total) * 100).toFixed(0)}% (${value})`}</p>
                                     </div>
                                   );
                                 }
@@ -784,7 +784,7 @@ export default function FileDetailPage() {
                                   const total = conditionChartData.reduce((acc, curr) => acc + curr.value, 0);
                                   return (
                                     <div className="p-2 text-sm bg-background/80 backdrop-blur-sm rounded-lg border shadow-sm">
-                                      <p className="font-bold">{`${name}: ${((value / total) * 100).toFixed(0)}% (${value})`}</p>
+                                      <p>{`${name}: ${((value / total) * 100).toFixed(0)}% (${value})`}</p>
                                     </div>
                                   );
                                 }
@@ -840,12 +840,12 @@ export default function FileDetailPage() {
                     <TableBody>
                         {paginatedItems.map((item) => (
                             <TableRow id={item.id} key={item.id} className={cn("transition-colors target:bg-primary/20 target:duration-500", getRowClass(item))}>
-                                <TableCell className="font-medium">
+                                <TableCell>
                                     {isEditing ? <span className='text-muted-foreground'>{item.model}</span> : item.model}
                                 </TableCell>
                                 <TableCell>
                                     <div className="flex items-center gap-2">
-                                        {isEditing ? <span className='text-muted-foreground font-semibold'>{item.quantity}</span> : <span className="font-semibold">{item.quantity}</span>}
+                                        {isEditing ? <span className='text-muted-foreground'>{item.quantity}</span> : <span>{item.quantity}</span>}
                                         {isEditing && originalQuantities[item.id] !== undefined && originalQuantities[item.id] !== item.quantity && (
                                             <span className="text-xs text-muted-foreground whitespace-nowrap">(was {originalQuantities[item.id]})</span>
                                         )}

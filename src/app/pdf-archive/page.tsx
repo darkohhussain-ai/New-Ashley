@@ -38,7 +38,7 @@ export default function PdfArchivePage() {
             <span className="sr-only">{t('back_to_placement_storage')}</span>
           </Link>
         </Button>
-        <h1 className="text-2xl md:text-3xl font-bold">{t('pdf_archive')}</h1>
+        <h1 className="text-2xl md:text-3xl">{t('pdf_archive')}</h1>
       </header>
       <main>
         {isLoading ? (
