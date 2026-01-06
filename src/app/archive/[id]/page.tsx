@@ -27,7 +27,6 @@ import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from 'recha
 import { useAppContext } from '@/context/app-provider';
 import type { ExcelFile, Item, Employee, StorageLocation } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
-import { shapeText } from '@/lib/pdf-utils';
 
 
 type SortableKeys = keyof Item;
@@ -484,15 +483,15 @@ export default function FileDetailPage() {
     
     autoTable(pdf, {
       startY: finalImgHeight + 30,
-      head: [[shapeText(t('model')), t('quantity'), shapeText(t('storage_status')), shapeText(t('condition')), t('qty_per_condition'), shapeText(t('location')), shapeText(t('notes'))]],
+      head: [[t('model'), t('quantity'), t('storage_status'), t('condition'), t('qty_per_condition'), t('location'), t('notes')]],
       body: sortedItems.map(item => [
-        shapeText(item.model),
+        item.model,
         item.quantity,
-        shapeText(t(item.storageStatus?.toLowerCase() || '') || item.storageStatus || ''),
-        shapeText(t(item.modelCondition?.toLowerCase() || '') || item.modelCondition || ''),
+        t(item.storageStatus?.toLowerCase() || '') || item.storageStatus || '',
+        t(item.modelCondition?.toLowerCase() || '') || item.modelCondition || '',
         item.quantityPerCondition ?? '',
-        shapeText(item.locationId ? getLocationName(item.locationId) : ''),
-        shapeText(item.notes || '')
+        item.locationId ? getLocationName(item.locationId) : '',
+        item.notes || ''
       ]),
       theme: 'grid',
       styles: {
@@ -516,9 +515,9 @@ export default function FileDetailPage() {
     const signatureY = finalY > pageHeight - 50 ? 40 : finalY;
     if (useKurdish && customFontBase64) pdf.setFont("CustomFont");
     pdf.setFontSize(10);
-    const signatureX = useKurdish ? 14 : pdf.internal.pageSize.width - 120;
-    pdf.text("...................................", signatureX, signatureY, { align: useKurdish ? 'right' : 'center' });
-    pdf.text(shapeText(t('warehouse_manager_signature')), signatureX, signatureY + 10, { align: useKurdish ? 'right' : 'center' });
+    const signatureX = useKurdish ? pdf.internal.pageSize.width - 14 : 14;
+    pdf.text("...................................", signatureX, signatureY, { align: useKurdish ? 'right' : 'left' });
+    pdf.text(t('warehouse_manager_signature'), signatureX, signatureY + 10, { align: useKurdish ? 'right' : 'left' });
 
 
     pdf.save(`${file.storageName}.pdf`);
@@ -923,5 +922,3 @@ export default function FileDetailPage() {
     </div>
   );
 }
-
-    

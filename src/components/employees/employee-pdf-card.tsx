@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -7,7 +8,6 @@ import Image from 'next/image';
 import type { Employee, PdfSettings } from "@/lib/types";
 import { useEffect, useState } from "react";
 import { useTranslation } from "@/hooks/use-translation";
-import { shapeText } from "@/lib/pdf-utils";
 
 type EmployeePdfCardProps = {
   employee: Employee;
@@ -38,8 +38,8 @@ export function EmployeePdfCard({ employee, settings }: EmployeePdfCardProps) {
             </AvatarFallback>
           </Avatar>
           <div className="text-center">
-            <h2 className="text-lg font-bold text-gray-900" dir={useKurdish ? 'rtl' : 'ltr'}>{shapeText(displayName)}</h2>
-            <p className="text-sm text-gray-500" dir={useKurdish ? 'rtl' : 'ltr'}>{shapeText(employee.role || t('employee'))}</p>
+            <h2 className="text-lg font-bold text-gray-900" dir={useKurdish ? 'rtl' : 'ltr'}>{displayName}</h2>
+            <p className="text-sm text-gray-500" dir={useKurdish ? 'rtl' : 'ltr'}>{employee.role || t('employee')}</p>
           </div>
            <div className="mt-4 text-xs text-left w-full space-y-2">
                 <p className="flex items-center gap-2 truncate"><Mail className="w-3 h-3 shrink-0"/>{employee.email || t('na')}</p>
@@ -61,8 +61,8 @@ export function EmployeePdfCard({ employee, settings }: EmployeePdfCardProps) {
                 }}
              ></div>
             <div className="z-10">
-                <h1 className="font-bold text-xl uppercase">{shapeText(employee.role || t('employee').toLocaleUpperCase())}</h1>
-                {settings.headerText && <p className="text-xs opacity-90">{shapeText(settings.headerText)}</p>}
+                <h1 className="font-bold text-xl uppercase">{employee.role || t('employee').toLocaleUpperCase()}</h1>
+                {settings.headerText && <p className="text-xs opacity-90">{settings.headerText}</p>}
             </div>
             <div className="relative w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-md z-10">
                 <div className="w-12 h-12 relative">
@@ -79,16 +79,16 @@ export function EmployeePdfCard({ employee, settings }: EmployeePdfCardProps) {
           <div className="relative bg-white p-4 flex-grow flex flex-col">
               {/* Details Grid */}
               <div className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm mt-4" dir={useKurdish ? 'rtl' : 'ltr'}>
-                  <div><p className="text-gray-500 text-xs">{shapeText(t('id_no'))}</p><p className="font-semibold">{employee.employeeId || t('na')}</p></div>
-                  <div><p className="text-gray-500 text-xs">{shapeText(t('joined_date'))}</p><p className="font-semibold">{formattedJoinedDate}</p></div>
-                  <div><p className="text-gray-500 text-xs">{shapeText(t('dob'))}</p><p className="font-semibold">{formattedDob}</p></div>
-                  <div><p className="text-gray-500 text-xs">{shapeText(t('expire_date'))}</p><p className="font-semibold">{t('na')}</p></div>
+                  <div><p className="text-gray-500 text-xs">{t('id_no')}</p><p className="font-semibold">{employee.employeeId || t('na')}</p></div>
+                  <div><p className="text-gray-500 text-xs">{t('joined_date')}</p><p className="font-semibold">{formattedJoinedDate}</p></div>
+                  <div><p className="text-gray-500 text-xs">{t('dob')}</p><p className="font-semibold">{formattedDob}</p></div>
+                  <div><p className="text-gray-500 text-xs">{t('expire_date')}</p><p className="font-semibold">{t('na')}</p></div>
               </div>
               
               {/* Signature & QR Area */}
               <div className="mt-auto pt-4 flex justify-between items-end">
                   <div className="text-left" dir={useKurdish ? 'rtl' : 'ltr'}>
-                      <p className="text-xs text-gray-500">{shapeText(t('employee_signature'))}</p>
+                      <p className="text-xs text-gray-500">{t('employee_signature')}</p>
                       <div className="w-32 h-8 border-b border-gray-400"></div>
                   </div>
                   <div className="flex flex-col items-center">

@@ -209,8 +209,9 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
         
         const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
         const settings = pdfSettings.report || {};
+        const useKurdish = language === 'ku';
 
-        if (settings.customFont) {
+        if (settings.customFont && useKurdish) {
             const fontName = "CustomFont";
             const fontStyle = "normal";
             const fontBase64 = settings.customFont.split(',')[1];
@@ -240,7 +241,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
             }
 
             pdf.setFontSize(14);
-            pdf.text(title, 14, startY);
+            pdf.text(title, useKurdish ? pdf.internal.pageSize.width - 14 : 14, startY, { align: useKurdish ? 'right' : 'left' });
             startY += 10;
             autoTable(pdf, {
                 startY,
@@ -248,9 +249,9 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                 body: data.map(bodyMapper),
                 foot: [['Total', '', formatCurrency(total)]],
                 theme: 'striped',
-                headStyles: { fillColor: settings.themeColor || '#22c55e' },
-                footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' },
-                didParseCell: (data) => { if (settings.customFont) { data.cell.styles.font = "CustomFont"; } }
+                headStyles: { fillColor: settings.themeColor || '#22c55e', font: 'helvetica' },
+                footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold', font: 'helvetica' },
+                didParseCell: (data) => { if (settings.customFont && useKurdish) { data.cell.styles.font = "CustomFont"; data.cell.styles.halign = 'right' } }
             });
             startY = (pdf as any).lastAutoTable.finalY + 20;
         }
