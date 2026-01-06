@@ -6,7 +6,7 @@ import {
   collection,
   doc,
 } from 'firebase/firestore';
-import { useCollection, useDocument } from 'react-firebase-hooks/firestore';
+import { useCollection as useFirestoreCollection, useDocument } from 'react-firebase-hooks/firestore';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { FirebaseContext } from './provider';
 
@@ -43,7 +43,7 @@ export function useDoc<T>(ref: DocumentReference<T>) {
 }
 
 export function useCollection<T>(query: Query<T> | null) {
-  const [snapshot, loading, error] = useCollection(query);
+  const [snapshot, loading, error] = useFirestoreCollection(query);
   const data = snapshot?.docs.map((doc) => doc.data());
   return { data, loading, error };
 }
