@@ -3,15 +3,19 @@
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/shared/theme-provider";
-import { Inter } from 'next/font/google';
 import { AppProvider } from '@/context/app-provider';
 import { FirebaseProvider } from '@/firebase';
 import { LanguageProvider } from '@/context/language-provider';
 import { useState, useEffect } from 'react';
 import { SplashScreen } from '@/components/shared/splash-screen';
 import { AppHeader } from '@/components/shared/app-header';
+import { Noto_Naskh_Arabic } from 'next/font/google';
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-body' });
+const notoNaskhArabic = Noto_Naskh_Arabic({ 
+  subsets: ['arabic'],
+  variable: '--font-body',
+  display: 'swap',
+});
 
 export default function RootLayout({
   children,
@@ -30,7 +34,7 @@ export default function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} font-body antialiased`}>
+      <body className={`${notoNaskhArabic.variable} font-body antialiased`}>
         {showSplash ? (
           <SplashScreen />
         ) : (

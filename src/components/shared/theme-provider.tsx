@@ -14,47 +14,12 @@ const ThemeProviderContext = createContext<ThemeProviderState | undefined>(undef
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>("light")
-  const [customFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-
-  useEffect(() => {
-    if (!isMounted) return;
-
-    // This effect handles applying the custom font to the document.
-    const styleId = 'custom-app-font-style';
-    let styleElement = document.getElementById(styleId) as HTMLStyleElement;
-
-    if (!styleElement) {
-        styleElement = document.createElement('style');
-        styleElement.id = styleId;
-        document.head.appendChild(styleElement);
-    }
-    
-    if (customFontBase64) {
-        styleElement.innerHTML = `
-            @font-face {
-                font-family: 'CustomAppFont';
-                src: url(${customFontBase64});
-            }
-            body {
-                font-family: 'CustomAppFont', var(--font-body), sans-serif !important;
-            }
-        `;
-    } else {
-        // If no custom font, revert to the default body font
-        styleElement.innerHTML = `
-             body {
-                font-family: var(--font-body), sans-serif;
-            }
-        `;
-    }
-
-  }, [customFontBase64, isMounted]);
 
   useEffect(() => {
     if (!isMounted) return;
