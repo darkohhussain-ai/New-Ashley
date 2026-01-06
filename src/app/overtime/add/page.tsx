@@ -22,7 +22,6 @@ import { useTranslation } from '@/hooks/use-translation';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { shapeText } from '@/lib/pdf-utils';
 
 
 const formatCurrency = (amount: number) => {
@@ -192,22 +191,22 @@ export default function AddOvertimePage() {
     }
     
     doc.setFontSize(18);
-    doc.text(shapeText(`${t('daily_overtime_report')} - ${format(selectedDate, 'PPP')}`), 14, 22);
+    doc.text(`${t('daily_overtime_report')} - ${format(selectedDate, 'PPP')}`, 14, 22, { align: useKurdish ? 'right' : 'left' });
     doc.setFontSize(11);
     
-    const head = [[shapeText(t('employee')), shapeText(t('overtime_hours')), shapeText(t('salary')), shapeText(t('notes'))]];
+    const head = [[t('employee'), t('overtime_hours'), t('salary'), t('notes')]];
     const body = overtimeRecords.map(r => [
-        shapeText(getEmployeeName(r.employeeId, useKurdish)),
+        getEmployeeName(r.employeeId, useKurdish),
         r.hours.toFixed(2),
         formatCurrency(r.totalAmount),
-        shapeText(r.notes || '')
+        r.notes || ''
     ]);
 
     autoTable(doc, {
       startY: 30,
       head,
       body,
-      foot: [[shapeText(t('total')), totalHours.toFixed(2), formatCurrency(totalAmount), '']],
+      foot: [[t('total'), totalHours.toFixed(2), formatCurrency(totalAmount), '']],
       theme: 'striped',
       styles: { font: (customFontBase64 && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
       headStyles: { fillColor: pdfSettings.report.reportColors?.overtime || '#f97316' },
