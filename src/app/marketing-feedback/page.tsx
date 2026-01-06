@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
@@ -207,10 +208,10 @@ function EditSubmissionDialog({ feedback, onOpenChange, open }: { feedback: Mark
                             <RadioGroup onValueChange={(value) => handleLocalResponseChange(q.id, value)} value={String(localResponses[q.id] || '')}>
                                 <div className="flex flex-wrap gap-4">
                                     {q.answers.sort((a,b) => b.value - a.value).map(opt => (
-                                        <div key={opt.value} className="flex items-center space-x-2">
+                                        <Label key={opt.value} htmlFor={`edit-${q.id}-${opt.value}`} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted cursor-pointer">
                                             <RadioGroupItem value={String(opt.value)} id={`edit-${q.id}-${opt.value}`} />
-                                            <Label htmlFor={`edit-${q.id}-${opt.value}`}>{opt.label}</Label>
-                                        </div>
+                                            <span>{opt.label}</span>
+                                        </Label>
                                     ))}
                                 </div>
                             </RadioGroup>
@@ -505,7 +506,7 @@ export default function MarketingFeedbackPage() {
                     <Button variant="outline" size="icon" asChild>
                         <Link href="/"><ArrowLeft /></Link>
                     </Button>
-                    <h1 className="text-2xl md:text-3xl font-bold">{t('marketing_feedback')}</h1>
+                    <h1 className="text-2xl md:text-3xl">{t('marketing_feedback')}</h1>
                 </div>
                 <div className='flex items-center gap-2'>
                     <Button variant="outline" onClick={() => setManageQuestionsOpen(true)}>
@@ -541,7 +542,7 @@ export default function MarketingFeedbackPage() {
                                     <TableBody>
                                         {evaluationSummary.map((item, index) => (
                                             <TableRow key={item.employeeId} className={cn(getRowClass(index))}>
-                                                <TableCell className="font-bold">{index + 1}</TableCell>
+                                                <TableCell className="font-semibold">{index + 1}</TableCell>
                                                 <TableCell>{item.name}</TableCell>
                                                 <TableCell className="text-right font-medium">{item.score}</TableCell>
                                             </TableRow>
@@ -620,12 +621,12 @@ export default function MarketingFeedbackPage() {
                                             <div key={q.id} className="p-4 border rounded-lg">
                                                 <p className="font-medium mb-3">{index + 1}. {t(q.id) || q.text}</p>
                                                 <RadioGroup onValueChange={(value) => handleResponseChange(q.id, value)} value={String(responses[q.id] || '')}>
-                                                    <div className="flex flex-wrap gap-4">
+                                                    <div className="flex flex-wrap gap-2 sm:gap-4">
                                                         {q.answers.sort((a,b) => b.value - a.value).map(opt => (
-                                                            <div key={opt.value} className="flex items-center space-x-2">
+                                                            <Label key={opt.value} htmlFor={`${q.id}-${opt.value}`} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted cursor-pointer flex-1 justify-center border">
                                                                 <RadioGroupItem value={String(opt.value)} id={`${q.id}-${opt.value}`} />
-                                                                <Label htmlFor={`${q.id}-${opt.value}`}>{t(opt.label.toLowerCase().replace(/ /g, '_')) || opt.label}</Label>
-                                                            </div>
+                                                                <span>{t(opt.label.toLowerCase().replace(/ /g, '_')) || opt.label}</span>
+                                                            </Label>
                                                         ))}
                                                     </div>
                                                 </RadioGroup>
