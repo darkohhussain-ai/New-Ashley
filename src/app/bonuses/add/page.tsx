@@ -253,9 +253,10 @@ export default function AddBonusPage() {
 
             <div className="lg:col-span-2">
                 <Card>
-                <CardHeader className="flex-row items-center justify-between">
-                    <div>
-                        <CardTitle>{t('bonus_records_for_date', {date: selectedDate ? format(selectedDate, 'PPP') : '...' })}</CardTitle>
+                <CardHeader>
+                    <div className="text-center">
+                        <CardTitle className='text-2xl'>{t('bonus_records_for_date', {date: ''})}</CardTitle>
+                        <CardDescription className="text-lg">{selectedDate ? format(selectedDate, 'PPP') : '...'}</CardDescription>
                     </div>
                 </CardHeader>
                 <CardContent>
@@ -345,5 +346,3 @@ export default function AddBonusPage() {
     </>
   );
 }
-
-    

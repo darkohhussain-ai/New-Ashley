@@ -4,7 +4,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Calendar as CalendarIcon, FileText, Printer, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
@@ -43,7 +43,7 @@ export default function MonthlyReportPage() {
   };
 
   const monthlyData = useMemo(() => {
-    if (isLoading) return { records: [], summary: [], totalAmount: 0, totalHours: 0 };
+    if (isLoading) return { records: [], summary: [], totalAmount: 0, totalHours: 0, totalLoads: 0 };
 
     const start = startOfMonth(selectedDate!);
     const end = endOfMonth(selectedDate!);
@@ -135,10 +135,7 @@ export default function MonthlyReportPage() {
             <div className="space-y-8">
                 <Card className="print:shadow-none print:border-none">
                 <CardHeader>
-                    <div className="print:hidden">
-                        <CardTitle>{t('summary_for_month', {month: selectedDate ? format(selectedDate, 'MMMM yyyy') : ''})}</CardTitle>
-                    </div>
-                    <div className="hidden print:block text-center">
+                    <div className="text-center">
                          <h1 className="text-2xl">{reportTitles[reportType]}</h1>
                          <p className="text-muted-foreground">{selectedDate ? format(selectedDate, 'MMMM yyyy') : ''}</p>
                     </div>

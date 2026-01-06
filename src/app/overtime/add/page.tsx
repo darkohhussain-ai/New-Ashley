@@ -191,8 +191,10 @@ export default function AddOvertimePage() {
     }
     
     doc.setFontSize(18);
-    doc.text(`${t('daily_overtime_report')} - ${format(selectedDate, 'PPP')}`, 14, 22, { align: useKurdish ? 'right' : 'left' });
-    doc.setFontSize(11);
+    doc.text(t('daily_overtime_report'), doc.internal.pageSize.getWidth() / 2, 22, { align: 'center' });
+    doc.setFontSize(12);
+    doc.text(format(selectedDate, 'PPP'), doc.internal.pageSize.getWidth() / 2, 32, { align: 'center' });
+
     
     const head = [[t('employee'), t('overtime_hours'), t('salary'), t('notes')]];
     const body = overtimeRecords.map(r => [
@@ -203,7 +205,7 @@ export default function AddOvertimePage() {
     ]);
 
     autoTable(doc, {
-      startY: 30,
+      startY: 40,
       head,
       body,
       foot: [[t('total'), totalHours.toFixed(2), formatCurrency(totalAmount), '']],
@@ -303,9 +305,10 @@ export default function AddOvertimePage() {
 
             <div className="lg:col-span-2">
                 <Card>
-                <CardHeader className="flex-row items-center justify-between">
-                    <div>
-                        <CardTitle>{t('overtime_records_for_date', {date: selectedDate ? format(selectedDate, 'PPP') : '...' })}</CardTitle>
+                <CardHeader>
+                    <div className="text-center">
+                        <CardTitle className='text-2xl'>{t('overtime_records_for_date', {date: ''})}</CardTitle>
+                        <CardDescription className="text-lg">{selectedDate ? format(selectedDate, 'PPP') : '...'}</CardDescription>
                     </div>
                 </CardHeader>
                 <CardContent>

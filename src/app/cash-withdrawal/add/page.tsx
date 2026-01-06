@@ -28,13 +28,6 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
-const formatCurrencyForPdf = (amount: number) => {
-  return new Intl.NumberFormat('en-US', {
-    maximumFractionDigits: 0,
-  }).format(amount);
-};
-
-
 export default function AddCashWithdrawalPage() {
   const { t, language } = useTranslation();
   const { toast } = useToast();
@@ -245,9 +238,10 @@ export default function AddCashWithdrawalPage() {
 
             <div className="lg:col-span-2">
                 <Card>
-                <CardHeader className="flex-row items-center justify-between">
-                    <div>
-                        <CardTitle>{t('withdrawals_for_date', {date: selectedDate ? format(selectedDate, 'PPP') : '...' })}</CardTitle>
+                <CardHeader>
+                    <div className='text-center'>
+                        <CardTitle className='text-2xl'>{t('withdrawals_for_date', {date: ''})}</CardTitle>
+                        <CardDescription className='text-lg'>{selectedDate ? format(selectedDate, 'PPP') : '...'}</CardDescription>
                     </div>
                 </CardHeader>
                 <CardContent>
