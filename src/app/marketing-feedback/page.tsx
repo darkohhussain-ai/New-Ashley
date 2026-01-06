@@ -3,7 +3,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Star, Loader2, ChevronsRight, Plus, Settings, LayoutDashboard, FileText, FileDown, FileSpreadsheet, Trash2, Edit } from 'lucide-react';
+import { ArrowLeft, Star, Loader2, ChevronsRight, Plus, Settings, LayoutDashboard, FileText, FileDown, FileSpreadsheet, Trash2, Edit, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -277,30 +277,16 @@ export default function MarketingFeedbackPage() {
         if(marketingEmployees.length > 0 && !currentEmployeeId) {
             setCurrentEmployeeId(marketingEmployees[0].id);
         }
-    }, [marketingEmployees, currentEmployeeId]);
+         if(marketingEmployees.length > 0 && !selectedEmployeeForHistory) {
+            setSelectedEmployeeForHistory(marketingEmployees[0].id);
+        }
+    }, [marketingEmployees, currentEmployeeId, selectedEmployeeForHistory]);
 
     useEffect(() => {
         if(employees && marketingFeedbacks && evaluationQuestions) {
             setIsLoading(false);
         }
     }, [employees, marketingFeedbacks, evaluationQuestions]);
-    
-     useEffect(() => {
-        if (!currentEmployeeId) {
-            setResponses({});
-            return;
-        }
-        const todaysFeedback = marketingFeedbacks.find(fb => fb.employeeId === currentEmployeeId && isToday(parseISO(fb.date)));
-        if (todaysFeedback) {
-            const initialResponses = todaysFeedback.responses.reduce((acc, res) => {
-                acc[res.questionId] = res.answer;
-                return acc;
-            }, {} as Record<string, number>);
-            setResponses(initialResponses);
-        } else {
-            setResponses({});
-        }
-    }, [currentEmployeeId, marketingFeedbacks]);
 
     const addMarketingEmployee = (employeeData: Omit<Employee, 'id'>) => {
         const newEmployee: Employee = {
@@ -311,47 +297,60 @@ export default function MarketingFeedbackPage() {
     };
 
     const handleResponseChange = (questionId: string, value: string) => {
-        if (!currentEmployeeId) return;
+        setResponses(prev => ({ ...prev, [questionId]: parseInt(value) }));
+    };
+    
+    const handleSaveSubmission = () => {
+        if (!currentEmployeeId) {
+            toast({ variant: 'destructive', title: "No Employee Selected", description: "Please select an employee before saving." });
+            return;
+        }
 
-        const numericValue = parseInt(value);
-        const newResponses = { ...responses, [questionId]: numericValue };
-        setResponses(newResponses);
+        if (Object.keys(responses).length === 0) {
+            toast({ variant: 'destructive', title: "No Answers", description: "Please answer at least one question before saving." });
+            return;
+        }
 
         const today = new Date();
         const existingFeedbackIndex = marketingFeedbacks.findIndex(fb => fb.employeeId === currentEmployeeId && isToday(parseISO(fb.date)));
-
+        
         if (existingFeedbackIndex > -1) {
-            // Update existing feedback for today
-            setMarketingFeedbacks(prevFeedbacks => {
-                const newFeedbacks = [...prevFeedbacks];
-                const existing = newFeedbacks[existingFeedbackIndex];
-                
-                const updatedResponseList = existing.responses.filter(r => r.questionId !== questionId);
-                updatedResponseList.push({ questionId, answer: numericValue });
-                
-                const newTotalScore = updatedResponseList.reduce((sum, r) => sum + r.answer, 0);
+            // Update existing feedback for today by merging new answers
+            setMarketingFeedbacks(prevFeedbacks => 
+                prevFeedbacks.map((fb, index) => {
+                    if (index === existingFeedbackIndex) {
+                        const newResponsesMap = new Map(fb.responses.map(r => [r.questionId, r.answer]));
+                        Object.entries(responses).forEach(([qId, ans]) => newResponsesMap.set(qId, ans));
+                        
+                        const updatedResponses = Array.from(newResponsesMap.entries()).map(([questionId, answer]) => ({ questionId, answer }));
+                        const newTotalScore = updatedResponses.reduce((sum, r) => sum + r.answer, 0);
 
-                newFeedbacks[existingFeedbackIndex] = {
-                    ...existing,
-                    responses: updatedResponseList,
-                    totalScore: newTotalScore,
-                };
-                return newFeedbacks;
-            });
+                        return {
+                            ...fb,
+                            responses: updatedResponses,
+                            totalScore: newTotalScore,
+                        };
+                    }
+                    return fb;
+                })
+            );
         } else {
-            // Create new feedback for today
-            const totalScore = numericValue;
+            // Create a new feedback record for today
+            const totalScore = Object.values(responses).reduce((sum, val) => sum + val, 0);
             const feedbackData: MarketingFeedback = {
                 id: crypto.randomUUID(),
                 employeeId: currentEmployeeId,
                 date: formatISO(today, { representation: 'date' }),
-                responses: [{ questionId, answer: numericValue }],
+                responses: Object.entries(responses).map(([questionId, answer]) => ({ questionId, answer })),
                 totalScore,
             };
             setMarketingFeedbacks(prev => [...prev, feedbackData]);
         }
-        toast({ title: t('saved'), description: `Answer for ${evaluationQuestions.find(q=>q.id === questionId)?.text.substring(0, 20)}... saved.` });
+        
+        toast({ title: "Feedback Saved", description: "The answers have been successfully saved." });
+        setResponses({}); // Clear the form for the next entry
     };
+
 
     const handleDeleteSubmission = (feedbackId: string) => {
         setMarketingFeedbacks(current => current.filter(fb => fb.id !== feedbackId));
@@ -671,7 +670,7 @@ export default function MarketingFeedbackPage() {
                                 <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-4">
                                     {evaluationQuestions.map((q) => (
                                         <div key={q.id} className="p-4 border rounded-lg">
-                                            <p className="font-medium mb-3">{q.text}</p>
+                                            <p className="font-medium mb-3">{t(q.text.toLowerCase().replace(/ /g, '_')) || q.text}</p>
                                             <RadioGroup 
                                                 onValueChange={(value) => handleResponseChange(q.id, value)} 
                                                 value={String(responses[q.id] || '')}
@@ -688,6 +687,9 @@ export default function MarketingFeedbackPage() {
                                         </div>
                                     ))}
                                 </div>
+                                <Button onClick={handleSaveSubmission} className="w-full">
+                                    <Save className="mr-2 h-4 w-4" /> Save Submission
+                                </Button>
                             </div>
                             )}
                         </CardContent>
