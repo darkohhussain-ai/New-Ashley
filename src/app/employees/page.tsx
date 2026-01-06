@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
-import { format, parseISO } from "date-fns"
+import { format, formatISO, parseISO } from "date-fns"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ArrowLeft, Plus, User, Calendar as CalendarIcon, Edit, Trash2, Save, X, Upload, Download, Mail, Phone, Cake, Briefcase, Search, Building, DollarSign, Clock, Gift, Banknote, FileDown, Printer } from 'lucide-react'
@@ -530,6 +530,7 @@ function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean,
           notes: notes || undefined,
           employmentStartDate: employmentStartDate?.toISOString(),
           dateOfBirth: dateOfBirth?.toISOString(),
+          createdAt: formatISO(new Date()),
         };
         
         addEmployee(employeeData);

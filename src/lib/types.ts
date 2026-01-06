@@ -12,6 +12,7 @@ export type Employee = {
   phone?: string;
   photoUrl?: string;
   notes?: string;
+  createdAt?: string;
 };
 
 export type ExcelFile = {
