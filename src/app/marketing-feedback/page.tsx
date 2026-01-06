@@ -216,7 +216,7 @@ function EditSubmissionDialog({ feedback, onOpenChange, open }: { feedback: Mark
                 <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-4 pt-4">
                     {evaluationQuestions.map((q, index) => (
                         <div key={q.id} className="p-4 border rounded-lg">
-                            <p className="font-medium mb-3">{index + 1}. {q.text}</p>
+                            <p className="font-medium mb-3">{q.text}</p>
                             <RadioGroup onValueChange={(value) => handleLocalResponseChange(q.id, value)} value={String(localResponses[q.id] || '')}>
                                 <div className="flex flex-wrap gap-4">
                                     {q.answers.sort((a,b) => b.value - a.value).map(opt => (
@@ -317,18 +317,6 @@ export default function MarketingFeedbackPage() {
             }
         }));
     };
-    
-    const handleNextEmployee = () => {
-        if (currentEmployeeIndex < marketingEmployees.length - 1) {
-            setCurrentEmployeeIndex(prev => prev + 1);
-        }
-    };
-    
-    const handlePrevEmployee = () => {
-        if (currentEmployeeIndex > 0) {
-            setCurrentEmployeeIndex(prev => prev - 1);
-        }
-    };
 
     const handleNextSet = () => {
       if (currentSetIndex < questionSets.length - 1) {
@@ -343,12 +331,9 @@ export default function MarketingFeedbackPage() {
     };
 
     const handleSaveAndContinue = () => {
-        if (!currentEmployee) return;
+        if (isSubmitting) return;
         setIsSubmitting(true);
         const today = new Date();
-
-        // An array to hold promises for UI updates
-        const updatePromises: Promise<void>[] = [];
 
         marketingEmployees.forEach(employee => {
             const employeeResponses = responses[employee.id];
@@ -364,55 +349,55 @@ export default function MarketingFeedbackPage() {
 
             if (existingFeedbackIndex > -1) {
                 // Update existing feedback
-                const promise = new Promise<void>(resolve => {
-                    setMarketingFeedbacks(prevFeedbacks => {
-                        const newFeedbacks = [...prevFeedbacks];
-                        const existing = newFeedbacks[existingFeedbackIndex];
-                        const updatedResponses = [
-                            ...existing.responses.filter(r => !newResponsesForSet.some(nr => nr.questionId === r.questionId)),
-                            ...newResponsesForSet
-                        ];
-                        const newTotalScore = updatedResponses.reduce((sum, r) => sum + r.answer, 0);
+                setMarketingFeedbacks(prevFeedbacks => {
+                    const newFeedbacks = [...prevFeedbacks];
+                    const existing = newFeedbacks[existingFeedbackIndex];
+                    const updatedResponses = [
+                        ...existing.responses.filter(r => !newResponsesForSet.some(nr => nr.questionId === r.questionId)),
+                        ...newResponsesForSet
+                    ];
+                    const newTotalScore = updatedResponses.reduce((sum, r) => sum + r.answer, 0);
 
-                        newFeedbacks[existingFeedbackIndex] = {
-                            ...existing,
-                            responses: updatedResponses,
-                            totalScore: newTotalScore,
-                        };
-                        return newFeedbacks;
-                    });
-                    resolve();
+                    newFeedbacks[existingFeedbackIndex] = {
+                        ...existing,
+                        responses: updatedResponses,
+                        totalScore: newTotalScore,
+                    };
+                    return newFeedbacks;
                 });
-                updatePromises.push(promise);
-
             } else {
                 // Create new feedback
                 const totalScore = newResponsesForSet.reduce((sum, r) => sum + r.answer, 0);
                 const feedbackData: MarketingFeedback = {
                     id: crypto.randomUUID(),
                     employeeId: employee.id,
-                    date: formatISO(today),
+                    date: formatISO(today, { representation: 'date' }),
                     responses: newResponsesForSet,
                     totalScore,
                 };
-                 const promise = new Promise<void>(resolve => {
-                    setMarketingFeedbacks(prev => [...prev, feedbackData]);
-                    resolve();
-                });
-                updatePromises.push(promise);
+                setMarketingFeedbacks(prev => [...prev, feedbackData]);
             }
         });
         
-        Promise.all(updatePromises).then(() => {
-            toast({ title: t('progress_saved'), description: t('feedback_for_current_set_saved') });
-            if (currentSetIndex < questionSets.length - 1) {
-                // Do not change employee index here, just move to the next set.
-                setCurrentSetIndex(prev => prev + 1);
-            } else {
-                 toast({ title: t('evaluation_complete'), description: t('all_feedback_has_been_saved') });
-            }
-            setIsSubmitting(false);
+        toast({ title: t('progress_saved'), description: t('feedback_for_current_set_saved') });
+
+        // Clear responses for the current set for all employees to allow fresh entry if needed
+        const newResponses = { ...responses };
+        marketingEmployees.forEach(emp => {
+            currentQuestionSet.forEach(q => {
+                if (newResponses[emp.id]) {
+                    delete newResponses[emp.id][q.id];
+                }
+            });
         });
+        setResponses(newResponses);
+
+        if (currentSetIndex < questionSets.length - 1) {
+            setCurrentSetIndex(prev => prev + 1);
+        } else {
+             toast({ title: t('evaluation_complete'), description: t('all_feedback_has_been_saved') });
+        }
+        setIsSubmitting(false);
     };
 
     const handleDeleteSubmission = (feedbackId: string) => {
@@ -480,7 +465,7 @@ export default function MarketingFeedbackPage() {
             const fontStyle = "normal";
             const fontBase64 = customFontBase64.split(',')[1];
             doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
-            doc.addFont(`${fontName}.ttf`, fontName, "normal");
+            doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
             doc.setFont(fontName);
         }
 
@@ -745,7 +730,7 @@ export default function MarketingFeedbackPage() {
                                     <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-4">
                                         {currentQuestionSet.map((q, index) => (
                                             <div key={q.id} className="p-4 border rounded-lg">
-                                                <p className="font-medium mb-3">{(currentSetIndex * questionsPerSet) + index + 1}. {q.text}</p>
+                                                <p className="font-medium mb-3">{q.text}</p>
                                                 <RadioGroup 
                                                     onValueChange={(value) => handleResponseChange(q.id, value)} 
                                                     value={String(responses[currentEmployee.id]?.[q.id] || '')}
