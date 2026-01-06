@@ -442,5 +442,6 @@
   "import_data_title": "Import data from a backup file",
   "import_data_warning": "Warning: Importing data will overwrite all existing data in the application. This action cannot be undone.",
   "run_import": "Run Import",
-  "print": "Print"
+  "print": "Print",
+  "salary": "Salary"
 }

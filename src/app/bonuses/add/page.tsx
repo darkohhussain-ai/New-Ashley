@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -197,7 +196,6 @@ export default function AddBonusPage() {
                 <Calendar mode="single" selected={selectedDate} onSelect={(date) => { setSelectedDate(date); if (dateParam) router.push('/bonuses/add'); }} initialFocus captionLayout="dropdown-nav" fromYear={2020} toYear={2040} />
               </PopoverContent>
             </Popover>
-            <Button variant="outline" onClick={handlePrint} disabled={!dailyBonuses || dailyBonuses.length === 0}><Printer className="mr-2 h-4 w-4" />{t('print')}</Button>
           </div>
         </div>
       </header>
@@ -257,7 +255,7 @@ export default function AddBonusPage() {
                 <Card>
                 <CardHeader className="flex-row items-center justify-between">
                     <div>
-                        <CardTitle>{t('bonus_records_for_date', {date: selectedDate ? format(selectedDate, 'MMMM d, yyyy') : '...'})}</CardTitle>
+                        <CardTitle>{t('bonus_records_for_date', {date: selectedDate ? format(selectedDate, 'PPP') : '...' })}</CardTitle>
                     </div>
                 </CardHeader>
                 <CardContent>

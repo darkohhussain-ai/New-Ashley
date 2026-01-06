@@ -198,7 +198,6 @@ export default function AddOvertimePage() {
                 <Calendar mode="single" selected={selectedDate} onSelect={(date) => { setSelectedDate(date); if (dateParam) router.push('/overtime/add'); }} initialFocus captionLayout="dropdown-nav" fromYear={2020} toYear={2040} />
               </PopoverContent>
             </Popover>
-            <Button variant="outline" onClick={handlePrint} disabled={!overtimeRecords || overtimeRecords.length === 0}><Printer className="mr-2 h-4 w-4" />{t('print')}</Button>
           </div>
         </div>
       </header>
@@ -258,7 +257,7 @@ export default function AddOvertimePage() {
                 <Card>
                 <CardHeader className="flex-row items-center justify-between">
                     <div>
-                        <CardTitle>{t('overtime_records_for_date', {date: selectedDate ? format(selectedDate, 'MMMM d, yyyy') : '...'})}</CardTitle>
+                        <CardTitle>{t('overtime_records_for_date', {date: selectedDate ? format(selectedDate, 'PPP') : '...' })}</CardTitle>
                     </div>
                 </CardHeader>
                 <CardContent>
