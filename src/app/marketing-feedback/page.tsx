@@ -293,24 +293,6 @@ export default function MarketingFeedbackPage() {
     const currentStep = (currentSetIndex * marketingEmployees.length) + currentEmployeeIndex + 1;
     const progressPercentage = totalSteps > 0 ? (currentStep / totalSteps) * 100 : 0;
 
-    // Effect to load today's responses for the current employee
-    useEffect(() => {
-      if (currentEmployee) {
-        const todayFeedback = marketingFeedbacks.find(fb => 
-          fb.employeeId === currentEmployee.id && isToday(parseISO(fb.date))
-        );
-        if (todayFeedback) {
-          setResponses(prev => ({
-            ...prev,
-            [currentEmployee.id]: todayFeedback.responses.reduce((acc, res) => {
-              acc[res.questionId] = res.answer;
-              return acc;
-            }, {} as Record<string, number>),
-          }));
-        }
-      }
-    }, [currentEmployee, marketingFeedbacks]);
-
     useEffect(() => {
         if(employees && marketingFeedbacks && evaluationQuestions) {
             setIsLoading(false);
