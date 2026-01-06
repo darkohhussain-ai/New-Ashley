@@ -287,9 +287,27 @@ export default function MarketingFeedbackPage() {
     const currentQuestionSet = questionSets[currentSetIndex] || [];
     const currentEmployee = marketingEmployees[currentEmployeeIndex];
 
-     const totalSteps = marketingEmployees.length * questionSets.length;
+    const totalSteps = marketingEmployees.length * questionSets.length;
     const currentStep = (currentSetIndex * marketingEmployees.length) + currentEmployeeIndex + 1;
     const progressPercentage = totalSteps > 0 ? (currentStep / totalSteps) * 100 : 0;
+
+    // Effect to load today's responses for the current employee
+    useEffect(() => {
+      if (currentEmployee) {
+        const todayFeedback = marketingFeedbacks.find(fb => 
+          fb.employeeId === currentEmployee.id && isToday(parseISO(fb.date))
+        );
+        if (todayFeedback) {
+          setResponses(prev => ({
+            ...prev,
+            [currentEmployee.id]: todayFeedback.responses.reduce((acc, res) => {
+              acc[res.questionId] = res.answer;
+              return acc;
+            }, {} as Record<string, number>),
+          }));
+        }
+      }
+    }, [currentEmployee, marketingFeedbacks]);
 
     useEffect(() => {
         if(employees && marketingFeedbacks && evaluationQuestions) {
@@ -326,6 +344,18 @@ export default function MarketingFeedbackPage() {
         if (currentEmployeeIndex > 0) {
             setCurrentEmployeeIndex(prev => prev - 1);
         }
+    };
+
+    const handleNextSet = () => {
+      if (currentSetIndex < questionSets.length - 1) {
+        setCurrentSetIndex(prev => prev + 1);
+      }
+    };
+
+    const handlePrevSet = () => {
+      if (currentSetIndex > 0) {
+        setCurrentSetIndex(prev => prev - 1);
+      }
     };
 
     const handleSaveAndContinue = () => {
@@ -395,7 +425,6 @@ export default function MarketingFeedbackPage() {
                 setCurrentSetIndex(prev => prev + 1);
                 setCurrentEmployeeIndex(0);
             } else {
-                // This is the final save
                  toast({ title: t('evaluation_complete'), description: t('all_feedback_has_been_saved') });
             }
             setIsSubmitting(false);
@@ -445,6 +474,10 @@ export default function MarketingFeedbackPage() {
             };
         });
     }, [marketingFeedbacks, marketingEmployees, evaluationQuestions, language]);
+    
+    const allSubmissions = useMemo(() => {
+      return [...marketingFeedbacks].sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
+    }, [marketingFeedbacks]);
 
     const handleDownloadPdf = async () => {
         if (!marketingFeedbacks.length) {
@@ -613,7 +646,7 @@ export default function MarketingFeedbackPage() {
             </header>
             
             <Tabs defaultValue="dashboard">
-                <TabsList className="mb-6">
+                <TabsList className="mb-6 grid grid-cols-2">
                     <TabsTrigger value="dashboard"><LayoutDashboard className="mr-2" />{t('dashboard')}</TabsTrigger>
                     <TabsTrigger value="form"><FileText className="mr-2" />{t('feedback_form')}</TabsTrigger>
                 </TabsList>
@@ -683,6 +716,58 @@ export default function MarketingFeedbackPage() {
                                 </Accordion>
                             </CardContent>
                         </Card>
+                        <Card>
+                          <CardHeader>
+                              <CardTitle>{t('historical_submissions')}</CardTitle>
+                              <CardDescription>{t('historical_submissions_desc')}</CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                              <div className="max-h-[400px] overflow-y-auto">
+                                  <Table>
+                                      <TableHeader>
+                                          <TableRow>
+                                              <TableHead>{t('date')}</TableHead>
+                                              <TableHead>{t('employee')}</TableHead>
+                                              <TableHead className='text-right'>{t('total_score')}</TableHead>
+                                              <TableHead className="text-right"></TableHead>
+                                          </TableRow>
+                                      </TableHeader>
+                                      <TableBody>
+                                          {allSubmissions.map(fb => {
+                                              const employee = employees.find(e => e.id === fb.employeeId);
+                                              return (
+                                                  <TableRow key={fb.id}>
+                                                      <TableCell>{format(parseISO(fb.date), 'PPP')}</TableCell>
+                                                      <TableCell>{employee ? (language === 'ku' && employee.kurdishName ? employee.kurdishName : employee.name) : 'Unknown'}</TableCell>
+                                                      <TableCell className="text-right">{fb.totalScore}</TableCell>
+                                                      <TableCell className="text-right">
+                                                        <div className="flex justify-end gap-2">
+                                                            <Button variant="ghost" size="icon" onClick={() => setEditingFeedback(fb)}><Edit className="h-4 w-4" /></Button>
+                                                            <AlertDialog>
+                                                              <AlertDialogTrigger asChild>
+                                                                <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                                              </AlertDialogTrigger>
+                                                              <AlertDialogContent>
+                                                                <AlertDialogHeader>
+                                                                  <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
+                                                                  <AlertDialogDescription>{t('confirm_delete_submission', {employeeName: employee?.name, date: format(parseISO(fb.date), 'PPP')})}</AlertDialogDescription>
+                                                                </AlertDialogHeader>
+                                                                <AlertDialogFooter>
+                                                                  <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                                                                  <AlertDialogAction onClick={() => handleDeleteSubmission(fb.id)}>{t('delete')}</AlertDialogAction>
+                                                                </AlertDialogFooter>
+                                                              </AlertDialogContent>
+                                                            </AlertDialog>
+                                                        </div>
+                                                      </TableCell>
+                                                  </TableRow>
+                                              )
+                                          })}
+                                      </TableBody>
+                                  </Table>
+                              </div>
+                          </CardContent>
+                        </Card>
                     </div>
                 </TabsContent>
                 
@@ -708,12 +793,18 @@ export default function MarketingFeedbackPage() {
                                 </div>
                             ) : (
                             <>
-                                <div className="p-4 border rounded-lg bg-muted/30">
+                                <div className="p-4 border rounded-lg bg-muted/30 flex justify-between items-center">
+                                  <div>
                                     <h3 className="font-bold text-lg text-primary">{currentEmployee.name}</h3>
                                     <p className="text-sm text-muted-foreground">{t('question_set', {
                                         start: (currentSetIndex * questionsPerSet) + 1,
                                         end: (currentSetIndex * questionsPerSet) + currentQuestionSet.length
                                     })}</p>
+                                  </div>
+                                  <div className='flex items-center gap-2'>
+                                    <Button onClick={handlePrevSet} disabled={currentSetIndex === 0}>{t('prev_set')}</Button>
+                                    <Button onClick={handleNextSet} disabled={currentSetIndex === questionSets.length - 1}>{t('next_set')}</Button>
+                                  </div>
                                 </div>
                                 <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-4">
                                     {currentQuestionSet.map((q, index) => (
@@ -755,3 +846,5 @@ export default function MarketingFeedbackPage() {
         </div>
     );
 }
+
+    
