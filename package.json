@@ -50,7 +50,7 @@
     "jspdf": "latest",
     "jspdf-autotable": "latest",
     "lucide-react": "latest",
-    "next": "14.2.35",
+    "next": "latest",
     "patch-package": "latest",
     "react": "18.3.1",
     "react-day-picker": "latest",
