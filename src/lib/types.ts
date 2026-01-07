@@ -31,6 +31,7 @@ export type Employee = {
   photoUrl?: string;
   notes?: string;
   createdAt?: string;
+  password?: string; // Added to store password for login purposes
 };
 
 export type ExcelFile = {
