@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/context/app-provider';
@@ -59,6 +60,20 @@ function UserManagement() {
     toast({ title: "User Deleted", description: "The user has been removed." });
   };
   
+  const handleDeleteAllUsers = () => {
+    const adminUser = users.find(u => u.username === 'Darko01');
+    const usersToKeep = adminUser ? [adminUser] : [];
+    const deletedCount = users.length - usersToKeep.length;
+
+    setUsers(usersToKeep);
+    
+    if (deletedCount > 0) {
+        toast({ title: "All Users Deleted", description: `${deletedCount} user accounts have been removed. The admin account was preserved.` });
+    } else {
+        toast({ title: "No Users Deleted", description: "Only the admin account exists." });
+    }
+  };
+
   const getRoleName = (roleId: string) => roles.find(r => r.id === roleId)?.name || 'Unknown Role';
 
   const handleCreateAllUsers = () => {
@@ -102,6 +117,25 @@ function UserManagement() {
           <Button onClick={() => { setEditingUser(null); setIsDialogOpen(true); }}>
             <Plus className="mr-2 h-4 w-4" /> Add User
           </Button>
+           <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" disabled={users.length <= 1}>
+                  <Trash2 className="mr-2 h-4 w-4" /> Remove All
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action will permanently delete all user accounts except for the main administrator. This cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteAllUsers}>Delete All Users</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
         </div>
         <div className="overflow-x-auto">
             <Table>
