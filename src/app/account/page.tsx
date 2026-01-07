@@ -38,8 +38,7 @@ export default function AccountPage() {
 
   useEffect(() => {
     if (user && employees) {
-      // The user object from useAuth is the simplified login object.
-      // We need to find the full employee details from the employees list.
+      // The user object from useAuth has a username. Find the employee record that matches.
       const emp = employees.find(e => e.name === user.username);
       setEmployeeDetails(emp || null);
     }
@@ -95,7 +94,7 @@ export default function AccountPage() {
   
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !user.password) return;
+    if (!user || !employeeDetails?.password) return;
 
     if (newPassword !== confirmPassword) {
       toast({ variant: 'destructive', title: "Passwords don't match", description: "The new password and confirmation do not match." });
@@ -114,9 +113,9 @@ export default function AccountPage() {
         return;
     }
 
-    // Find the user in the main `users` list and update their password
-    const updatedUser: Employee = { ...employeeDetails!, password: newPassword };
-    setEmployees(employees.map(emp => emp.id === employeeDetails!.id ? updatedUser : emp));
+    // Find the user in the main `employees` list and update their password
+    const updatedEmployeeWithNewPass: Employee = { ...employeeDetails, password: newPassword };
+    setEmployees(employees.map(emp => emp.id === employeeDetails!.id ? updatedEmployeeWithNewPass : emp));
     
     // We also need to re-log-in the user with the new password to update the session
     await login(user.username, newPassword);
