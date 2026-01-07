@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { UserCircle, Edit, Save, X, KeyRound, Upload, Mail, Phone, Building, DollarSign, Clock, Gift, Banknote } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -52,7 +52,7 @@ export default function AccountPage() {
 
   useEffect(() => {
     if (user && employees) {
-      const emp = employees.find(e => e.name === user.username);
+      const emp = employees.find(e => e.username === user.username);
       setEmployeeDetails(emp || null);
     }
   }, [user, employees]);
@@ -66,7 +66,7 @@ export default function AccountPage() {
     }
   }, [employeeDetails]);
   
-  const employeeFinancials = React.useMemo(() => {
+  const employeeFinancials = useMemo(() => {
     if (!employeeDetails) return null;
     
     const empId = employeeDetails.id;
