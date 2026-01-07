@@ -447,5 +447,7 @@
   "no_records_found": "No records found",
   "no_records_found_for_month": "No records for {month} were found.",
   "monthly_reports": "Monthly Reports",
-  "total_loads": "Total Loads"
+  "total_loads": "Total Loads",
+  "this_month_activity_summary": "This Month's Activity ({month})",
+  "last_month_activity_summary": "Last month's activity summary."
 }

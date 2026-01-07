@@ -266,7 +266,7 @@
   "search_item_by_model_desc": "شوێنی کاڵاکان لە هەموو فایلەکانی ئێکسڵدا بدۆزەرەوە.",
   "search": "گەڕان",
   "no_results": "هیچ ئەنجامێک نییە",
-  "no_results_desc": "هیچ کاڵایەک نەدۆزرایەوە کە مۆدێلەکەی \\\"{query}\\\"ی تێدابێت.",
+  "no_results_desc": "هیچ کاڵایەک نەدۆزرایەوە کە مۆدێلەکەی \\\"{query}\\\".ی تێدابێت",
   "file_name": "ناوی فایل",
   "file_date": "بەرواری فایل",
   "view_on_map": "بینین لەسەر نەخشە",
@@ -447,5 +447,7 @@
   "monthly_reports": "ڕاپۆرتی مانگانە",
   "no_records_found": "هیچ تۆمارێک نەدۆزرایەوە",
   "no_records_found_for_month": "هیچ تۆمارێک بۆ مانگی {month} نەدۆزرایەوە.",
-  "total_loads": "کۆی گشتی بارەکان"
+  "total_loads": "کۆی گشتی بارەکان",
+  "this_month_activity_summary": "چالاکی ئەم مانگە ({month})",
+  "last_month_activity_summary": "پوختەی چالاکی مانگی ڕابردوو."
 }

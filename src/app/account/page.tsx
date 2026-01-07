@@ -10,11 +10,11 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/use-auth';
 import { useAppContext } from '@/context/app-provider';
-import type { Employee } from '@/lib/types';
+import type { Employee, Expense, Overtime, Bonus, CashWithdrawal } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from '@/hooks/use-translation';
-import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
-import { format, parseISO } from 'date-fns';
+import { Table, TableBody, TableCell, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
+import { format, parseISO, startOfMonth, endOfMonth, subMonths, isWithinInterval } from 'date-fns';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -24,6 +24,47 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
+
+const FinancialDetailTable = ({ title, data, total }: { title: string, data: any[], total: number }) => {
+  const { t } = useTranslation();
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+      </CardHeader>
+      <CardContent className="max-h-60 overflow-y-auto">
+        {data.length > 0 ? (
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableCell>{t('date')}</TableCell>
+                        <TableCell>{t('notes')}</TableCell>
+                        <TableCell className="text-right">{t('amount')}</TableCell>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {data.map((item) => (
+                        <TableRow key={item.id}>
+                            <TableCell>{format(parseISO(item.date), 'PP')}</TableCell>
+                            <TableCell className="text-muted-foreground">{item.notes || 'N/A'}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(item.amount || item.totalAmount)}</TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+        ) : (
+          <p className="text-sm text-center text-muted-foreground py-4">{t('no_records_found')}</p>
+        )}
+      </CardContent>
+       {data.length > 0 && (
+          <CardFooter className="justify-end gap-2 bg-muted/50 text-sm">
+            <span className="text-muted-foreground">{t('total_colon')}</span>
+            <span className="font-semibold text-primary">{formatCurrency(total)}</span>
+          </CardFooter>
+        )}
+    </Card>
+  )
+}
 
 export default function AccountPage() {
   const { t } = useTranslation();
@@ -69,14 +110,36 @@ export default function AccountPage() {
     }
   }, [employeeDetails]);
   
-  const financials = useMemo(() => {
+  const monthlyFinancials = useMemo(() => {
     if (!employeeDetails) return null;
+
     const empId = employeeDetails.id;
-    const totalExpenses = expenses.filter(e => e.employeeId === empId).reduce((sum, exp) => sum + exp.amount, 0);
-    const totalOvertime = overtime.filter(e => e.employeeId === empId).reduce((sum, ot) => sum + ot.totalAmount, 0);
-    const totalBonuses = bonuses.filter(b => b.employeeId === empId).reduce((sum, b) => sum + b.totalAmount, 0);
-    const totalWithdrawals = withdrawals.filter(w => w.employeeId === empId).reduce((sum, w) => sum + w.amount, 0);
-    return { totalExpenses, totalOvertime, totalBonuses, totalWithdrawals };
+    const now = new Date();
+    const currentMonthStart = startOfMonth(now);
+    const currentMonthEnd = endOfMonth(now);
+    const lastMonthStart = startOfMonth(subMonths(now, 1));
+    const lastMonthEnd = endOfMonth(subMonths(now, 1));
+    
+    const filterAndSum = (data: (Expense | Overtime | Bonus | CashWithdrawal)[], start: Date, end: Date) => {
+        const filtered = data.filter(d => d.employeeId === empId && isWithinInterval(parseISO(d.date), {start, end}));
+        const total = filtered.reduce((sum, item) => sum + ('amount' in item ? item.amount : item.totalAmount), 0);
+        return { items: filtered, total };
+    };
+
+    return {
+        current: {
+            expenses: filterAndSum(expenses, currentMonthStart, currentMonthEnd),
+            overtime: filterAndSum(overtime, currentMonthStart, currentMonthEnd),
+            bonuses: filterAndSum(bonuses, currentMonthStart, currentMonthEnd),
+            withdrawals: filterAndSum(withdrawals, currentMonthStart, currentMonthEnd),
+        },
+        previous: {
+            expenses: filterAndSum(expenses, lastMonthStart, lastMonthEnd).total,
+            overtime: filterAndSum(overtime, lastMonthStart, lastMonthEnd).total,
+            bonuses: filterAndSum(bonuses, lastMonthStart, lastMonthEnd).total,
+            withdrawals: filterAndSum(withdrawals, lastMonthStart, lastMonthEnd).total,
+        }
+    };
   }, [employeeDetails, expenses, overtime, bonuses, withdrawals]);
 
 
@@ -153,7 +216,7 @@ export default function AccountPage() {
     setConfirmPassword('');
   };
 
-  if (!employeeDetails) {
+  if (!employeeDetails || !monthlyFinancials) {
     return (
       <div className="flex items-center justify-center h-full">
         <p>Loading account details...</p>
@@ -164,8 +227,8 @@ export default function AccountPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <main className="container mx-auto p-4 md:p-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="md:col-span-1">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-1 space-y-8">
                 <Card>
                     <CardHeader className="items-center text-center">
                         <div className="relative">
@@ -200,64 +263,21 @@ export default function AccountPage() {
                         )}
                     </CardFooter>
                 </Card>
-            </div>
-             <div className="md:col-span-2 space-y-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2"><DollarSign className="w-5 h-5 text-blue-500"/> {t('expenses')}</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                             <p className="text-2xl font-bold text-blue-500">{formatCurrency(financials?.totalExpenses || 0)}</p>
-                        </CardContent>
-                    </Card>
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2"><Clock className="w-5 h-5 text-orange-500"/> {t('overtime')}</CardTitle>
-                        </CardHeader>
-                         <CardContent>
-                             <p className="text-2xl font-bold text-orange-500">{formatCurrency(financials?.totalOvertime || 0)}</p>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2"><Gift className="w-5 h-5 text-green-500"/> {t('bonuses')}</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                             <p className="text-2xl font-bold text-green-500">{formatCurrency(financials?.totalBonuses || 0)}</p>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2"><Banknote className="w-5 h-5 text-rose-500"/> {t('cash_withdrawals')}</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-2xl font-bold text-rose-500">{formatCurrency(financials?.totalWithdrawals || 0)}</p>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                <Card>
+                 <Card>
                     <CardHeader>
-                        <CardTitle>{t('general')}</CardTitle>
-                        <CardDescription>Manage your general account information.</CardDescription>
+                        <CardTitle>{t('summary_for_month', { month: format(subMonths(new Date(), 1), 'MMMM') })}</CardTitle>
+                        <CardDescription>{t('last_month_activity_summary')}</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                         <div className="space-y-2">
-                            <Label htmlFor="name">Name</Label>
-                            <Input id="name" value={employeeDetails.name} disabled />
-                            <p className="text-xs text-muted-foreground">Your name can only be changed by an administrator.</p>
-                         </div>
-                         <div className="space-y-2">
-                            <Label htmlFor="kurdishName">Kurdish Name</Label>
-                            <Input id="kurdishName" value={kurdishName} dir="rtl" onChange={e => setKurdishName(e.target.value)} disabled={!isEditing} />
-                         </div>
+                    <CardContent className="grid grid-cols-2 gap-4 text-center">
+                        <div><p className="text-xs text-muted-foreground">{t('expenses')}</p><p className="font-semibold">{formatCurrency(monthlyFinancials.previous.expenses)}</p></div>
+                        <div><p className="text-xs text-muted-foreground">{t('overtime')}</p><p className="font-semibold">{formatCurrency(monthlyFinancials.previous.overtime)}</p></div>
+                        <div><p className="text-xs text-muted-foreground">{t('bonuses')}</p><p className="font-semibold">{formatCurrency(monthlyFinancials.previous.bonuses)}</p></div>
+                        <div><p className="text-xs text-muted-foreground">{t('cash_withdrawals')}</p><p className="font-semibold">{formatCurrency(monthlyFinancials.previous.withdrawals)}</p></div>
                     </CardContent>
                 </Card>
-                <Card>
+
+                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><KeyRound/> Change Password</CardTitle>
                         <CardDescription>For security, you must provide your current password to set a new one.</CardDescription>
@@ -284,6 +304,32 @@ export default function AccountPage() {
                         </CardFooter>
                     </form>
                 </Card>
+            </div>
+             <div className="lg:col-span-2 space-y-8">
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>{t('general')}</CardTitle>
+                        <CardDescription>Manage your general account information.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                         <div className="space-y-2">
+                            <Label htmlFor="name">Name</Label>
+                            <Input id="name" value={employeeDetails.name} disabled />
+                            <p className="text-xs text-muted-foreground">Your name can only be changed by an administrator.</p>
+                         </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="kurdishName">Kurdish Name</Label>
+                            <Input id="kurdishName" value={kurdishName} dir="rtl" onChange={e => setKurdishName(e.target.value)} disabled={!isEditing} />
+                         </div>
+                    </CardContent>
+                </Card>
+                <div className='space-y-4'>
+                    <h2 className="text-xl font-semibold">{t('this_month_activity_summary', {month: format(new Date(), 'MMMM')})}</h2>
+                    <FinancialDetailTable title={t('expenses')} data={monthlyFinancials.current.expenses.items} total={monthlyFinancials.current.expenses.total} />
+                    <FinancialDetailTable title={t('overtime')} data={monthlyFinancials.current.overtime.items} total={monthlyFinancials.current.overtime.total} />
+                    <FinancialDetailTable title={t('bonuses')} data={monthlyFinancials.current.bonuses.items} total={monthlyFinancials.current.bonuses.total} />
+                    <FinancialDetailTable title={t('cash_withdrawals')} data={monthlyFinancials.current.withdrawals.items} total={monthlyFinancials.current.withdrawals.total} />
+                </div>
              </div>
         </div>
       </main>

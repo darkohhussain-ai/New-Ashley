@@ -26,11 +26,10 @@ export const adminAssistantPermissions = allPermissions.filter(p => p.id !== 'ad
 // Viewer can see all pages but cannot edit
 export const viewerPermissions = allPermissions.filter(p => p.id.startsWith('page:')).map(p => p.id);
 
-// Employee/Member can only see their account, placement/storage, and their own financial data (via ashley-expenses page permission)
+// Employee/Member can only see their account and placement/storage
 export const employeePermissions = [
     'page:account',
     'page:items',
-    'page:ashley-expenses' // Required for My Account to pull personal financial data
 ];
 
 export const financeManagerPermissions = [
