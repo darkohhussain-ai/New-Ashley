@@ -63,7 +63,10 @@ function UserManagement() {
 
   const handleCreateAllUsers = () => {
     const existingUsernames = new Set(users.map(u => u.username));
-    const employeesWithoutUsers = employees.filter(emp => !existingUsernames.has(emp.name));
+    const employeesWithoutUsers = employees.filter(emp => {
+        const newUsername = `${emp.name.split(' ')[0]}${emp.employeeId || ''}`;
+        return !existingUsernames.has(newUsername) && emp.employeeId !== '01'; // Exclude Darko
+    });
 
     if (employeesWithoutUsers.length === 0) {
       toast({ title: "No New Users", description: "All employees already have a user account." });
@@ -72,9 +75,10 @@ function UserManagement() {
 
     const newUsers: User[] = employeesWithoutUsers.map(emp => {
       const defaultPassword = `${emp.name.split(' ')[0].toLowerCase()}123`;
+      const newUsername = `${emp.name.split(' ')[0]}${emp.employeeId || ''}`;
       return {
         id: `user-${emp.id}`,
-        username: emp.name,
+        username: newUsername,
         password: defaultPassword,
         roleId: 'role-viewer', // Default to Viewer role
       };
@@ -117,7 +121,7 @@ function UserManagement() {
                     <Button variant="ghost" size="icon" onClick={() => { setEditingUser(user); setIsDialogOpen(true); }}>
                         <Edit className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDeleteUser(user.id)} disabled={user.username === 'Darko Haidar'}>
+                    <Button variant="ghost" size="icon" onClick={() => handleDeleteUser(user.id)} disabled={user.username === 'Darko01'}>
                         <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                     </TableCell>
@@ -147,8 +151,18 @@ function UserDialog({ open, onOpenChange, user, onSave, roles, employees, existi
     const isNewUser = !user;
 
     const availableEmployees = useMemo(() => {
-        const existingUsernames = new Set(existingUsers.map(u => u.username));
-        return employees.filter(emp => !existingUsernames.has(emp.name));
+        const existingUsernames = new Set(existingUsers.map(u => {
+             const empForUser = employees.find(e => `user-${e.id}` === u.id || e.name === u.username || `${e.name.split(' ')[0]}${e.employeeId || ''}` === u.username || e.employeeId === '01');
+             if(empForUser) {
+                 return `${empForUser.name.split(' ')[0]}${empForUser.employeeId || ''}`;
+             }
+             return u.username;
+        }));
+        
+        return employees.filter(emp => {
+            const potentialUsername = `${emp.name.split(' ')[0]}${emp.employeeId || ''}`;
+            return !existingUsernames.has(potentialUsername);
+        });
     }, [employees, existingUsers]);
   
     useEffect(() => {
@@ -177,9 +191,11 @@ function UserDialog({ open, onOpenChange, user, onSave, roles, employees, existi
         }
         
         const defaultPassword = `${selectedEmp.name.split(' ')[0].toLowerCase()}123`;
+        const newUsername = `${selectedEmp.name.split(' ')[0]}${selectedEmp.employeeId || ''}`;
+
         const newUser: User = {
             id: `user-${selectedEmp.id}`,
-            username: selectedEmp.name,
+            username: newUsername,
             password: password || defaultPassword,
             roleId
         }
@@ -232,7 +248,7 @@ function UserDialog({ open, onOpenChange, user, onSave, roles, employees, existi
                 </SelectTrigger>
                 <SelectContent>
                   {roles.map(role => (
-                    <SelectItem key={role.id} value={role.id} disabled={user?.username === 'Darko Haidar' && role.name !== 'Admin'}>
+                    <SelectItem key={role.id} value={role.id} disabled={user?.username === 'Darko01' && role.name !== 'Admin'}>
                       {role.name}
                     </SelectItem>
                   ))}
