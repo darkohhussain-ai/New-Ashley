@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { UserCircle, Edit, Save, X, KeyRound, Upload, Mail, Phone, Building, DollarSign, Clock, Gift, Banknote } from 'lucide-react';
+import { UserCircle, Edit, Save, X, KeyRound, Upload, Mail, Phone, Building, DollarSign, Clock, Gift, Banknote, Calendar as CalendarIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from '@/hooks/use-translation';
 import { Table, TableBody, TableCell, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { format, parseISO, startOfMonth, endOfMonth, subMonths, isWithinInterval } from 'date-fns';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -77,6 +80,7 @@ export default function AccountPage() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [employeeDetails, setEmployeeDetails] = useState<Employee | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   // Form State
   const [photoUrl, setPhotoUrl] = useState<string | undefined>(undefined);
@@ -114,11 +118,11 @@ export default function AccountPage() {
     if (!employeeDetails) return null;
 
     const empId = employeeDetails.id;
-    const now = new Date();
-    const currentMonthStart = startOfMonth(now);
-    const currentMonthEnd = endOfMonth(now);
-    const lastMonthStart = startOfMonth(subMonths(now, 1));
-    const lastMonthEnd = endOfMonth(subMonths(now, 1));
+    const selectedMonthStart = startOfMonth(selectedDate);
+    const selectedMonthEnd = endOfMonth(selectedDate);
+    const previousMonth = subMonths(selectedDate, 1);
+    const previousMonthStart = startOfMonth(previousMonth);
+    const previousMonthEnd = endOfMonth(previousMonth);
     
     const filterAndSum = (data: (Expense | Overtime | Bonus | CashWithdrawal)[], start: Date, end: Date) => {
         const filtered = data.filter(d => d.employeeId === empId && isWithinInterval(parseISO(d.date), {start, end}));
@@ -127,20 +131,20 @@ export default function AccountPage() {
     };
 
     return {
-        current: {
-            expenses: filterAndSum(expenses, currentMonthStart, currentMonthEnd),
-            overtime: filterAndSum(overtime, currentMonthStart, currentMonthEnd),
-            bonuses: filterAndSum(bonuses, currentMonthStart, currentMonthEnd),
-            withdrawals: filterAndSum(withdrawals, currentMonthStart, currentMonthEnd),
+        selected: {
+            expenses: filterAndSum(expenses, selectedMonthStart, selectedMonthEnd),
+            overtime: filterAndSum(overtime, selectedMonthStart, selectedMonthEnd),
+            bonuses: filterAndSum(bonuses, selectedMonthStart, selectedMonthEnd),
+            withdrawals: filterAndSum(withdrawals, selectedMonthStart, selectedMonthEnd),
         },
         previous: {
-            expenses: filterAndSum(expenses, lastMonthStart, lastMonthEnd).total,
-            overtime: filterAndSum(overtime, lastMonthStart, lastMonthEnd).total,
-            bonuses: filterAndSum(bonuses, lastMonthStart, lastMonthEnd).total,
-            withdrawals: filterAndSum(withdrawals, lastMonthStart, lastMonthEnd).total,
+            expenses: filterAndSum(expenses, previousMonthStart, previousMonthEnd).total,
+            overtime: filterAndSum(overtime, previousMonthStart, previousMonthEnd).total,
+            bonuses: filterAndSum(bonuses, previousMonthStart, previousMonthEnd).total,
+            withdrawals: filterAndSum(withdrawals, previousMonthStart, previousMonthEnd).total,
         }
     };
-  }, [employeeDetails, expenses, overtime, bonuses, withdrawals]);
+  }, [employeeDetails, expenses, overtime, bonuses, withdrawals, selectedDate]);
 
 
   const handleEditToggle = () => {
@@ -204,10 +208,6 @@ export default function AccountPage() {
     const updatedEmployeeWithNewPass: Employee = { ...employeeDetails, password: newPassword };
     setEmployees(employees.map(emp => emp.id === employeeDetails!.id ? updatedEmployeeWithNewPass : emp));
     
-    // We need to also update the user record for the login to work next time
-    // This part is tricky as use-auth doesn't expose a setUser function.
-    // For now, we update the employee and re-login which should handle the session for now.
-    
     await login(user.username, newPassword);
 
     toast({ title: "Password Changed", description: "Your password has been successfully updated." });
@@ -266,7 +266,7 @@ export default function AccountPage() {
 
                  <Card>
                     <CardHeader>
-                        <CardTitle>{t('summary_for_month', { month: format(subMonths(new Date(), 1), 'MMMM') })}</CardTitle>
+                        <CardTitle>{t('summary_for_month', { month: format(subMonths(selectedDate, 1), 'MMMM') })}</CardTitle>
                         <CardDescription>{t('last_month_activity_summary')}</CardDescription>
                     </CardHeader>
                     <CardContent className="grid grid-cols-2 gap-4 text-center">
@@ -324,11 +324,36 @@ export default function AccountPage() {
                     </CardContent>
                 </Card>
                 <div className='space-y-4'>
-                    <h2 className="text-xl font-semibold">{t('this_month_activity_summary', {month: format(new Date(), 'MMMM')})}</h2>
-                    <FinancialDetailTable title={t('expenses')} data={monthlyFinancials.current.expenses.items} total={monthlyFinancials.current.expenses.total} />
-                    <FinancialDetailTable title={t('overtime')} data={monthlyFinancials.current.overtime.items} total={monthlyFinancials.current.overtime.total} />
-                    <FinancialDetailTable title={t('bonuses')} data={monthlyFinancials.current.bonuses.items} total={monthlyFinancials.current.bonuses.total} />
-                    <FinancialDetailTable title={t('cash_withdrawals')} data={monthlyFinancials.current.withdrawals.items} total={monthlyFinancials.current.withdrawals.total} />
+                    <div className="flex justify-between items-center">
+                        <h2 className="text-xl font-semibold">{t('this_month_activity_summary', {month: format(selectedDate, 'MMMM yyyy')})}</h2>
+                         <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                variant={"outline"}
+                                className={cn(
+                                    "w-[240px] justify-start text-left font-normal",
+                                    !selectedDate && "text-muted-foreground"
+                                )}
+                                >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {selectedDate ? format(selectedDate, "MMMM yyyy") : <span>{t('pick_a_month')}</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                                <Calendar
+                                mode="single"
+                                selected={selectedDate}
+                                onSelect={(date) => date && setSelectedDate(date)}
+                                initialFocus
+                                captionLayout="dropdown-nav" fromYear={2020} toYear={new Date().getFullYear()}
+                                />
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+                    <FinancialDetailTable title={t('expenses')} data={monthlyFinancials.selected.expenses.items} total={monthlyFinancials.selected.expenses.total} />
+                    <FinancialDetailTable title={t('overtime')} data={monthlyFinancials.selected.overtime.items} total={monthlyFinancials.selected.overtime.total} />
+                    <FinancialDetailTable title={t('bonuses')} data={monthlyFinancials.selected.bonuses.items} total={monthlyFinancials.selected.bonuses.total} />
+                    <FinancialDetailTable title={t('cash_withdrawals')} data={monthlyFinancials.selected.withdrawals.items} total={monthlyFinancials.selected.withdrawals.total} />
                 </div>
              </div>
         </div>
@@ -336,4 +361,3 @@ export default function AccountPage() {
     </div>
   );
 }
-
