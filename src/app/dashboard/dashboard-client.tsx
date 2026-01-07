@@ -3,96 +3,100 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import {
   Users,
   Box,
   Settings as SettingsIcon,
   CreditCard,
-  Bell,
-  ChevronDown,
-  Calendar,
-  Clock,
   PackagePlus,
   Star,
-  RefreshCcw,
   UserCircle,
-  Languages,
+  ShieldCheck,
 } from 'lucide-react';
 import useLocalStorage from '@/hooks/use-local-storage';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { format } from 'date-fns';
-import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/use-translation';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Card, CardContent } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
 import { DashboardCard } from './dashboard-card';
+import { useAuth } from '@/hooks/use-auth';
 
+const allMenuItems = [
+    {
+      title: 'ashley_employees_management',
+      icon: CreditCard,
+      href: '/ashley-expenses',
+      color: 'bg-blue-500',
+      permission: 'page:ashley-expenses',
+    },
+    {
+      title: 'transmit_cargo',
+      icon: PackagePlus,
+      href: '/transmit',
+      color: 'bg-yellow-500',
+      permission: 'page:transmit',
+    },
+    {
+      title: 'placement_storage',
+      icon: Box,
+      href: '/items',
+      color: 'bg-green-500',
+      permission: 'page:items',
+    },
+    {
+      title: 'marketing_feedback',
+      icon: Star,
+      href: '/marketing-feedback',
+      color: 'bg-cyan-500',
+      permission: 'page:marketing-feedback',
+    },
+    {
+        title: 'admin_panel',
+        icon: ShieldCheck,
+        href: '/admin',
+        color: 'bg-red-500',
+        permission: 'page:admin',
+    },
+    {
+      title: 'settings',
+      icon: SettingsIcon,
+      href: '/settings',
+      color: 'bg-purple-500',
+      permission: 'page:settings',
+    },
+    {
+      title: 'employees',
+      icon: Users,
+      href: '/employees',
+      color: 'bg-pink-500',
+      permission: 'page:employees',
+    },
+    {
+      title: 'my_account',
+      icon: UserCircle,
+      href: '/account',
+      color: 'bg-gray-500',
+      permission: 'page:account',
+    },
+];
 
 export function DashboardClient() {
-  const { t, setLanguage, language } = useTranslation();
+  const { t } = useTranslation();
+  const { hasPermission } = useAuth();
 
-  const [savedBannerHeight] = useLocalStorage('dashboard-banner-height', 150);
-  const [savedDashboardBanner] = useLocalStorage(
+  const [savedBannerHeight, setSavedBannerHeight] = useLocalStorage('dashboard-banner-height', 150);
+  const [savedDashboardBanner, setSavedDashboardBanner] = useLocalStorage<string | null>(
     'dashboard-banner',
-    'https://i.ibb.co/6Wp2t1Y/image.png'
+    null
   );
   
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => {
     setIsMounted(true);
+    if (!savedDashboardBanner) {
+      setSavedDashboardBanner('https://i.ibb.co/6Wp2t1Y/image.png')
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const menuItems = [
-    {
-      title: t('ashley_employees_management'),
-      icon: CreditCard,
-      href: '/ashley-expenses',
-      color: 'bg-blue-500',
-    },
-    {
-      title: t('transmit_cargo'),
-      icon: PackagePlus,
-      href: '/transmit',
-      color: 'bg-yellow-500',
-    },
-    {
-      title: t('placement_storage'),
-      icon: Box,
-      href: '/items',
-      color: 'bg-green-500',
-    },
-    {
-      title: t('marketing_feedback'),
-      icon: Star,
-      href: '/marketing-feedback',
-      color: 'bg-cyan-500',
-    },
-    {
-      title: t('settings'),
-      icon: SettingsIcon,
-      href: '/settings',
-      color: 'bg-purple-500',
-    },
-    {
-      title: t('employees'),
-      icon: Users,
-      href: '/employees',
-      color: 'bg-pink-500',
-    },
-    {
-      title: t('my_account'),
-      icon: UserCircle,
-      href: '/account',
-      color: 'bg-gray-500',
-    },
-  ];
+  const menuItems = allMenuItems.filter(item => hasPermission(item.permission));
   
   if (!isMounted) {
       return null;
@@ -125,7 +129,7 @@ export function DashboardClient() {
           {menuItems.map((item) => (
             <DashboardCard
               key={item.title}
-              title={item.title}
+              title={t(item.title)}
               icon={item.icon}
               href={item.href}
               color={item.color}

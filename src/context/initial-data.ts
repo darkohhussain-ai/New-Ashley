@@ -1,5 +1,5 @@
 import { Employee, ExcelFile, Item, StorageLocation, Expense, ExpenseReport, Overtime, Bonus, CashWithdrawal, SoldItemReceipt, Transfer, ItemForTransfer, MarketingFeedback, EvaluationQuestion, AnswerOption, User, Role } from '@/lib/types';
-import { adminPermissions, adminAssistantPermissions, viewerPermissions, financeManagerPermissions, inventoryManagerPermissions, hrManagerPermissions } from '@/lib/permissions';
+import { adminPermissions, adminAssistantPermissions, viewerPermissions, financeManagerPermissions, inventoryManagerPermissions, hrManagerPermissions, employeePermissions } from '@/lib/permissions';
 
 const defaultAnswers: [AnswerOption, AnswerOption, AnswerOption] = [
     { label: 'Excellent', value: 3 },
@@ -11,6 +11,7 @@ const initialRoles: Role[] = [
     { id: 'role-admin', name: 'Admin', permissions: adminPermissions },
     { id: 'role-admin-assistant', name: 'Admin Assistant', permissions: adminAssistantPermissions },
     { id: 'role-viewer', name: 'Viewer', permissions: viewerPermissions },
+    { id: 'role-employee', name: 'Employee', permissions: employeePermissions },
     { id: 'role-finance', name: 'Finance Manager', permissions: financeManagerPermissions },
     { id: 'role-inventory', name: 'Inventory Manager', permissions: inventoryManagerPermissions },
     { id: 'role-hr', name: 'HR Manager', permissions: hrManagerPermissions },
@@ -46,13 +47,15 @@ const initialEmployees: Employee[] = [
     { id: 'emp-27', name: 'Lanya', employeeId: '27', role: 'Marketing', createdAt: '2023-01-27T10:00:00Z', password: 'lanya123' },
 ];
 
-// Let's have the users list be dynamically generated from the employees list
-const initialUsers: User[] = initialEmployees.map(emp => ({
-  id: `user-${emp.id}`,
-  username: emp.name,
-  password: emp.password,
-  roleId: emp.name === 'Darko Haidar' ? 'role-admin' : 'role-viewer' // Assign Admin role to Darko, Viewer to others
-}));
+// Start with only the admin user. Other users will be created from the Admin Panel.
+const initialUsers: User[] = [
+    {
+        id: `user-emp-01`,
+        username: 'Darko Haidar',
+        password: 'Darko123',
+        roleId: 'role-admin'
+    }
+];
 
 
 export const initialData: {

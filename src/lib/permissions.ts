@@ -22,7 +22,14 @@ export const adminPermissions = allPermissions.map(p => p.id);
 
 export const adminAssistantPermissions = allPermissions.filter(p => p.id !== 'admin:all').map(p => p.id);
 
+// Viewer can see all pages
 export const viewerPermissions = allPermissions.filter(p => p.id.startsWith('page:')).map(p => p.id);
+
+// Employee/Member can only see their account and the placement/storage section
+export const employeePermissions = [
+    'page:account',
+    'page:items'
+];
 
 export const financeManagerPermissions = [
     'page:ashley-expenses',
