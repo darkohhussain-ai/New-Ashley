@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -10,11 +11,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/context/app-provider';
-import type { User, Role } from '@/lib/types';
+import type { User, Role, Employee } from '@/lib/types';
 import { allPermissions } from '@/lib/permissions';
 
 const useAdminAuth = () => {
@@ -36,19 +37,18 @@ const useAdminAuth = () => {
 };
 
 function UserManagement() {
-  const { users, setUsers, roles } = useAppContext();
+  const { users, setUsers, roles, employees } = useAppContext();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
-  const handleSaveUser = (user: User) => {
-    if(editingUser) {
+  const handleSaveUser = (user: User, isNew: boolean) => {
+    if(isNew) {
+        setUsers([...users, user]);
+        toast({ title: "User Created", description: `A user account for ${user.username} has been created.` });
+    } else {
         setUsers(users.map(u => u.id === user.id ? user : u));
         toast({ title: "User Updated", description: `Details for ${user.username} have been updated.` });
-    } else {
-        const newUser = { ...user, id: crypto.randomUUID() };
-        setUsers([...users, newUser]);
-        toast({ title: "User Added", description: `${user.username} has been added.` });
     }
     setEditingUser(null);
     setIsDialogOpen(false);
@@ -65,7 +65,7 @@ function UserManagement() {
     <Card>
       <CardHeader>
         <CardTitle>User Management</CardTitle>
-        <CardDescription>Add, edit, or remove users and assign their roles.</CardDescription>
+        <CardDescription>Add, edit, or remove user accounts and assign their roles.</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="mb-4 text-right">
@@ -91,7 +91,7 @@ function UserManagement() {
                     <Button variant="ghost" size="icon" onClick={() => { setEditingUser(user); setIsDialogOpen(true); }}>
                         <Edit className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDeleteUser(user.id)} disabled={user.username === 'admin'}>
+                    <Button variant="ghost" size="icon" onClick={() => handleDeleteUser(user.id)} disabled={user.username === 'Darko Haidar'}>
                         <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                     </TableCell>
@@ -101,36 +101,67 @@ function UserManagement() {
             </Table>
         </div>
       </CardContent>
-      <UserDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} user={editingUser} onSave={handleSaveUser} roles={roles} />
+      <UserDialog 
+        open={isDialogOpen} 
+        onOpenChange={setIsDialogOpen} 
+        user={editingUser} 
+        onSave={handleSaveUser} 
+        roles={roles}
+        employees={employees}
+        existingUsers={users}
+      />
     </Card>
   );
 }
 
-function UserDialog({ open, onOpenChange, user, onSave, roles }: { open: boolean, onOpenChange: (open: boolean) => void, user: User | null, onSave: (user: User) => void, roles: Role[] }) {
-    const [username, setUsername] = useState('');
+function UserDialog({ open, onOpenChange, user, onSave, roles, employees, existingUsers }: { open: boolean, onOpenChange: (open: boolean) => void, user: User | null, onSave: (user: User, isNew: boolean) => void, roles: Role[], employees: Employee[], existingUsers: User[] }) {
+    const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
     const [password, setPassword] = useState('');
     const [roleId, setRoleId] = useState('');
+    const isNewUser = !user;
+
+    const availableEmployees = useMemo(() => {
+        const existingUsernames = new Set(existingUsers.map(u => u.username));
+        return employees.filter(emp => !existingUsernames.has(emp.name));
+    }, [employees, existingUsers]);
   
     useEffect(() => {
       if (user) {
-        setUsername(user.username);
+        setSelectedEmployeeId(''); // Not applicable for editing
         setPassword(''); // Always clear password for security
         setRoleId(user.roleId);
       } else {
-        setUsername('');
+        setSelectedEmployeeId('');
         setPassword('');
-        setRoleId('');
+        setRoleId('role-viewer'); // Default to Viewer
       }
     }, [user]);
   
     const handleSubmit = () => {
-      const userData: User = {
-        id: user?.id || '',
-        username,
-        password, // For new users or if password is being reset
-        roleId,
-      };
-      onSave(userData);
+      if(isNewUser) {
+        const selectedEmp = employees.find(e => e.id === selectedEmployeeId);
+        if (!selectedEmp) {
+            alert("Please select an employee.");
+            return;
+        }
+        const defaultPassword = `${selectedEmp.name.split(' ')[0].toLowerCase()}123`;
+        const newUser: User = {
+            id: `user-${selectedEmp.id}`,
+            username: selectedEmp.name,
+            password: password || defaultPassword,
+            roleId
+        }
+        onSave(newUser, true);
+      } else { // Editing existing user
+        const updatedUser: User = {
+            ...user!,
+            roleId,
+        };
+        if (password) {
+            updatedUser.password = password;
+        }
+        onSave(updatedUser, false);
+      }
     };
   
     return (
@@ -141,12 +172,25 @@ function UserDialog({ open, onOpenChange, user, onSave, roles }: { open: boolean
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <Input id="username" value={username} onChange={e => setUsername(e.target.value)} disabled={!!user} />
+                <Label htmlFor="username">Username</Label>
+                {isNewUser ? (
+                    <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
+                        <SelectTrigger id="username">
+                            <SelectValue placeholder="Select an employee" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {availableEmployees.map(emp => (
+                                <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                ) : (
+                    <Input id="username" value={user.username} disabled />
+                )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder={user ? "Leave blank to keep current password" : "Enter a password"} />
+              <Input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder={isNewUser ? "Leave blank for default (firstname123)" : "Leave blank to keep current password"} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="role">Role</Label>
@@ -156,7 +200,7 @@ function UserDialog({ open, onOpenChange, user, onSave, roles }: { open: boolean
                 </SelectTrigger>
                 <SelectContent>
                   {roles.map(role => (
-                    <SelectItem key={role.id} value={role.id} disabled={user?.username === 'admin' && role.name !== 'Admin'}>
+                    <SelectItem key={role.id} value={role.id} disabled={user?.username === 'Darko Haidar' && role.name !== 'Admin'}>
                       {role.name}
                     </SelectItem>
                   ))}
@@ -172,6 +216,7 @@ function UserDialog({ open, onOpenChange, user, onSave, roles }: { open: boolean
       </Dialog>
     );
 }
+
 
 function RoleManagement() {
     const { roles, setRoles } = useAppContext();
