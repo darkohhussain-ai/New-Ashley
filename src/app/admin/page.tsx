@@ -111,9 +111,25 @@ function UserManagement() {
       </CardHeader>
       <CardContent>
         <div className="mb-4 flex justify-end gap-2">
-           <Button onClick={handleCreateAllUsers} variant="outline">
-            <Users2 className="mr-2 h-4 w-4" /> Create All Users
-          </Button>
+           <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline">
+                  <Users2 className="mr-2 h-4 w-4" /> Create All Users
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you sure you want to create all users?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will create user accounts for all employees who do not already have one. Existing users will not be affected.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleCreateAllUsers}>Create Users</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           <Button onClick={() => { setEditingUser(null); setIsDialogOpen(true); }}>
             <Plus className="mr-2 h-4 w-4" /> Add User
           </Button>
