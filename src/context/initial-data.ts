@@ -46,24 +46,9 @@ const initialEmployees: Employee[] = [
     { id: 'emp-27', name: 'Lanya', employeeId: '27', role: 'Marketing', createdAt: '2023-01-27T10:00:00Z' },
 ];
 
-// Automatically generate users from the employee list, excluding the admin
-const generatedUsers: User[] = initialEmployees
-  .filter(emp => emp.name !== 'Darko Haidar') // Assuming admin is not in the main employee list
-  .map(employee => {
-    const firstName = employee.name.split(' ')[0].toLowerCase();
-    return {
-        id: `user-${employee.id}`,
-        username: employee.name,
-        password: `${firstName}123`,
-        roleId: 'role-viewer', // Default role
-    };
-});
-
 const initialUsers: User[] = [
     // The main admin account
     { id: 'user-admin-darko', username: 'Darko Haidar', password: 'Darko123', roleId: 'role-admin' },
-    // All other employees
-    ...generatedUsers
 ];
 
 export const initialData: {

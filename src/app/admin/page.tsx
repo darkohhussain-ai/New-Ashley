@@ -131,19 +131,25 @@ function UserDialog({ open, onOpenChange, user, onSave, roles, employees, existi
         setPassword(''); // Always clear password for security
         setRoleId(user.roleId);
       } else {
+        // Reset for new user
         setSelectedEmployeeId('');
         setPassword('');
         setRoleId('role-viewer'); // Default to Viewer
       }
-    }, [user]);
+    }, [user, open]);
   
     const handleSubmit = () => {
       if(isNewUser) {
-        const selectedEmp = employees.find(e => e.id === selectedEmployeeId);
-        if (!selectedEmp) {
+        if (!selectedEmployeeId) {
             alert("Please select an employee.");
             return;
         }
+        const selectedEmp = employees.find(e => e.id === selectedEmployeeId);
+        if (!selectedEmp) {
+            alert("Selected employee not found.");
+            return;
+        }
+        
         const defaultPassword = `${selectedEmp.name.split(' ')[0].toLowerCase()}123`;
         const newUser: User = {
             id: `user-${selectedEmp.id}`,
