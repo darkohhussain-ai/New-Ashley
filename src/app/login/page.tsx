@@ -8,7 +8,10 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { Loader2, KeyRound } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import Image from 'next/image';
+import useLocalStorage from '@/hooks/use-local-storage';
+
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -17,6 +20,9 @@ export default function LoginPage() {
   const { login } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
+  
+  const [savedLogo] = useLocalStorage<string | null>('app-logo', null);
+
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,9 +44,26 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-sm">
+        <div className='absolute inset-0'>
+             <Image
+                src="https://picsum.photos/seed/login-banner/1920/1080"
+                alt="Login background"
+                fill
+                className="object-cover opacity-20"
+             />
+        </div>
+      <Card className="w-full max-w-sm z-10">
         <CardHeader className="text-center">
-            <KeyRound className="mx-auto h-12 w-12 text-primary" />
+            {savedLogo && (
+                 <div className="relative w-full h-20 mb-4">
+                  <Image
+                    src={savedLogo}
+                    alt="App Logo"
+                    fill
+                    className="object-contain"
+                  />
+                </div>
+            )}
           <CardTitle className="mt-4 text-2xl">Login to Your Account</CardTitle>
           <CardDescription>Enter your credentials to access the dashboard.</CardDescription>
         </CardHeader>

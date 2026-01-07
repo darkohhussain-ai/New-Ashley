@@ -15,7 +15,7 @@ const initialRoles: Role[] = [
 ];
 
 const initialEmployees: Employee[] = [
-    { id: 'emp-01', name: 'Darko Haidar', employeeId: '01', role: 'Super Manager', createdAt: '2023-01-01T10:00:00Z', password: 'Darko123' },
+    { id: 'emp-01', name: 'Darko01', employeeId: '01', role: 'Super Manager', createdAt: '2023-01-01T10:00:00Z', password: 'darko0123' },
     { id: 'emp-02', name: 'Shexan Ebrahem', employeeId: '02', role: 'Manager', createdAt: '2023-01-02T10:00:00Z', password: 'shexan123' },
     { id: 'emp-03', name: 'Hunar Jaza', employeeId: '03', role: 'IT', createdAt: '2023-01-03T10:00:00Z', password: 'hunar123' },
     { id: 'emp-04', name: 'Aram Qadr', employeeId: '04', role: 'Manager', createdAt: '2023-01-04T10:00:00Z', password: 'aram123' },
@@ -44,12 +44,11 @@ const initialEmployees: Employee[] = [
     { id: 'emp-27', name: 'Lanya', employeeId: '27', role: 'Marketing', createdAt: '2023-01-27T10:00:00Z', password: 'lanya123' },
 ];
 
-// Start with only the admin user. Other users will be created from the Admin Panel.
 const initialUsers: User[] = [
     {
         id: `user-emp-01`,
-        username: 'Darko Haidar',
-        password: 'Darko123',
+        username: 'Darko01',
+        password: 'darko0123',
         roleId: 'role-admin'
     }
 ];
