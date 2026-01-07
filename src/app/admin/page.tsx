@@ -4,7 +4,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { Loader2, ShieldCheck, Users, KeyRound, Save, Plus, Trash2, Edit, X } from 'lucide-react';
+import { Loader2, ShieldCheck, Users, KeyRound, Save, Plus, Trash2, Edit, X, Users2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -61,6 +61,29 @@ function UserManagement() {
   
   const getRoleName = (roleId: string) => roles.find(r => r.id === roleId)?.name || 'Unknown Role';
 
+  const handleCreateAllUsers = () => {
+    const existingUsernames = new Set(users.map(u => u.username));
+    const employeesWithoutUsers = employees.filter(emp => !existingUsernames.has(emp.name));
+
+    if (employeesWithoutUsers.length === 0) {
+      toast({ title: "No New Users", description: "All employees already have a user account." });
+      return;
+    }
+
+    const newUsers: User[] = employeesWithoutUsers.map(emp => {
+      const defaultPassword = `${emp.name.split(' ')[0].toLowerCase()}123`;
+      return {
+        id: `user-${emp.id}`,
+        username: emp.name,
+        password: defaultPassword,
+        roleId: 'role-viewer', // Default to Viewer role
+      };
+    });
+
+    setUsers([...users, ...newUsers]);
+    toast({ title: "Users Created", description: `${newUsers.length} new user accounts have been created.` });
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -68,7 +91,10 @@ function UserManagement() {
         <CardDescription>Add, edit, or remove user accounts and assign their roles.</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="mb-4 text-right">
+        <div className="mb-4 flex justify-end gap-2">
+           <Button onClick={handleCreateAllUsers} variant="outline">
+            <Users2 className="mr-2 h-4 w-4" /> Create All Users
+          </Button>
           <Button onClick={() => { setEditingUser(null); setIsDialogOpen(true); }}>
             <Plus className="mr-2 h-4 w-4" /> Add User
           </Button>
