@@ -20,6 +20,8 @@ export const allPermissions: Permission[] = [
 
 export const adminPermissions = allPermissions.map(p => p.id);
 
+export const adminAssistantPermissions = allPermissions.filter(p => p.id !== 'admin:all').map(p => p.id);
+
 export const viewerPermissions = allPermissions.filter(p => p.id.startsWith('page:')).map(p => p.id);
 
 export const financeManagerPermissions = [

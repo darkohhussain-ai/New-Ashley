@@ -1,6 +1,6 @@
 
 import { Employee, ExcelFile, Item, StorageLocation, Expense, ExpenseReport, Overtime, Bonus, CashWithdrawal, SoldItemReceipt, Transfer, ItemForTransfer, MarketingFeedback, EvaluationQuestion, AnswerOption, User, Role } from '@/lib/types';
-import { adminPermissions, viewerPermissions, financeManagerPermissions, inventoryManagerPermissions, hrManagerPermissions } from '@/lib/permissions';
+import { adminPermissions, adminAssistantPermissions, viewerPermissions, financeManagerPermissions, inventoryManagerPermissions, hrManagerPermissions } from '@/lib/permissions';
 
 const defaultAnswers: [AnswerOption, AnswerOption, AnswerOption] = [
     { label: 'Excellent', value: 3 },
@@ -10,6 +10,7 @@ const defaultAnswers: [AnswerOption, AnswerOption, AnswerOption] = [
 
 const initialRoles: Role[] = [
     { id: 'role-admin', name: 'Admin', permissions: adminPermissions },
+    { id: 'role-admin-assistant', name: 'Admin Assistant', permissions: adminAssistantPermissions },
     { id: 'role-viewer', name: 'Viewer', permissions: viewerPermissions },
     { id: 'role-finance', name: 'Finance Manager', permissions: financeManagerPermissions },
     { id: 'role-inventory', name: 'Inventory Manager', permissions: inventoryManagerPermissions },
