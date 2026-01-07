@@ -18,6 +18,7 @@ import { format, parseISO, startOfMonth, endOfMonth, subMonths, isWithinInterval
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -120,9 +121,6 @@ export default function AccountPage() {
     const empId = employeeDetails.id;
     const selectedMonthStart = startOfMonth(selectedDate);
     const selectedMonthEnd = endOfMonth(selectedDate);
-    const previousMonth = subMonths(selectedDate, 1);
-    const previousMonthStart = startOfMonth(previousMonth);
-    const previousMonthEnd = endOfMonth(previousMonth);
     
     const filterAndSum = (data: (Expense | Overtime | Bonus | CashWithdrawal)[], start: Date, end: Date) => {
         const filtered = data.filter(d => d.employeeId === empId && isWithinInterval(parseISO(d.date), {start, end}));
@@ -136,12 +134,6 @@ export default function AccountPage() {
             overtime: filterAndSum(overtime, selectedMonthStart, selectedMonthEnd),
             bonuses: filterAndSum(bonuses, selectedMonthStart, selectedMonthEnd),
             withdrawals: filterAndSum(withdrawals, selectedMonthStart, selectedMonthEnd),
-        },
-        previous: {
-            expenses: filterAndSum(expenses, previousMonthStart, previousMonthEnd).total,
-            overtime: filterAndSum(overtime, previousMonthStart, previousMonthEnd).total,
-            bonuses: filterAndSum(bonuses, previousMonthStart, previousMonthEnd).total,
-            withdrawals: filterAndSum(withdrawals, previousMonthStart, previousMonthEnd).total,
         }
     };
   }, [employeeDetails, expenses, overtime, bonuses, withdrawals, selectedDate]);
@@ -149,10 +141,14 @@ export default function AccountPage() {
 
   const handleEditToggle = () => {
     if (isEditing && employeeDetails) {
+      // Reset fields to original state on cancel
       setPhotoUrl(employeeDetails.photoUrl);
       setKurdishName(employeeDetails.kurdishName || '');
       setEmail(employeeDetails.email || '');
       setPhone(employeeDetails.phone || '');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
     }
     setIsEditing(!isEditing);
   };
@@ -187,8 +183,12 @@ export default function AccountPage() {
   
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !employeeDetails?.password) return;
+    if (!user || !employeeDetails) return;
 
+     if (!currentPassword || !newPassword || !confirmPassword) {
+        toast({ variant: 'destructive', title: "Missing Fields", description: "Please fill out all password fields to make a change." });
+        return;
+    }
     if (newPassword !== confirmPassword) {
       toast({ variant: 'destructive', title: "Passwords don't match", description: "The new password and confirmation do not match." });
       return;
@@ -214,7 +214,16 @@ export default function AccountPage() {
     setCurrentPassword('');
     setNewPassword('');
     setConfirmPassword('');
+    // Optionally close edit mode after successful password change
+    // setIsEditing(false);
   };
+  
+  const handleSaveAll = () => {
+    handleSaveChanges(); // Saves profile details first
+    if(newPassword) { // Only try to change password if a new one is entered
+        handleChangePassword(new Event('submit'));
+    }
+  }
 
   if (!employeeDetails || !monthlyFinancials) {
     return (
@@ -250,10 +259,39 @@ export default function AccountPage() {
                          <p className="flex items-center gap-2"><Mail className="w-4 h-4"/> {isEditing ? <Input value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email address" /> : (employeeDetails.email || t('no_email'))}</p>
                          <p className="flex items-center gap-2"><Phone className="w-4 h-4"/> {isEditing ? <Input value={phone} onChange={e=>setPhone(e.target.value)} placeholder="Phone number" /> : (employeeDetails.phone || t('no_phone'))}</p>
                     </CardContent>
+
+                    {isEditing && (
+                      <>
+                        <Separator />
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2"><KeyRound/> Change Password</CardTitle>
+                            <CardDescription>For security, you must provide your current password to set a new one.</CardDescription>
+                        </CardHeader>
+                        <form onSubmit={handleChangePassword}>
+                            <CardContent className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="current-password">Current Password</Label>
+                                    <Input id="current-password" type="password" value={currentPassword} onChange={e=>setCurrentPassword(e.target.value)} required={!!newPassword} />
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="new-password">New Password</Label>
+                                        <Input id="new-password" type="password" value={newPassword} onChange={e=>setNewPassword(e.target.value)} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="confirm-password">Confirm New Password</Label>
+                                        <Input id="confirm-password" type="password" value={confirmPassword} onChange={e=>setConfirmPassword(e.target.value)} />
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </form>
+                      </>
+                    )}
+
                     <CardFooter>
                         {isEditing ? (
                             <div className="flex w-full gap-2">
-                                <Button onClick={handleSaveChanges} className="flex-1"><Save className="mr-2 h-4 w-4"/> Save</Button>
+                                <Button onClick={handleSaveAll} className="flex-1"><Save className="mr-2 h-4 w-4"/> Save All</Button>
                                 <Button variant="ghost" onClick={handleEditToggle}><X className="mr-2 h-4 w-4"/> Cancel</Button>
                             </div>
                         ) : (
@@ -262,47 +300,6 @@ export default function AccountPage() {
                             </Button>
                         )}
                     </CardFooter>
-                </Card>
-
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>{t('summary_for_month', { month: format(subMonths(selectedDate, 1), 'MMMM') })}</CardTitle>
-                        <CardDescription>{t('last_month_activity_summary')}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-2 gap-4 text-center">
-                        <div><p className="text-xs text-muted-foreground">{t('expenses')}</p><p className="font-semibold">{formatCurrency(monthlyFinancials.previous.expenses)}</p></div>
-                        <div><p className="text-xs text-muted-foreground">{t('overtime')}</p><p className="font-semibold">{formatCurrency(monthlyFinancials.previous.overtime)}</p></div>
-                        <div><p className="text-xs text-muted-foreground">{t('bonuses')}</p><p className="font-semibold">{formatCurrency(monthlyFinancials.previous.bonuses)}</p></div>
-                        <div><p className="text-xs text-muted-foreground">{t('cash_withdrawals')}</p><p className="font-semibold">{formatCurrency(monthlyFinancials.previous.withdrawals)}</p></div>
-                    </CardContent>
-                </Card>
-
-                 <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><KeyRound/> Change Password</CardTitle>
-                        <CardDescription>For security, you must provide your current password to set a new one.</CardDescription>
-                    </CardHeader>
-                    <form onSubmit={handleChangePassword}>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="current-password">Current Password</Label>
-                                <Input id="current-password" type="password" value={currentPassword} onChange={e=>setCurrentPassword(e.target.value)} required />
-                            </div>
-                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="new-password">New Password</Label>
-                                    <Input id="new-password" type="password" value={newPassword} onChange={e=>setNewPassword(e.target.value)} required />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="confirm-password">Confirm New Password</Label>
-                                    <Input id="confirm-password" type="password" value={confirmPassword} onChange={e=>setConfirmPassword(e.target.value)} required />
-                                </div>
-                            </div>
-                        </CardContent>
-                        <CardFooter>
-                            <Button type="submit">Update Password</Button>
-                        </CardFooter>
-                    </form>
                 </Card>
             </div>
              <div className="lg:col-span-2 space-y-8">
