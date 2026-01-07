@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { useAppContext } from '@/context/app-provider';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslation } from '@/hooks/use-translation';
+import { useAuth } from '@/hooks/use-auth';
 
 
 const formatCurrency = (amount: number) => {
@@ -26,6 +27,8 @@ const formatCurrency = (amount: number) => {
 export default function MonthlyReportPage() {
   const { t, language } = useTranslation();
   const { overtime, bonuses, withdrawals, employees } = useAppContext();
+  const { user, hasPermission } = useAuth();
+  const isReadOnly = !hasPermission('page:admin');
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [reportType, setReportType] = useState<'overtime' | 'bonuses' | 'withdrawals'>('overtime');
@@ -39,6 +42,7 @@ export default function MonthlyReportPage() {
   const getEmployeeName = (employeeId: string) => {
     const employee = employees.find(e => e.id === employeeId);
     if (!employee) return t('unknown');
+    if (isReadOnly && user?.username !== `${employee.name.split(' ')[0]}${employee.employeeId || ''}`) return '***';
     return language === 'ku' && employee.kurdishName ? employee.kurdishName : employee.name;
   };
 
@@ -76,7 +80,7 @@ export default function MonthlyReportPage() {
     const totalLoads = reportType === 'bonuses' ? summary.reduce((sum, item) => sum + (item.totalLoads || 0), 0) : 0;
 
     return { records: filteredRecords, summary, totalAmount, totalHours, totalLoads };
-  }, [isLoading, selectedDate, reportType, overtime, bonuses, withdrawals, employees, getEmployeeName, t, language]);
+  }, [isLoading, selectedDate, reportType, overtime, bonuses, withdrawals, employees, getEmployeeName, t, language, isReadOnly, user]);
 
 
   const handlePrint = () => {
@@ -157,7 +161,7 @@ export default function MonthlyReportPage() {
                                         <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{item.employeeName}</TableCell>
                                         {reportType === 'overtime' && <TableCell className="text-right">{item.totalHours?.toFixed(2)}</TableCell>}
                                         {reportType === 'bonuses' && <TableCell className="text-right">{item.totalLoads}</TableCell>}
-                                        <TableCell className="text-right">{formatCurrency(item.totalAmount)}</TableCell>
+                                        <TableCell className="text-right">{isReadOnly ? '***' : formatCurrency(item.totalAmount)}</TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -166,7 +170,7 @@ export default function MonthlyReportPage() {
                                     <TableCell>{t('grand_total')}</TableCell>
                                      {reportType === 'overtime' && <TableCell className="text-right">{monthlyData.totalHours.toFixed(2)}</TableCell>}
                                      {reportType === 'bonuses' && <TableCell className="text-right">{monthlyData.totalLoads}</TableCell>}
-                                    <TableCell className="text-right text-primary">{formatCurrency(monthlyData.totalAmount)}</TableCell>
+                                    <TableCell className="text-right text-primary">{isReadOnly ? '***' : formatCurrency(monthlyData.totalAmount)}</TableCell>
                                 </TableRow>
                             </TableFooter>
                         </Table>

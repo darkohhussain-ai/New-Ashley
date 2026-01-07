@@ -18,6 +18,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useAppContext } from '@/context/app-provider';
 import type { CashWithdrawal, AllPdfSettings } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
+import { useAuth } from '@/hooks/use-auth';
 
 
 const formatCurrency = (amount: number) => {
@@ -33,8 +34,10 @@ export default function AddCashWithdrawalPage() {
   const { toast } = useToast();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { user, hasPermission } = useAuth();
 
   const { employees, withdrawals, setWithdrawals } = useAppContext();
+  const isReadOnly = !hasPermission('page:admin');
 
   const dateParam = searchParams.get('date');
 
@@ -85,6 +88,7 @@ export default function AddCashWithdrawalPage() {
   const getEmployeeName = (id: string, useKurdish: boolean = false) => {
     const employee = employees?.find(e => e.id === id);
     if (!employee) return t('unknown');
+    if (isReadOnly && user?.username !== `${employee.name.split(' ')[0]}${employee.employeeId || ''}`) return '***';
     return useKurdish && employee.kurdishName ? employee.kurdishName : employee.name;
   };
   
@@ -103,7 +107,7 @@ export default function AddCashWithdrawalPage() {
   };
   
   const handleUpdateRecord = () => {
-    if(!editingRecord) return;
+    if(!editingRecord || isReadOnly) return;
     
     setIsSaving(true);
     
@@ -115,6 +119,7 @@ export default function AddCashWithdrawalPage() {
 
   const handleAddWithdrawal = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isReadOnly) return;
     if (!selectedEmployee || !amount || !selectedDate || parseFloat(amount) <= 0) {
       toast({ variant: 'destructive', title: t('missing_information'), description: t('add_withdrawal_validation_error') });
       return;
@@ -136,6 +141,7 @@ export default function AddCashWithdrawalPage() {
   };
 
   const handleDelete = (record: CashWithdrawal) => {
+    if (isReadOnly) return;
     setWithdrawals(withdrawals.filter(rec => rec.id !== record.id));
     toast({ title: t('record_deleted'), description: t('withdrawal_record_deleted') });
   };
@@ -190,7 +196,7 @@ export default function AddCashWithdrawalPage() {
 
       <main className="container mx-auto p-4 md:p-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-1 print:hidden">
+            <div className={cn("lg:col-span-1 print:hidden", isReadOnly && "opacity-50 pointer-events-none")}>
                 <Card>
                 <CardHeader>
                     <CardTitle>{t('add_withdrawal_record')}</CardTitle>
@@ -200,7 +206,7 @@ export default function AddCashWithdrawalPage() {
                     <CardContent className="space-y-4">
                     <div className="space-y-2">
                         <label htmlFor="employee">{t('employee')}</label>
-                        <Select onValueChange={setSelectedEmployee} value={selectedEmployee} disabled={isSaving}>
+                        <Select onValueChange={setSelectedEmployee} value={selectedEmployee} disabled={isSaving || isReadOnly}>
                         <SelectTrigger id="employee">
                             <SelectValue placeholder={t('select_an_employee')} />
                         </SelectTrigger>
@@ -219,16 +225,16 @@ export default function AddCashWithdrawalPage() {
                         <label htmlFor="amount">{t('amount_iqd')}</label>
                         <div className="relative">
                         <Banknote className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input id="amount" type="number" value={amount} onChange={e => setAmount(e.target.value)} required placeholder="e.g., 100000" className="pl-8" disabled={isSaving} />
+                        <Input id="amount" type="number" value={amount} onChange={e => setAmount(e.target.value)} required placeholder="e.g., 100000" className="pl-8" disabled={isSaving || isReadOnly} />
                         </div>
                     </div>
                     <div className="space-y-2">
                         <label htmlFor="notes">{t('notes')}</label>
-                        <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder={t('notes_optional')} disabled={isSaving}/>
+                        <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder={t('notes_optional')} disabled={isSaving || isReadOnly}/>
                     </div>
                     </CardContent>
                     <CardFooter>
-                        <Button type="submit" className="w-full" disabled={isSaving}>
+                        <Button type="submit" className="w-full" disabled={isSaving || isReadOnly}>
                             <Plus className="mr-2 h-4 w-4" /> {t('add_record')}
                         </Button>
                     </CardFooter>
@@ -274,7 +280,8 @@ export default function AddCashWithdrawalPage() {
                             )}
                             <div className='flex flex-col items-end'>
                                 <p className="font-semibold text-primary">{formatCurrency(record.amount)}</p>
-                                {editingRecord?.id === record.id ? (
+                                {!isReadOnly && (
+                                editingRecord?.id === record.id ? (
                                     <div className="flex gap-1 mt-2 print:hidden">
                                         <Button size="icon" className="h-8 w-8" onClick={handleUpdateRecord} disabled={isSaving}><Save className="h-4 w-4"/></Button>
                                         <Button size="icon" variant="ghost" className="h-8 w-8" onClick={cancelEditing}><X className="h-4 w-4"/></Button>
@@ -304,6 +311,7 @@ export default function AddCashWithdrawalPage() {
                                             </AlertDialogContent>
                                         </AlertDialog>
                                     </div>
+                                )
                                 )}
                             </div>
                         </div>
@@ -316,7 +324,7 @@ export default function AddCashWithdrawalPage() {
                 {dailyWithdrawals && dailyWithdrawals.length > 0 && (
                     <CardFooter className="flex justify-between bg-muted/50 py-4 rounded-b-lg">
                         <span>{t('total')}</span>
-                        <p className="text-primary">{formatCurrency(totalAmount)}</p>
+                        <p className="text-primary">{isReadOnly ? '***' : formatCurrency(totalAmount)}</p>
                     </CardFooter>
                 )}
                 </Card>

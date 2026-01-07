@@ -7,87 +7,58 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/hooks/use-translation';
-
-const menuItems = [
-  {
-    title: "Manage Locations",
-    icon: MapPin,
-    href: "/locations",
-    color: "bg-pink-500",
-  },
-  {
-    title: "New Excel File",
-    icon: FilePlus,
-    href: "/new-file",
-    color: "bg-blue-500",
-  },
-  {
-    title: "Import Excel File",
-    icon: Upload,
-    href: "/import",
-    color: "bg-teal-500",
-  },
-  {
-    title: "Excel Archive",
-    icon: Archive,
-    href: "/archive",
-    color: "bg-yellow-500",
-  },
-  {
-    title: "PDF Archive",
-    icon: FileText,
-    href: "/pdf-archive",
-    color: "bg-purple-500",
-  },
-  {
-    title: "Sold Items Check",
-    icon: ShoppingCart,
-    href: "/sold-items",
-    color: "bg-orange-500",
-  }
-];
+import { useAuth } from '@/hooks/use-auth';
 
 export default function ItemsPage() {
     const { t } = useTranslation();
+    const { hasPermission } = useAuth();
+    const canEdit = hasPermission('page:admin');
 
-  const translatedMenuItems = [
+    const menuItems = [
     {
       title: t("manage_locations"),
       icon: MapPin,
       href: "/locations",
       color: "bg-pink-500",
+      enabled: true
     },
     {
       title: t("new_excel_file"),
       icon: FilePlus,
       href: "/new-file",
       color: "bg-blue-500",
+      enabled: canEdit
     },
     {
       title: t("import_excel_file"),
       icon: Upload,
       href: "/import",
       color: "bg-teal-500",
+      enabled: canEdit
     },
     {
       title: t("excel_archive"),
       icon: Archive,
       href: "/archive",
       color: "bg-yellow-500",
+      enabled: true
     },
     {
       title: t("pdf_archive"),
       icon: FileText,
       href: "/pdf-archive",
       color: "bg-purple-500",
+      enabled: true
     },
     {
       title: t("sold_items_check"),
       icon: ShoppingCart,
       href: "/sold-items",
       color: "bg-orange-500",
+      enabled: canEdit
     }
   ];
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="bg-card border-b p-4">
@@ -103,7 +74,7 @@ export default function ItemsPage() {
       </header>
       <main className='container mx-auto p-4 md:p-8'>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {translatedMenuItems.map((item) => (
+          {menuItems.filter(item => item.enabled).map((item) => (
             <Link key={item.title} href={item.href} className="group block" passHref>
                 <Card className={cn("h-48 flex flex-col items-center justify-center text-white transition-transform transform hover:-translate-y-1 hover:shadow-xl", item.color)}>
                   <CardContent className="flex flex-col items-center justify-center p-6 text-center">

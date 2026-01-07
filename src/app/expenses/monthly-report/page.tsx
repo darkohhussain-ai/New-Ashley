@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -14,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { useAppContext } from '@/context/app-provider';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslation } from '@/hooks/use-translation';
+import { useAuth } from '@/hooks/use-auth';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -26,6 +26,8 @@ const formatCurrency = (amount: number) => {
 export default function MonthlyExpenseReportPage() {
   const { t, language } = useTranslation();
   const { expenses, employees, expenseReports } = useAppContext();
+  const { user, hasPermission } = useAuth();
+  const isReadOnly = !hasPermission('page:admin');
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   useEffect(() => {
@@ -38,6 +40,7 @@ export default function MonthlyExpenseReportPage() {
   const getEmployeeName = (employeeId: string, useKurdish: boolean = false) => {
     const employee = employees.find(e => e.id === employeeId);
     if (!employee) return t('unknown');
+    if (isReadOnly && user?.username !== `${employee.name.split(' ')[0]}${employee.employeeId || ''}`) return '***';
     return useKurdish && employee.kurdishName ? employee.kurdishName : employee.name;
   };
 
@@ -71,7 +74,7 @@ export default function MonthlyExpenseReportPage() {
     const total = summary.reduce((sum, item) => sum + item.totalAmount, 0);
 
     return { expenses: filteredExpenses, summary, total };
-  }, [expenses, employees, expenseReports, selectedDate, language, getEmployeeName, t]);
+  }, [expenses, employees, expenseReports, selectedDate, language, getEmployeeName, t, isReadOnly, user]);
 
 
   const handlePrint = () => {
@@ -136,14 +139,14 @@ export default function MonthlyExpenseReportPage() {
                                 {monthlyData.summary.map(item => (
                                     <TableRow key={item.employeeId}>
                                         <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{item.employeeName}</TableCell>
-                                        <TableCell className="text-right">{formatCurrency(item.totalAmount)}</TableCell>
+                                        <TableCell className="text-right">{isReadOnly ? '***' : formatCurrency(item.totalAmount)}</TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
                             <TableFooter>
                                 <TableRow>
                                     <TableCell className="text-lg">{t('grand_total')}</TableCell>
-                                    <TableCell className="text-right text-lg text-primary">{formatCurrency(monthlyData.total)}</TableCell>
+                                    <TableCell className="text-right text-lg text-primary">{isReadOnly ? '***' : formatCurrency(monthlyData.total)}</TableCell>
                                 </TableRow>
                             </TableFooter>
                         </Table>
@@ -170,4 +173,3 @@ export default function MonthlyExpenseReportPage() {
     </>
   );
 }
-    

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -15,6 +14,7 @@ import { useAppContext } from '@/context/app-provider';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Bar, BarChart as RechartsBarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { useTranslation } from '@/hooks/use-translation';
+import { useAuth } from '@/hooks/use-auth';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -27,6 +27,8 @@ const formatCurrency = (amount: number) => {
 export default function MonthlyBonusReportPage() {
   const { t, language } = useTranslation();
   const { bonuses, employees } = useAppContext();
+  const { user, hasPermission } = useAuth();
+  const isReadOnly = !hasPermission('page:admin');
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   useEffect(() => {
@@ -38,6 +40,7 @@ export default function MonthlyBonusReportPage() {
   const getEmployeeName = (employeeId: string, useKurdish: boolean = false) => {
     const employee = employees.find(e => e.id === employeeId);
     if (!employee) return t('unknown');
+    if (isReadOnly && user?.username !== `${employee.name.split(' ')[0]}${employee.employeeId || ''}`) return '***';
     return useKurdish && employee.kurdishName ? employee.kurdishName : employee.name;
   };
 
@@ -67,7 +70,7 @@ export default function MonthlyBonusReportPage() {
     const totalLoads = summary.reduce((sum, item) => sum + item.totalLoads, 0);
 
     return { records: filteredRecords, summary, totalAmount, totalLoads };
-  }, [isLoading, selectedDate, bonuses, employees, getEmployeeName, language]);
+  }, [isLoading, selectedDate, bonuses, employees, getEmployeeName, language, isReadOnly, user]);
 
 
   const handlePrint = () => {
@@ -130,7 +133,7 @@ export default function MonthlyBonusReportPage() {
                                     <TableRow key={item.employeeId}>
                                         <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{item.employeeName}</TableCell>
                                         <TableCell className="text-right">{item.totalLoads.toFixed(0)}</TableCell>
-                                        <TableCell className="text-right">{formatCurrency(item.totalAmount)}</TableCell>
+                                        <TableCell className="text-right">{isReadOnly ? '***' : formatCurrency(item.totalAmount)}</TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -138,7 +141,7 @@ export default function MonthlyBonusReportPage() {
                                 <TableRow>
                                     <TableCell className="text-lg">{t('grand_total')}</TableCell>
                                     <TableCell className="text-right text-lg">{monthlyData.totalLoads.toFixed(0)}</TableCell>
-                                    <TableCell className="text-right text-lg text-primary">{formatCurrency(monthlyData.totalAmount)}</TableCell>
+                                    <TableCell className="text-right text-lg text-primary">{isReadOnly ? '***' : formatCurrency(monthlyData.totalAmount)}</TableCell>
                                 </TableRow>
                             </TableFooter>
                         </Table>

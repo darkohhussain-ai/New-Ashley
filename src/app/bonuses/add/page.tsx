@@ -19,6 +19,7 @@ import useLocalStorage from '@/hooks/use-local-storage';
 import { useAppContext } from '@/context/app-provider';
 import type { Bonus, AllPdfSettings } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
+import { useAuth } from '@/hooks/use-auth';
 
 
 const formatCurrency = (amount: number) => {
@@ -35,11 +36,13 @@ export default function AddBonusPage() {
   const { toast } = useToast();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { user, hasPermission } = useAuth();
 
   const { employees, bonuses, setBonuses } = useAppContext();
   const [salarySettings] = useLocalStorage('ashley-salary-settings', { bonusRate: 5000 });
 
   const dateParam = searchParams.get('date');
+  const isReadOnly = !hasPermission('page:admin');
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   
@@ -88,6 +91,7 @@ export default function AddBonusPage() {
   const getEmployeeName = (id: string, useKurdish: boolean = false) => {
     const employee = employees?.find(e => e.id === id);
     if (!employee) return t('unknown');
+    if (isReadOnly && user?.username !== `${employee.name.split(' ')[0]}${employee.employeeId || ''}`) return '***';
     return useKurdish && employee.kurdishName ? employee.kurdishName : employee.name;
   };
   
@@ -106,7 +110,7 @@ export default function AddBonusPage() {
   };
   
   const handleUpdateRecord = () => {
-    if(!editingRecord) return;
+    if(!editingRecord || isReadOnly) return;
     
     setIsSaving(true);
     
@@ -123,6 +127,7 @@ export default function AddBonusPage() {
 
   const handleAddBonus = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isReadOnly) return;
     if (!selectedEmployee || !loadCount || !selectedDate || parseInt(loadCount) <= 0) {
       toast({ variant: 'destructive', title: t('missing_information'), description: t('add_bonus_validation_error') });
       return;
@@ -146,6 +151,7 @@ export default function AddBonusPage() {
   };
 
   const handleDelete = (record: Bonus) => {
+    if (isReadOnly) return;
     setBonuses(bonuses.filter(rec => rec.id !== record.id));
     toast({ title: t('record_deleted'), description: t('bonus_record_deleted') });
   };
@@ -202,7 +208,7 @@ export default function AddBonusPage() {
 
       <main className="container mx-auto p-4 md:p-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-1 print:hidden">
+            <div className={cn("lg:col-span-1 print:hidden", isReadOnly && "opacity-50 pointer-events-none")}>
                 <Card>
                 <CardHeader>
                     <CardTitle>{t('add_bonus_record')}</CardTitle>
@@ -212,7 +218,7 @@ export default function AddBonusPage() {
                     <CardContent className="space-y-4">
                     <div className="space-y-2">
                         <label htmlFor="employee">{t('employee')}</label>
-                        <Select onValueChange={setSelectedEmployee} value={selectedEmployee} disabled={isSaving}>
+                        <Select onValueChange={setSelectedEmployee} value={selectedEmployee} disabled={isSaving || isReadOnly}>
                         <SelectTrigger id="employee">
                             <SelectValue placeholder={t('select_an_employee')} />
                         </SelectTrigger>
@@ -231,19 +237,19 @@ export default function AddBonusPage() {
                         <label htmlFor="loadCount">{t('number_of_loads')}</label>
                         <div className="relative">
                         <Truck className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input id="loadCount" type="number" value={loadCount} onChange={e => setLoadCount(e.target.value)} required placeholder="e.g., 2" className="pl-8" disabled={isSaving} />
+                        <Input id="loadCount" type="number" value={loadCount} onChange={e => setLoadCount(e.target.value)} required placeholder="e.g., 2" className="pl-8" disabled={isSaving || isReadOnly} />
                         </div>
                     </div>
                     <div className="space-y-2">
                         <label htmlFor="notes">{t('notes')}</label>
-                        <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder={t('notes_optional')} disabled={isSaving}/>
+                        <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder={t('notes_optional')} disabled={isSaving || isReadOnly}/>
                     </div>
                     <p className="text-sm text-muted-foreground">
                         {t('bonus_rate', {rate: formatCurrency(salarySettings.bonusRate)})}
                     </p>
                     </CardContent>
                     <CardFooter>
-                        <Button type="submit" className="w-full" disabled={isSaving}>
+                        <Button type="submit" className="w-full" disabled={isSaving || isReadOnly}>
                             <Plus className="mr-2 h-4 w-4" /> {t('add_record')}
                         </Button>
                     </CardFooter>
@@ -290,36 +296,38 @@ export default function AddBonusPage() {
                             )}
                             <div className='flex flex-col items-end'>
                                 <p className="font-semibold text-primary">{formatCurrency(record.totalAmount)}</p>
-                                {editingRecord?.id === record.id ? (
-                                    <div className="flex gap-1 mt-2 print:hidden">
-                                        <Button size="icon" className="h-8 w-8" onClick={handleUpdateRecord} disabled={isSaving}><Save className="h-4 w-4"/></Button>
-                                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={cancelEditing}><X className="h-4 w-4"/></Button>
-                                    </div>
-                                ) : (
-                                    <div className="flex gap-1 mt-1 print:hidden">
-                                        <Button size="icon" variant="ghost" className="text-muted-foreground hover:text-primary h-8 w-8" onClick={() => startEditing(record)}>
-                                            <Edit className="h-4 w-4"/>
-                                        </Button>
-                                        <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8">
-                                                    <Trash2 className="h-4 w-4"/>
-                                                </Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle>{t('delete_this_record')}</AlertDialogTitle>
-                                                    <AlertDialogDescription>
-                                                    {t('confirm_delete_bonus', {employeeName: getEmployeeName(record.employeeId, language === 'ku')})}
-                                                    </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                    <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => handleDelete(record)}>{t('delete')}</AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
-                                    </div>
+                                {!isReadOnly && (
+                                  editingRecord?.id === record.id ? (
+                                      <div className="flex gap-1 mt-2 print:hidden">
+                                          <Button size="icon" className="h-8 w-8" onClick={handleUpdateRecord} disabled={isSaving}><Save className="h-4 w-4"/></Button>
+                                          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={cancelEditing}><X className="h-4 w-4"/></Button>
+                                      </div>
+                                  ) : (
+                                      <div className="flex gap-1 mt-1 print:hidden">
+                                          <Button size="icon" variant="ghost" className="text-muted-foreground hover:text-primary h-8 w-8" onClick={() => startEditing(record)}>
+                                              <Edit className="h-4 w-4"/>
+                                          </Button>
+                                          <AlertDialog>
+                                              <AlertDialogTrigger asChild>
+                                                  <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8">
+                                                      <Trash2 className="h-4 w-4"/>
+                                                  </Button>
+                                              </AlertDialogTrigger>
+                                              <AlertDialogContent>
+                                                  <AlertDialogHeader>
+                                                      <AlertDialogTitle>{t('delete_this_record')}</AlertDialogTitle>
+                                                      <AlertDialogDescription>
+                                                      {t('confirm_delete_bonus', {employeeName: getEmployeeName(record.employeeId, language === 'ku')})}
+                                                      </AlertDialogDescription>
+                                                  </AlertDialogHeader>
+                                                  <AlertDialogFooter>
+                                                      <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                                                      <AlertDialogAction onClick={() => handleDelete(record)}>{t('delete')}</AlertDialogAction>
+                                                  </AlertDialogFooter>
+                                              </AlertDialogContent>
+                                          </AlertDialog>
+                                      </div>
+                                  )
                                 )}
                             </div>
                         </div>
@@ -333,8 +341,14 @@ export default function AddBonusPage() {
                     <CardFooter className="flex justify-between bg-muted/50 py-4 rounded-b-lg">
                         <span>{t('total')}</span>
                         <div className='text-right'>
-                            <p>{totalLoads.toFixed(0)} {t('loads')}</p>
-                            <p className="text-primary">{formatCurrency(totalAmount)}</p>
+                             {isReadOnly ? (
+                                <p className='font-bold'>***</p>
+                             ) : (
+                                <>
+                                    <p>{totalLoads.toFixed(0)} {t('loads')}</p>
+                                    <p className="text-primary">{formatCurrency(totalAmount)}</p>
+                                </>
+                             )}
                         </div>
                     </CardFooter>
                 )}
