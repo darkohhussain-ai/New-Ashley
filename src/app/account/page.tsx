@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { UserCircle, Edit, Save, X, KeyRound, Upload, Mail, Phone, Building, DollarSign, Clock, Gift, Banknote } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,6 +36,7 @@ export default function AccountPage() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [employeeDetails, setEmployeeDetails] = useState<Employee | null>(null);
+  const [financials, setFinancials] = useState<{ totalExpenses: number, totalOvertime: number, totalBonuses: number, totalWithdrawals: number } | null>(null);
 
   // Form State
   const [photoUrl, setPhotoUrl] = useState<string | undefined>(undefined);
@@ -52,7 +53,11 @@ export default function AccountPage() {
 
   useEffect(() => {
     if (user && employees) {
-      const emp = employees.find(e => e.username === user.username);
+      const potentialUsername = `${user.username.split(' ')[0]}${user.employeeId || ''}`;
+      const emp = employees.find(e => {
+        const empUsername = `${e.name.split(' ')[0]}${e.employeeId || ''}`;
+        return empUsername === user.username || e.name === user.username;
+      });
       setEmployeeDetails(emp || null);
     }
   }, [user, employees]);
@@ -63,19 +68,14 @@ export default function AccountPage() {
       setKurdishName(employeeDetails.kurdishName || '');
       setEmail(employeeDetails.email || '');
       setPhone(employeeDetails.phone || '');
+      
+      const empId = employeeDetails.id;
+      const totalExpenses = expenses.filter(e => e.employeeId === empId).reduce((sum, exp) => sum + exp.amount, 0);
+      const totalOvertime = overtime.filter(e => e.employeeId === empId).reduce((sum, ot) => sum + ot.totalAmount, 0);
+      const totalBonuses = bonuses.filter(b => b.employeeId === empId).reduce((sum, b) => sum + b.totalAmount, 0);
+      const totalWithdrawals = withdrawals.filter(w => w.employeeId === empId).reduce((sum, w) => sum + w.amount, 0);
+      setFinancials({ totalExpenses, totalOvertime, totalBonuses, totalWithdrawals });
     }
-  }, [employeeDetails]);
-  
-  const employeeFinancials = useMemo(() => {
-    if (!employeeDetails) return null;
-    
-    const empId = employeeDetails.id;
-    const totalExpenses = expenses.filter(e => e.employeeId === empId).reduce((sum, exp) => sum + exp.amount, 0);
-    const totalOvertime = overtime.filter(e => e.employeeId === empId).reduce((sum, ot) => sum + ot.totalAmount, 0);
-    const totalBonuses = bonuses.filter(b => b.employeeId === empId).reduce((sum, b) => sum + b.totalAmount, 0);
-    const totalWithdrawals = withdrawals.filter(w => w.employeeId === empId).reduce((sum, w) => sum + w.amount, 0);
-
-    return { totalExpenses, totalOvertime, totalBonuses, totalWithdrawals };
   }, [employeeDetails, expenses, overtime, bonuses, withdrawals]);
 
   const handleEditToggle = () => {
@@ -138,6 +138,10 @@ export default function AccountPage() {
 
     const updatedEmployeeWithNewPass: Employee = { ...employeeDetails, password: newPassword };
     setEmployees(employees.map(emp => emp.id === employeeDetails!.id ? updatedEmployeeWithNewPass : emp));
+    
+    // We need to also update the user record for the login to work next time
+    // This part is tricky as use-auth doesn't expose a setUser function.
+    // For now, we update the employee and re-login which should handle the session for now.
     
     await login(user.username, newPassword);
 
@@ -202,7 +206,7 @@ export default function AccountPage() {
                             <CardTitle className="flex items-center gap-2"><DollarSign className="w-5 h-5 text-blue-500"/> {t('expenses')}</CardTitle>
                         </CardHeader>
                         <CardContent>
-                             <p className="text-2xl font-bold text-blue-500">{formatCurrency(employeeFinancials?.totalExpenses || 0)}</p>
+                             <p className="text-2xl font-bold text-blue-500">{formatCurrency(financials?.totalExpenses || 0)}</p>
                         </CardContent>
                     </Card>
 
@@ -211,7 +215,7 @@ export default function AccountPage() {
                             <CardTitle className="flex items-center gap-2"><Clock className="w-5 h-5 text-orange-500"/> {t('overtime')}</CardTitle>
                         </CardHeader>
                          <CardContent>
-                             <p className="text-2xl font-bold text-orange-500">{formatCurrency(employeeFinancials?.totalOvertime || 0)}</p>
+                             <p className="text-2xl font-bold text-orange-500">{formatCurrency(financials?.totalOvertime || 0)}</p>
                         </CardContent>
                     </Card>
 
@@ -220,7 +224,7 @@ export default function AccountPage() {
                             <CardTitle className="flex items-center gap-2"><Gift className="w-5 h-5 text-green-500"/> {t('bonuses')}</CardTitle>
                         </CardHeader>
                         <CardContent>
-                             <p className="text-2xl font-bold text-green-500">{formatCurrency(employeeFinancials?.totalBonuses || 0)}</p>
+                             <p className="text-2xl font-bold text-green-500">{formatCurrency(financials?.totalBonuses || 0)}</p>
                         </CardContent>
                     </Card>
 
@@ -229,7 +233,7 @@ export default function AccountPage() {
                             <CardTitle className="flex items-center gap-2"><Banknote className="w-5 h-5 text-rose-500"/> {t('cash_withdrawals')}</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-2xl font-bold text-rose-500">{formatCurrency(employeeFinancials?.totalWithdrawals || 0)}</p>
+                            <p className="text-2xl font-bold text-rose-500">{formatCurrency(financials?.totalWithdrawals || 0)}</p>
                         </CardContent>
                     </Card>
                 </div>

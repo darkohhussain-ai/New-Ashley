@@ -1,3 +1,4 @@
+
 import type { Permission } from './types';
 
 export const allPermissions: Permission[] = [
@@ -22,13 +23,14 @@ export const adminPermissions = allPermissions.map(p => p.id);
 
 export const adminAssistantPermissions = allPermissions.filter(p => p.id !== 'admin:all').map(p => p.id);
 
-// Viewer can see all pages
+// Viewer can see all pages but cannot edit
 export const viewerPermissions = allPermissions.filter(p => p.id.startsWith('page:')).map(p => p.id);
 
-// Employee/Member can only see their account and the placement/storage section
+// Employee/Member can only see their account, placement/storage, and their own financial data (via ashley-expenses page permission)
 export const employeePermissions = [
     'page:account',
-    'page:items'
+    'page:items',
+    'page:ashley-expenses' // Required for My Account to pull personal financial data
 ];
 
 export const financeManagerPermissions = [
