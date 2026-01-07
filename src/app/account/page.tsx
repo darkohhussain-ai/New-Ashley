@@ -1,7 +1,8 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { UserCircle, Edit, Save, X, KeyRound, Upload, Mail, Phone, Building } from 'lucide-react';
+import { UserCircle, Edit, Save, X, KeyRound, Upload, Mail, Phone, Building, DollarSign, Clock, Gift, Banknote } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,13 +13,26 @@ import { useAppContext } from '@/context/app-provider';
 import type { Employee } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from '@/hooks/use-translation';
+import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
+import { format, parseISO } from 'date-fns';
+
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'IQD',
+    maximumFractionDigits: 0,
+  }).format(amount);
+};
 
 
 export default function AccountPage() {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const { user, login } = useAuth(); // We need `login` to re-authenticate for password change
-  const { employees, setEmployees } = useAppContext();
+  const { user, login } = useAuth();
+  const { 
+    employees, setEmployees, 
+    expenses, overtime, bonuses, withdrawals 
+  } = useAppContext();
 
   const [isEditing, setIsEditing] = useState(false);
   const [employeeDetails, setEmployeeDetails] = useState<Employee | null>(null);
@@ -38,7 +52,6 @@ export default function AccountPage() {
 
   useEffect(() => {
     if (user && employees) {
-      // The user object from useAuth has a username. Find the employee record that matches.
       const emp = employees.find(e => e.name === user.username);
       setEmployeeDetails(emp || null);
     }
@@ -52,10 +65,21 @@ export default function AccountPage() {
       setPhone(employeeDetails.phone || '');
     }
   }, [employeeDetails]);
+  
+  const employeeFinancials = React.useMemo(() => {
+    if (!employeeDetails) return null;
+    
+    const empId = employeeDetails.id;
+    const totalExpenses = expenses.filter(e => e.employeeId === empId).reduce((sum, exp) => sum + exp.amount, 0);
+    const totalOvertime = overtime.filter(e => e.employeeId === empId).reduce((sum, ot) => sum + ot.totalAmount, 0);
+    const totalBonuses = bonuses.filter(b => b.employeeId === empId).reduce((sum, b) => sum + b.totalAmount, 0);
+    const totalWithdrawals = withdrawals.filter(w => w.employeeId === empId).reduce((sum, w) => sum + w.amount, 0);
+
+    return { totalExpenses, totalOvertime, totalBonuses, totalWithdrawals };
+  }, [employeeDetails, expenses, overtime, bonuses, withdrawals]);
 
   const handleEditToggle = () => {
     if (isEditing && employeeDetails) {
-      // If cancelling edit, reset form to original details
       setPhotoUrl(employeeDetails.photoUrl);
       setKurdishName(employeeDetails.kurdishName || '');
       setEmail(employeeDetails.email || '');
@@ -105,7 +129,6 @@ export default function AccountPage() {
         return;
     }
 
-    // "login" function checks the password. We use it to verify the current password.
     const isCurrentPasswordCorrect = await login(user.username, currentPassword);
 
     if (!isCurrentPasswordCorrect) {
@@ -113,11 +136,9 @@ export default function AccountPage() {
         return;
     }
 
-    // Find the user in the main `employees` list and update their password
     const updatedEmployeeWithNewPass: Employee = { ...employeeDetails, password: newPassword };
     setEmployees(employees.map(emp => emp.id === employeeDetails!.id ? updatedEmployeeWithNewPass : emp));
     
-    // We also need to re-log-in the user with the new password to update the session
     await login(user.username, newPassword);
 
     toast({ title: "Password Changed", description: "Your password has been successfully updated." });
@@ -125,7 +146,6 @@ export default function AccountPage() {
     setNewPassword('');
     setConfirmPassword('');
   };
-
 
   if (!employeeDetails) {
     return (
@@ -176,6 +196,44 @@ export default function AccountPage() {
                 </Card>
             </div>
              <div className="md:col-span-2 space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2"><DollarSign className="w-5 h-5 text-blue-500"/> {t('expenses')}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                             <p className="text-2xl font-bold text-blue-500">{formatCurrency(employeeFinancials?.totalExpenses || 0)}</p>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2"><Clock className="w-5 h-5 text-orange-500"/> {t('overtime')}</CardTitle>
+                        </CardHeader>
+                         <CardContent>
+                             <p className="text-2xl font-bold text-orange-500">{formatCurrency(employeeFinancials?.totalOvertime || 0)}</p>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2"><Gift className="w-5 h-5 text-green-500"/> {t('bonuses')}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                             <p className="text-2xl font-bold text-green-500">{formatCurrency(employeeFinancials?.totalBonuses || 0)}</p>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2"><Banknote className="w-5 h-5 text-rose-500"/> {t('cash_withdrawals')}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-2xl font-bold text-rose-500">{formatCurrency(employeeFinancials?.totalWithdrawals || 0)}</p>
+                        </CardContent>
+                    </Card>
+                </div>
+
                 <Card>
                     <CardHeader>
                         <CardTitle>{t('general')}</CardTitle>
