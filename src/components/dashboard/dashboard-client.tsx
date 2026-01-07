@@ -10,14 +10,75 @@ import {
   PackagePlus,
   Star,
   UserCircle,
+  ShieldCheck,
 } from 'lucide-react';
 import useLocalStorage from '@/hooks/use-local-storage';
 import { useTranslation } from '@/hooks/use-translation';
 import { DashboardCard } from './dashboard-card';
+import { useAuth } from '@/hooks/use-auth';
 
+const allMenuItems = [
+    {
+      title: 'ashley_employees_management',
+      icon: CreditCard,
+      href: '/ashley-expenses',
+      color: 'bg-blue-500',
+      permission: 'page:ashley-expenses',
+    },
+    {
+      title: 'transmit_cargo',
+      icon: PackagePlus,
+      href: '/transmit',
+      color: 'bg-yellow-500',
+      permission: 'page:transmit',
+    },
+    {
+      title: 'placement_storage',
+      icon: Box,
+      href: '/items',
+      color: 'bg-green-500',
+      permission: 'page:items',
+    },
+    {
+      title: 'marketing_feedback',
+      icon: Star,
+      href: '/marketing-feedback',
+      color: 'bg-cyan-500',
+      permission: 'page:marketing-feedback',
+    },
+    {
+        title: 'admin_panel',
+        icon: ShieldCheck,
+        href: '/admin',
+        color: 'bg-red-500',
+        permission: 'page:admin',
+    },
+    {
+      title: 'settings',
+      icon: SettingsIcon,
+      href: '/settings',
+      color: 'bg-purple-500',
+      permission: 'page:settings',
+    },
+    {
+      title: 'employees',
+      icon: Users,
+      href: '/employees',
+      color: 'bg-pink-500',
+      permission: 'page:employees',
+    },
+    {
+      title: 'my_account',
+      icon: UserCircle,
+      href: '/account',
+      color: 'bg-gray-500',
+      permission: 'page:account',
+    },
+];
 
 export function DashboardClient() {
   const { t } = useTranslation();
+  const { hasPermission } = useAuth();
 
   const [savedBannerHeight] = useLocalStorage('dashboard-banner-height', 150);
   const [savedDashboardBanner, setSavedDashboardBanner] = useLocalStorage<string | null>(
@@ -33,50 +94,7 @@ export function DashboardClient() {
     }
   }, []);
 
-  const menuItems = [
-    {
-      title: t('ashley_employees_management'),
-      icon: CreditCard,
-      href: '/ashley-expenses',
-      color: 'bg-blue-500',
-    },
-    {
-      title: t('transmit_cargo'),
-      icon: PackagePlus,
-      href: '/transmit',
-      color: 'bg-yellow-500',
-    },
-    {
-      title: t('placement_storage'),
-      icon: Box,
-      href: '/items',
-      color: 'bg-green-500',
-    },
-    {
-      title: t('marketing_feedback'),
-      icon: Star,
-      href: '/marketing-feedback',
-      color: 'bg-cyan-500',
-    },
-    {
-      title: t('settings'),
-      icon: SettingsIcon,
-      href: '/settings',
-      color: 'bg-purple-500',
-    },
-    {
-      title: t('employees'),
-      icon: Users,
-      href: '/employees',
-      color: 'bg-pink-500',
-    },
-    {
-      title: t('my_account'),
-      icon: UserCircle,
-      href: '/account',
-      color: 'bg-gray-500',
-    },
-  ];
+  const menuItems = allMenuItems.filter(item => hasPermission(item.permission));
   
   if (!isMounted) {
       return null;
@@ -109,7 +127,7 @@ export function DashboardClient() {
           {menuItems.map((item) => (
             <DashboardCard
               key={item.title}
-              title={item.title}
+              title={t(item.title)}
               icon={item.icon}
               href={item.href}
               color={item.color}

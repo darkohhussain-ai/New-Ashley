@@ -1,5 +1,23 @@
 
 
+export type User = {
+    id: string;
+    username: string;
+    password?: string; // Should not be stored long-term, used for creation/reset
+    roleId: string;
+};
+
+export type Role = {
+    id: string;
+    name: string;
+    permissions: string[];
+};
+
+export type Permission = {
+    id: string;
+    description: string;
+};
+
 export type Employee = {
   id: string;
   name: string;

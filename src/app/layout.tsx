@@ -4,12 +4,13 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/shared/theme-provider";
 import { AppProvider } from '@/context/app-provider';
-import { FirebaseProvider } from '@/firebase';
+import { AuthProvider } from '@/hooks/use-auth';
 import { LanguageProvider } from '@/context/language-provider';
 import { useState, useEffect } from 'react';
 import { SplashScreen } from '@/components/shared/splash-screen';
 import { AppHeader } from '@/components/shared/app-header';
 import { Noto_Naskh_Arabic } from 'next/font/google';
+import { usePathname } from 'next/navigation';
 
 const notoNaskhArabic = Noto_Naskh_Arabic({ 
   subsets: ['arabic'],
@@ -23,6 +24,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const [showSplash, setShowSplash] = useState(true);
+  const pathname = usePathname();
+  const isLoginPage = pathname === '/login';
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -38,18 +41,18 @@ export default function RootLayout({
         {showSplash ? (
           <SplashScreen />
         ) : (
-          <FirebaseProvider>
-            <ThemeProvider>
-              <AppProvider>
+          <ThemeProvider>
+            <AppProvider>
+              <AuthProvider>
                 <LanguageProvider>
-                  <AppHeader />
+                  {!isLoginPage && <AppHeader />}
                   {children}
                 </LanguageProvider>
-              </AppProvider>
-            </ThemeProvider>
-            <Toaster />
-          </FirebaseProvider>
+              </AuthProvider>
+            </AppProvider>
+          </ThemeProvider>
         )}
+        <Toaster />
       </body>
     </html>
   );

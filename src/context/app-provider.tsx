@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { createContext, useContext, ReactNode, useEffect } from 'react';
@@ -17,7 +16,9 @@ import {
     Transfer,
     ItemForTransfer,
     MarketingFeedback,
-    EvaluationQuestion
+    EvaluationQuestion,
+    User,
+    Role,
 } from '@/lib/types';
 import { initialData as initialDataObject } from './initial-data';
 
@@ -53,6 +54,10 @@ interface AppState {
     setMarketingFeedbacks: (feedbacks: MarketingFeedback[]) => void;
     evaluationQuestions: EvaluationQuestion[];
     setEvaluationQuestions: (questions: EvaluationQuestion[]) => void;
+    users: User[];
+    setUsers: (users: User[]) => void;
+    roles: Role[];
+    setRoles: (roles: Role[]) => void;
 }
 
 const AppContext = createContext<AppState | undefined>(undefined);
@@ -73,6 +78,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const [transferItems, setTransferItems] = useLocalStorage<ItemForTransfer[]>('transfer_items', initialData.transferItems);
     const [marketingFeedbacks, setMarketingFeedbacks] = useLocalStorage<MarketingFeedback[]>('marketing-feedbacks', initialData.marketingFeedbacks);
     const [evaluationQuestions, setEvaluationQuestions] = useLocalStorage<EvaluationQuestion[]>('evaluation_questions', initialData.evaluationQuestions);
+    const [users, setUsers] = useLocalStorage<User[]>('users', initialData.users);
+    const [roles, setRoles] = useLocalStorage<Role[]>('roles', initialData.roles);
+
 
     const value: AppState = {
         employees, setEmployees,
@@ -89,6 +97,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         transferItems, setTransferItems,
         marketingFeedbacks, setMarketingFeedbacks,
         evaluationQuestions, setEvaluationQuestions,
+        users, setUsers,
+        roles, setRoles,
     };
 
     return (

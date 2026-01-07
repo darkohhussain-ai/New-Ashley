@@ -1,13 +1,14 @@
-
 'use client';
 
 import Link from 'next/link';
 import { ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/use-translation';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function NotFound() {
   const { t } = useTranslation();
+  const { user } = useAuth();
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-8 text-center">
@@ -20,7 +21,7 @@ export default function NotFound() {
       </p>
       <div className="mt-10 flex items-center justify-center gap-x-6">
         <Button asChild>
-          <Link href="/">
+          <Link href={user ? "/" : "/login"}>
             {t('back_to_dashboard')}
           </Link>
         </Button>

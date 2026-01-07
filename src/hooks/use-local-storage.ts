@@ -1,7 +1,7 @@
 
 "use client"
 import { useState, useEffect, useCallback } from 'react';
-import { get, set, keys, del } from 'idb-keyval';
+import { get, set, keys, del, clear } from 'idb-keyval';
 import { produce } from 'immer';
 
 // Simple heuristic to decide if a value is "large" and should go to IndexedDB
@@ -117,16 +117,11 @@ export const getAllDataForExport = async (): Promise<Record<string, any>> => {
     // Get all from localStorage
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key) {
+        if (key && !key.startsWith('genkit:')) {
             const item = localStorage.getItem(key);
             if (item) {
                 try {
-                    const parsed = JSON.parse(item);
-                     if (typeof parsed === 'string' && isIdbKey(parsed)) {
-                        // This is a pointer, the real data is in IDB
-                        // Let's store the raw pointer and handle it during import
-                    }
-                    data[key] = parsed;
+                    data[key] = JSON.parse(item);
                 } catch {
                      data[key] = item; // Store as raw string if not JSON
                 }
@@ -134,7 +129,7 @@ export const getAllDataForExport = async (): Promise<Record<string, any>> => {
         }
     }
 
-    // Get all from IndexedDB
+    // Get all from IndexedDB for idb-keyval
     const idbKeys = await keys();
     for (const key of idbKeys) {
         if (typeof key === 'string') {
@@ -145,66 +140,31 @@ export const getAllDataForExport = async (): Promise<Record<string, any>> => {
     return data;
 };
 
-// Merges a new item into an existing array, updating it if it exists or adding it if it doesn't.
-const mergeItem = <T extends { id: string }>(existingArray: T[], newItem: T): T[] => {
-    return produce(existingArray, draft => {
-        const index = draft.findIndex(item => item.id === newItem.id);
-        if (index !== -1) {
-            draft[index] = { ...draft[index], ...newItem }; // Merge properties
-        } else {
-            draft.push(newItem);
-        }
-    });
-};
-
-// Merges an array of new items into an existing array.
-const mergeArray = <T extends { id: string }>(existingArray: T[] = [], newItems: T[] = []): T[] => {
-    if (!Array.isArray(existingArray) || !Array.isArray(newItems)) return existingArray;
-    return produce(existingArray, draft => {
-        newItems.forEach(newItem => {
-            if (newItem && typeof newItem.id !== 'undefined') {
-                const index = draft.findIndex(item => item.id === newItem.id);
-                if (index !== -1) {
-                    draft[index] = { ...draft[index], ...newItem };
-                } else {
-                    draft.push(newItem);
-                }
-            }
-        });
-    });
-};
 
 export const importData = async (data: Record<string, any>) => {
-    // This function now merges data instead of overwriting.
+    // Clear existing data first for a clean import
+    localStorage.clear();
+    await clear();
+    
     for (const key in data) {
         if (Object.prototype.hasOwnProperty.call(data, key)) {
-            const newValue = data[key];
-
-            // If the value is large (like a font), store it in IDB and put pointer in LS.
-            if (isLargeValue(newValue)) {
-                await set(key, newValue);
-                localStorage.setItem(key, JSON.stringify(toIdbKey(key)));
-            } else {
-                let finalValue = newValue;
-                // Check if existing value is an array to merge.
-                try {
-                    const existingRaw = localStorage.getItem(key);
-                    if (existingRaw) {
-                        const existingParsed = JSON.parse(existingRaw);
-                        if (Array.isArray(existingParsed) && Array.isArray(newValue)) {
-                             // This is a simplistic array merge. A more sophisticated one might be needed
-                             // depending on the data structure (e.g., merging objects within arrays by ID).
-                             finalValue = mergeArray(existingParsed, newValue);
-                        }
-                    }
-                } catch {
-                    // Could not parse existing data, so we will overwrite.
-                }
-                
-                if (typeof finalValue === 'string') {
-                    localStorage.setItem(key, finalValue);
+            const value = data[key];
+            
+            // Check if the key is one that should be in IndexedDB or localStorage
+            if (isIdbKey(value)) {
+                // This is a pointer. The actual data is also in our export.
+                // We let the main loop handle writing the actual data to IDB.
+                // Here we just write the pointer to localStorage.
+                 localStorage.setItem(key, JSON.stringify(value));
+            } else if (isLargeValue(value)) {
+                 await set(key, value);
+                 localStorage.setItem(key, JSON.stringify(toIdbKey(key)));
+            }
+            else {
+                if (typeof value === 'string') {
+                    localStorage.setItem(key, value);
                 } else {
-                    localStorage.setItem(key, JSON.stringify(finalValue));
+                    localStorage.setItem(key, JSON.stringify(value));
                 }
             }
         }

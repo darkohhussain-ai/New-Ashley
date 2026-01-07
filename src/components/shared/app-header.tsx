@@ -11,6 +11,7 @@ import {
   RefreshCcw,
   Languages,
   Home,
+  LogOut,
 } from 'lucide-react';
 import useLocalStorage from '@/hooks/use-local-storage';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -22,7 +23,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import { useAuth } from '@/hooks/use-auth';
+import { useRouter } from 'next/navigation';
 
 function DateTimeDisplay() {
   const [time, setTime] = useState<Date | null>(null);
@@ -68,6 +72,9 @@ function DateTimeDisplay() {
 
 export function AppHeader() {
   const { t, setLanguage, language } = useTranslation();
+  const { user, logout } = useAuth();
+  const router = useRouter();
+
   const [savedLogo, setSavedLogo] = useLocalStorage<string | null>(
     'app-logo',
     null
@@ -85,6 +92,11 @@ export function AppHeader() {
     window.location.reload();
   };
 
+  const handleLogout = async () => {
+    await logout();
+    router.push('/login');
+  };
+
   if (!isMounted) {
     return (
       <header className="bg-card border-b top-0 z-10">
@@ -98,7 +110,7 @@ export function AppHeader() {
   }
 
   return (
-    <header className="bg-card border-b top-0 z-10">
+    <header className="bg-card border-b top-0 z-10 print:hidden">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20">
           <div className="hidden md:flex items-center gap-4 text-sm text-muted-foreground w-1/3">
@@ -154,15 +166,29 @@ export function AppHeader() {
               <RefreshCcw className="w-5 h-5 text-muted-foreground hover:text-primary" />
             </Button>
             <Bell className="w-6 h-6 text-muted-foreground hover:text-primary cursor-pointer" />
-            <Link href="/account">
-              <div className="flex items-center gap-2 cursor-pointer">
-                <Avatar className="w-10 h-10">
-                  <AvatarImage src={undefined} />
-                  <AvatarFallback>{'A'}</AvatarFallback>
-                </Avatar>
-                <ChevronDown className="w-4 h-4 text-muted-foreground" />
-              </div>
-            </Link>
+            
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <div className="flex items-center gap-2 cursor-pointer">
+                        <Avatar className="w-10 h-10">
+                        <AvatarImage src={undefined} />
+                        <AvatarFallback>{user?.username?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
+                        </Avatar>
+                        <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem asChild>
+                        <Link href="/account">My Account</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout}>
+                        <LogOut className="mr-2 h-4 w-4" />
+                        <span>Logout</span>
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+
           </div>
         </div>
       </div>

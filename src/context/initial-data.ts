@@ -1,10 +1,24 @@
-
-import { Employee, ExcelFile, Item, StorageLocation, Expense, ExpenseReport, Overtime, Bonus, CashWithdrawal, SoldItemReceipt, Transfer, ItemForTransfer, MarketingFeedback, EvaluationQuestion, AnswerOption } from '@/lib/types';
+import { Employee, ExcelFile, Item, StorageLocation, Expense, ExpenseReport, Overtime, Bonus, CashWithdrawal, SoldItemReceipt, Transfer, ItemForTransfer, MarketingFeedback, EvaluationQuestion, AnswerOption, User, Role } from '@/lib/types';
+import { adminPermissions, viewerPermissions, financeManagerPermissions, inventoryManagerPermissions, hrManagerPermissions } from '@/lib/permissions';
 
 const defaultAnswers: [AnswerOption, AnswerOption, AnswerOption] = [
     { label: 'Excellent', value: 3 },
     { label: 'Good', value: 2 },
     { label: 'Needs Improvement', value: 1 },
+];
+
+const initialRoles: Role[] = [
+    { id: 'role-admin', name: 'Admin', permissions: adminPermissions },
+    { id: 'role-viewer', name: 'Viewer', permissions: viewerPermissions },
+    { id: 'role-finance', name: 'Finance Manager', permissions: financeManagerPermissions },
+    { id: 'role-inventory', name: 'Inventory Manager', permissions: inventoryManagerPermissions },
+    { id: 'role-hr', name: 'HR Manager', permissions: hrManagerPermissions },
+];
+
+const initialUsers: User[] = [
+    { id: 'user-admin-1', username: 'admin', password: 'admin', roleId: 'role-admin' },
+    { id: 'user-admin-2', username: 'haidar', password: 'password', roleId: 'role-admin' },
+    { id: 'user-viewer-1', username: 'viewer', password: 'password', roleId: 'role-viewer' },
 ];
 
 export const initialData: {
@@ -22,6 +36,8 @@ export const initialData: {
     transferItems: ItemForTransfer[],
     marketingFeedbacks: MarketingFeedback[],
     evaluationQuestions: EvaluationQuestion[],
+    users: User[],
+    roles: Role[],
 } = {
     employees: [],
     excelFiles: [],
@@ -56,4 +72,6 @@ export const initialData: {
         { id: 'q17', text: 'Marketing Skills', answers: defaultAnswers },
         { id: 'q18', text: 'Sales Performance', answers: defaultAnswers },
     ],
+    users: initialUsers,
+    roles: initialRoles,
 };
