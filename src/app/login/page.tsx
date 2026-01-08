@@ -11,9 +11,11 @@ import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import useLocalStorage from '@/hooks/use-local-storage';
+import { useTranslation } from '@/hooks/use-translation';
 
 
 export default function LoginPage() {
+  const { t } = useTranslation();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -22,7 +24,6 @@ export default function LoginPage() {
   const router = useRouter();
   
   const [savedLogo] = useLocalStorage<string | null>('app-logo', null);
-  const [loginBg] = useLocalStorage<string | null>('login-background-image', 'https://picsum.photos/seed/login-banner/1920/1080');
 
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -45,16 +46,6 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
-        <div className='absolute inset-0'>
-             {loginBg && (
-                <Image
-                    src={loginBg}
-                    alt="Login background"
-                    fill
-                    className="object-cover opacity-20"
-                />
-             )}
-        </div>
       <Card className="w-full max-w-sm z-10">
         <CardHeader className="text-center">
             {savedLogo && (
@@ -67,8 +58,8 @@ export default function LoginPage() {
                   />
                 </div>
             )}
-          <CardTitle className="mt-4 text-2xl">Login to Your Account</CardTitle>
-          <CardDescription>Enter your credentials to access the dashboard.</CardDescription>
+          <CardTitle className="mt-4 text-2xl">{t('login_title')}</CardTitle>
+          <CardDescription>{t('login_description')}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-6">

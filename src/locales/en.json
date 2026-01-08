@@ -449,5 +449,7 @@
   "monthly_reports": "Monthly Reports",
   "total_loads": "Total Loads",
   "this_month_activity_summary": "This Month's Activity ({month})",
-  "last_month_activity_summary": "Last month's activity summary."
+  "last_month_activity_summary": "Last month's activity summary.",
+  "login_title": "Ashley Staff",
+  "login_description": "Enter your credentials to access the dashboard."
 }

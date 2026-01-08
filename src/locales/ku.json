@@ -449,5 +449,7 @@
   "no_records_found_for_month": "هیچ تۆمارێک بۆ مانگی {month} نەدۆزرایەوە.",
   "total_loads": "کۆی گشتی بارەکان",
   "this_month_activity_summary": "چالاکی ئەم مانگە ({month})",
-  "last_month_activity_summary": "پوختەی چالاکی مانگی ڕابردوو."
+  "last_month_activity_summary": "پوختەی چالاکی مانگی ڕابردوو.",
+  "login_title": "کارمەندی ئاشلی",
+  "login_description": "زانیارییەکانت بنووسە بۆ چوونەژوورەوە بۆ داشبۆرد."
 }
