@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -24,6 +25,7 @@ export default function LoginPage() {
   const router = useRouter();
   
   const [savedLogo] = useLocalStorage<string | null>('app-logo', null);
+  const [savedLoginBg] = useLocalStorage<string | null>('login-background-image', null);
 
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -45,7 +47,16 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+    <div className="flex min-h-screen items-center justify-center bg-background p-4 relative">
+       {savedLoginBg && (
+        <Image
+          src={savedLoginBg}
+          alt="Login background"
+          fill
+          className="object-cover z-0"
+        />
+      )}
+      <div className="absolute inset-0 bg-black/50 z-0"/>
       <Card className="w-full max-w-sm z-10">
         <CardHeader className="text-center">
             {savedLogo && (

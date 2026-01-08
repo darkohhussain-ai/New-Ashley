@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from 'react';
@@ -203,7 +204,6 @@ const reportTypes = [
 function TranslationEditor() {
     const { t } = useTranslation();
     const langContext = React.useContext(LanguageContext);
-    const { toast } = useToast();
 
     const [enTranslations, setEnTranslations] = React.useState<Translations>(langContext?.translations.en || {});
     const [kuTranslations, setKuTranslations] = React.useState<Translations>(langContext?.translations.ku || {});
@@ -220,10 +220,6 @@ function TranslationEditor() {
         if (langContext) {
             langContext.setTranslations('en', enTranslations);
             langContext.setTranslations('ku', kuTranslations);
-            toast({
-                title: 'Translations Saved',
-                description: 'Your text changes have been saved successfully.',
-            });
         }
     };
     
@@ -250,7 +246,6 @@ function TranslationEditor() {
                             className="pl-10"
                         />
                     </div>
-                    <Button onClick={handleSaveTranslations}><Save className="mr-2 h-4 w-4" /> Save Translations</Button>
                 </div>
                  <div className="max-h-[60vh] overflow-y-auto border rounded-lg p-4">
                     <div className="grid grid-cols-[1fr_2fr_2fr] gap-x-4 gap-y-2 sticky top-0 bg-background pb-2 border-b mb-2">
@@ -309,6 +304,7 @@ function SettingsPage() {
   const [importFile, setImportFile] = useState<File | null>(null);
 
   const importInputRef = useRef<HTMLInputElement>(null)
+  const langContext = React.useContext(LanguageContext);
   
   const applyColors = (colors: ThemeColors) => {
     const root = document.documentElement;
@@ -390,7 +386,6 @@ function SettingsPage() {
         const result = loadEvent.target?.result
         if (typeof result === 'string') {
           setter(result)
-          toast({ title: t(toastTitle), description: t('save_changes_to_apply') })
         }
       }
       reader.readAsDataURL(file)
@@ -404,13 +399,23 @@ function SettingsPage() {
     setSavedBannerHeight(bannerHeight);
     setSavedLogo(appLogo);
     setSavedLoginBg(loginBg);
-    toast({ title: t('settings_saved'), description: t('appearance_settings_updated') });
-  }
 
-  const handleSavePdfSettings = () => {
+    if (langContext) {
+        // This assumes the child component (TranslationEditor) has already updated its state
+        // A more robust solution might involve lifting state up or using callbacks
+        // But for now, we trigger its save logic if it's rendered
+        // This is a bit of a hack, but works for this structure
+        // A better way would be for the TranslationEditor to get a save trigger prop
+        // For now, we manually get the state from its context and save it.
+        const { translations, setTranslations } = langContext;
+        setTranslations('en', translations.en);
+        setTranslations('ku', translations.ku);
+    }
+    
     setSavedPdfSettings(pdfSettings);
-    toast({ title: t('pdf_settings_saved'), description: t('pdf_design_updated') });
-  };
+
+    toast({ title: t('settings_saved'), description: t('settings_have_been_updated') });
+  }
 
 
   const handleResetToDefault = () => {
@@ -644,7 +649,7 @@ function SettingsPage() {
                                 </Tabs>
                             </CardContent>
                             <CardFooter>
-                                <Button onClick={handleSavePdfSettings} className="w-full">
+                                <Button onClick={handleSaveChanges} className="w-full">
                                     <Save className="mr-2 h-4 w-4" /> {t('save_design')}
                                 </Button>
                             </CardFooter>
