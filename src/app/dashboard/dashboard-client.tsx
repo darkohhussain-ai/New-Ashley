@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -14,7 +15,7 @@ import {
 } from 'lucide-react';
 import useLocalStorage from '@/hooks/use-local-storage';
 import { useTranslation } from '@/hooks/use-translation';
-import { DashboardCard } from './dashboard-card';
+import { DashboardCard } from '@/components/dashboard/dashboard-card';
 import { useAuth } from '@/hooks/use-auth';
 
 const allMenuItems = [
