@@ -3,7 +3,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Plus, Trash2, Warehouse, MapPin, Loader2, Wand2, Map, Search } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Warehouse, MapPin, Loader2, Wand2, Map, Search, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -496,7 +496,12 @@ export default function LocationsPage() {
                                         </TableCell>
                                         <TableCell>{item.quantity}</TableCell>
                                         <TableCell>{item.locationName}</TableCell>
-                                        <TableCell>{format(parseISO(item.excelFileDate), 'PPP')}</TableCell>
+                                        <TableCell>
+                                            <div className="flex items-center gap-2">
+                                                <Calendar className="w-4 h-4 text-muted-foreground" />
+                                                {format(parseISO(item.excelFileDate), 'PPP')}
+                                            </div>
+                                        </TableCell>
                                         <TableCell>
                                             {item.locationId && item.warehouseType && (
                                                 <Button variant="outline" size="sm" asChild>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -81,8 +80,8 @@ export function DashboardClient() {
   const { t } = useTranslation();
   const { hasPermission } = useAuth();
 
-  const [savedBannerHeight, setSavedBannerHeight] = useLocalStorage('dashboard-banner-height', 150);
-  const [savedDashboardBanner, setSavedDashboardBanner] = useLocalStorage<string | null>(
+  const [savedBannerHeight] = useLocalStorage('dashboard-banner-height', 150);
+  const [savedDashboardBanner] = useLocalStorage<string | null>(
     'dashboard-banner',
     null
   );
@@ -90,10 +89,6 @@ export function DashboardClient() {
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => {
     setIsMounted(true);
-    if (!savedDashboardBanner) {
-      setSavedDashboardBanner('https://i.ibb.co/6Wp2t1Y/image.png')
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const menuItems = allMenuItems.filter(item => hasPermission(item.permission));
