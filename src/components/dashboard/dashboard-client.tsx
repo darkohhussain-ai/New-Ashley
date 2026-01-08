@@ -81,7 +81,7 @@ export function DashboardClient() {
   const { hasPermission } = useAuth();
 
   const [savedBannerHeight] = useLocalStorage('dashboard-banner-height', 150);
-  const [savedDashboardBanner, setSavedDashboardBanner] = useLocalStorage<string | null>(
+  const [savedDashboardBanner] = useLocalStorage<string | null>(
     'dashboard-banner',
     null
   );
@@ -89,9 +89,6 @@ export function DashboardClient() {
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => {
     setIsMounted(true);
-    if (!savedDashboardBanner) {
-      setSavedDashboardBanner('https://i.ibb.co/6Wp2t1Y/image.png')
-    }
   }, []);
 
   const menuItems = allMenuItems.filter(item => hasPermission(item.permission));

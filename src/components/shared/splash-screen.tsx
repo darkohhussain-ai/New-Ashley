@@ -5,9 +5,7 @@ import { useState, useEffect } from 'react';
 import useLocalStorage from '@/hooks/use-local-storage';
 
 export function SplashScreen() {
-  // Start with a guaranteed valid, non-null default URL.
-  const defaultLogo = "https://picsum.photos/seed/ashley-logo/300/100";
-  const [savedLogo, setSavedLogo] = useLocalStorage<string | null>('app-logo', null);
+  const [savedLogo] = useLocalStorage<string | null>('app-logo', null);
   const [logo, setLogo] = useState('');
   const [isMounted, setIsMounted] = useState(false);
 
@@ -15,11 +13,8 @@ export function SplashScreen() {
     setIsMounted(true);
     if (savedLogo) {
       setLogo(savedLogo);
-    } else {
-        setLogo(defaultLogo);
-        setSavedLogo(defaultLogo);
     }
-  }, [savedLogo, setSavedLogo]);
+  }, [savedLogo]);
 
   if (!isMounted || !logo) {
     // Render a consistent placeholder on the server to avoid hydration mismatch
@@ -37,12 +32,12 @@ export function SplashScreen() {
       <div className="animate-pulse">
         <div className="relative w-48 h-16">
             <Image
-              src={logo} // This is now guaranteed to be a valid URL string
+              src={logo}
               alt="Loading..."
               layout="fill"
               objectFit="contain"
               priority
-              unoptimized // Added to prevent Next.js from processing a potentially external URL if needed
+              unoptimized
             />
         </div>
       </div>

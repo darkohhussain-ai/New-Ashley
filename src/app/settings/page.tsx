@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowLeft, Download, Upload, Save, Palette, Type, ShieldCheck, ImageIcon, LayoutDashboard, RefreshCcw, Play, Newspaper, Building, FileText, Receipt, CreditCard, Languages, Search } from 'lucide-react'
+import { ArrowLeft, Download, Upload, Save, Palette, Type, ShieldCheck, ImageIcon, LayoutDashboard, RefreshCcw, Play, Newspaper, Building, FileText, Receipt, CreditCard, Languages, Search, Wallpaper } from 'lucide-react'
 import useLocalStorage, { getAllDataForExport, importData } from '@/hooks/use-local-storage'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -291,12 +291,16 @@ export default function SettingsPage() {
   const [savedDarkColors, setSavedDarkColors] = useLocalStorage<ThemeColors>('dark-theme-colors', defaultDarkColors);
   const [savedDashboardBanner, setSavedDashboardBanner] = useLocalStorage<string | null>('dashboard-banner', null);
   const [savedBannerHeight, setSavedBannerHeight] = useLocalStorage('dashboard-banner-height', 150);
+  const [savedLoginBg, setSavedLoginBg] = useLocalStorage<string | null>('login-background-image', null);
+  const [savedLogo, setSavedLogo] = useLocalStorage<string | null>('app-logo', null);
   const [savedPdfSettings, setSavedPdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', defaultPdfSettings);
   
   const [lightColors, setLightColors] = useState(savedLightColors);
   const [darkColors, setDarkColors] = useState(savedDarkColors);
   const [dashboardBanner, setDashboardBanner] = useState(savedDashboardBanner);
   const [bannerHeight, setBannerHeight] = useState(savedBannerHeight);
+  const [loginBg, setLoginBg] = useState(savedLoginBg);
+  const [appLogo, setAppLogo] = useState(savedLogo);
   const [pdfSettings, setPdfSettings] = useState(savedPdfSettings);
   const [activePdfTab, setActivePdfTab] = useState<'report' | 'invoice' | 'card'>('report');
   const [selectedReportType, setSelectedReportType] = useState<keyof NonNullable<AllPdfSettings['report']['reportColors']>>('general');
@@ -325,6 +329,8 @@ export default function SettingsPage() {
       setDarkColors(savedDarkColors);
       setDashboardBanner(savedDashboardBanner);
       setBannerHeight(savedBannerHeight);
+      setLoginBg(savedLoginBg);
+      setAppLogo(savedLogo);
       
       const mergedPdfSettings: AllPdfSettings = {
           report: { ...defaultReportSettings, ...(savedPdfSettings.report || {})},
@@ -341,7 +347,7 @@ export default function SettingsPage() {
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mounted, savedLightColors, savedDarkColors, savedDashboardBanner, savedBannerHeight, savedPdfSettings])
+  }, [mounted, savedLightColors, savedDarkColors, savedDashboardBanner, savedBannerHeight, savedLoginBg, savedLogo, savedPdfSettings])
   
   useEffect(() => {
     if(!mounted) return;
@@ -395,6 +401,8 @@ export default function SettingsPage() {
     setSavedDarkColors(darkColors);
     setSavedDashboardBanner(dashboardBanner);
     setSavedBannerHeight(bannerHeight);
+    setSavedLoginBg(loginBg);
+    setSavedLogo(appLogo);
     toast({ title: t('settings_saved'), description: t('appearance_settings_updated') });
   }
 
@@ -409,12 +417,16 @@ export default function SettingsPage() {
     setDarkColors(defaultDarkColors);
     setDashboardBanner(null);
     setBannerHeight(150);
+    setLoginBg(null);
+    setAppLogo(null);
     setPdfSettings(defaultPdfSettings);
     
     setSavedLightColors(defaultLightColors);
     setSavedDarkColors(defaultDarkColors);
     setSavedDashboardBanner(null);
     setSavedBannerHeight(150);
+    setSavedLoginBg(null);
+    setSavedLogo(null);
     setSavedPdfSettings(defaultPdfSettings);
     
     toast({ title: t('settings_reset'), description: t('settings_reset_desc') });
@@ -547,6 +559,10 @@ export default function SettingsPage() {
                                 <Label htmlFor="dark-mode">{t('dark_mode')}</Label>
                                 <Switch id="dark-mode" checked={theme === 'dark'} onCheckedChange={() => setTheme(theme === 'light' ? 'dark' : 'light')} />
                             </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="logo-upload">{t('company_logo')}</Label>
+                                <Input id="logo-upload" type="file" accept="image/*" onChange={(e) => handleImageUpload(e, setAppLogo, "Logo updated!")} />
+                            </div>
                         </CardContent>
                     </Card>
                     <Card>
@@ -562,6 +578,18 @@ export default function SettingsPage() {
                             <div className="space-y-2">
                                 <Label htmlFor="banner-height">{t('banner_height')}: {bannerHeight}px</Label>
                                 <Slider id="banner-height" min={80} max={300} step={10} value={[bannerHeight]} onValueChange={(value) => setBannerHeight(value[0])} />
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Wallpaper /> Login Page</CardTitle></CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="w-full h-24 border rounded-md flex items-center justify-center bg-muted/30 relative overflow-hidden">
+                                {loginBg ? <Image src={loginBg} alt="Current Login Background" fill={true} className="object-cover" /> : <span className='text-sm text-muted-foreground'>Login Background Preview</span>}
+                            </div>
+                            <div>
+                                <Label htmlFor="login-bg-upload">Upload Login Background Image</Label>
+                                <Input id="login-bg-upload" type="file" accept="image/*" className="mt-2" onChange={(e) => handleImageUpload(e, setLoginBg, "Login background updated!")} />
                             </div>
                         </CardContent>
                     </Card>
@@ -627,7 +655,7 @@ export default function SettingsPage() {
                             <CardContent className="space-y-4">
                                 <div>
                                     <Label htmlFor="logo-upload">{t('company_logo')}</Label>
-                                    <Input id="logo-upload" type="file" accept="image/*" className="mt-2" onChange={(e) => handleImageUpload(e, (val) => handlePdfSettingChange('logo', val), "Logo updated!")} />
+                                    <Input id="logo-upload" type="file" accept="image/*" onChange={(e) => handleImageUpload(e, (val) => handlePdfSettingChange('logo', val), "Logo updated!")} />
                                 </div>
                                 <div className="space-y-2">
                                 <Label htmlFor="header-text">{t('header_text_optional')}</Label>

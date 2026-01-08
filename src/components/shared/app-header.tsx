@@ -75,7 +75,7 @@ export function AppHeader() {
   const { user, logout } = useAuth();
   const router = useRouter();
 
-  const [savedLogo, setSavedLogo] = useLocalStorage<string | null>(
+  const [savedLogo] = useLocalStorage<string | null>(
     'app-logo',
     null
   );
@@ -83,10 +83,7 @@ export function AppHeader() {
   
   useEffect(() => {
     setIsMounted(true);
-    if (!savedLogo) {
-      setSavedLogo('https://picsum.photos/seed/ashley-logo/300/100');
-    }
-  }, [savedLogo, setSavedLogo]);
+  }, []);
 
   const handleRefresh = () => {
     window.location.reload();

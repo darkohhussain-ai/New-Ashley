@@ -22,6 +22,7 @@ export default function LoginPage() {
   const router = useRouter();
   
   const [savedLogo] = useLocalStorage<string | null>('app-logo', null);
+  const [loginBg] = useLocalStorage<string | null>('login-background-image', 'https://picsum.photos/seed/login-banner/1920/1080');
 
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -45,12 +46,14 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
         <div className='absolute inset-0'>
-             <Image
-                src="https://picsum.photos/seed/login-banner/1920/1080"
-                alt="Login background"
-                fill
-                className="object-cover opacity-20"
-             />
+             {loginBg && (
+                <Image
+                    src={loginBg}
+                    alt="Login background"
+                    fill
+                    className="object-cover opacity-20"
+                />
+             )}
         </div>
       <Card className="w-full max-w-sm z-10">
         <CardHeader className="text-center">

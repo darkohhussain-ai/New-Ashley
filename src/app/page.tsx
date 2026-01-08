@@ -3,7 +3,7 @@
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { DashboardClient } from '@/components/dashboard/dashboard-client';
+import { DashboardClient } from '@/app/dashboard/dashboard-client';
 import { Loader2 } from 'lucide-react';
 
 export default function Home() {
