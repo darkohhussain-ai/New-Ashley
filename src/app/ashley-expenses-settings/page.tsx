@@ -10,6 +10,7 @@ import { useTranslation } from '@/hooks/use-translation';
 import { useToast } from '@/hooks/use-toast';
 import useLocalStorage from '@/hooks/use-local-storage';
 import { useState, useEffect } from 'react';
+import withAuth from '@/hooks/withAuth';
 
 type SalarySettings = {
     overtimeRate: number;
@@ -21,7 +22,7 @@ const defaultSettings: SalarySettings = {
     bonusRate: 5000,
 }
 
-export default function AshleyExpensesSettingsPage() {
+function AshleyExpensesSettingsPage() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const [savedSettings, setSavedSettings] = useLocalStorage<SalarySettings>('ashley-salary-settings', defaultSettings);
@@ -96,3 +97,5 @@ export default function AshleyExpensesSettingsPage() {
     </div>
   );
 }
+
+export default withAuth(AshleyExpensesSettingsPage);

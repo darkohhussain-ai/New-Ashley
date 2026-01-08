@@ -2,6 +2,7 @@
 "use client"
 
 import { useState, useMemo, useEffect, useRef } from "react"
+import withAuth from "@/hooks/withAuth";
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -560,7 +561,7 @@ function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean,
     )
 }
 
-export default function EmployeesPage() {
+function EmployeesPage() {
   const { t, language } = useTranslation();
   const { employees, setEmployees } = useAppContext();
   const [isLoading, setIsLoading] = useState(true);
@@ -716,3 +717,5 @@ export default function EmployeesPage() {
     </div>
   )
 }
+
+export default withAuth(EmployeesPage);

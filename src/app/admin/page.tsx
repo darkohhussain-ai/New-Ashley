@@ -1,8 +1,6 @@
-
-'use client';
+"use client";
 
 import { useState, useMemo, useEffect } from 'react';
-import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { Loader2, ShieldCheck, Users, KeyRound, Save, Plus, Trash2, Edit, X, Users2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +16,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/context/app-provider';
 import type { User, Role, Employee } from '@/lib/types';
 import { allPermissions } from '@/lib/permissions';
+import { useAuth } from '@/hooks/use-auth';
+import withAuth from '@/hooks/withAuth';
 
 const useAdminAuth = () => {
   const { user, loading, hasPermission } = useAuth();
@@ -396,7 +396,7 @@ function RoleManagement() {
     );
 }
 
-export default function AdminPage() {
+function AdminPage() {
   const { isAdmin, loading } = useAdminAuth();
 
   if (loading || !isAdmin) {
@@ -424,3 +424,5 @@ export default function AdminPage() {
     </main>
   );
 }
+
+export default withAuth(AdminPage);

@@ -1,6 +1,6 @@
+"use client";
 
-'use client';
-
+import withAuth from "@/hooks/withAuth";
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { UserCircle, Edit, Save, X, KeyRound, Upload, Mail, Phone, Building, DollarSign, Clock, Gift, Banknote, Calendar as CalendarIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -70,7 +70,7 @@ const FinancialDetailTable = ({ title, data, total }: { title: string, data: any
   )
 }
 
-export default function AccountPage() {
+function AccountPage() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const { user, login } = useAuth();
@@ -358,3 +358,5 @@ export default function AccountPage() {
     </div>
   );
 }
+
+export default withAuth(AccountPage);

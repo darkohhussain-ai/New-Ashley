@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
@@ -28,6 +29,7 @@ import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useTranslation } from '@/hooks/use-translation';
 import { Progress } from '@/components/ui/progress';
+import withAuth from '@/hooks/withAuth';
 
 
 function AddMarketingEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean, onOpenChange: (open: boolean) => void, addEmployee: (employee: Omit<Employee, 'id'>) => void }) {
@@ -240,7 +242,7 @@ function EditSubmissionDialog({ feedback, onOpenChange, open }: { feedback: Mark
     );
 }
 
-export default function MarketingFeedbackPage() {
+function MarketingFeedbackPage() {
     const { toast } = useToast();
     const { t, language } = useTranslation();
     const { 
@@ -779,3 +781,5 @@ export default function MarketingFeedbackPage() {
         </div>
     );
 }
+
+export default withAuth(MarketingFeedbackPage);

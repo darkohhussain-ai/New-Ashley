@@ -1,12 +1,13 @@
-'use client';
+"use client";
 
 import Link from 'next/link';
 import { CreditCard, Clock, Gift, Banknote, Settings, FileText, Calendar } from 'lucide-react';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/hooks/use-translation';
+import withAuth from '@/hooks/withAuth';
 
-export default function AshleyExpensesDashboard() {
+function AshleyExpensesDashboard() {
   const { t } = useTranslation();
 
   const menuItems = [
@@ -73,3 +74,5 @@ export default function AshleyExpensesDashboard() {
     </div>
   );
 }
+
+export default withAuth(AshleyExpensesDashboard);

@@ -8,8 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/hooks/use-translation';
 import { useAuth } from '@/hooks/use-auth';
+import withAuth from '@/hooks/withAuth';
 
-export default function ItemsPage() {
+function ItemsPage() {
     const { t } = useTranslation();
     const { hasPermission } = useAuth();
     const canEdit = hasPermission('page:admin');
@@ -91,3 +92,5 @@ export default function ItemsPage() {
     </div>
   );
 }
+
+export default withAuth(ItemsPage);

@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowLeft, Download, Upload, Save, Palette, Type, ShieldCheck, ImageIcon, LayoutDashboard, RefreshCcw, Play, Newspaper, Building, FileText, Receipt, CreditCard, Languages, Search } from 'lucide-react'
+import { ArrowLeft, Download, Upload, Save, Palette, Type, ShieldCheck, ImageIcon, LayoutDashboard, RefreshCcw, Play, Newspaper, Building, FileText, Receipt, CreditCard, Languages, Search, LogIn } from 'lucide-react'
 import useLocalStorage, { getAllDataForExport, importData } from '@/hooks/use-local-storage'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -293,6 +293,7 @@ function SettingsPage() {
   const [savedDashboardBanner, setSavedDashboardBanner] = useLocalStorage<string | null>('dashboard-banner', null);
   const [savedBannerHeight, setSavedBannerHeight] = useLocalStorage('dashboard-banner-height', 150);
   const [savedLogo, setSavedLogo] = useLocalStorage<string | null>('app-logo', null);
+  const [savedLoginBg, setSavedLoginBg] = useLocalStorage<string | null>('login-background-image', null);
   const [savedPdfSettings, setSavedPdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', defaultPdfSettings);
   
   const [lightColors, setLightColors] = useState(savedLightColors);
@@ -300,6 +301,7 @@ function SettingsPage() {
   const [dashboardBanner, setDashboardBanner] = useState(savedDashboardBanner);
   const [bannerHeight, setBannerHeight] = useState(savedBannerHeight);
   const [appLogo, setAppLogo] = useState(savedLogo);
+  const [loginBg, setLoginBg] = useState(savedLoginBg);
   const [pdfSettings, setPdfSettings] = useState(savedPdfSettings);
   const [activePdfTab, setActivePdfTab] = useState<'report' | 'invoice' | 'card'>('report');
   const [selectedReportType, setSelectedReportType] = useState<keyof NonNullable<AllPdfSettings['report']['reportColors']>>('general');
@@ -329,6 +331,7 @@ function SettingsPage() {
       setDashboardBanner(savedDashboardBanner);
       setBannerHeight(savedBannerHeight);
       setAppLogo(savedLogo);
+      setLoginBg(savedLoginBg);
       
       const mergedPdfSettings: AllPdfSettings = {
           report: { ...defaultReportSettings, ...(savedPdfSettings.report || {})},
@@ -345,7 +348,7 @@ function SettingsPage() {
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mounted, savedLightColors, savedDarkColors, savedDashboardBanner, savedBannerHeight, savedLogo, savedPdfSettings])
+  }, [mounted, savedLightColors, savedDarkColors, savedDashboardBanner, savedBannerHeight, savedLogo, savedLoginBg, savedPdfSettings])
   
   useEffect(() => {
     if(!mounted) return;
@@ -400,6 +403,7 @@ function SettingsPage() {
     setSavedDashboardBanner(dashboardBanner);
     setSavedBannerHeight(bannerHeight);
     setSavedLogo(appLogo);
+    setSavedLoginBg(loginBg);
     toast({ title: t('settings_saved'), description: t('appearance_settings_updated') });
   }
 
@@ -415,6 +419,7 @@ function SettingsPage() {
     setDashboardBanner(null);
     setBannerHeight(150);
     setAppLogo(null);
+    setLoginBg(null);
     setPdfSettings(defaultPdfSettings);
     
     setSavedLightColors(defaultLightColors);
@@ -422,6 +427,7 @@ function SettingsPage() {
     setSavedDashboardBanner(null);
     setSavedBannerHeight(150);
     setSavedLogo(null);
+    setSavedLoginBg(null);
     setSavedPdfSettings(defaultPdfSettings);
     
     toast({ title: t('settings_reset'), description: t('settings_reset_desc') });
@@ -560,7 +566,7 @@ function SettingsPage() {
                             </div>
                         </CardContent>
                     </Card>
-                    <Card>
+                     <Card>
                         <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><LayoutDashboard /> {t('dashboard')}</CardTitle></CardHeader>
                         <CardContent className="space-y-6">
                             <div className="w-full h-24 border rounded-md flex items-center justify-center bg-muted/30 relative overflow-hidden">
@@ -573,6 +579,18 @@ function SettingsPage() {
                             <div className="space-y-2">
                                 <Label htmlFor="banner-height">{t('banner_height')}: {bannerHeight}px</Label>
                                 <Slider id="banner-height" min={80} max={300} step={10} value={[bannerHeight]} onValueChange={(value) => setBannerHeight(value[0])} />
+                            </div>
+                        </CardContent>
+                    </Card>
+                     <Card>
+                        <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><LogIn /> Login Page</CardTitle></CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="w-full h-24 border rounded-md flex items-center justify-center bg-muted/30 relative overflow-hidden">
+                                {loginBg ? <Image src={loginBg} alt="Current Login Background" fill={true} className="object-cover" /> : <span className='text-sm text-muted-foreground'>Login Background Preview</span>}
+                            </div>
+                            <div>
+                                <Label htmlFor="login-bg-upload">Upload Login Background</Label>
+                                <Input id="login-bg-upload" type="file" accept="image/*" className="mt-2" onChange={(e) => handleImageUpload(e, setLoginBg, "Login background updated!")} />
                             </div>
                         </CardContent>
                     </Card>

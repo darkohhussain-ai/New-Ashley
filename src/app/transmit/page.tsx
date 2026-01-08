@@ -7,8 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/hooks/use-translation';
+import withAuth from '@/hooks/withAuth';
 
-export default function TransmitDashboardPage() {
+function TransmitDashboardPage() {
     const { t } = useTranslation();
 
     const menuItems = [
@@ -70,3 +71,5 @@ export default function TransmitDashboardPage() {
     </div>
   );
 }
+
+export default withAuth(TransmitDashboardPage);
