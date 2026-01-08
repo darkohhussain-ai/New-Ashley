@@ -113,25 +113,23 @@ function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((val
 
 export const getAllDataForExport = async (): Promise<Record<string, any>> => {
     const data: Record<string, any> = {};
+    const allLocalStorageKeys = Object.keys(localStorage);
 
-    // Get all from localStorage
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && !key.startsWith('genkit:')) {
+    for (const key of allLocalStorageKeys) {
+        if (!key.startsWith('genkit:')) {
             const item = localStorage.getItem(key);
             if (item) {
                 try {
                     data[key] = JSON.parse(item);
                 } catch {
-                     data[key] = item; // Store as raw string if not JSON
+                    data[key] = item;
                 }
             }
         }
     }
 
-    // Get all from IndexedDB for idb-keyval
-    const idbKeys = await keys();
-    for (const key of idbKeys) {
+    const idbKeysList = await keys();
+    for (const key of idbKeysList) {
         if (typeof key === 'string') {
             data[key] = await get(key);
         }

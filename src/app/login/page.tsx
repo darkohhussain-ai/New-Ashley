@@ -54,6 +54,7 @@ export default function LoginPage() {
           alt="Login background"
           fill
           className="object-cover z-0"
+          priority
         />
       )}
       <div className="absolute inset-0 bg-black/50 z-0"/>

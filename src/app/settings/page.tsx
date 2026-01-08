@@ -470,15 +470,8 @@ function SettingsPage() {
     setSavedLoginBg(loginBg);
 
     if (langContext) {
-        // This assumes the child component (TranslationEditor) has already updated its state
-        // A more robust solution might involve lifting state up or using callbacks
-        // But for now, we trigger its save logic if it's rendered
-        // This is a bit of a hack, but works for this structure
-        // A better way would be for the TranslationEditor to get a save trigger prop
-        // For now, we manually get the state from its context and save it.
-        const { translations, setTranslations } = langContext;
-        setTranslations('en', translations.en);
-        setTranslations('ku', translations.ku);
+        langContext.setTranslations('en', langContext.translations.en);
+        langContext.setTranslations('ku', langContext.translations.ku);
     }
     
     setSavedPdfSettings(pdfSettings);
