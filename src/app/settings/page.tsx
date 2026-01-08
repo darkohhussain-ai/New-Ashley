@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import * as React from 'react';
@@ -201,6 +202,64 @@ const reportTypes = [
   { value: 'withdrawal', label: 'Withdrawal' }
 ];
 
+function LoginTextEditor() {
+    const { t } = useTranslation();
+    const langContext = React.useContext(LanguageContext);
+
+    const [loginTitleEn, setLoginTitleEn] = React.useState(langContext?.translations.en.login_title || '');
+    const [loginDescEn, setLoginDescEn] = React.useState(langContext?.translations.en.login_description || '');
+    const [loginTitleKu, setLoginTitleKu] = React.useState(langContext?.translations.ku.login_title || '');
+    const [loginDescKu, setLoginDescKu] = React.useState(langContext?.translations.ku.login_description || '');
+    
+    React.useEffect(() => {
+        if(langContext) {
+            langContext.setTranslations('en', { ...langContext.translations.en, login_title: loginTitleEn, login_description: loginDescEn });
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [loginTitleEn, loginDescEn]);
+    
+    React.useEffect(() => {
+        if(langContext) {
+            langContext.setTranslations('ku', { ...langContext.translations.ku, login_title: loginTitleKu, login_description: loginDescKu });
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [loginTitleKu, loginDescKu]);
+
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><LogIn /> Login Page Text</CardTitle>
+                <CardDescription>Customize the title and description on the login screen.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                <div className="space-y-4">
+                    <h3 className="font-semibold text-sm text-muted-foreground">English</h3>
+                    <div className="space-y-2">
+                        <Label htmlFor="login-title-en">Login Title</Label>
+                        <Input id="login-title-en" value={loginTitleEn} onChange={(e) => setLoginTitleEn(e.target.value)} />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="login-desc-en">Login Description</Label>
+                        <Input id="login-desc-en" value={loginDescEn} onChange={(e) => setLoginDescEn(e.target.value)} />
+                    </div>
+                </div>
+                 <div className="space-y-4">
+                    <h3 className="font-semibold text-sm text-muted-foreground">Kurdish</h3>
+                    <div className="space-y-2">
+                        <Label htmlFor="login-title-ku">Sernivîsa Têketinê</Label>
+                        <Input id="login-title-ku" value={loginTitleKu} onChange={(e) => setLoginTitleKu(e.target.value)} dir="rtl"/>
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="login-desc-ku">Danasîna Têketinê</Label>
+                        <Input id="login-desc-ku" value={loginDescKu} onChange={(e) => setLoginDescKu(e.target.value)} dir="rtl"/>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
 function TranslationEditor() {
     const { t } = useTranslation();
     const langContext = React.useContext(LanguageContext);
@@ -209,24 +268,34 @@ function TranslationEditor() {
     const [kuTranslations, setKuTranslations] = React.useState<Translations>(langContext?.translations.ku || {});
     const [search, setSearch] = React.useState('');
 
-    useEffect(() => {
+    React.useEffect(() => {
         if (langContext) {
             setEnTranslations(langContext.translations.en);
             setKuTranslations(langContext.translations.ku);
         }
     }, [langContext]);
 
-    const handleSaveTranslations = () => {
+    React.useEffect(() => {
         if (langContext) {
             langContext.setTranslations('en', enTranslations);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [enTranslations]);
+    
+    React.useEffect(() => {
+        if (langContext) {
             langContext.setTranslations('ku', kuTranslations);
         }
-    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [kuTranslations]);
     
     const filteredKeys = Object.keys(enTranslations).filter(key => 
-        key.toLowerCase().includes(search.toLowerCase()) || 
-        enTranslations[key].toLowerCase().includes(search.toLowerCase()) ||
-        (kuTranslations[key] && kuTranslations[key].toLowerCase().includes(search.toLowerCase()))
+        !['login_title', 'login_description'].includes(key) &&
+        (
+            key.toLowerCase().includes(search.toLowerCase()) || 
+            enTranslations[key].toLowerCase().includes(search.toLowerCase()) ||
+            (kuTranslations[key] && kuTranslations[key].toLowerCase().includes(search.toLowerCase()))
+        )
     ).sort();
 
     return (
@@ -627,7 +696,8 @@ function SettingsPage() {
                 </div>
             </TabsContent>
 
-            <TabsContent value="language" className="pt-6">
+            <TabsContent value="language" className="pt-6 space-y-6">
+                 <LoginTextEditor />
                  <TranslationEditor />
             </TabsContent>
 
