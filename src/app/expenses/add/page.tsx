@@ -4,7 +4,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, Save, Trash2, Calendar as CalendarIcon, Loader2, User, Edit, X, Printer, FileDown } from 'lucide-react';
+import { ArrowLeft, Plus, Save, Trash2, Calendar as CalendarIcon, Loader2, User, Edit, X, Printer, FileDown, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -163,7 +163,7 @@ export default function AddExpensePage() {
              relevantExpenses.push({
                 id: crypto.randomUUID(), // temp id
                 employeeId: selectedEmployee,
-                amount: parsedAmount,
+                amount: parsedAmount || 0,
                 date: date.toISOString(),
                 notes: description,
                 expenseReportId: report.id,
@@ -171,7 +171,7 @@ export default function AddExpensePage() {
             });
         }
         
-        const newTotal = relevantExpenses.reduce((sum, e) => sum + e.amount, 0);
+        const newTotal = relevantExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
         return { ...rep, totalAmount: newTotal };
     });
 
@@ -271,6 +271,16 @@ export default function AddExpensePage() {
     doc.save(`expenses-report-${format(date, 'yyyy-MM-dd')}.pdf`);
   };
 
+  const handleSaveAndRefresh = () => {
+    toast({
+      title: "Data Saved",
+      description: "All expenses have been saved.",
+    });
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+  }
+
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -300,6 +310,7 @@ export default function AddExpensePage() {
             </Popover>
             <Button variant="outline" onClick={handlePrint} disabled={isLoading || dailyExpenses.length === 0}><Printer className="mr-2"/>{t('print')}</Button>
             <Button variant="outline" onClick={handleDownloadPdf} disabled={isLoading || dailyExpenses.length === 0}><FileDown className="mr-2"/>PDF</Button>
+            <Button onClick={handleSaveAndRefresh}><RefreshCw className="mr-2 h-4 w-4" /> Save & Refresh</Button>
         </div>
       </header>
 
