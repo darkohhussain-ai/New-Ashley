@@ -26,7 +26,7 @@ const formatCurrency = (amount: number) => {
 
 export default function MonthlyExpenseReportPage() {
   const { t, language } = useTranslation();
-  const { simpleExpenses, employees } = useAppContext();
+  const { expenses, employees } = useAppContext();
   const { user, hasPermission } = useAuth();
   const isReadOnly = !hasPermission('page:admin');
 
@@ -36,7 +36,7 @@ export default function MonthlyExpenseReportPage() {
     setSelectedDate(new Date());
   }, []);
 
-  const isLoading = !simpleExpenses || !employees || !selectedDate;
+  const isLoading = !expenses || !employees || !selectedDate;
 
   const getEmployeeName = (employeeId: string, useKurdish: boolean = false) => {
     const employee = employees.find(e => e.id === employeeId);
@@ -46,12 +46,12 @@ export default function MonthlyExpenseReportPage() {
   };
 
   const monthlyData = useMemo(() => {
-    if (!simpleExpenses || !employees || !selectedDate) return { expenses: [], summary: [], total: 0 };
+    if (!expenses || !employees || !selectedDate) return { expenses: [], summary: [], total: 0 };
 
     const start = startOfMonth(selectedDate);
     const end = endOfMonth(selectedDate);
 
-    const filteredExpenses = simpleExpenses.filter(e => isWithinInterval(parseISO(e.date), { start, end }));
+    const filteredExpenses = expenses.filter(e => isWithinInterval(parseISO(e.date), { start, end }));
 
     const employeeTotals = new Map<string, { totalAmount: number }>();
     filteredExpenses.forEach(expense => {
@@ -69,7 +69,7 @@ export default function MonthlyExpenseReportPage() {
     const total = summary.reduce((sum, item) => sum + item.totalAmount, 0);
 
     return { expenses: filteredExpenses, summary, total };
-  }, [simpleExpenses, employees, selectedDate, language, getEmployeeName, t, isReadOnly, user]);
+  }, [expenses, employees, selectedDate, language, getEmployeeName, t, isReadOnly, user]);
 
 
   const handlePrint = () => {

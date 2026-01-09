@@ -64,19 +64,11 @@ export type StorageLocation = {
   warehouseType: 'Ashley' | 'Huana';
 };
 
-export type SimpleExpense = {
-  id: string;
-  employeeId: string;
-  amount: number;
-  date: string;
-  expenseType?: string;
-  description?: string;
-};
-
 export type Expense = {
   id: string;
   employeeId: string;
   amount: number;
+  date: string;
   notes?: string;
   expenseReportId: string; // Link to the parent report
   expenseType?: string;

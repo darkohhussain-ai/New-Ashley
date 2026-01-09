@@ -1,5 +1,5 @@
 
-import { Employee, ExcelFile, Item, StorageLocation, Expense, ExpenseReport, Overtime, Bonus, CashWithdrawal, SoldItemReceipt, Transfer, ItemForTransfer, MarketingFeedback, EvaluationQuestion, AnswerOption, User, Role, SimpleExpense } from '@/lib/types';
+import { Employee, ExcelFile, Item, StorageLocation, Expense, ExpenseReport, Overtime, Bonus, CashWithdrawal, SoldItemReceipt, Transfer, ItemForTransfer, MarketingFeedback, EvaluationQuestion, AnswerOption, User, Role } from '@/lib/types';
 import { adminPermissions, adminAssistantPermissions, viewerPermissions, employeePermissions } from '@/lib/permissions';
 
 const defaultAnswers: [AnswerOption, AnswerOption, AnswerOption] = [
@@ -60,7 +60,6 @@ export const initialData: {
     excelFiles: ExcelFile[],
     items: Item[],
     locations: StorageLocation[],
-    simpleExpenses: SimpleExpense[],
     expenses: Expense[],
     expenseReports: ExpenseReport[],
     overtime: Overtime[],
@@ -78,7 +77,6 @@ export const initialData: {
     excelFiles: [],
     items: [],
     locations: [],
-    simpleExpenses: [],
     expenses: [],
     expenseReports: [],
     overtime: [],
