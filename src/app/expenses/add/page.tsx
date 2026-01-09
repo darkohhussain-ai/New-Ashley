@@ -17,7 +17,7 @@ import { format, formatISO, startOfDay, endOfDay, isWithinInterval, parseISO } f
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/context/app-provider';
-import type { Employee, SimpleExpense, AllPdfSettings } from '@/lib/types';
+import type { Employee, SimpleExpense, Expense, ExpenseReport, AllPdfSettings } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import jsPDF from 'jspdf';
@@ -31,7 +31,7 @@ const expenseTypes = ["Taxi Fare", "General Expense", "Food & Beverage", "Office
 export default function AddExpensePage() {
   const { t, language } = useTranslation();
   const { toast } = useToast();
-  const { employees, simpleExpenses, setSimpleExpenses } = useAppContext();
+  const { employees, expenses, setExpenses, expenseReports, setExpenseReports } = useAppContext();
   const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {}, card: {} });
   const [customFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
 
@@ -45,7 +45,7 @@ export default function AddExpensePage() {
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   
-  const [editingExpense, setEditingExpense] = useState<SimpleExpense | null>(null);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   
   useEffect(() => {
@@ -53,24 +53,27 @@ export default function AddExpensePage() {
     setDate(initialDate);
   }, [dateParam]);
   
-  const isLoading = !employees || !simpleExpenses || !date;
+  const isLoading = !employees || !expenses || !date;
 
   const warehouseEmployees = useMemo(() => {
     if (!employees) return [];
     return employees.filter(e => e.role !== 'Marketing').sort((a, b) => a.name.localeCompare(b.name));
   }, [employees]);
 
+  const dailyReport = useMemo(() => {
+    if (!expenseReports || !date) return null;
+    const reportDateStr = format(date, 'yyyy-MM-dd');
+    return expenseReports.find(r => format(parseISO(r.reportDate), 'yyyy-MM-dd') === reportDateStr);
+  }, [expenseReports, date]);
+
   const dailyExpenses = useMemo(() => {
-    if (!simpleExpenses || !date) return [];
-    const start = startOfDay(date);
-    const end = endOfDay(date);
-    return simpleExpenses
-      .filter(exp => isWithinInterval(parseISO(exp.date), { start, end }))
-      .sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
-  }, [simpleExpenses, date]);
+    if (!dailyReport) return [];
+    return expenses.filter(exp => exp.expenseReportId === dailyReport.id)
+                   .sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
+  }, [expenses, dailyReport]);
 
   const expensesByEmployee = useMemo(() => {
-    const grouped: Record<string, { employee: Employee, expenses: SimpleExpense[], total: number }> = {};
+    const grouped: Record<string, { employee: Employee, expenses: Expense[], total: number }> = {};
     dailyExpenses.forEach(exp => {
       if (!grouped[exp.employeeId]) {
         const employee = employees.find(e => e.id === exp.employeeId);
@@ -94,7 +97,7 @@ export default function AddExpensePage() {
     setAmount('');
     setDescription('');
   }
-
+  
   const handleAddOrUpdateExpense = () => {
     if (!selectedEmployee || !amount || !date) {
       toast({ variant: 'destructive', title: t('missing_information'), description: "Please select an employee, date, and enter an amount." });
@@ -103,41 +106,66 @@ export default function AddExpensePage() {
 
     setIsSaving(true);
     
+    // Find or create the report for the day
+    const reportDateStr = format(date, 'yyyy-MM-dd');
+    let report = expenseReports.find(r => format(parseISO(r.reportDate), 'yyyy-MM-dd') === reportDateStr);
+    let newReportCreated = false;
+    if (!report) {
+        report = {
+            id: `report-${reportDateStr}`,
+            reportName: `Daily Expenses - ${format(date, 'PPP')}`,
+            reportDate: date.toISOString(),
+            totalAmount: 0
+        };
+        newReportCreated = true;
+    }
+
     if (editingExpense) {
-      const updatedExpense: SimpleExpense = {
+      const updatedExpense: Expense = {
         ...editingExpense,
         employeeId: selectedEmployee,
         date: date.toISOString(),
         amount: parseFloat(amount) || 0,
-        expenseType,
-        description,
+        notes: description,
       };
-      setSimpleExpenses(simpleExpenses.map(e => e.id === editingExpense.id ? updatedExpense : e));
+      setExpenses(expenses.map(e => e.id === editingExpense.id ? updatedExpense : e));
       toast({ title: "Expense Updated", description: "The expense record has been successfully updated."});
       setEditingExpense(null);
     } else {
-      const newExpense: SimpleExpense = {
+      const newExpense: Expense = {
         id: crypto.randomUUID(),
         employeeId: selectedEmployee,
-        date: date.toISOString(),
         amount: parseFloat(amount) || 0,
-        expenseType,
-        description,
+        date: date.toISOString(),
+        notes: description,
+        expenseReportId: report.id,
       };
-      setSimpleExpenses([...simpleExpenses, newExpense]);
+      setExpenses([...expenses, newExpense]);
       toast({ title: "Expense Added", description: `An expense of ${formatCurrency(newExpense.amount)} has been added.`});
     }
+
+    // Recalculate total for the report
+    const updatedReportExpenses = expenses.filter(e => e.expenseReportId === report!.id);
+    const newTotal = updatedReportExpenses.reduce((sum, e) => sum + e.amount, 0) + (editingExpense ? 0 : (parseFloat(amount) || 0));
+    
+    const updatedReport: ExpenseReport = { ...report, totalAmount: newTotal };
+    
+    if (newReportCreated) {
+        setExpenseReports([...expenseReports, updatedReport]);
+    } else {
+        setExpenseReports(expenseReports.map(r => r.id === report!.id ? updatedReport : r));
+    }
+
 
     resetForm();
     setIsSaving(false);
   }
   
-  const startEditing = (expense: SimpleExpense) => {
+  const startEditing = (expense: Expense) => {
     setEditingExpense(expense);
     setSelectedEmployee(expense.employeeId);
-    setExpenseType(expense.expenseType || '');
     setAmount(String(expense.amount));
-    setDescription(expense.description || '');
+    setDescription(expense.notes || '');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -147,7 +175,7 @@ export default function AddExpensePage() {
   };
 
   const handleDelete = (expenseId: string) => {
-    setSimpleExpenses(simpleExpenses.filter(e => e.id !== expenseId));
+    setExpenses(expenses.filter(e => e.id !== expenseId));
     toast({ title: "Expense Deleted", description: "The expense record has been removed." });
   };
   
@@ -181,19 +209,18 @@ export default function AddExpensePage() {
       group.expenses.forEach((exp, index) => {
         body.push([
           index === 0 ? group.employee.name : '',
-          exp.expenseType || 'General',
-          exp.description || '',
+          exp.notes || '',
           formatCurrency(exp.amount)
         ]);
       });
-      body.push(['', { content: `Total for ${group.employee.name}`, colSpan: 2, styles: { halign: 'right', fontStyle: 'bold' } }, formatCurrency(group.total)]);
+      body.push(['', { content: `Total for ${group.employee.name}`, styles: { halign: 'right', fontStyle: 'bold' } }, formatCurrency(group.total)]);
     });
 
     autoTable(doc, {
       startY: 40,
-      head: [['Employee', 'Type', 'Notes', 'Amount']],
+      head: [['Employee', 'Notes', 'Amount']],
       body: body,
-      foot: [['Grand Total', '', '', formatCurrency(grandTotal)]],
+      foot: [['Grand Total', '', formatCurrency(grandTotal)]],
       theme: 'striped',
       headStyles: { fillColor: pdfSettings.report.reportColors?.expense || '#3b82f6' },
       footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
@@ -310,7 +337,7 @@ export default function AddExpensePage() {
                             <div key={exp.id} className="p-4 flex justify-between items-start">
                               <div>
                                 <p className="font-medium">{exp.expenseType || 'General'}</p>
-                                <p className="text-sm text-muted-foreground">{exp.description || t('na')}</p>
+                                <p className="text-sm text-muted-foreground">{exp.notes || t('na')}</p>
                               </div>
                               <div className="text-right">
                                 <p className="font-semibold">{formatCurrency(exp.amount)}</p>

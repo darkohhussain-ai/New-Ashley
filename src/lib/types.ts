@@ -1,5 +1,6 @@
 
 
+
 export type User = {
     id: string;
     username: string;
@@ -68,6 +69,7 @@ export type SimpleExpense = {
   employeeId: string;
   amount: number;
   date: string;
+  expenseType?: string;
   description?: string;
 };
 
@@ -77,6 +79,7 @@ export type Expense = {
   amount: number;
   notes?: string;
   expenseReportId: string; // Link to the parent report
+  expenseType?: string;
 };
 
 export type ExpenseReport = {
