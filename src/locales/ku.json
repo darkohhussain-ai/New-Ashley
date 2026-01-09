@@ -1,3 +1,4 @@
+
 {
   "welcome_back": "بەخێربێیتەوە",
   "select_service": "خزمەتگوزارییەک هەڵبژێرە بۆ بەردەوامبوون.",
@@ -177,7 +178,7 @@
   "no_employees_found_desc": "گەڕانێکی جیاواز تاقیبکەرەوە یان کارمەندێکی نوێ زیاد بکە.",
   "select_an_employee_to_view": "کارمەندێک لە لیستەکە هەڵبژێرە بۆ بینینی وردەکارییەکانیان.",
   "expense_management": "بەڕێوەبردنی خەرجییەکان",
-  "create_new_expense_report": "دروستکردنی ڕاپۆرتی خەرجی نوێ",
+  "add_daily_expense": "زیادکردنی خەرجی ڕۆژانە",
   "expense_report_archive": "ئەرشیفی ڕاپۆرتەکانی خەرجی",
   "monthly_expense_report": "ڕاپۆرتی مانگانەی خەرجی",
   "new_expense_report": "ڕاپۆرتی خەرجی نوێ",
@@ -451,5 +452,24 @@
   "this_month_activity_summary": "چالاکی ئەم مانگە ({month})",
   "last_month_activity_summary": "پوختەی چالاکی مانگی ڕابردوو.",
   "login_title": "کارمەندی ئاشلی",
-  "login_description": "زانیارییەکانت بنووسە بۆ چوونەژوورەوە بۆ داشبۆرد."
+  "login_description": "زانیارییەکانت بنووسە بۆ چوونەژوورەوە بۆ داشبۆرد.",
+  "edit_expense": "دەستکاریکردنی خەرجی",
+  "update_expense_details": "وردەکارییەکانی ئەم خەرجییە نوێبکەرەوە.",
+  "new_expense_entry": "تۆماری خەرجی نوێ",
+  "add_new_expense_for_date": "خەرجییەکی نوێ بۆ بەرواری هەڵبژێردراو زیاد بکە.",
+  "select_expense_type": "جۆرێکی خەرجی هەڵبژێرە",
+  "notes_optional_expense": "وردەکاری ئارەزوومەندانە دەربارەی خەرجییەکە...",
+  "add_expense": "زیادکردنی خەرجی",
+  "expenses_for_date": "خەرجییەکان بۆ {date}",
+  "total_for": "کۆی گشتی بۆ",
+  "confirm_delete_expense": "ئەمە تۆماری ئەم خەرجییە بە شێوەیەکی هەمیشەیی دەسڕێتەوە. ئەم کردارە ناتوانرێت هەڵبوەشێنرێتەوە.",
+  "no_expenses_for_date": "هیچ خەرجییەک بۆ ئەم بەروارە تۆمار نەکراوە.",
+  "warehouse_manager_signature": "واژۆی بەڕێوەبەری کۆگا",
+  "data_exported_successfully": "داتا بە سەرکەوتوویی هەناردەکرا!",
+  "export_failed": "هەناردەکردن سەرکەوتوو نەبوو",
+  "export_failed_desc": "هەڵەیەک ڕوویدا لە کاتی هەناردەکردنی داتاکەدا.",
+  "data_imported_successfully": "داتا بە سەرکەوتوویی هاوردەکرا!",
+  "page_will_reload": "پەڕەکە ئێستا نوێ دەبێتەوە.",
+  "import_failed": "هاوردەکردن سەرکەوتوو نەبوو",
+  "invalid_or_corrupted_file": "فایلی پاشەکەوتەکە نادروستە یان خراپ بووە."
 }

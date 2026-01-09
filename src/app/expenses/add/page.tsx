@@ -17,7 +17,7 @@ import { format, formatISO, startOfDay, endOfDay, isWithinInterval, parseISO } f
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/context/app-provider';
-import type { Employee, SimpleExpense, Expense, ExpenseReport, AllPdfSettings } from '@/lib/types';
+import type { Employee, Expense, ExpenseReport, AllPdfSettings } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import jsPDF from 'jspdf';
@@ -99,8 +99,9 @@ export default function AddExpensePage() {
   }
   
   const handleAddOrUpdateExpense = () => {
-    if (!selectedEmployee || !amount || !date) {
-      toast({ variant: 'destructive', title: t('missing_information'), description: "Please select an employee, date, and enter an amount." });
+    const parsedAmount = parseFloat(amount);
+    if (!selectedEmployee || !amount || !date || isNaN(parsedAmount) || parsedAmount <= 0) {
+      toast({ variant: 'destructive', title: t('missing_information'), description: "Please select an employee and enter a valid positive amount." });
       return;
     }
 
@@ -125,8 +126,9 @@ export default function AddExpensePage() {
         ...editingExpense,
         employeeId: selectedEmployee,
         date: date.toISOString(),
-        amount: parseFloat(amount) || 0,
+        amount: parsedAmount,
         notes: description,
+        expenseType: expenseType,
       };
       setExpenses(expenses.map(e => e.id === editingExpense.id ? updatedExpense : e));
       toast({ title: "Expense Updated", description: "The expense record has been successfully updated."});
@@ -135,26 +137,45 @@ export default function AddExpensePage() {
       const newExpense: Expense = {
         id: crypto.randomUUID(),
         employeeId: selectedEmployee,
-        amount: parseFloat(amount) || 0,
+        amount: parsedAmount,
         date: date.toISOString(),
         notes: description,
         expenseReportId: report.id,
+        expenseType: expenseType
       };
       setExpenses([...expenses, newExpense]);
       toast({ title: "Expense Added", description: `An expense of ${formatCurrency(newExpense.amount)} has been added.`});
     }
 
-    // Recalculate total for the report
-    const updatedReportExpenses = expenses.filter(e => e.expenseReportId === report!.id);
-    const newTotal = updatedReportExpenses.reduce((sum, e) => sum + e.amount, 0) + (editingExpense ? 0 : (parseFloat(amount) || 0));
-    
-    const updatedReport: ExpenseReport = { ...report, totalAmount: newTotal };
-    
-    if (newReportCreated) {
-        setExpenseReports([...expenseReports, updatedReport]);
-    } else {
-        setExpenseReports(expenseReports.map(r => r.id === report!.id ? updatedReport : r));
-    }
+    // This logic is complex because it has to recalculate totals after an update/add.
+    // We defer this to a useEffect that watches the `expenses` array.
+    // This is a placeholder for that logic, which should ideally be a more robust state management pattern.
+    const allReports = newReportCreated ? [...expenseReports, report] : [...expenseReports];
+    const finalReports = allReports.map(rep => {
+        const relevantExpenses = expenses
+            .filter(ex => ex.expenseReportId === rep.id)
+            .filter(ex => !(editingExpense && ex.id === editingExpense.id)); // exclude old version if editing
+
+        if(editingExpense && rep.id === report?.id) {
+            relevantExpenses.push({ ...editingExpense, employeeId: selectedEmployee, amount: parsedAmount, notes: description, expenseType });
+        }
+        if(!editingExpense && rep.id === report?.id) {
+             relevantExpenses.push({
+                id: crypto.randomUUID(), // temp id
+                employeeId: selectedEmployee,
+                amount: parsedAmount,
+                date: date.toISOString(),
+                notes: description,
+                expenseReportId: report.id,
+                expenseType: expenseType
+            });
+        }
+        
+        const newTotal = relevantExpenses.reduce((sum, e) => sum + e.amount, 0);
+        return { ...rep, totalAmount: newTotal };
+    });
+
+    setExpenseReports(finalReports.filter(r => r.totalAmount > 0));
 
 
     resetForm();
@@ -164,6 +185,7 @@ export default function AddExpensePage() {
   const startEditing = (expense: Expense) => {
     setEditingExpense(expense);
     setSelectedEmployee(expense.employeeId);
+    setExpenseType(expense.expenseType || '');
     setAmount(String(expense.amount));
     setDescription(expense.notes || '');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -208,20 +230,22 @@ export default function AddExpensePage() {
     expensesByEmployee.forEach(group => {
       group.expenses.forEach((exp, index) => {
         body.push([
-          index === 0 ? group.employee.name : '',
+          index === 0 ? (language === 'ku' && group.employee.kurdishName ? group.employee.kurdishName : group.employee.name) : '',
+          exp.expenseType || '',
           exp.notes || '',
           formatCurrency(exp.amount)
         ]);
       });
-      body.push(['', { content: `Total for ${group.employee.name}`, styles: { halign: 'right', fontStyle: 'bold' } }, formatCurrency(group.total)]);
+      body.push(['', '', { content: `${t('total_for')} ${language === 'ku' && group.employee.kurdishName ? group.employee.kurdishName : group.employee.name}`, styles: { halign: 'right', fontStyle: 'bold' } }, formatCurrency(group.total)]);
     });
 
     autoTable(doc, {
       startY: 40,
-      head: [['Employee', 'Notes', 'Amount']],
+      head: [[t('employee'), t('expense_type'), t('notes'), t('amount')]],
       body: body,
-      foot: [['Grand Total', '', formatCurrency(grandTotal)]],
+      foot: [[t('grand_total'), '', '', formatCurrency(grandTotal)]],
       theme: 'striped',
+      styles: { font: (customFontBase64 && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
       headStyles: { fillColor: pdfSettings.report.reportColors?.expense || '#3b82f6' },
       footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
       didParseCell: (data) => {
@@ -236,8 +260,9 @@ export default function AddExpensePage() {
     const pageHeight = doc.internal.pageSize.height;
     if (finalY > pageHeight - 30) {
         doc.addPage();
+        finalY = 40;
     }
-    const signatureY = finalY > pageHeight - 50 ? 40 : finalY;
+    const signatureY = finalY;
     doc.setFontSize(10);
     doc.text("...................................", doc.internal.pageSize.width - 120, signatureY, { align: 'center' });
     doc.text(t('warehouse_manager_signature'), doc.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
@@ -261,7 +286,7 @@ export default function AddExpensePage() {
           <h1 className="text-2xl md:text-3xl">{t('add_daily_expense')}</h1>
         </div>
         <div className="flex items-center gap-2">
-            <Label className="hidden sm:block">Date:</Label>
+            <Label className="hidden sm:block">{t('date')}:</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" className={cn("w-48 justify-start text-left font-normal", !date && "text-muted-foreground")}>
@@ -282,21 +307,21 @@ export default function AddExpensePage() {
         <div className="lg:col-span-1 print:hidden">
           <Card>
             <CardHeader>
-              <CardTitle>{editingExpense ? "Edit Expense" : "New Expense Entry"}</CardTitle>
-              <CardDescription>{editingExpense ? "Update the details for this expense." : "Add a new expense for the selected date."}</CardDescription>
+              <CardTitle>{editingExpense ? t('edit_expense') : t('new_expense_entry')}</CardTitle>
+              <CardDescription>{editingExpense ? t('update_expense_details') : t('add_new_expense_for_date')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="employee">{t('employee')}</Label>
                 <Select value={selectedEmployee} onValueChange={setSelectedEmployee} disabled={isSaving}>
                   <SelectTrigger><SelectValue placeholder={t('select_an_employee')} /></SelectTrigger>
-                  <SelectContent>{warehouseEmployees.map(e => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}</SelectContent>
+                  <SelectContent>{warehouseEmployees.map(e => <SelectItem key={e.id} value={e.id} dir={language === 'ku' ? 'rtl' : 'ltr'}>{language==='ku' && e.kurdishName ? e.kurdishName : e.name}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="expense-type">{t('expense_type')}</Label>
                 <Select value={expenseType} onValueChange={setExpenseType} disabled={isSaving}>
-                    <SelectTrigger><SelectValue placeholder="Select a type" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder={t('select_expense_type')} /></SelectTrigger>
                     <SelectContent>
                         {expenseTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
                     </SelectContent>
@@ -308,13 +333,13 @@ export default function AddExpensePage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="description">{t('notes')}</Label>
-                <Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} placeholder="Optional details..." disabled={isSaving}/>
+                <Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} placeholder={t('notes_optional_expense')} disabled={isSaving}/>
               </div>
             </CardContent>
             <CardFooter className="flex gap-2">
                <Button onClick={handleAddOrUpdateExpense} disabled={isSaving} className="w-full">
                   {isSaving ? <Loader2 className="animate-spin mr-2"/> : editingExpense ? <Save className="mr-2"/> : <Plus className="mr-2" />}
-                  {editingExpense ? "Save Changes" : "Add Expense"}
+                  {editingExpense ? t('save_changes') : t('add_expense')}
                </Button>
                {editingExpense && <Button variant="ghost" onClick={cancelEditing}><X/></Button>}
             </CardFooter>
@@ -323,14 +348,14 @@ export default function AddExpensePage() {
         <div className="lg:col-span-2">
             <Card>
                 <CardHeader>
-                    <CardTitle>Expenses for {date ? format(date, 'PPP') : '...'}</CardTitle>
+                    <CardTitle>{t('expenses_for_date', { date: date ? format(date, 'PPP') : '...' })}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-6">
                     {expensesByEmployee.length > 0 ? expensesByEmployee.map(({employee, expenses, total}) => (
                       <div key={employee.id} className="border rounded-lg">
                         <div className="bg-muted/50 px-4 py-2 rounded-t-lg">
-                          <h3 className="font-semibold flex items-center gap-2"><User className="h-4 w-4"/> {employee.name}</h3>
+                          <h3 className="font-semibold flex items-center gap-2" dir={language==='ku' ? 'rtl' : 'ltr'}><User className="h-4 w-4"/> {language === 'ku' && employee.kurdishName ? employee.kurdishName : employee.name}</h3>
                         </div>
                         <div className="divide-y">
                           {expenses.map(exp => (
@@ -349,12 +374,12 @@ export default function AddExpensePage() {
                                         </AlertDialogTrigger>
                                         <AlertDialogContent>
                                             <AlertDialogHeader>
-                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                <AlertDialogDescription>This will permanently delete this expense record. This cannot be undone.</AlertDialogDescription>
+                                                <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
+                                                <AlertDialogDescription>{t('confirm_delete_expense')}</AlertDialogDescription>
                                             </AlertDialogHeader>
                                             <AlertDialogFooter>
-                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                <AlertDialogAction onClick={() => handleDelete(exp.id)}>Delete</AlertDialogAction>
+                                                <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => handleDelete(exp.id)}>{t('delete')}</AlertDialogAction>
                                             </AlertDialogFooter>
                                         </AlertDialogContent>
                                     </AlertDialog>
@@ -364,19 +389,19 @@ export default function AddExpensePage() {
                           ))}
                         </div>
                         <div className="bg-muted/50 px-4 py-2 rounded-b-lg flex justify-end items-center gap-2 font-semibold">
-                          <span>Total for {employee.name.split(' ')[0]}:</span>
+                          <span>{t('total_for')} {language === 'ku' && employee.kurdishName ? employee.kurdishName.split(' ')[0] : employee.name.split(' ')[0]}:</span>
                           <span>{formatCurrency(total)}</span>
                         </div>
                       </div>
                     )) : (
-                       <div className="text-center py-16 text-muted-foreground">No expenses recorded for this date.</div>
+                       <div className="text-center py-16 text-muted-foreground">{t('no_expenses_for_date')}</div>
                     )}
                   </div>
                 </CardContent>
                 {grandTotal > 0 && (
                    <CardFooter className="bg-muted/80 py-4 justify-end">
                       <div className="text-lg font-bold flex items-center gap-4">
-                        <span>Grand Total:</span>
+                        <span>{t('grand_total')}:</span>
                         <span className="text-primary">{formatCurrency(grandTotal)}</span>
                       </div>
                    </CardFooter>
