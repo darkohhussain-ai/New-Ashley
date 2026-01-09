@@ -1,4 +1,5 @@
 
+
 import type { Permission } from './types';
 
 export const allPermissions: Permission[] = [
@@ -7,6 +8,7 @@ export const allPermissions: Permission[] = [
     // Page access permissions
     { id: 'page:admin', description: 'Access the Admin Panel' },
     { id: 'page:ashley-expenses', description: 'Access Ashley Employees Management' },
+    { id: 'page:employee-expenses', description: 'Access Employee Expenses'},
     { id: 'page:transmit', description: 'Access Transmit Cargo' },
     { id: 'page:items', description: 'Access Placement & Storage' },
     { id: 'page:marketing-feedback', description: 'Access Marketing Feedback' },
@@ -34,6 +36,7 @@ export const employeePermissions = [
 
 export const financeManagerPermissions = [
     'page:ashley-expenses',
+    'page:employee-expenses',
     'page:account'
 ];
 

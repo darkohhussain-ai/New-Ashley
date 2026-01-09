@@ -63,6 +63,14 @@ export type StorageLocation = {
   warehouseType: 'Ashley' | 'Huana';
 };
 
+export type SimpleExpense = {
+  id: string;
+  employeeId: string;
+  amount: number;
+  date: string;
+  description?: string;
+};
+
 export type Expense = {
   id: string;
   employeeId: string;
@@ -175,10 +183,12 @@ export type PdfSettings = {
     tableTheme?: 'striped' | 'grid';
     headerText?: string;
     footerText?: string;
+    loginCardColor?: string;
+    hideLoginBg?: boolean;
 }
 
 export type AllPdfSettings = {
     report: PdfSettings;
     invoice: PdfSettings;
     card: PdfSettings;
-}
+};

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from 'next/link';
-import { CreditCard, Clock, Gift, Banknote, Settings, FileText, Calendar } from 'lucide-react';
+import { CreditCard, Clock, Gift, Banknote, Settings, FileText, Calendar, Wallet } from 'lucide-react';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/hooks/use-translation';
@@ -11,6 +11,12 @@ function AshleyExpensesDashboard() {
   const { t } = useTranslation();
 
   const menuItems = [
+    {
+      title: "Employee Expenses",
+      icon: Wallet,
+      href: "/employee-expenses",
+      color: "bg-purple-500",
+    },
     {
       title: t('expenses'),
       icon: FileText,

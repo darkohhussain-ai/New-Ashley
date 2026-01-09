@@ -19,6 +19,7 @@ import {
     EvaluationQuestion,
     User,
     Role,
+    SimpleExpense,
 } from '@/lib/types';
 import { initialData as initialDataObject } from './initial-data';
 
@@ -34,6 +35,8 @@ interface AppState {
     setItems: (items: Item[]) => void;
     locations: StorageLocation[];
     setLocations: (locations: StorageLocation[]) => void;
+    simpleExpenses: SimpleExpense[];
+    setSimpleExpenses: (expenses: SimpleExpense[]) => void;
     expenses: Expense[];
     setExpenses: (expenses: Expense[]) => void;
     expenseReports: ExpenseReport[];
@@ -68,6 +71,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const [excelFiles, setExcelFiles] = useLocalStorage<ExcelFile[]>('excel_files', initialData.excelFiles);
     const [items, setItems] = useLocalStorage<Item[]>('items', initialData.items);
     const [locations, setLocations] = useLocalStorage<StorageLocation[]>('storage_locations', initialData.locations);
+    const [simpleExpenses, setSimpleExpenses] = useLocalStorage<SimpleExpense[]>('simple_expenses', initialData.simpleExpenses);
     const [expenses, setExpenses] = useLocalStorage<Expense[]>('expenses', initialData.expenses);
     const [expenseReports, setExpenseReports] = useLocalStorage<ExpenseReport[]>('expense_reports', initialData.expenseReports);
     const [overtime, setOvertime] = useLocalStorage<Overtime[]>('overtime', initialData.overtime);
@@ -87,6 +91,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         excelFiles, setExcelFiles,
         items, setItems,
         locations, setLocations,
+        simpleExpenses, setSimpleExpenses,
         expenses, setExpenses,
         expenseReports, setExpenseReports,
         overtime, setOvertime,
