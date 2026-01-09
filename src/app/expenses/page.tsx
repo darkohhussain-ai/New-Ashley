@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, FilePlus, Archive, Calendar } from 'lucide-react';
+import { ArrowLeft, FilePlus, Archive } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -14,7 +14,7 @@ export default function ExpensesDashboardPage() {
 
   const menuItems = [
     {
-      title: t('create_new_expense_report'),
+      title: t('add_daily_expense'),
       icon: FilePlus,
       href: "/expenses/add",
       color: "bg-blue-500",
@@ -24,12 +24,6 @@ export default function ExpensesDashboardPage() {
       icon: Archive,
       href: "/expenses/archive",
       color: "bg-teal-500",
-    },
-    {
-      title: t('monthly_expense_report'),
-      icon: Calendar,
-      href: "/expenses/monthly-report",
-      color: "bg-orange-500",
     },
   ];
 

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -25,7 +26,7 @@ const formatCurrency = (amount: number) => {
 
 export default function MonthlyExpenseReportPage() {
   const { t, language } = useTranslation();
-  const { expenses, employees, expenseReports } = useAppContext();
+  const { simpleExpenses, employees } = useAppContext();
   const { user, hasPermission } = useAuth();
   const isReadOnly = !hasPermission('page:admin');
 
@@ -35,7 +36,7 @@ export default function MonthlyExpenseReportPage() {
     setSelectedDate(new Date());
   }, []);
 
-  const isLoading = !expenses || !employees || !expenseReports || !selectedDate;
+  const isLoading = !simpleExpenses || !employees || !selectedDate;
 
   const getEmployeeName = (employeeId: string, useKurdish: boolean = false) => {
     const employee = employees.find(e => e.id === employeeId);
@@ -45,18 +46,12 @@ export default function MonthlyExpenseReportPage() {
   };
 
   const monthlyData = useMemo(() => {
-    if (!expenses || !employees || !expenseReports || !selectedDate) return { expenses: [], summary: [], total: 0 };
+    if (!simpleExpenses || !employees || !selectedDate) return { expenses: [], summary: [], total: 0 };
 
     const start = startOfMonth(selectedDate);
     const end = endOfMonth(selectedDate);
 
-    const relevantReportIds = new Set(
-        expenseReports
-            .filter(r => isWithinInterval(parseISO(r.reportDate), { start, end }))
-            .map(r => r.id)
-    );
-
-    const filteredExpenses = expenses.filter(e => relevantReportIds.has(e.expenseReportId));
+    const filteredExpenses = simpleExpenses.filter(e => isWithinInterval(parseISO(e.date), { start, end }));
 
     const employeeTotals = new Map<string, { totalAmount: number }>();
     filteredExpenses.forEach(expense => {
@@ -74,7 +69,7 @@ export default function MonthlyExpenseReportPage() {
     const total = summary.reduce((sum, item) => sum + item.totalAmount, 0);
 
     return { expenses: filteredExpenses, summary, total };
-  }, [expenses, employees, expenseReports, selectedDate, language, getEmployeeName, t, isReadOnly, user]);
+  }, [simpleExpenses, employees, selectedDate, language, getEmployeeName, t, isReadOnly, user]);
 
 
   const handlePrint = () => {

@@ -15,13 +15,25 @@ const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { styl
 
 export default function ExpenseArchivePage() {
   const { t } = useTranslation();
-  const { expenseReports } = useAppContext();
-  const isLoading = !expenseReports;
+  const { simpleExpenses } = useAppContext();
+  const isLoading = !simpleExpenses;
 
-  const sortedReports = useMemo(() => {
-    if (!expenseReports) return [];
-    return [...expenseReports].sort((a, b) => new Date(b.reportDate).getTime() - new Date(a.reportDate).getTime());
-  }, [expenseReports]);
+  const groupedByDay = useMemo(() => {
+    if (!simpleExpenses) return [];
+    
+    const groups: Record<string, { date: string, totalAmount: number, count: number }> = {};
+    
+    simpleExpenses.forEach(exp => {
+      const day = format(parseISO(exp.date), 'yyyy-MM-dd');
+      if (!groups[day]) {
+        groups[day] = { date: day, totalAmount: 0, count: 0 };
+      }
+      groups[day].totalAmount += exp.amount;
+      groups[day].count += 1;
+    });
+
+    return Object.values(groups).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [simpleExpenses]);
 
   return (
     <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
@@ -47,16 +59,16 @@ export default function ExpenseArchivePage() {
               </Card>
             ))}
           </div>
-        ) : sortedReports.length > 0 ? (
+        ) : groupedByDay.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {sortedReports.map(report => (
-              <Card key={report.id} className="hover:border-primary/50 hover:shadow-lg transition-all h-full flex flex-col">
+            {groupedByDay.map(report => (
+              <Card key={report.date} className="hover:border-primary/50 hover:shadow-lg transition-all h-full flex flex-col">
                 <CardHeader>
-                  <CardTitle className="text-lg leading-tight">{report.reportName}</CardTitle>
-                  <CardDescription className="flex items-center gap-2 text-sm">
-                    <CalendarIcon className="w-4 h-4" />
-                    {format(parseISO(report.reportDate), 'PPP')}
-                  </CardDescription>
+                  <CardTitle className="text-lg leading-tight flex items-center gap-2">
+                    <CalendarIcon className="w-5 h-5 text-primary"/>
+                    {format(parseISO(report.date), 'PPP')}
+                  </CardTitle>
+                  <CardDescription>{report.count} expenses</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-grow">
                   <p className="flex items-center gap-2 text-2xl font-bold text-primary">
@@ -65,8 +77,9 @@ export default function ExpenseArchivePage() {
                   </p>
                 </CardContent>
                 <CardFooter>
-                  <Button asChild className="w-full">
-                    <Link href={`/expenses/archive/${report.id}`}><Eye className="mr-2"/>{t('view_edit_details')}</Link>
+                  <Button asChild className="w-full" disabled>
+                    {/* The view-by-day functionality is now integrated into the add page */}
+                    <span className='opacity-50 cursor-not-allowed flex items-center'><Eye className="mr-2"/>{t('view_edit_details')}</span>
                   </Button>
                 </CardFooter>
               </Card>

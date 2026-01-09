@@ -1,3 +1,4 @@
+
 {
   "welcome_back": "Welcome Back",
   "select_service": "Select a service to continue.",
@@ -189,7 +190,7 @@
   "expense_items": "Expense Items",
   "expense_items_desc": "Add all expenses for this report.",
   "add_item": "Add Item",
-  "amount": "Amount (IQD)",
+  "amount": "Amount",
   "no_expense_items_added": "No expense items added yet.",
   "missing_information": "Missing Information",
   "missing_information_desc_expense": "Please provide a report name, date, and at least one expense item.",
@@ -320,6 +321,8 @@
   "the_selected_month": "the selected month",
   "employee_overtime": "Employee Overtime",
   "add_daily_overtime": "Add Daily Overtime",
+  "add_daily_expense": "Add Daily Expense",
+  "expense_type": "Expense Type",
   "invalid_receipt_number": "Invalid Receipt Number",
   "invalid_receipt_number_desc": "The receipt number must be exactly 4 digits.",
   "no_categories": "No Categories",
