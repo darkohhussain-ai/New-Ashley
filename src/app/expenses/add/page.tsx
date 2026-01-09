@@ -1,9 +1,10 @@
 
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Plus, Save, Trash2, Calendar as CalendarIcon, Loader2, User, Edit, X } from 'lucide-react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { ArrowLeft, Plus, Save, Trash2, Calendar as CalendarIcon, Loader2, User, Edit, X, Printer, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -16,19 +17,27 @@ import { format, formatISO, startOfDay, endOfDay, isWithinInterval, parseISO } f
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/context/app-provider';
-import type { Employee, SimpleExpense } from '@/lib/types';
+import type { Employee, SimpleExpense, AllPdfSettings } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import useLocalStorage from '@/hooks/use-local-storage';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'IQD', maximumFractionDigits: 0 }).format(amount);
 
 const expenseTypes = ["Taxi Fare", "General Expense", "Food & Beverage", "Office Supplies", "Other"];
 
 export default function AddExpensePage() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { toast } = useToast();
   const { employees, simpleExpenses, setSimpleExpenses } = useAppContext();
+  const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {}, card: {} });
+  const [customFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
+
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const dateParam = searchParams.get('date');
 
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [selectedEmployee, setSelectedEmployee] = useState('');
@@ -40,8 +49,9 @@ export default function AddExpensePage() {
   const [isSaving, setIsSaving] = useState(false);
   
   useEffect(() => {
-    setDate(new Date());
-  }, []);
+    const initialDate = dateParam ? parseISO(dateParam) : new Date();
+    setDate(initialDate);
+  }, [dateParam]);
   
   const isLoading = !employees || !simpleExpenses || !date;
 
@@ -73,7 +83,7 @@ export default function AddExpensePage() {
         grouped[exp.employeeId].total += exp.amount;
       }
     });
-    return Object.values(grouped);
+    return Object.values(grouped).sort((a, b) => a.employee.name.localeCompare(b.employee.name));
   }, [dailyExpenses, employees]);
 
   const grandTotal = useMemo(() => dailyExpenses.reduce((sum, exp) => sum + exp.amount, 0), [dailyExpenses]);
@@ -128,6 +138,7 @@ export default function AddExpensePage() {
     setExpenseType(expense.expenseType || '');
     setAmount(String(expense.amount));
     setDescription(expense.description || '');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const cancelEditing = () => {
@@ -140,13 +151,82 @@ export default function AddExpensePage() {
     toast({ title: "Expense Deleted", description: "The expense record has been removed." });
   };
   
+  const handlePrint = () => {
+    window.print();
+  }
+
+  const handleDownloadPdf = async () => {
+    if (!date || expensesByEmployee.length === 0) return;
+    const doc = new jsPDF();
+    const useKurdish = language === 'ku';
+
+    if (customFontBase64 && useKurdish) {
+      try {
+        const fontName = "CustomFont";
+        doc.addFileToVFS(`${fontName}.ttf`, customFontBase64.split(',')[1]);
+        doc.addFont(`${fontName}.ttf`, fontName, "normal");
+        doc.setFont(fontName);
+      } catch (e) {
+        console.error("Could not add custom font to PDF", e);
+      }
+    }
+
+    doc.setFontSize(18);
+    doc.text(t('daily_expense_report'), doc.internal.pageSize.getWidth() / 2, 22, { align: 'center' });
+    doc.setFontSize(12);
+    doc.text(format(date, 'PPP'), doc.internal.pageSize.getWidth() / 2, 32, { align: 'center' });
+
+    const body: (string | number)[][] = [];
+    expensesByEmployee.forEach(group => {
+      group.expenses.forEach((exp, index) => {
+        body.push([
+          index === 0 ? group.employee.name : '',
+          exp.expenseType || 'General',
+          exp.description || '',
+          formatCurrency(exp.amount)
+        ]);
+      });
+      body.push(['', { content: `Total for ${group.employee.name}`, colSpan: 2, styles: { halign: 'right', fontStyle: 'bold' } }, formatCurrency(group.total)]);
+    });
+
+    autoTable(doc, {
+      startY: 40,
+      head: [['Employee', 'Type', 'Notes', 'Amount']],
+      body: body,
+      foot: [['Grand Total', '', '', formatCurrency(grandTotal)]],
+      theme: 'striped',
+      headStyles: { fillColor: pdfSettings.report.reportColors?.expense || '#3b82f6' },
+      footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
+      didParseCell: (data) => {
+        if (useKurdish && customFontBase64) {
+          data.cell.styles.font = "CustomFont";
+          data.cell.styles.halign = 'right';
+        }
+      }
+    });
+    
+    let finalY = (doc as any).lastAutoTable.finalY + 40;
+    const pageHeight = doc.internal.pageSize.height;
+    if (finalY > pageHeight - 30) {
+        doc.addPage();
+    }
+    const signatureY = finalY > pageHeight - 50 ? 40 : finalY;
+    doc.setFontSize(10);
+    doc.text("...................................", doc.internal.pageSize.width - 120, signatureY, { align: 'center' });
+    doc.text(t('warehouse_manager_signature'), doc.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
+
+
+    doc.save(`expenses-report-${format(date, 'yyyy-MM-dd')}.pdf`);
+  };
+
+
   if (isLoading) {
     return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
-      <header className="flex items-center justify-between gap-4 mb-8">
+    <div className="min-h-screen bg-background text-foreground p-4 md:p-8 print:p-0">
+      <header className="flex items-center justify-between gap-4 mb-8 print:hidden">
         <div className="flex items-center gap-4">
           <Button variant="outline" size="icon" asChild>
             <Link href="/expenses"><ArrowLeft /></Link>
@@ -154,7 +234,7 @@ export default function AddExpensePage() {
           <h1 className="text-2xl md:text-3xl">{t('add_daily_expense')}</h1>
         </div>
         <div className="flex items-center gap-2">
-            <Label>Date:</Label>
+            <Label className="hidden sm:block">Date:</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" className={cn("w-48 justify-start text-left font-normal", !date && "text-muted-foreground")}>
@@ -162,13 +242,17 @@ export default function AddExpensePage() {
                   {date ? format(date, 'PPP') : <span>{t('pick_a_date')}</span>}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={date} onSelect={setDate} /></PopoverContent>
+              <PopoverContent className="w-auto p-0">
+                <Calendar mode="single" selected={date} onSelect={(d) => { if(d) setDate(d); router.push('/expenses/add')}} />
+              </PopoverContent>
             </Popover>
+            <Button variant="outline" onClick={handlePrint} disabled={isLoading || dailyExpenses.length === 0}><Printer className="mr-2"/>{t('print')}</Button>
+            <Button variant="outline" onClick={handleDownloadPdf} disabled={isLoading || dailyExpenses.length === 0}><FileDown className="mr-2"/>PDF</Button>
         </div>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-1 print:hidden">
           <Card>
             <CardHeader>
               <CardTitle>{editingExpense ? "Edit Expense" : "New Expense Entry"}</CardTitle>
@@ -230,7 +314,7 @@ export default function AddExpensePage() {
                               </div>
                               <div className="text-right">
                                 <p className="font-semibold">{formatCurrency(exp.amount)}</p>
-                                <div className="flex gap-1 mt-1">
+                                <div className="flex gap-1 mt-1 print:hidden">
                                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEditing(exp)}><Edit className="h-4 w-4"/></Button>
                                     <AlertDialog>
                                         <AlertDialogTrigger asChild>
