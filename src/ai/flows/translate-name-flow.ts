@@ -1,0 +1,50 @@
+
+'use server';
+/**
+ * @fileOverview An AI flow to translate an English name to Kurdish.
+ *
+ * - translateNameToKurdish - A function that suggests a Kurdish translation for an English name.
+ * - TranslateNameInput - The input type for the translateNameToKurdish function.
+ * - TranslateNameOutput - The return type for the translateNameToKurdish function.
+ */
+
+import { ai } from '@/ai/genkit';
+import { z } from 'zod';
+
+export const TranslateNameInputSchema = z.object({
+  name: z.string().describe('The English name to be translated.'),
+});
+export type TranslateNameInput = z.infer<typeof TranslateNameInputSchema>;
+
+export const TranslateNameOutputSchema = z.object({
+  kurdishName: z.string().describe('The suggested Kurdish translation of the name.'),
+});
+export type TranslateNameOutput = z.infer<typeof TranslateNameOutputSchema>;
+
+const translateNamePrompt = ai.definePrompt({
+  name: 'translateNamePrompt',
+  input: { schema: TranslateNameInputSchema },
+  output: { schema: TranslateNameOutputSchema },
+  prompt: `
+    Translate the following English name to its most common Kurdish equivalent.
+    Provide only the Kurdish name as the translation.
+
+    English Name: {{{name}}}
+  `,
+});
+
+const translateNameFlow = ai.defineFlow(
+  {
+    name: 'translateNameFlow',
+    inputSchema: TranslateNameInputSchema,
+    outputSchema: TranslateNameOutputSchema,
+  },
+  async (input) => {
+    const { output } = await translateNamePrompt(input);
+    return output!;
+  }
+);
+
+export async function translateNameToKurdish(input: TranslateNameInput): Promise<TranslateNameOutput> {
+  return translateNameFlow(input);
+}

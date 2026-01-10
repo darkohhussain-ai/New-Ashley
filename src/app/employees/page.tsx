@@ -2,7 +2,7 @@
 
 "use client"
 
-import { useState, useMemo, useEffect, useRef } from "react"
+import { useState, useMemo, useEffect, useRef, useCallback } from "react"
 import withAuth from "@/hooks/withAuth";
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,7 +14,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { format, formatISO, parseISO } from "date-fns"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ArrowLeft, Plus, User, Calendar as CalendarIcon, Edit, Trash2, Save, X, Upload, Download, Mail, Phone, Cake, Briefcase, Search, Building, DollarSign, Clock, Gift, Banknote, FileDown, Printer } from 'lucide-react'
+import { ArrowLeft, Plus, User, Calendar as CalendarIcon, Edit, Trash2, Save, X, Upload, Download, Mail, Phone, Cake, Briefcase, Search, Building, DollarSign, Clock, Gift, Banknote, FileDown, Printer, Wand2 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
@@ -33,6 +33,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { EmployeeReportPdfHeader } from "@/components/employees/employee-report-pdf-header"
 import { Separator } from "@/components/ui/separator"
 import { useTranslation } from "@/hooks/use-translation"
+import { translateNameToKurdish } from "@/ai/flows/translate-name-flow"
+import { Loader2 } from "lucide-react";
 
 
 const formatCurrency = (amount: number) => {
@@ -88,6 +90,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
     const [phone, setPhone] = useState('');
     const [photoUrl, setPhotoUrl] = useState<string | undefined>(undefined);
     const [notes, setNotes] = useState('');
+    const [isTranslating, setIsTranslating] = useState(false);
     
     const cardPdfRef = useRef<HTMLDivElement>(null);
     const reportPdfRef = useRef<HTMLDivElement>(null);
@@ -157,6 +160,22 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                 setPhotoUrl(result);
             };
             reader.readAsDataURL(file);
+        }
+    };
+    
+    const handleAutoTranslate = async () => {
+        if (!name || isTranslating) return;
+        setIsTranslating(true);
+        try {
+            const result = await translateNameToKurdish({ name });
+            if (result.kurdishName) {
+                setKurdishName(result.kurdishName);
+            }
+        } catch (error) {
+            console.error("Translation error:", error);
+            toast({ variant: 'destructive', title: "Translation Failed", description: "Could not translate the name." });
+        } finally {
+            setIsTranslating(false);
         }
     };
 
@@ -325,7 +344,19 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                                 {isEditing ? (
                                     <div className='space-y-4'>
                                         <Input className="text-2xl h-12" value={name} onChange={e => setName(e.target.value)} placeholder={t('employee_name')} />
-                                        <Input dir="rtl" className="text-2xl h-12" value={kurdishName} onChange={e => setKurdishName(e.target.value)} placeholder="ناو بە کوردی" />
+                                        <div className="relative">
+                                            <Input dir="rtl" className="text-2xl h-12 pr-12" value={kurdishName} onChange={e => setKurdishName(e.target.value)} placeholder="ناو بە کوردی" />
+                                            <Button 
+                                                size="icon" 
+                                                variant="ghost" 
+                                                className="absolute right-1 top-1/2 -translate-y-1/2" 
+                                                onClick={handleAutoTranslate}
+                                                disabled={isTranslating || !name}
+                                                type="button"
+                                            >
+                                                {isTranslating ? <Loader2 className="animate-spin" /> : <Wand2 />}
+                                            </Button>
+                                        </div>
 
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <Input value={uniqueId} onChange={e => setUniqueId(e.target.value)} placeholder={t('employee_id_optional')} />
@@ -479,7 +510,6 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
 function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean, onOpenChange: (open: boolean) => void, addEmployee: (employee: Omit<Employee, 'id'>) => void }) {
     const { t } = useTranslation();
     const { toast } = useToast();
-    
     const [name, setName] = useState("");
     const [kurdishName, setKurdishName] = useState("");
     const [uniqueId, setUniqueId] = useState("");
@@ -490,6 +520,36 @@ function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean,
     const [phone, setPhone] = useState("");
     const [photoUrl, setPhotoUrl] = useState<string | undefined>();
     const [notes, setNotes] = useState("");
+    const [isTranslating, setIsTranslating] = useState(false);
+
+    const nameDebounceTimeout = useRef<NodeJS.Timeout | null>(null);
+
+    const handleAutoTranslate = useCallback(async (engName: string) => {
+        if (!engName || isTranslating) return;
+        setIsTranslating(true);
+        try {
+            const result = await translateNameToKurdish({ name: engName });
+            if (result.kurdishName) {
+                setKurdishName(result.kurdishName);
+            }
+        } catch (error) {
+            console.error("Translation error:", error);
+            toast({ variant: 'destructive', title: "Translation Failed", description: "Could not translate the name." });
+        } finally {
+            setIsTranslating(false);
+        }
+    }, [isTranslating, toast]);
+
+    const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newName = e.target.value;
+        setName(newName);
+        if (nameDebounceTimeout.current) {
+            clearTimeout(nameDebounceTimeout.current);
+        }
+        nameDebounceTimeout.current = setTimeout(() => {
+            handleAutoTranslate(newName);
+        }, 1000); // 1-second delay
+    };
 
     const resetForm = () => {
         setName(""); setKurdishName(""); setUniqueId(""); setRole(undefined); setEmploymentStartDate(undefined); setDateOfBirth(undefined);
@@ -546,8 +606,12 @@ function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean,
                         <Avatar className="w-24 h-24"><AvatarImage src={photoUrl} /><AvatarFallback><User className="w-12 h-12" /></AvatarFallback></Avatar>
                         <Input id="photo" type="file" onChange={handlePhotoUpload} accept="image/*" />
                     </div>
-                    <div className="space-y-2"><Label htmlFor="name">{t('employee_name')}</Label><Input id="name" value={name} onChange={e => setName(e.target.value)} required placeholder="e.g. John Doe" /></div>
-                    <div className="space-y-2"><Label htmlFor="kurdishName">ناو بە کوردی</Label><Input id="kurdishName" value={kurdishName} onChange={e => setKurdishName(e.target.value)} dir="rtl" placeholder="بۆ نموونە، جۆن دۆ" /></div>
+                    <div className="space-y-2"><Label htmlFor="name">{t('employee_name')}</Label><Input id="name" value={name} onChange={handleNameChange} required placeholder="e.g. John Doe" /></div>
+                    <div className="space-y-2 relative">
+                        <Label htmlFor="kurdishName">ناو بە کوردی</Label>
+                        <Input id="kurdishName" value={kurdishName} onChange={e => setKurdishName(e.target.value)} dir="rtl" placeholder="بۆ نموونە، جۆن دۆ" className="pr-10"/>
+                        {isTranslating && <Loader2 className="absolute right-3 top-[calc(50%+8px)] -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />}
+                    </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2"><Label htmlFor="employeeId">{t('employee_id_optional')}</Label><Input id="employeeId" value={uniqueId} onChange={e => setUniqueId(e.target.value)} placeholder="e.g. 10234" /></div>
                         <div className="space-y-2"><Label htmlFor="role">{t('role_optional')}</Label>
