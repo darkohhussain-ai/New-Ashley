@@ -1,4 +1,3 @@
-
 'use client';
 
 import Image from 'next/image';
@@ -25,11 +24,11 @@ export function ReportPdfHeader({ title, subtitle, logoSrc, themeColor, headerTe
 
       {/* Main Header */}
       <div 
-        className="flex justify-between items-center p-4 rounded-t-lg text-white"
+        className="flex justify-between items-center p-4 rounded-lg text-white"
         style={{ backgroundColor: themeColor || '#22c55e' }}
       >
         <div className="flex-1">
-          <h1 className="text-xl font-bold">{t(title) || title}</h1>
+          <h1 className="text-xl font-bold">{t(title.toLowerCase().replace(/ /g, '_')) || title}</h1>
           <p className="text-sm opacity-90">{subtitle}</p>
         </div>
         <div className="w-16 h-16 flex items-center justify-center bg-white/20 rounded-full p-1">

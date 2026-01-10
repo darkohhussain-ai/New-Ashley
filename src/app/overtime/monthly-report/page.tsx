@@ -16,7 +16,9 @@ import { useTranslation } from '@/hooks/use-translation';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import useLocalStorage from '@/hooks/use-local-storage';
-import { AllPdfSettings } from '@/lib/types';
+import type { AllPdfSettings } from '@/lib/types';
+import { ReportPdfHeader } from '@/components/reports/report-pdf-header';
+import html2canvas from 'html2canvas';
 
 
 const formatCurrency = (amount: number) => {
@@ -32,6 +34,8 @@ export default function MonthlyOvertimeReportPage() {
   const { overtime, employees } = useAppContext();
   const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {}, card: {} });
   const [customFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
+  
+  const reportContentRef = useRef<HTMLDivElement>(null);
 
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
@@ -82,8 +86,8 @@ export default function MonthlyOvertimeReportPage() {
   };
 
   const handleDownloadPdf = async () => {
-    if (!selectedDate || monthlyData.summary.length === 0) return;
-    const doc = new jsPDF();
+    if (!reportContentRef.current || !selectedDate) return;
+    const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
     const useKurdish = language === 'ku';
 
     if (customFontBase64 && useKurdish) {
@@ -97,46 +101,16 @@ export default function MonthlyOvertimeReportPage() {
         }
     }
     
-    doc.setFontSize(18);
-    doc.text(t('monthly_overtime_report'), doc.internal.pageSize.getWidth() / 2, 22, { align: 'center' });
-    doc.setFontSize(12);
-    doc.text(format(selectedDate, 'MMMM yyyy'), doc.internal.pageSize.getWidth() / 2, 32, { align: 'center' });
+    const canvas = await html2canvas(reportContentRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
+    const imgData = canvas.toDataURL('image/png');
+    const pdfWidth = doc.internal.pageSize.getWidth();
+    const imgWidth = canvas.width;
+    const imgHeight = canvas.height;
+    const ratio = imgWidth / imgHeight;
+    const finalImgWidth = pdfWidth;
+    const finalImgHeight = finalImgWidth / ratio;
     
-    const head = [[t('employee'), t('total_hours'), t('total_amount')]];
-    const body = monthlyData.summary.map(item => [
-        item.employeeName,
-        item.totalHours.toFixed(2),
-        formatCurrency(item.totalAmount)
-    ]);
-
-    autoTable(doc, {
-      startY: 40,
-      head,
-      body,
-      foot: [[t('grand_total'), monthlyData.totalHours.toFixed(2), formatCurrency(monthlyData.totalAmount)]],
-      theme: 'striped',
-      styles: { font: (customFontBase64 && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
-      headStyles: { fillColor: pdfSettings.report.reportColors?.overtime || '#f97316' },
-      footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' },
-       didParseCell: (data) => {
-        if (useKurdish && customFontBase64) {
-          data.cell.styles.font = "CustomFont";
-          data.cell.styles.halign = 'right';
-        }
-      }
-    });
-
-    let finalY = (doc as any).lastAutoTable.finalY + 40;
-    const pageHeight = doc.internal.pageSize.height;
-    if (finalY > pageHeight - 30) {
-        doc.addPage();
-    }
-    const signatureY = finalY > pageHeight - 50 ? 40 : finalY;
-    doc.setFontSize(10);
-    doc.text("...................................", doc.internal.pageSize.width - 120, signatureY, { align: 'center' });
-    doc.text(t('warehouse_manager_signature'), doc.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
-
-
+    doc.addImage(imgData, 'PNG', 0, 0, finalImgWidth, finalImgHeight);
     doc.save(`monthly-overtime-report-${format(selectedDate, 'yyyy-MM')}.pdf`);
   };
   
@@ -146,89 +120,135 @@ export default function MonthlyOvertimeReportPage() {
 
   return (
     <>
-      <div className="min-h-screen bg-background text-foreground p-4 md:p-8 print:p-0">
-        <header className="flex items-center justify-between gap-4 mb-8 print:hidden">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="icon" asChild>
-              <Link href="/overtime"><ArrowLeft /></Link>
-            </Button>
-            <h1 className="text-xl">{t('monthly_overtime_report')}</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className={cn("w-[280px] justify-start text-left", !selectedDate && "text-muted-foreground")}>
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {selectedDate ? format(selectedDate, 'MMMM yyyy') : <span>{t('pick_a_month')}</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="end">
-                <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} captionLayout="dropdown-buttons" fromYear={2020} toYear={2040} />
-              </PopoverContent>
-            </Popover>
-            <Button variant="outline" onClick={handlePrint} disabled={isLoading || monthlyData.records.length === 0}><Printer className="mr-2"/>{t('print')}</Button>
-            <Button variant="outline" onClick={handleDownloadPdf} disabled={isLoading || monthlyData.records.length === 0}><FileDown className="mr-2"/>PDF</Button>
-          </div>
-        </header>
-
-        <main className="print:p-8">
-            {isLoading ? (
-            <div className="space-y-6"><Skeleton className="h-64 w-full" /></div>
-            ) : monthlyData.records.length > 0 ? (
-            <div className="space-y-8">
-                <Card className="print:shadow-none print:border-none">
-                <CardHeader>
-                    <div className="text-center">
-                         <h1 className="text-2xl">{t('monthly_overtime_report')}</h1>
-                         <p className="text-muted-foreground">{selectedDate ? format(selectedDate, 'MMMM yyyy') : ''}</p>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <div className="overflow-x-auto">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>{t('employee')}</TableHead>
-                                    <TableHead className="text-right">{t('total_hours')}</TableHead>
-                                    <TableHead className="text-right">{t('total_amount')}</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {monthlyData.summary.map(item => (
-                                    <TableRow key={item.employeeId}>
-                                        <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{item.employeeName}</TableCell>
-                                        <TableCell className="text-right">{item.totalHours.toFixed(2)}</TableCell>
-                                        <TableCell className="text-right">{formatCurrency(item.totalAmount)}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                            <TableFooter>
-                                <TableRow>
-                                    <TableCell>{t('grand_total')}</TableCell>
-                                    <TableCell className="text-right">{monthlyData.totalHours.toFixed(2)}</TableCell>
-                                    <TableCell className="text-right text-primary">{formatCurrency(monthlyData.totalAmount)}</TableCell>
-                                </TableRow>
-                            </TableFooter>
-                        </Table>
-                    </div>
-                </CardContent>
-                </Card>
-                <div className="hidden print:block pt-24">
+      <div className="min-h-screen bg-background text-foreground">
+        <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+          <div ref={reportContentRef} className="bg-white" style={{width: '700px'}}>
+             <ReportPdfHeader 
+                title="Monthly Overtime Report" 
+                subtitle={selectedDate ? format(selectedDate, 'MMMM yyyy') : ''}
+                logoSrc={pdfSettings.report.logo ?? null} 
+                themeColor={pdfSettings.report.reportColors?.overtime}
+             />
+             <div className="p-8">
+                 <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>{t('employee')}</TableHead>
+                            <TableHead className="text-right">{t('total_hours')}</TableHead>
+                            <TableHead className="text-right">{t('total_amount')}</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {monthlyData.summary.map(item => (
+                            <TableRow key={item.employeeId}>
+                                <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{item.employeeName}</TableCell>
+                                <TableCell className="text-right">{item.totalHours.toFixed(2)}</TableCell>
+                                <TableCell className="text-right">{formatCurrency(item.totalAmount)}</TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                    <TableFooter>
+                        <TableRow>
+                            <TableCell>{t('grand_total')}</TableCell>
+                            <TableCell className="text-right">{monthlyData.totalHours.toFixed(2)}</TableCell>
+                            <TableCell className="text-right text-primary">{formatCurrency(monthlyData.totalAmount)}</TableCell>
+                        </TableRow>
+                    </TableFooter>
+                </Table>
+                 <div className="pt-24">
                     <div className="flex justify-end">
                         <div className="w-64 text-center">
                             <p className="border-t pt-2">{t('warehouse_manager_signature')}</p>
                         </div>
                     </div>
                 </div>
+             </div>
+          </div>
+        </div>
+        <div className="p-4 md:p-8 print:p-0">
+            <header className="flex items-center justify-between gap-4 mb-8 print:hidden">
+            <div className="flex items-center gap-4">
+                <Button variant="outline" size="icon" asChild>
+                <Link href="/overtime"><ArrowLeft /></Link>
+                </Button>
+                <h1 className="text-xl">{t('monthly_overtime_report')}</h1>
             </div>
-            ) : (
-            <div className="text-center py-16 border-2 border-dashed rounded-lg print:hidden">
-                <CalendarIcon className="mx-auto h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-4 text-lg">{t('no_overtime_found')}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">{t('no_overtime_found_for_month', {month: selectedDate ? format(selectedDate, 'MMMM yyyy') : t('the_selected_month')})}</p>
+            <div className="flex items-center gap-2">
+                <Popover>
+                <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("w-[280px] justify-start text-left", !selectedDate && "text-muted-foreground")}>
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {selectedDate ? format(selectedDate, 'MMMM yyyy') : <span>{t('pick_a_month')}</span>}
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="end">
+                    <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} captionLayout="dropdown-buttons" fromYear={2020} toYear={2040} />
+                </PopoverContent>
+                </Popover>
+                <Button variant="outline" onClick={handlePrint} disabled={isLoading || monthlyData.records.length === 0}><Printer className="mr-2"/>{t('print')}</Button>
+                <Button variant="outline" onClick={handleDownloadPdf} disabled={isLoading || monthlyData.records.length === 0}><FileDown className="mr-2"/>PDF</Button>
             </div>
-            )}
-        </main>
+            </header>
+
+            <main className="print:p-8">
+                {isLoading ? (
+                <div className="space-y-6"><Skeleton className="h-64 w-full" /></div>
+                ) : monthlyData.records.length > 0 ? (
+                <div className="space-y-8">
+                    <Card className="print:shadow-none print:border-none">
+                    <CardHeader>
+                        <div className="text-center">
+                            <h1 className="text-2xl">{t('monthly_overtime_report')}</h1>
+                            <p className="text-muted-foreground">{selectedDate ? format(selectedDate, 'MMMM yyyy') : ''}</p>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="overflow-x-auto">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>{t('employee')}</TableHead>
+                                        <TableHead className="text-right">{t('total_hours')}</TableHead>
+                                        <TableHead className="text-right">{t('total_amount')}</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {monthlyData.summary.map(item => (
+                                        <TableRow key={item.employeeId}>
+                                            <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{item.employeeName}</TableCell>
+                                            <TableCell className="text-right">{item.totalHours.toFixed(2)}</TableCell>
+                                            <TableCell className="text-right">{formatCurrency(item.totalAmount)}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                                <TableFooter>
+                                    <TableRow>
+                                        <TableCell>{t('grand_total')}</TableCell>
+                                        <TableCell className="text-right">{monthlyData.totalHours.toFixed(2)}</TableCell>
+                                        <TableCell className="text-right text-primary">{formatCurrency(monthlyData.totalAmount)}</TableCell>
+                                    </TableRow>
+                                </TableFooter>
+                            </Table>
+                        </div>
+                    </CardContent>
+                    </Card>
+                    <div className="hidden print:block pt-24">
+                        <div className="flex justify-end">
+                            <div className="w-64 text-center">
+                                <p className="border-t pt-2">{t('warehouse_manager_signature')}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                ) : (
+                <div className="text-center py-16 border-2 border-dashed rounded-lg print:hidden">
+                    <CalendarIcon className="mx-auto h-12 w-12 text-muted-foreground" />
+                    <h3 className="mt-4 text-lg">{t('no_overtime_found')}</h3>
+                    <p className="mt-2 text-sm text-muted-foreground">{t('no_overtime_found_for_month', {month: selectedDate ? format(selectedDate, 'MMMM yyyy') : t('the_selected_month')})}</p>
+                </div>
+                )}
+            </main>
+        </div>
       </div>
     </>
   );

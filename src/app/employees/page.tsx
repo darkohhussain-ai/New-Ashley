@@ -14,7 +14,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { format, formatISO, parseISO } from "date-fns"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ArrowLeft, Plus, User, Calendar as CalendarIcon, Edit, Trash2, Save, X, Upload, Download, Mail, Phone, Cake, Briefcase, Search, Building, DollarSign, Clock, Gift, Banknote, FileDown, Printer, Wand2 } from 'lucide-react'
+import { ArrowLeft, Plus, User, Calendar as CalendarIcon, Edit, Trash2, Save, X, Upload, Download, Mail, Phone, Cake, Briefcase, Search, Building, DollarSign, Clock, Gift, Banknote, FileDown, Printer, Wand2, UserX } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
@@ -207,6 +207,15 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
         toast({ title: t('employee_deleted'), description: t('employee_deleted_desc', {employeeName: employee?.name}) });
         onDeselect();
     }
+    
+    const handleToggleActiveStatus = () => {
+        if (!employee) return;
+        setEmployees(employees.map(e => e.id === employee.id ? { ...e, isActive: !e.isActive } : e));
+        toast({
+            title: employee.isActive ? 'Employee Deactivated' : 'Employee Reactivated',
+            description: `${employee.name} has been ${employee.isActive ? 'deactivated' : 'reactivated'}.`
+        })
+    };
 
     const handlePrintCard = async () => {
         if (!cardPdfRef.current || !employee) return;
@@ -310,6 +319,23 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                             <Button onClick={handlePrintCard} variant="outline"><Printer className="mr-2 h-4 w-4" /> {t('print_card')}</Button>
                             <Button onClick={handleDownloadReport} variant="outline"><FileDown className="mr-2 h-4 w-4" /> {t('download_report')}</Button>
                             <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="outline" className={cn(!employee.isActive && "text-destructive border-destructive/50")}>
+                                        <UserX className="mr-2 h-4 w-4"/> {employee.isActive ? 'Deactivate' : 'Reactivate'}
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Are you sure you want to {employee.isActive ? 'deactivate' : 'reactivate'} {employee.name}?</AlertDialogTitle>
+                                        <AlertDialogDescription>Deactivated employees will not appear in dropdown lists for new entries.</AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                                        <AlertDialogAction onClick={handleToggleActiveStatus}>{employee.isActive ? 'Deactivate' : 'Reactivate'}</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                            <AlertDialog>
                                 <AlertDialogTrigger asChild><Button variant="destructive"><Trash2 className="mr-2 h-4 w-4"/> {t('delete')}</Button></AlertDialogTrigger>
                                 <AlertDialogContent>
                                     <AlertDialogHeader>
@@ -390,7 +416,12 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                                     </div>
                                 ) : (
                                     <>
-                                        <CardTitle className="text-3xl md:text-4xl" dir={language === 'ku' ? 'rtl': 'ltr'}>{displayName}</CardTitle>
+                                        <div className="flex items-start justify-between">
+                                            <CardTitle className="text-3xl md:text-4xl" dir={language === 'ku' ? 'rtl': 'ltr'}>{displayName}</CardTitle>
+                                            {!employee.isActive && (
+                                                <Badge variant="destructive" className="text-sm">INACTIVE</Badge>
+                                            )}
+                                        </div>
                                         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-2">
                                             {employee.role && <CardDescription className="text-lg md:text-xl flex items-center gap-2">{employee.role}</CardDescription>}
                                         </div>
@@ -581,6 +612,7 @@ function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean,
           employmentStartDate: employmentStartDate?.toISOString(),
           dateOfBirth: dateOfBirth?.toISOString(),
           createdAt: formatISO(new Date()),
+          isActive: true,
         };
         
         addEmployee(employeeData);
@@ -721,16 +753,17 @@ function EmployeesPage() {
         const displayName = language === 'ku' && emp.kurdishName ? emp.kurdishName : emp.name;
         return (
           <button key={emp.id} onClick={() => setSelectedEmployeeId(emp.id)} className={cn("w-full text-left p-3 rounded-lg transition-colors flex items-center gap-4",
-              selectedEmployeeId === emp.id ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+              selectedEmployeeId === emp.id ? "bg-primary text-primary-foreground" : "hover:bg-muted",
+              !emp.isActive && 'bg-red-100 dark:bg-red-900/30'
           )}>
-              <Avatar className="w-10 h-10"><AvatarImage src={emp.photoUrl} /><AvatarFallback>{emp.name.charAt(0)}</AvatarFallback></Avatar>
+              <Avatar className="w-10 h-10"><AvatarImage src={emp.photoUrl || undefined} /><AvatarFallback>{emp.name.charAt(0)}</AvatarFallback></Avatar>
               <div>
                   <p className="font-semibold" dir={language === 'ku' ? 'rtl' : 'ltr'}>{displayName}</p>
                   <p className={cn("text-xs flex items-center gap-1.5", selectedEmployeeId === emp.id ? "text-primary-foreground/80" : "text-muted-foreground")}>
                     {emp.employeeId && <span className='font-mono'>ID: {emp.employeeId}</span>}
                     {emp.employeeId && emp.role && <span>&middot;</span>}
                     {emp.role && <span>{emp.role}</span>}
-                    {!emp.employeeId && !emp.role && <span>No Role</span>}
+                    {!emp.isActive && <Badge variant="destructive" className="ml-2">Inactive</Badge>}
                   </p>
               </div>
           </button>

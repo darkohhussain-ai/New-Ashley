@@ -2,6 +2,7 @@
 
 
 
+
 export type User = {
     id: string;
     username: string;
@@ -34,6 +35,7 @@ export type Employee = {
   notes?: string;
   createdAt?: string;
   password?: string; // Added to store password for login purposes
+  isActive?: boolean;
 };
 
 export type ExcelFile = {
