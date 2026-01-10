@@ -14,7 +14,7 @@ import { useAppContext } from '@/context/app-provider';
 import type { Employee, Expense, Overtime, Bonus, CashWithdrawal } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from '@/hooks/use-translation';
-import { Table, TableBody, TableCell, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHeader, TableRow, TableFooter as ShadcnTableFooter } from '@/components/ui/table';
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -136,7 +136,7 @@ function AccountPage() {
     
     const filterAndSum = (data: (Expense | Overtime | Bonus | CashWithdrawal)[], start: Date, end: Date) => {
         const filtered = data.filter(d => d.employeeId === empId && isWithinInterval(parseISO(d.date), {start, end}));
-        const total = filtered.reduce((sum, item) => sum + ('amount' in item ? item.amount : item.totalAmount), 0);
+        const total = filtered.reduce((sum, item) => sum + (('amount' in item && typeof item.amount === 'number') ? item.amount : ('totalAmount' in item && typeof item.totalAmount === 'number') ? item.totalAmount : 0), 0);
         return { items: filtered, total };
     };
 
@@ -276,15 +276,15 @@ function AccountPage() {
         }
 
         doc.setFontSize(14);
-        doc.text(title, 14, startY);
+        doc.text(title, useKurdish ? doc.internal.pageSize.width - 14 : 14, startY, { align: useKurdish ? 'right' : 'left' });
         startY += 10;
         autoTable(doc, {
             startY,
             head: [[t('date'), t('notes'), t('amount')]],
             body: data.map(item => [format(parseISO(item.date), 'PP'), item.notes || '', formatCurrency(item.amount || item.totalAmount)]),
             theme: 'striped',
-            headStyles: { fillColor: '#3b82f6', font: (useKurdish && customFontBase64) ? 'CustomFont' : 'helvetica' },
             styles: { font: (useKurdish && customFontBase64) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
+            headStyles: { fillColor: '#3b82f6', font: (useKurdish && customFontBase64) ? 'CustomFont' : 'helvetica' },
         });
         startY = (doc as any).lastAutoTable.finalY + 20;
     }
@@ -449,3 +449,5 @@ function AccountPage() {
 }
 
 export default withAuth(AccountPage);
+
+    

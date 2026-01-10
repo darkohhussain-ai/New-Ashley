@@ -27,9 +27,9 @@ export function AccountPdfCard({ employee, logoSrc, selectedDate }: AccountPdfCa
   const displayName = language === 'ku' && employee.kurdishName ? employee.kurdishName : employee.name;
 
   return (
-    <div className="bg-white text-black w-full p-6 font-sans border-2 border-gray-200" style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" }}>
+    <div className="bg-white text-black w-full p-6 font-sans border-2 border-gray-200" style={{ fontFamily: (language === 'ku' ? "var(--font-body), sans-serif" : "'Helvetica Neue', Helvetica, Arial, sans-serif") }}>
       {/* Header */}
-      <div className="flex justify-between items-start pb-4 border-b-2 border-gray-200">
+      <div className="flex justify-between items-start pb-4 border-b-2 border-gray-200" dir={language === 'ku' ? 'rtl' : 'ltr'}>
         <div className="flex-1">
           <h1 className="text-2xl font-bold text-gray-800">{t('employee_report')}</h1>
           <p className="text-lg font-semibold text-blue-600">{formattedDate}</p>
@@ -40,21 +40,23 @@ export function AccountPdfCard({ employee, logoSrc, selectedDate }: AccountPdfCa
       </div>
       
       {/* Employee Details Section */}
-      <div className="flex items-center gap-6 py-4">
+      <div className="flex items-center gap-6 py-4" dir={language === 'ku' ? 'rtl' : 'ltr'}>
         <Avatar className="w-24 h-24 border-4 border-gray-200">
           <AvatarImage src={employee.photoUrl} alt={employee.name} />
           <AvatarFallback>{employee.name.charAt(0)}</AvatarFallback>
         </Avatar>
         <div className="text-sm">
-            <h2 className="text-xl font-bold text-gray-800" dir={language === 'ku' ? 'rtl' : 'ltr'}>{displayName}</h2>
-            <p className="text-gray-600" dir={language === 'ku' ? 'rtl' : 'ltr'}>{employee.role || 'Employee'}</p>
+            <h2 className="text-xl font-bold text-gray-800">{displayName}</h2>
+            <p className="text-gray-600">{employee.role || 'Employee'}</p>
             <div className="mt-2 space-y-1 text-gray-700">
                 {employee.email && <p className="flex items-center gap-2"><Mail className="w-3 h-3"/> {employee.email}</p>}
                 {employee.phone && <p className="flex items-center gap-2"><Phone className="w-3 h-3"/> {employee.phone}</p>}
-                {employee.employmentStartDate && <p className="flex items-center gap-2"><CalendarIcon className="w-3 h-3"/> Joined: {format(parseISO(employee.employmentStartDate), 'PP')}</p>}
+                {employee.employmentStartDate && <p className="flex items-center gap-2"><CalendarIcon className="w-3 h-3"/> {t('joined_on')}: {format(parseISO(employee.employmentStartDate), 'PP')}</p>}
             </div>
         </div>
       </div>
     </div>
   );
 };
+
+    
