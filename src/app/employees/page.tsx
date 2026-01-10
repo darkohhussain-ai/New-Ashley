@@ -759,12 +759,12 @@ function EmployeesPage() {
               <Avatar className="w-10 h-10"><AvatarImage src={emp.photoUrl || undefined} /><AvatarFallback>{emp.name.charAt(0)}</AvatarFallback></Avatar>
               <div>
                   <p className="font-semibold" dir={language === 'ku' ? 'rtl' : 'ltr'}>{displayName}</p>
-                  <p className={cn("text-xs flex items-center gap-1.5", selectedEmployeeId === emp.id ? "text-primary-foreground/80" : "text-muted-foreground")}>
+                  <div className={cn("text-xs flex items-center gap-1.5", selectedEmployeeId === emp.id ? "text-primary-foreground/80" : "text-muted-foreground")}>
                     {emp.employeeId && <span className='font-mono'>ID: {emp.employeeId}</span>}
                     {emp.employeeId && emp.role && <span>&middot;</span>}
                     {emp.role && <span>{emp.role}</span>}
                     {!emp.isActive && <Badge variant="destructive" className="ml-2">Inactive</Badge>}
-                  </p>
+                  </div>
               </div>
           </button>
         )
