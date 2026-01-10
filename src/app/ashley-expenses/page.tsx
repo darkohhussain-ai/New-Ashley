@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -5,10 +6,12 @@ import { CreditCard, Clock, Gift, Banknote, Settings, FileText, Calendar, Wallet
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/hooks/use-translation';
+import { useAuth } from '@/hooks/use-auth';
 import withAuth from '@/hooks/withAuth';
 
 function AshleyExpensesDashboard() {
   const { t } = useTranslation();
+  const { hasPermission } = useAuth();
 
   const menuItems = [
     {
@@ -16,36 +19,42 @@ function AshleyExpensesDashboard() {
       icon: FileText,
       href: "/expenses",
       color: "bg-blue-500",
+      permission: 'page:ashley-expenses:expenses',
     },
     {
       title: t('overtime'),
       icon: Clock,
       href: "/overtime",
       color: "bg-orange-500",
+      permission: 'page:ashley-expenses:overtime',
     },
     {
       title: t('bonuses'),
       icon: Gift,
       href: "/bonuses",
       color: "bg-yellow-500",
+      permission: 'page:ashley-expenses:bonuses',
     },
     {
       title: t('cash_withdrawals'),
       icon: Banknote,
       href: "/cash-withdrawal",
       color: "bg-rose-500",
+      permission: 'page:ashley-expenses:withdrawals',
     },
     {
         title: t('monthly_reports'),
         icon: Calendar,
         href: "/monthly-report",
         color: "bg-teal-500",
+        permission: 'page:ashley-expenses:reports',
     },
     {
       title: t('settings'),
       icon: Settings,
       href: "/ashley-expenses-settings",
       color: "bg-gray-500",
+      permission: 'page:ashley-expenses:settings',
     }
   ];
 
@@ -57,7 +66,7 @@ function AshleyExpensesDashboard() {
             <h1 className="text-xl">{t('ashley_employees_management')}</h1>
          </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {menuItems.map((item) => (
+          {menuItems.filter(item => hasPermission(item.permission)).map((item) => (
             <Link key={item.title} href={item.href} className="group block" passHref>
                 <Card className={cn("h-48 flex flex-col items-center justify-center text-white transition-transform transform hover:-translate-y-1 hover:shadow-xl", item.color)}>
                   <CardContent className="flex flex-col items-center justify-center p-6 text-center">

@@ -1,8 +1,9 @@
+
 "use client";
 
 import withAuth from "@/hooks/withAuth";
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { UserCircle, Edit, Save, X, KeyRound, Upload, Mail, Phone, Building, DollarSign, Clock, Gift, Banknote, Calendar as CalendarIcon } from 'lucide-react';
+import { UserCircle, Edit, Save, X, KeyRound, Upload, Mail, Phone, Building, DollarSign, Clock, Gift, Banknote, Calendar as CalendarIcon, FileDown, Printer } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -73,7 +74,7 @@ const FinancialDetailTable = ({ title, data, total }: { title: string, data: any
 function AccountPage() {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const { user, login } = useAuth();
+  const { user, login, hasPermission } = useAuth();
   const { 
     employees, setEmployees, 
     expenses, overtime, bonuses, withdrawals 
@@ -82,6 +83,8 @@ function AccountPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [employeeDetails, setEmployeeDetails] = useState<Employee | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const canEditProfile = hasPermission('page:admin');
+
 
   // Form State
   const [photoUrl, setPhotoUrl] = useState<string | undefined>(undefined);
@@ -236,6 +239,10 @@ function AccountPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <main className="container mx-auto p-4 md:p-8">
+        <div className="flex justify-end gap-2 mb-4 print:hidden">
+            <Button variant="outline"><Printer className="mr-2"/> Print</Button>
+            <Button variant="outline"><FileDown className="mr-2"/> Download PDF</Button>
+        </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1 space-y-8">
                 <Card>
@@ -294,7 +301,7 @@ function AccountPage() {
                                 <Button onClick={handleSaveAll} className="flex-1"><Save className="mr-2 h-4 w-4"/> Save All</Button>
                                 <Button variant="ghost" onClick={handleEditToggle}><X className="mr-2 h-4 w-4"/> Cancel</Button>
                             </div>
-                        ) : (
+                        ) : (canEdit &&
                             <Button variant="outline" onClick={handleEditToggle} className="w-full">
                                 <Edit className="mr-2 h-4 w-4"/> Edit Profile
                             </Button>

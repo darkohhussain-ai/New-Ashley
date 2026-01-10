@@ -7,10 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/hooks/use-translation';
+import { useAuth } from '@/hooks/use-auth';
 import withAuth from '@/hooks/withAuth';
 
 function TransmitDashboardPage() {
     const { t } = useTranslation();
+    const { hasPermission } = useAuth();
 
     const menuItems = [
       {
@@ -18,24 +20,28 @@ function TransmitDashboardPage() {
         icon: ListPlus,
         href: "/transmit/add",
         color: "bg-blue-500",
+        permission: 'page:transmit:add',
       },
       {
         title: t('view_staged_items'),
         icon: ClipboardList,
         href: "/transmit/staged",
         color: "bg-orange-500",
+        permission: 'page:transmit:staged',
       },
       {
         title: t('create_transfer_slip'),
         icon: PackagePlus,
         href: "/transmit/create",
         color: "bg-green-500",
+        permission: 'page:transmit:create',
       },
       {
         title: t('view_transfers'),
         icon: Eye,
         href: "/transmit/archive",
         color: "bg-purple-500",
+        permission: 'page:transmit:archive',
       }
     ];
 
@@ -54,7 +60,7 @@ function TransmitDashboardPage() {
       </header>
       <main className='container mx-auto p-4 md:p-8'>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {menuItems.map((item) => (
+          {menuItems.filter(item => hasPermission(item.permission)).map((item) => (
             <Link key={item.title} href={item.href} className="group block" passHref>
                 <Card className={cn("h-48 flex flex-col items-center justify-center text-white transition-transform transform hover:-translate-y-1 hover:shadow-xl", item.color)}>
                   <CardContent className="flex flex-col items-center justify-center p-6 text-center">

@@ -13,50 +13,49 @@ import withAuth from '@/hooks/withAuth';
 function ItemsPage() {
     const { t } = useTranslation();
     const { hasPermission } = useAuth();
-    const canEdit = hasPermission('page:admin');
-
+    
     const menuItems = [
     {
       title: t("manage_locations"),
       icon: MapPin,
       href: "/locations",
       color: "bg-pink-500",
-      enabled: true
+      permission: 'page:items:locations',
     },
     {
       title: t("new_excel_file"),
       icon: FilePlus,
       href: "/new-file",
       color: "bg-blue-500",
-      enabled: canEdit
+      permission: 'page:items:new',
     },
     {
       title: t("import_excel_file"),
       icon: Upload,
       href: "/import",
       color: "bg-teal-500",
-      enabled: canEdit
+      permission: 'page:items:import',
     },
     {
       title: t("excel_archive"),
       icon: Archive,
       href: "/archive",
       color: "bg-yellow-500",
-      enabled: true
+      permission: 'page:items:archive',
     },
     {
       title: t("pdf_archive"),
       icon: FileText,
       href: "/pdf-archive",
       color: "bg-purple-500",
-      enabled: true
+      permission: 'page:items:pdf',
     },
     {
       title: t("sold_items_check"),
       icon: ShoppingCart,
       href: "/sold-items",
       color: "bg-orange-500",
-      enabled: canEdit
+      permission: 'page:items:sold',
     }
   ];
 
@@ -75,7 +74,7 @@ function ItemsPage() {
       </header>
       <main className='container mx-auto p-4 md:p-8'>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {menuItems.filter(item => item.enabled).map((item) => (
+          {menuItems.filter(item => hasPermission(item.permission)).map((item) => (
             <Link key={item.title} href={item.href} className="group block" passHref>
                 <Card className={cn("h-48 flex flex-col items-center justify-center text-white transition-transform transform hover:-translate-y-1 hover:shadow-xl", item.color)}>
                   <CardContent className="flex flex-col items-center justify-center p-6 text-center">
