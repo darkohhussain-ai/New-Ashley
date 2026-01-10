@@ -263,6 +263,9 @@ function LoginTextEditor() {
 function TranslationEditor() {
     const { t } = useTranslation();
     const langContext = React.useContext(LanguageContext);
+    
+    const [savedCustomFont, setSavedCustomFont] = useLocalStorage<string | null>('custom-font-base64', null);
+    const [customFont, setCustomFont] = React.useState<string | null>(savedCustomFont);
 
     const [enTranslations, setEnTranslations] = React.useState<Translations>(langContext?.translations.en || {});
     const [kuTranslations, setKuTranslations] = React.useState<Translations>(langContext?.translations.ku || {});
@@ -298,13 +301,48 @@ function TranslationEditor() {
         )
     ).sort();
 
+     const handleFontUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (file) {
+          const reader = new FileReader()
+          reader.onload = (loadEvent) => {
+            const result = loadEvent.target?.result as string;
+            setCustomFont(result);
+            setSavedCustomFont(result);
+          }
+          reader.readAsDataURL(file)
+        }
+    };
+
+
     return (
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Languages /> {t('language_text')}</CardTitle>
                 <CardDescription>{t('language_text_desc')}</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
+                <Card>
+                    <CardHeader>
+                         <CardTitle className="flex items-center gap-2"><Type /> {t('custom_app_font')}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="font-upload">{t('upload_font_file')}</Label>
+                            <Input id="font-upload" type="file" accept=".ttf,.woff" onChange={handleFontUpload} />
+                        </div>
+                        {customFont && (
+                            <div className="space-y-2">
+                                <Label>{t('font_preview')}</Label>
+                                 <div className="p-4 border rounded-lg" style={{ fontFamily: 'CustomAppFont, sans-serif' }}>
+                                    <style>{`@font-face { font-family: 'CustomAppFont'; src: url(${customFont}); }`}</style>
+                                    <p className="text-lg">The quick brown fox jumps over the lazy dog.</p>
+                                    <p className="text-lg" dir="rtl">چۆنی باشی؟ سوپاس بۆ تۆ، من باشم.</p>
+                                </div>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
                  <div className="flex gap-4">
                      <div className="relative flex-grow">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

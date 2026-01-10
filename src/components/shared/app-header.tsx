@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -95,18 +96,6 @@ export function AppHeader() {
     router.push('/login');
   };
 
-  if (!isMounted) {
-    return (
-      <header className="bg-card border-b top-0 z-10">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-20">
-            {/* Skeleton state or minimal header */}
-          </div>
-        </div>
-      </header>
-    );
-  }
-
   return (
     <header className="bg-card border-b top-0 z-10 print:hidden">
       <div className="container mx-auto px-4">
@@ -115,7 +104,7 @@ export function AppHeader() {
             <DateTimeDisplay />
           </div>
           <div className="flex items-center justify-center w-1/3">
-            {savedLogo && (
+            {isMounted && savedLogo && (
               <Link href="/">
                 <div className="relative w-full max-w-[240px] h-16 cursor-pointer">
                   <Image
