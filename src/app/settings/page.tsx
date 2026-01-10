@@ -329,7 +329,7 @@ function TranslationEditor() {
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="font-upload">{t('upload_font_file')}</Label>
-                            <Input id="font-upload" type="file" accept=".ttf,.woff" onChange={handleFontUpload} />
+                            <Input id="font-upload" type="file" accept=".ttf,.woff,.woff2" onChange={handleFontUpload} />
                         </div>
                         {customFont && (
                             <div className="space-y-2">
@@ -668,6 +668,14 @@ function SettingsPage() {
                             <div className="space-y-2">
                                 <Label htmlFor="logo-upload">{t('company_logo')}</Label>
                                 <Input id="logo-upload" type="file" accept="image/*" onChange={(e) => handleImageUpload(e, setAppLogo, "Logo updated!")} />
+                                {appLogo && (
+                                    <div className="mt-4">
+                                        <Label>Logo Preview</Label>
+                                        <div className="relative w-full h-24 mt-2 border rounded-md p-2 flex justify-center items-center bg-muted/30">
+                                            <Image src={appLogo} alt="Logo Preview" fill className="object-contain" />
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </CardContent>
                     </Card>
