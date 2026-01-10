@@ -301,7 +301,7 @@ function AccountPage() {
                                 <Button onClick={handleSaveAll} className="flex-1"><Save className="mr-2 h-4 w-4"/> Save All</Button>
                                 <Button variant="ghost" onClick={handleEditToggle}><X className="mr-2 h-4 w-4"/> Cancel</Button>
                             </div>
-                        ) : (canEdit &&
+                        ) : (canEditProfile &&
                             <Button variant="outline" onClick={handleEditToggle} className="w-full">
                                 <Edit className="mr-2 h-4 w-4"/> Edit Profile
                             </Button>
@@ -367,3 +367,5 @@ function AccountPage() {
 }
 
 export default withAuth(AccountPage);
+
+    
