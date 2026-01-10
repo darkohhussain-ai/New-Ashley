@@ -15,11 +15,16 @@ import type { Employee, Expense, Overtime, Bonus, CashWithdrawal } from '@/lib/t
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from '@/hooks/use-translation';
 import { Table, TableBody, TableCell, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
-import { format, parseISO, startOfMonth, endOfMonth, subMonths, isWithinInterval } from 'date-fns';
+import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import html2canvas from 'html2canvas';
+import { AccountPdfCard } from "@/components/account/account-pdf-card";
+import useLocalStorage from "@/hooks/use-local-storage";
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -72,7 +77,7 @@ const FinancialDetailTable = ({ title, data, total }: { title: string, data: any
 }
 
 function AccountPage() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { toast } = useToast();
   const { user, login, hasPermission } = useAuth();
   const { 
@@ -84,6 +89,10 @@ function AccountPage() {
   const [employeeDetails, setEmployeeDetails] = useState<Employee | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const canEditProfile = hasPermission('page:admin');
+
+  const pdfCardRef = useRef<HTMLDivElement>(null);
+  const [logoSrc] = useLocalStorage('app-logo', "https://picsum.photos/seed/1/300/100");
+  const [customFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
 
 
   // Form State
@@ -217,8 +226,6 @@ function AccountPage() {
     setCurrentPassword('');
     setNewPassword('');
     setConfirmPassword('');
-    // Optionally close edit mode after successful password change
-    // setIsEditing(false);
   };
   
   const handleSaveAll = () => {
@@ -226,7 +233,69 @@ function AccountPage() {
     if(newPassword) { // Only try to change password if a new one is entered
         handleChangePassword(new Event('submit'));
     }
-  }
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!pdfCardRef.current || !employeeDetails || !monthlyFinancials) return;
+    
+    const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
+    const useKurdish = language === 'ku';
+
+    if (customFontBase64 && useKurdish) {
+        try {
+            const fontName = "CustomFont";
+            doc.addFileToVFS(`${fontName}.ttf`, customFontBase64.split(',')[1]);
+            doc.addFont(`${fontName}.ttf`, fontName, "normal");
+            doc.setFont(fontName);
+        } catch (e) { console.error("Could not add custom font to PDF", e); }
+    } else {
+        doc.setFont('helvetica');
+    }
+    
+    const canvas = await html2canvas(pdfCardRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
+    const imgData = canvas.toDataURL('image/png');
+    const pdfWidth = doc.internal.pageSize.getWidth();
+    const imgWidth = canvas.width;
+    const imgHeight = canvas.height;
+    const ratio = imgWidth / imgHeight;
+    const finalImgWidth = pdfWidth;
+    const finalImgHeight = finalImgWidth / ratio;
+    
+    doc.addImage(imgData, 'PNG', 0, 0, finalImgWidth, finalImgHeight);
+    let startY = finalImgHeight + 20;
+
+    const addSection = (title: string, data: any[], total: number) => {
+        if (data.length === 0) return;
+        if (startY + (data.length * 15) + 40 > doc.internal.pageSize.getHeight()) {
+            doc.addPage();
+            startY = 20;
+        }
+
+        doc.setFontSize(14);
+        doc.text(title, 14, startY);
+        startY += 10;
+        autoTable(doc, {
+            startY,
+            head: [[t('date'), t('notes'), t('amount')]],
+            body: data.map(item => [format(parseISO(item.date), 'PP'), item.notes || '', formatCurrency(item.amount || item.totalAmount)]),
+            theme: 'striped',
+            headStyles: { fillColor: '#3b82f6', font: (useKurdish && customFontBase64) ? 'CustomFont' : 'helvetica' },
+            styles: { font: (useKurdish && customFontBase64) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
+        });
+        startY = (doc as any).lastAutoTable.finalY + 20;
+    }
+
+    addSection(t('expenses'), monthlyFinancials.selected.expenses.items, monthlyFinancials.selected.expenses.total);
+    addSection(t('overtime'), monthlyFinancials.selected.overtime.items, monthlyFinancials.selected.overtime.total);
+    addSection(t('bonuses'), monthlyFinancials.selected.bonuses.items, monthlyFinancials.selected.bonuses.total);
+    addSection(t('cash_withdrawals'), monthlyFinancials.selected.withdrawals.items, monthlyFinancials.selected.withdrawals.total);
+    
+    doc.save(`${employeeDetails.name}_report_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+  };
 
   if (!employeeDetails || !monthlyFinancials) {
     return (
@@ -237,11 +306,23 @@ function AccountPage() {
   }
 
   return (
+    <>
+    <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+      <div ref={pdfCardRef} style={{ width: '700px', background: 'white' }}>
+          {employeeDetails && (
+              <AccountPdfCard
+                  employee={employeeDetails}
+                  logoSrc={logoSrc}
+                  selectedDate={selectedDate}
+              />
+          )}
+      </div>
+    </div>
     <div className="min-h-screen bg-background text-foreground">
       <main className="container mx-auto p-4 md:p-8">
         <div className="flex justify-end gap-2 mb-4 print:hidden">
-            <Button variant="outline"><Printer className="mr-2"/> Print</Button>
-            <Button variant="outline"><FileDown className="mr-2"/> Download PDF</Button>
+            <Button variant="outline" onClick={handlePrint}><Printer className="mr-2"/> Print</Button>
+            <Button variant="outline" onClick={handleDownloadPdf}><FileDown className="mr-2"/> Download PDF</Button>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1 space-y-8">
@@ -363,9 +444,8 @@ function AccountPage() {
         </div>
       </main>
     </div>
+    </>
   );
 }
 
 export default withAuth(AccountPage);
-
-    

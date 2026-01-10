@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
@@ -376,7 +377,7 @@ function RoleManagement() {
                                     id={`perm-${permission.id}`}
                                     checked={selectedRole.permissions.includes(permission.id)}
                                     onCheckedChange={(checked) => handlePermissionChange(permission.id, !!checked)}
-                                    disabled={selectedRole.name === 'Admin' || selectedRole.name === 'Viewer'}
+                                    disabled={selectedRole.name === 'Admin'}
                                 />
                                 <label htmlFor={`perm-${permission.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                                     {permission.description}
@@ -385,7 +386,7 @@ function RoleManagement() {
                         ))}
                     </div>
                     <div className="mt-4 text-right">
-                        <Button onClick={handleSaveRole} disabled={selectedRole.name === 'Admin' || selectedRole.name === 'Viewer'}>
+                        <Button onClick={handleSaveRole} disabled={selectedRole.name === 'Admin'}>
                             <Save className="mr-2 h-4 w-4" /> Save Permissions for {selectedRole.name}
                         </Button>
                     </div>
