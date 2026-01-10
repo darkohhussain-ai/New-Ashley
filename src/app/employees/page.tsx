@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import { useState, useMemo, useEffect, useRef } from "react"
@@ -44,9 +45,14 @@ const formatCurrency = (amount: number) => {
 
 const safeDate = (dateValue: string | undefined): Date | null => {
   if (!dateValue) return null;
-  const parsed = parseISO(dateValue);
-  return isNaN(parsed.getTime()) ? null : parsed;
+  try {
+    const parsed = parseISO(dateValue);
+    return isNaN(parsed.getTime()) ? null : parsed;
+  } catch {
+    return null;
+  }
 };
+
 
 const employeeRoles = ["Super Manager", "Manager", "IT", "Employee Supervisor", "Transport Supervisor", "Employee", "Marketing"];
 
@@ -105,7 +111,9 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
     const { totalExpenses, sortedExpenses } = useMemo(() => {
         if (!employeeExpenses) return { totalExpenses: 0, sortedExpenses: [] };
         const total = employeeExpenses.reduce((sum, exp) => sum + exp.amount, 0);
-        const sorted = [...employeeExpenses].sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
+        const sorted = [...employeeExpenses]
+            .filter(e => e.date && !isNaN(parseISO(e.date).getTime()))
+            .sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
         return { totalExpenses: total, sortedExpenses: sorted };
     }, [employeeExpenses]);
 
@@ -116,21 +124,27 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
             acc.totalHours += ot.hours;
             return acc;
         }, { totalAmount: 0, totalHours: 0 });
-        const sorted = [...employeeOvertime].sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
+        const sorted = [...employeeOvertime]
+            .filter(o => o.date && !isNaN(parseISO(o.date).getTime()))
+            .sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
         return { totalOvertimeAmount: totals.totalAmount, totalOvertimeHours: totals.totalHours, sortedOvertime: sorted };
     }, [employeeOvertime]);
 
     const { totalBonuses, sortedBonuses } = useMemo(() => {
         if (!employeeBonuses) return { totalBonuses: 0, sortedBonuses: [] };
         const total = employeeBonuses.reduce((sum, b) => sum + b.totalAmount, 0);
-        const sorted = [...employeeBonuses].sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
+        const sorted = [...employeeBonuses]
+            .filter(b => b.date && !isNaN(parseISO(b.date).getTime()))
+            .sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
         return { totalBonuses: total, sortedBonuses: sorted };
     }, [employeeBonuses]);
 
     const { totalWithdrawals, sortedWithdrawals } = useMemo(() => {
         if (!employeeWithdrawals) return { totalWithdrawals: 0, sortedWithdrawals: [] };
         const total = employeeWithdrawals.reduce((sum, w) => sum + w.amount, 0);
-        const sorted = [...employeeWithdrawals].sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
+        const sorted = [...employeeWithdrawals]
+            .filter(w => w.date && !isNaN(parseISO(w.date).getTime()))
+            .sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
         return { totalWithdrawals: total, sortedWithdrawals: sorted };
     }, [employeeWithdrawals]);
 
