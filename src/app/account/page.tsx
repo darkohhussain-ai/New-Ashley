@@ -135,7 +135,15 @@ function AccountPage() {
     const selectedMonthEnd = endOfMonth(selectedDate);
     
     const filterAndSum = (data: (Expense | Overtime | Bonus | CashWithdrawal)[], start: Date, end: Date) => {
-        const filtered = data.filter(d => d.employeeId === empId && isWithinInterval(parseISO(d.date), {start, end}));
+        const filtered = data.filter(d => {
+            if (!d.date) return false;
+            try {
+                const recordDate = parseISO(d.date);
+                return d.employeeId === empId && isWithinInterval(recordDate, {start, end});
+            } catch {
+                return false;
+            }
+        });
         const total = filtered.reduce((sum, item) => sum + (('amount' in item && typeof item.amount === 'number') ? item.amount : ('totalAmount' in item && typeof item.totalAmount === 'number') ? item.totalAmount : 0), 0);
         return { items: filtered, total };
     };
@@ -285,6 +293,8 @@ function AccountPage() {
             theme: 'striped',
             styles: { font: (useKurdish && customFontBase64) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
             headStyles: { fillColor: '#3b82f6', font: (useKurdish && customFontBase64) ? 'CustomFont' : 'helvetica' },
+            foot: [[{content: t('total'), colSpan: 2, styles: { halign: 'right' }}, formatCurrency(total)]],
+            footStyles: { fontStyle: 'bold' },
         });
         startY = (doc as any).lastAutoTable.finalY + 20;
     }
