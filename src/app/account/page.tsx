@@ -79,7 +79,7 @@ const FinancialDetailTable = ({ title, data, total }: { title: string, data: any
 function AccountPage() {
   const { t, language } = useTranslation();
   const { toast } = useToast();
-  const { user, login, hasPermission } = useAuth();
+  const { user, login } = useAuth();
   const { 
     employees, setEmployees, 
     expenses, overtime, bonuses, withdrawals 
@@ -88,7 +88,6 @@ function AccountPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [employeeDetails, setEmployeeDetails] = useState<Employee | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const canEditProfile = hasPermission('page:admin');
 
   const pdfCardRef = useRef<HTMLDivElement>(null);
   const [logoSrc] = useLocalStorage('app-logo', "https://picsum.photos/seed/1/300/100");
@@ -97,7 +96,6 @@ function AccountPage() {
 
   // Form State
   const [photoUrl, setPhotoUrl] = useState<string | undefined>(undefined);
-  const [kurdishName, setKurdishName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
 
@@ -121,7 +119,6 @@ function AccountPage() {
   useEffect(() => {
     if (employeeDetails) {
       setPhotoUrl(employeeDetails.photoUrl);
-      setKurdishName(employeeDetails.kurdishName || '');
       setEmail(employeeDetails.email || '');
       setPhone(employeeDetails.phone || '');
     }
@@ -163,7 +160,6 @@ function AccountPage() {
     if (isEditing && employeeDetails) {
       // Reset fields to original state on cancel
       setPhotoUrl(employeeDetails.photoUrl);
-      setKurdishName(employeeDetails.kurdishName || '');
       setEmail(employeeDetails.email || '');
       setPhone(employeeDetails.phone || '');
       setCurrentPassword('');
@@ -191,7 +187,6 @@ function AccountPage() {
     const updatedEmployee: Employee = {
       ...employeeDetails,
       photoUrl: photoUrl,
-      kurdishName: kurdishName,
       email: email,
       phone: phone,
     };
@@ -392,7 +387,7 @@ function AccountPage() {
                                 <Button onClick={handleSaveAll} className="flex-1"><Save className="mr-2 h-4 w-4"/> Save All</Button>
                                 <Button variant="ghost" onClick={handleEditToggle}><X className="mr-2 h-4 w-4"/> Cancel</Button>
                             </div>
-                        ) : (canEditProfile &&
+                        ) : (
                             <Button variant="outline" onClick={handleEditToggle} className="w-full">
                                 <Edit className="mr-2 h-4 w-4"/> Edit Profile
                             </Button>
@@ -414,7 +409,7 @@ function AccountPage() {
                          </div>
                          <div className="space-y-2">
                             <Label htmlFor="kurdishName">Kurdish Name</Label>
-                            <Input id="kurdishName" value={kurdishName} dir="rtl" onChange={e => setKurdishName(e.target.value)} disabled={!isEditing} />
+                             <Input id="kurdishName" value={employeeDetails.kurdishName} dir="rtl" disabled />
                          </div>
                     </CardContent>
                 </Card>
@@ -459,5 +454,7 @@ function AccountPage() {
 }
 
 export default withAuth(AccountPage);
+
+    
 
     
