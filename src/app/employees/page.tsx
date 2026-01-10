@@ -330,7 +330,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                         <CardHeader className="flex-col md:flex-row gap-6 space-y-0 items-start">
                              <div className="relative">
                                 <Avatar className="w-24 h-24 md:w-32 md:h-32 border-4 border-primary/20">
-                                    <AvatarImage src={isEditing ? photoUrl : employee.photoUrl} alt={employee.name} />
+                                    <AvatarImage src={(isEditing ? photoUrl : employee.photoUrl) || undefined} alt={employee.name} />
                                     <AvatarFallback><User className="w-16 h-16"/></AvatarFallback>
                                 </Avatar>
                                 {isEditing && (
