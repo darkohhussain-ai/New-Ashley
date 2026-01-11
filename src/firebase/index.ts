@@ -1,24 +1,9 @@
-'use client';
-import {
-  FirebaseApp,
-  getApp,
-  getApps,
-  initializeApp,
-} from 'firebase/app';
-import {
-  Auth,
-  getAuth,
-} from 'firebase/auth';
-import {
-  Firestore,
-  getFirestore,
-} from 'firebase/firestore';
-import {
-  getStorage,
-  FirebaseStorage,
-} from 'firebase/storage';
 
-import { firebaseConfig } from './config';
+'use client';
+// This file is part of the Firebase integration.
+// Since we are reverting to an offline-first approach, the functions here are placeholders
+// and not actively used. They are kept for potential future re-integration.
+
 import { FirebaseClientProvider, FirebaseProvider } from './provider';
 
 export {
@@ -33,31 +18,7 @@ export {
 
 export { FirebaseClientProvider, FirebaseProvider };
 
-export type FirebaseServices = {
-  app: FirebaseApp;
-  auth: Auth;
-  db: Firestore;
-  storage: FirebaseStorage;
-};
-
-let firebaseApp: FirebaseApp;
-let auth: Auth;
-let db: Firestore;
-let storage: FirebaseStorage;
-
-export function getFirebase(): FirebaseServices {
-  if (!firebaseApp) {
-    //
-    // Initialize Firebase
-    //
-    if (getApps().length) {
-      firebaseApp = getApp();
-    } else {
-      firebaseApp = initializeApp(firebaseConfig);
-    }
-    auth = getAuth(firebaseApp);
-    db = getFirestore(firebaseApp);
-    storage = getStorage(firebaseApp);
-  }
-  return { app: firebaseApp, auth, db, storage };
+export function getFirebase() {
+  // Return null or a mock object to prevent errors
+  return null;
 }

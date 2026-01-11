@@ -1,45 +1,14 @@
+
 'use client';
 
-import { createContext, useEffect, useMemo } from 'react';
-import { getFirebase, type FirebaseServices } from './index';
-import { set } from 'idb-keyval';
-import { useRouter, usePathname } from 'next/navigation';
-import { onAuthStateChanged } from 'firebase/auth';
+import { createContext } from 'react';
 
-export const FirebaseContext = createContext<FirebaseServices | null>(null);
+// This file is part of the Firebase integration.
+// Since we are reverting to an offline-first approach, this provider is no longer used
+// but is kept for potential future re-integration.
 
-function AuthHandler() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const { auth } = getFirebase();
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      const isLoginPage = pathname === '/login';
-
-      if (user) {
-        const token = await user.getIdTokenResult();
-        await set('user', {
-          ...user,
-          claims: token.claims,
-        });
-
-        if (isLoginPage) {
-          router.push('/');
-        }
-      } else {
-        // Not handling unauthenticated redirects for now
-        // if (!isLoginPage) {
-        //   router.push('/login');
-        // }
-      }
-    });
-
-    return () => unsubscribe();
-  }, [auth, pathname, router]);
-
-  return null; // This component does not render anything
-}
+// Define a minimal context to avoid errors if imported elsewhere.
+export const FirebaseContext = createContext<null>(null);
 
 
 export function FirebaseProvider({
@@ -47,14 +16,7 @@ export function FirebaseProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const { app, auth, db, storage } = getFirebase();
-  
-  return (
-    <FirebaseContext.Provider value={{ app, auth, db, storage }}>
-      <AuthHandler />
-      {children}
-    </FirebaseContext.Provider>
-  );
+  return <>{children}</>;
 }
 
 export function FirebaseClientProvider({
@@ -62,11 +24,5 @@ export function FirebaseClientProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const services = useMemo(() => getFirebase(), []);
-
-  return (
-    <FirebaseContext.Provider value={services}>
-      {children}
-    </FirebaseContext.Provider>
-  );
+  return <>{children}</>;
 }

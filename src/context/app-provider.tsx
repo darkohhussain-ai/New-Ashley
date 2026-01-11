@@ -1,9 +1,8 @@
 
 'use client';
 
-import React, { createContext, useContext, ReactNode, useEffect, useMemo, useCallback } from 'react';
-import { collection, doc, setDoc, deleteDoc, getFirestore } from 'firebase/firestore';
-import { useCollection } from '@/firebase';
+import React, { createContext, useContext, ReactNode } from 'react';
+import useLocalStorage from '@/hooks/use-local-storage';
 import { 
     Employee, 
     ExcelFile, 
@@ -22,7 +21,7 @@ import {
     User,
     Role,
 } from '@/lib/types';
-import { initialData as initialDataObject } from './initial-data';
+import { initialData } from './initial-data';
 
 // The structure of our application state
 interface AppState {
@@ -63,75 +62,26 @@ interface AppState {
 // Create the context
 const AppContext = createContext<AppState | undefined>(undefined);
 
-// Generic hook for managing a Firestore collection
-function useFirestoreCollectionManager<T extends { id: string }>(
-    collectionName: string, 
-    initialData: T[]
-): [T[], (data: T[]) => void] {
-    const db = getFirestore();
-    const query = useMemo(() => collection(db, collectionName), [db, collectionName]);
-    const { data: firestoreData, loading } = useCollection<T>(query);
-    
-    const [localData, setLocalData] = React.useState<T[]>(initialData);
-
-    useEffect(() => {
-        if (!loading && firestoreData) {
-            // Only update if the data has actually changed to prevent loops
-            if (JSON.stringify(firestoreData) !== JSON.stringify(localData)) {
-                setLocalData(firestoreData);
-            }
-        }
-    }, [firestoreData, loading, localData]);
-
-    const setData = useCallback((newData: T[]) => {
-        const db = getFirestore();
-        const oldDataMap = new Map(localData.map(item => [item.id, item]));
-        const newDataMap = new Map(newData.map(item => [item.id, item]));
-
-        // Add or update documents
-        newData.forEach(item => {
-            const docRef = doc(db, collectionName, item.id);
-            const oldItem = oldDataMap.get(item.id);
-            if (!oldItem || JSON.stringify(oldItem) !== JSON.stringify(item)) {
-                setDoc(docRef, item, { merge: true });
-            }
-        });
-
-        // Delete documents
-        localData.forEach(item => {
-            if (!newDataMap.has(item.id)) {
-                const docRef = doc(db, collectionName, item.id);
-                deleteDoc(docRef);
-            }
-        });
-        
-        // This local update is important for immediate UI feedback
-        setLocalData(newData);
-
-    }, [collectionName, localData]);
-
-    return [localData, setData];
-}
-
+// The provider component
 export function AppProvider({ children }: { children: ReactNode }) {
-    const [employees, setEmployees] = useFirestoreCollectionManager<Employee>('employees', initialDataObject.employees);
-    const [excelFiles, setExcelFiles] = useFirestoreCollectionManager<ExcelFile>('excel_files', initialDataObject.excelFiles);
-    const [items, setItems] = useFirestoreCollectionManager<Item>('items', initialDataObject.items);
-    const [locations, setLocations] = useFirestoreCollectionManager<StorageLocation>('storage_locations', initialDataObject.locations);
-    const [expenses, setExpenses] = useFirestoreCollectionManager<Expense>('expenses', initialDataObject.expenses);
-    const [expenseReports, setExpenseReports] = useFirestoreCollectionManager<ExpenseReport>('expense_reports', initialDataObject.expenseReports);
-    const [overtime, setOvertime] = useFirestoreCollectionManager<Overtime>('overtime', initialDataObject.overtime);
-    const [bonuses, setBonuses] = useFirestoreCollectionManager<Bonus>('bonuses', initialDataObject.bonuses);
-    const [withdrawals, setWithdrawals] = useFirestoreCollectionManager<CashWithdrawal>('cash_withdrawals', initialDataObject.withdrawals);
-    const [receipts, setReceipts] = useFirestoreCollectionManager<SoldItemReceipt>('sold_item_receipts', initialDataObject.receipts);
-    const [transfers, setTransfers] = useFirestoreCollectionManager<Transfer>('transfers', initialDataObject.transfers);
-    const [transferItems, setTransferItems] = useFirestoreCollectionManager<ItemForTransfer>('transfer_items', initialDataObject.transferItems);
-    const [marketingFeedbacks, setMarketingFeedbacks] = useFirestoreCollectionManager<MarketingFeedback>('marketing_feedbacks', initialDataObject.marketingFeedbacks);
-    const [evaluationQuestions, setEvaluationQuestions] = useFirestoreCollectionManager<EvaluationQuestion>('evaluation_questions', initialDataObject.evaluationQuestions);
-    const [users, setUsers] = useFirestoreCollectionManager<User>('users', initialDataObject.users);
-    const [roles, setRoles] = useFirestoreCollectionManager<Role>('roles', initialDataObject.roles);
+    const [employees, setEmployees] = useLocalStorage<Employee[]>('employees', initialData.employees);
+    const [excelFiles, setExcelFiles] = useLocalStorage<ExcelFile[]>('excel_files', initialData.excelFiles);
+    const [items, setItems] = useLocalStorage<Item[]>('items', initialData.items);
+    const [locations, setLocations] = useLocalStorage<StorageLocation[]>('storage_locations', initialData.locations);
+    const [expenses, setExpenses] = useLocalStorage<Expense[]>('expenses', initialData.expenses);
+    const [expenseReports, setExpenseReports] = useLocalStorage<ExpenseReport[]>('expense_reports', initialData.expenseReports);
+    const [overtime, setOvertime] = useLocalStorage<Overtime[]>('overtime', initialData.overtime);
+    const [bonuses, setBonuses] = useLocalStorage<Bonus[]>('bonuses', initialData.bonuses);
+    const [withdrawals, setWithdrawals] = useLocalStorage<CashWithdrawal[]>('cash_withdrawals', initialData.withdrawals);
+    const [receipts, setReceipts] = useLocalStorage<SoldItemReceipt[]>('sold_item_receipts', initialData.receipts);
+    const [transfers, setTransfers] = useLocalStorage<Transfer[]>('transfers', initialData.transfers);
+    const [transferItems, setTransferItems] = useLocalStorage<ItemForTransfer[]>('transfer_items', initialData.transferItems);
+    const [marketingFeedbacks, setMarketingFeedbacks] = useLocalStorage<MarketingFeedback[]>('marketing_feedbacks', initialData.marketingFeedbacks);
+    const [evaluationQuestions, setEvaluationQuestions] = useLocalStorage<EvaluationQuestion[]>('evaluation_questions', initialData.evaluationQuestions);
+    const [users, setUsers] = useLocalStorage<User[]>('users', initialData.users);
+    const [roles, setRoles] = useLocalStorage<Role[]>('roles', initialData.roles);
     
-    const value = useMemo<AppState>(() => ({
+    const value: AppState = {
         employees, setEmployees,
         excelFiles, setExcelFiles,
         items, setItems,
@@ -148,24 +98,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         evaluationQuestions, setEvaluationQuestions,
         users, setUsers,
         roles, setRoles,
-    }), [
-        employees, setEmployees,
-        excelFiles, setExcelFiles,
-        items, setItems,
-        locations, setLocations,
-        expenses, setExpenses,
-        expenseReports, setExpenseReports,
-        overtime, setOvertime,
-        bonuses, setBonuses,
-        withdrawals, setWithdrawals,
-        receipts, setReceipts,
-        transfers, setTransfers,
-        transferItems, setTransferItems,
-        marketingFeedbacks, setMarketingFeedbacks,
-        evaluationQuestions, setEvaluationQuestions,
-        users, setUsers,
-        roles, setRoles,
-    ]);
+    };
 
     return (
         <AppContext.Provider value={value}>

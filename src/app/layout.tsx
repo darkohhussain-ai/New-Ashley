@@ -13,7 +13,6 @@ import { AppHeader } from '@/components/shared/app-header';
 import { Noto_Naskh_Arabic } from 'next/font/google';
 import { usePathname } from 'next/navigation';
 import useLocalStorage from '@/hooks/use-local-storage';
-import { FirebaseClientProvider } from '@/firebase';
 
 const notoNaskhArabic = Noto_Naskh_Arabic({ 
   subsets: ['arabic'],
@@ -73,16 +72,14 @@ export default function RootLayout({
           <SplashScreen />
         ) : (
           <ThemeProvider>
-            <FirebaseClientProvider>
-                <AppProvider>
-                  <AuthProvider>
-                    <LanguageProvider>
-                      {!isLoginPage && <AppHeader />}
-                      {children}
-                    </LanguageProvider>
-                  </AuthProvider>
-                </AppProvider>
-            </FirebaseClientProvider>
+            <AppProvider>
+              <AuthProvider>
+                <LanguageProvider>
+                  {!isLoginPage && <AppHeader />}
+                  {children}
+                </LanguageProvider>
+              </AuthProvider>
+            </AppProvider>
           </ThemeProvider>
         )}
         <Toaster />
