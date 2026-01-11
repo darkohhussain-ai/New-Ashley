@@ -2,8 +2,8 @@
 'use client';
 
 import React, { createContext, useContext, ReactNode, useEffect, useMemo, useCallback } from 'react';
-import { collection, doc, setDoc, deleteDoc } from 'firebase/firestore';
-import { useFirestore, useCollection } from '@/firebase';
+import { collection, doc, setDoc, deleteDoc, getFirestore } from 'firebase/firestore';
+import { useCollection } from '@/firebase';
 import { 
     Employee, 
     ExcelFile, 
@@ -68,7 +68,7 @@ function useFirestoreCollectionManager<T extends { id: string }>(
     collectionName: string, 
     initialData: T[]
 ): [T[], (data: T[]) => void] {
-    const db = useFirestore();
+    const db = getFirestore();
     const query = useMemo(() => collection(db, collectionName), [db, collectionName]);
     const { data: firestoreData, loading } = useCollection<T>(query);
     
@@ -76,9 +76,12 @@ function useFirestoreCollectionManager<T extends { id: string }>(
 
     useEffect(() => {
         if (!loading && firestoreData) {
-            setLocalData(firestoreData);
+            // Only update if the data has actually changed to prevent loops
+            if (JSON.stringify(firestoreData) !== JSON.stringify(localData)) {
+                setLocalData(firestoreData);
+            }
         }
-    }, [firestoreData, loading]);
+    }, [firestoreData, loading, localData]);
 
     const setData = useCallback((newData: T[]) => {
         const db = getFirestore();
@@ -101,8 +104,10 @@ function useFirestoreCollectionManager<T extends { id: string }>(
                 deleteDoc(docRef);
             }
         });
-
+        
+        // This local update is important for immediate UI feedback
         setLocalData(newData);
+
     }, [collectionName, localData]);
 
     return [localData, setData];
@@ -126,7 +131,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const [users, setUsers] = useFirestoreCollectionManager<User>('users', initialDataObject.users);
     const [roles, setRoles] = useFirestoreCollectionManager<Role>('roles', initialDataObject.roles);
     
-    const value: AppState = {
+    const value = useMemo<AppState>(() => ({
         employees, setEmployees,
         excelFiles, setExcelFiles,
         items, setItems,
@@ -143,7 +148,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
         evaluationQuestions, setEvaluationQuestions,
         users, setUsers,
         roles, setRoles,
-    };
+    }), [
+        employees, setEmployees,
+        excelFiles, setExcelFiles,
+        items, setItems,
+        locations, setLocations,
+        expenses, setExpenses,
+        expenseReports, setExpenseReports,
+        overtime, setOvertime,
+        bonuses, setBonuses,
+        withdrawals, setWithdrawals,
+        receipts, setReceipts,
+        transfers, setTransfers,
+        transferItems, setTransferItems,
+        marketingFeedbacks, setMarketingFeedbacks,
+        evaluationQuestions, setEvaluationQuestions,
+        users, setUsers,
+        roles, setRoles,
+    ]);
 
     return (
         <AppContext.Provider value={value}>

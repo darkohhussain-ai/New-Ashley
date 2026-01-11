@@ -35,17 +35,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (currentUser) {
+    if (currentUser && roles.length > 0) {
       const userRole = roles.find(role => role.id === currentUser.roleId);
       if (userRole) {
-        setUserPermissions(new Set(userRole.permissions));
+        const newPermissions = new Set(userRole.permissions);
+        // Prevent re-setting state if permissions haven't changed
+        if (newPermissions.size !== userPermissions.size || !Array.from(newPermissions).every(p => userPermissions.has(p))) {
+            setUserPermissions(newPermissions);
+        }
       } else {
         setUserPermissions(new Set());
       }
     } else {
       setUserPermissions(new Set());
     }
-  }, [currentUser, roles]);
+  }, [currentUser, roles, userPermissions]);
 
   const login = useCallback(async (username: string, password: string): Promise<boolean> => {
     const foundUser = users.find(
