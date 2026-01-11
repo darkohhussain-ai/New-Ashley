@@ -1,169 +1,238 @@
 
 {
   "entities": {
-    "Volunteer": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Volunteer",
+    "Employee": {
+      "title": "Employee",
       "type": "object",
-      "description": "Represents a volunteer in the HR section.",
+      "description": "Represents an employee, including their personal and employment details.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the volunteer."
-        },
-        "firstName": {
-          "type": "string",
-          "description": "First name of the volunteer."
-        },
-        "lastName": {
-          "type": "string",
-          "description": "Last name of the volunteer."
-        },
-        "email": {
-          "type": "string",
-          "description": "Email address of the volunteer.",
-          "format": "email"
-        },
-        "phone": {
-          "type": "string",
-          "description": "Phone number of the volunteer."
-        },
-        "address": {
-          "type": "string",
-          "description": "Address of the volunteer."
-        },
-        "availability": {
-          "type": "string",
-          "description": "Availability of the volunteer."
-        },
-        "notes": {
-          "type": "string",
-          "description": "Any notes about the volunteer."
-        }
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "kurdishName": { "type": "string" },
+        "employeeId": { "type": "string" },
+        "role": { "type": "string" },
+        "employmentStartDate": { "type": "string", "format": "date-time" },
+        "dateOfBirth": { "type": "string", "format": "date-time" },
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" },
+        "photoUrl": { "type": "string", "format": "uri" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "isActive": { "type": "boolean" },
+        "password": { "type": "string" }
       },
-      "required": [
-        "id",
-        "firstName",
-        "lastName",
-        "email"
-      ]
+      "required": ["id", "name", "isActive"]
     },
-    "Settings": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Settings",
+    "ExcelFile": {
+      "title": "ExcelFile",
       "type": "object",
-      "description": "Represents user-specific application settings.",
+      "description": "Metadata for an uploaded Excel file.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the settings."
-        },
-        "designColors": {
-          "type": "string",
-          "description": "Selected color scheme."
-        },
-        "applicationFonts": {
-          "type": "string",
-          "description": "Selected fonts for the application."
-        },
-        "darkModeEnabled": {
-          "type": "boolean",
-          "description": "Indicates if dark mode is enabled."
-        }
+        "id": { "type": "string" },
+        "storekeeperId": { "type": "string" },
+        "storageName": { "type": "string" },
+        "categoryName": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "source": { "type": "string" },
+        "type": { "type": "string", "enum": ["new", "imported"] }
       },
-      "required": [
-        "id"
-      ]
+      "required": ["id", "storageName", "date", "source", "type"]
     },
-    "ApplicationLogo": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "ApplicationLogo",
+    "Item": {
+      "title": "Item",
       "type": "object",
-      "description": "Represents the application logo.",
+      "description": "An inventory item, usually from an Excel file.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the logo."
-        },
-        "logoUrl": {
-          "type": "string",
-          "description": "URL of the application logo.",
-          "format": "uri"
-        },
-        "uploadDate": {
-          "type": "string",
-          "description": "Date and time when the logo was uploaded.",
-          "format": "date-time"
-        }
+        "id": { "type": "string" },
+        "fileId": { "type": "string" },
+        "model": { "type": "string" },
+        "quantity": { "type": "number" },
+        "notes": { "type": "string" },
+        "storageStatus": { "type": "string", "enum": ["Correct", "Less", "More", ""] },
+        "modelCondition": { "type": "string", "enum": ["Wrapped", "Damaged", ""] },
+        "quantityPerCondition": { "type": "number" },
+        "locationId": { "type": "string" }
       },
-      "required": [
-        "id",
-        "logoUrl",
-        "uploadDate"
-      ]
+      "required": ["id", "fileId", "model", "quantity"]
     },
-    "AdminUser": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "AdminUser",
+    "StorageLocation": {
+      "title": "StorageLocation",
       "type": "object",
-      "description": "Represents an administrator user with elevated privileges.",
+      "description": "A physical location in a warehouse.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the admin user."
-        },
-        "username": {
-          "type": "string",
-          "description": "Username of the admin user."
-        },
-        "accessLevel": {
-          "type": "string",
-          "description": "Access level of the admin user."
-        }
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "warehouseType": { "type": "string", "enum": ["Ashley", "Huana"] }
       },
-      "required": [
-        "id",
-        "username",
-        "accessLevel"
-      ]
+      "required": ["id", "name", "warehouseType"]
     },
-    "MarketingEmployee": {
-      "title": "MarketingEmployee",
-      "description": "Represents a marketing employee being evaluated.",
+    "Expense": {
+      "title": "Expense",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
-        "name": { "type": "string" }
-      }
+        "employeeId": { "type": "string" },
+        "amount": { "type": "number" },
+        "date": { "type": "string", "format": "date-time" },
+        "notes": { "type": "string" },
+        "expenseReportId": { "type": "string" },
+        "expenseType": { "type": "string" }
+      },
+      "required": ["id", "employeeId", "amount", "date", "expenseReportId"]
     },
-    "EvaluationQuestion": {
-      "title": "EvaluationQuestion",
-      "description": "Represents a single question in the employee evaluation.",
+    "ExpenseReport": {
+      "title": "ExpenseReport",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
-        "text": { "type": "string" }
-      }
+        "reportName": { "type": "string" },
+        "reportDate": { "type": "string", "format": "date-time" },
+        "totalAmount": { "type": "number" }
+      },
+      "required": ["id", "reportName", "reportDate", "totalAmount"]
     },
-    "EvaluationResponse": {
-      "title": "EvaluationResponse",
-      "description": "Represents a submitted evaluation for a marketing employee.",
+    "Overtime": {
+      "title": "Overtime",
       "type": "object",
       "properties": {
+        "id": { "type": "string" },
         "employeeId": { "type": "string" },
         "date": { "type": "string", "format": "date-time" },
+        "hours": { "type": "number" },
+        "rate": { "type": "number" },
+        "totalAmount": { "type": "number" },
+        "notes": { "type": "string" }
+      },
+      "required": ["id", "employeeId", "date", "hours", "rate", "totalAmount"]
+    },
+    "Bonus": {
+      "title": "Bonus",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "employeeId": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "loadCount": { "type": "number" },
+        "rate": { "type": "number" },
+        "totalAmount": { "type": "number" },
+        "notes": { "type": "string" }
+      },
+      "required": ["id", "employeeId", "date", "loadCount", "rate", "totalAmount"]
+    },
+    "CashWithdrawal": {
+      "title": "CashWithdrawal",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "employeeId": { "type": "string" },
+        "amount": { "type": "number" },
+        "date": { "type": "string", "format": "date-time" },
+        "notes": { "type": "string" }
+      },
+      "required": ["id", "employeeId", "amount", "date"]
+    },
+    "SoldItemReceipt": {
+      "title": "SoldItemReceipt",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "receiptNumber": { "type": "string" },
+        "receiptDate": { "type": "string", "format": "date-time" },
+        "customerName": { "type": "string" },
+        "itemCategories": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["id", "receiptNumber", "itemCategories"]
+    },
+    "Transfer": {
+      "title": "Transfer",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "transferDate": { "type": "string", "format": "date-time" },
+        "cargoName": { "type": "string" },
+        "destinationCity": { "type": "string" },
+        "driverName": { "type": "string" },
+        "warehouseManagerName": { "type": "string" },
+        "itemIds": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["id", "transferDate", "cargoName", "destinationCity", "driverName", "warehouseManagerName", "itemIds"]
+    },
+    "ItemForTransfer": {
+      "title": "ItemForTransfer",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "model": { "type": "string" },
+        "quantity": { "type": "number" },
+        "destination": { "type": "string" },
+        "notes": { "type": "string" },
+        "transferId": { "type": ["string", "null"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "model", "quantity", "destination", "createdAt"]
+    },
+    "MarketingFeedback": {
+      "title": "MarketingFeedback",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "employeeId": { "type": "string" },
+        "totalScore": { "type": "number" },
+        "date": { "type": "string", "format": "date" },
         "responses": {
           "type": "array",
           "items": {
             "type": "object",
             "properties": {
               "questionId": { "type": "string" },
-              "answer": { "type": "integer", "enum": [1, 2, 3] }
-            }
+              "answer": { "type": "number" }
+            },
+            "required": ["questionId", "answer"]
           }
-        },
-        "totalScore": { "type": "number" }
-      }
+        }
+      },
+      "required": ["id", "employeeId", "totalScore", "date", "responses"]
+    },
+    "EvaluationQuestion": {
+      "title": "EvaluationQuestion",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "text": { "type": "string" },
+        "answers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "label": { "type": "string" },
+              "value": { "type": "number" }
+            },
+            "required": ["label", "value"]
+          }
+        }
+      },
+      "required": ["id", "text", "answers"]
+    },
+    "User": {
+      "title": "User",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "username": { "type": "string" },
+        "password": { "type": "string" },
+        "roleId": { "type": "string" }
+      },
+      "required": ["id", "username", "roleId"]
+    },
+    "Role": {
+      "title": "Role",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "permissions": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["id", "name", "permissions"]
     }
   },
   "auth": {
@@ -171,5 +240,70 @@
       "anonymous"
     ]
   },
-  "firestore": null
+  "firestore": {
+    "employees": {
+      "schema": { "$ref": "#/entities/Employee" },
+      "description": "Stores all employee records."
+    },
+    "excel_files": {
+      "schema": { "$ref": "#/entities/ExcelFile" },
+      "description": "Metadata for uploaded Excel files."
+    },
+    "items": {
+      "schema": { "$ref": "#/entities/Item" },
+      "description": "All individual inventory items from all files."
+    },
+    "storage_locations": {
+      "schema": { "$ref": "#/entities/StorageLocation" },
+      "description": "All physical warehouse storage locations."
+    },
+    "expenses": {
+      "schema": { "$ref": "#/entities/Expense" },
+      "description": "Individual expense records."
+    },
+    "expense_reports": {
+      "schema": { "$ref": "#/entities/ExpenseReport" },
+      "description": "Daily or grouped expense reports."
+    },
+    "overtime": {
+      "schema": { "$ref": "#/entities/Overtime" },
+      "description": "Overtime records for employees."
+    },
+    "bonuses": {
+      "schema": { "$ref": "#/entities/Bonus" },
+      "description": "Bonus records for employees."
+    },
+    "cash_withdrawals": {
+      "schema": { "$ref": "#/entities/CashWithdrawal" },
+      "description": "Cash withdrawal records for employees."
+    },
+    "sold_item_receipts": {
+      "schema": { "$ref": "#/entities/SoldItemReceipt" },
+      "description": "Records of sold items via receipts."
+    },
+    "transfers": {
+      "schema": { "$ref": "#/entities/Transfer" },
+      "description": "Records of cargo transfers."
+    },
+    "transfer_items": {
+      "schema": { "$ref": "#/entities/ItemForTransfer" },
+      "description": "Items staged for or included in transfers."
+    },
+    "marketing_feedbacks": {
+      "schema": { "$ref": "#/entities/MarketingFeedback" },
+      "description": "Feedback submissions for marketing employees."
+    },
+    "evaluation_questions": {
+      "schema": { "$ref": "#/entities/EvaluationQuestion" },
+      "description": "The questions used for marketing evaluations."
+    },
+    "users": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User accounts for application access."
+    },
+    "roles": {
+      "schema": { "$ref": "#/entities/Role" },
+      "description": "Roles and their associated permissions."
+    }
+  }
 }
