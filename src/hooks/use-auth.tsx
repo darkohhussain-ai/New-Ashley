@@ -39,17 +39,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userRole = roles.find(role => role.id === currentUser.roleId);
       if (userRole) {
         const newPermissions = new Set(userRole.permissions);
-        // Prevent re-setting state if permissions haven't changed
-        if (newPermissions.size !== userPermissions.size || !Array.from(newPermissions).every(p => userPermissions.has(p))) {
-            setUserPermissions(newPermissions);
-        }
+        setUserPermissions(newPermissions);
       } else {
         setUserPermissions(new Set());
       }
     } else {
       setUserPermissions(new Set());
     }
-  }, [currentUser, roles, userPermissions]);
+  }, [currentUser, roles]);
 
   const login = useCallback(async (username: string, password: string): Promise<boolean> => {
     const foundUser = users.find(
