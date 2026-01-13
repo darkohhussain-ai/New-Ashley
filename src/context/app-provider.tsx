@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import useLocalStorage from '@/hooks/use-local-storage';
 import { 
     Employee, 
@@ -81,7 +81,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const [users, setUsers] = useLocalStorage<User[]>('users', initialData.users);
     const [roles, setRoles] = useLocalStorage<Role[]>('roles', initialData.roles);
     
-    const value: AppState = {
+    const value = useMemo<AppState>(() => ({
         employees, setEmployees,
         excelFiles, setExcelFiles,
         items, setItems,
@@ -98,7 +98,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
         evaluationQuestions, setEvaluationQuestions,
         users, setUsers,
         roles, setRoles,
-    };
+    }), [
+        employees, setEmployees,
+        excelFiles, setExcelFiles,
+        items, setItems,
+        locations, setLocations,
+        expenses, setExpenses,
+        expenseReports, setExpenseReports,
+        overtime, setOvertime,
+        bonuses, setBonuses,
+        withdrawals, setWithdrawals,
+        receipts, setReceipts,
+        transfers, setTransfers,
+        transferItems, setTransferItems,
+        marketingFeedbacks, setMarketingFeedbacks,
+        evaluationQuestions, setEvaluationQuestions,
+        users, setUsers,
+        roles, setRoles,
+    ]);
 
     return (
         <AppContext.Provider value={value}>
