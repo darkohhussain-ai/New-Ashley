@@ -51,8 +51,31 @@ That's it! GitHub will now automatically build and deploy your website. Wait a f
 
 ### Step 4 (Optional): Connect Your Custom Domain
 
-1.  **Go to your repository's "Settings" > "Pages" page.**
-2.  Under the **"Custom domain"** section, enter your domain name (e.g., `www.yourcompany.com`) and click **"Save"**.
-3.  **Configure your DNS records.** GitHub will show you the DNS records you need to add at your domain registrar (e.g., GoDaddy, Namecheap, Google Domains). This usually involves adding one `A` record and one `CNAME` record.
+To use a custom domain (like `www.yourcompany.com`) with your GitHub Pages site, follow these steps.
 
-It may take a few hours for the DNS changes to take effect. Once they do, your website will be accessible via your custom domain.
+#### Part A: Add Your Domain to GitHub
+
+1.  Go to your repository's **"Settings" > "Pages"** page on GitHub.
+2.  Under the **"Custom domain"** section, enter your domain name (e.g., `www.yourcompany.com`) and click **"Save"**.
+3.  After saving, GitHub may display a message with the DNS records you need. It typically asks you to point your domain to specific IP addresses.
+
+#### Part B: Configure Your DNS Records
+
+Now, go to your domain registrar's website (where you bought the domain, like GoDaddy or Namecheap) and find the DNS settings page. You will need to add or edit the following records:
+
+1.  **Add `A` Records:**
+    Create four `A` records that point your bare domain (e.g., `yourcompany.com`) to GitHub's IP addresses.
+    
+    *   `185.199.108.153`
+    *   `185.199.109.153`
+    *   `185.199.110.153`
+    *   `185.199.111.153`
+
+    *An `A` record maps a domain name to an IP address.*
+
+2.  **Add a `CNAME` Record:**
+    Create one `CNAME` record that points your `www` subdomain (e.g., `www.yourcompany.com`) to your GitHub Pages URL (e.g., `your-username.github.io`).
+    
+    *A `CNAME` record maps one domain name to another.*
+
+It may take a few hours for these DNS changes to take effect. Once they do, GitHub will automatically secure your site with HTTPS, and your website will be accessible via your custom domain!
