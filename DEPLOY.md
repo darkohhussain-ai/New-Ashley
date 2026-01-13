@@ -1,76 +1,58 @@
-# How to Deploy Your Website
+# How to Deploy Your Website to GitHub Pages
 
-This guide provides the step-by-step instructions to deploy your website to Firebase App Hosting and connect a custom domain.
-
-You will need to run these commands on your local computer's terminal.
+This guide provides the step-by-step instructions to automatically deploy your website to GitHub Pages and connect a custom domain.
 
 ---
 
-### Step 1: Install the Firebase CLI
+### Step 1: Create a GitHub Repository
 
-If you don't have it installed already, open a terminal and run this command. This only needs to be done once.
+1.  **Sign up or log in** to your account at [github.com](https://github.com).
+2.  Create a **new repository**. You can name it whatever you like (e.g., `my-website`). Make sure it is "Public".
+
+---
+
+### Step 2: Push Your Code to GitHub
+
+Open a terminal on your local computer, navigate to your project's root directory, and run the following commands.
+
+*Replace `<YOUR_GITHUB_URL>` with the URL of the repository you just created.*
 
 ```bash
-npm install -g firebase-tools
+# Initialize git if you haven't already
+git init -b main
+
+# Add all your project files
+git add .
+
+# Save your changes
+git commit -m "Initial commit"
+
+# Connect your local project to your GitHub repository
+git remote add origin <YOUR_GITHUB_URL>
+
+# Upload your code
+git push -u origin main
 ```
 
 ---
 
-### Step 2: Log In to Firebase
+### Step 3: Enable GitHub Pages
 
-Connect the Firebase CLI to your Google account.
+1.  Go to your repository on GitHub.
+2.  Click on the **"Settings"** tab.
+3.  In the left sidebar, click on **"Pages"**.
+4.  Under "Build and deployment", change the "Source" from "Deploy from a branch" to **"GitHub Actions"**.
 
-```bash
-firebase login
-```
+That's it! GitHub will now automatically build and deploy your website. Wait a few minutes, and your site will be live at a URL like `https://your-username.github.io/your-repository-name/`.
 
-A browser window will open, asking you to log in and authorize the CLI.
-
----
-
-### Step 3: Initialize App Hosting
-
-Navigate to your project's root directory in your terminal. Then, run the following command to link your local project to your Firebase project.
-
-```bash
-firebase init apphosting
-```
-
-You will be prompted to select your Firebase project from a list.
+**Every time you `git push` new changes to your `main` branch, your website will be automatically updated.**
 
 ---
 
-### Step 4: Build Your Website for Production
+### Step 4 (Optional): Connect Your Custom Domain
 
-This command creates a highly optimized version of your website that is ready for deployment.
+1.  **Go to your repository's "Settings" > "Pages" page.**
+2.  Under the **"Custom domain"** section, enter your domain name (e.g., `www.yourcompany.com`) and click **"Save"**.
+3.  **Configure your DNS records.** GitHub will show you the DNS records you need to add at your domain registrar (e.g., GoDaddy, Namecheap, Google Domains). This usually involves adding one `A` record and one `CNAME` record.
 
-```bash
-npm run build
-```
-
----
-
-### Step 5: Deploy to Firebase
-
-This is the final command to launch your website. It will upload your built files to Firebase Hosting.
-
-```bash
-firebase deploy
-```
-
-After this command finishes, your website will be live on a Firebase-provided URL (like `your-project-id.web.app`).
-
----
-
-### Step 6: Connect Your Custom Domain
-
-To use your own domain (e.g., `www.yourcompany.com`):
-
-1.  **Go to the Firebase Console**: Open your project in the [Firebase Console](https://console.firebase.google.com/).
-2.  **Navigate to App Hosting**: In the left-hand menu, under the "Build" section, click on **App Hosting**.
-3.  **Add Custom Domain**: Click the **"Add custom domain"** button.
-4.  **Follow the Instructions**: Firebase will provide you with DNS records (like A, AAAA, or CNAME records). You need to copy these records and add them to your domain registrar's settings (e.g., GoDaddy, Google Domains, Namecheap).
-
-This process proves you own the domain and points it to your new website. It can sometimes take a few hours for the changes to take effect across the internet.
-
-Congratulations on getting ready to launch!
+It may take a few hours for the DNS changes to take effect. Once they do, your website will be accessible via your custom domain.
