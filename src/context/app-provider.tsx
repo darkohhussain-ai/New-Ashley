@@ -79,8 +79,11 @@ function useFirestoreCollection<T>(collectionName: string) {
     const db = useFirestore();
     const { user } = useUser();
 
-    // Memoize the collection reference to prevent re-renders
-    const collectionRef = useMemoFirebase(() => collection(db, 'users', user?.uid || 'anonymous', collectionName), [db, user?.uid]);
+    // Memoize the collection reference. If user is not available, ref will be null.
+    const collectionRef = useMemoFirebase(() => {
+        if (!user) return null;
+        return collection(db, 'users', user.uid, collectionName)
+    }, [db, user]);
     
     // Use the useCollection hook to get real-time data
     const { data, isLoading } = useCollection<T>(collectionRef);
@@ -135,7 +138,7 @@ function useFirestoreCollection<T>(collectionName: string) {
 
 // The provider component
 export function AppProvider({ children }: { children: ReactNode }) {
-    const { user } = useUser();
+    const { isUserLoading } = useUser();
 
     const [employees, setEmployees] = useFirestoreCollection<Employee>('employees');
     const [excelFiles, setExcelFiles] = useFirestoreCollection<ExcelFile>('excelFiles');
@@ -190,7 +193,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         roles, setRoles,
     ]);
 
-    if (!user) {
+    if (isUserLoading) {
         return <div className="flex h-screen items-center justify-center">Loading user data...</div>;
     }
 
