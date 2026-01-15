@@ -1,18 +1,11 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Helper function to check if a user is signed in.
-    // This rule is simple and allows any authenticated user full access.
-    // For production apps, you would want more granular rules.
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    // Allow read/write access to all collections if the user is signed in.
-    // This enables a shared database for all app users.
+    // WARNING: These rules are completely open and allow anyone to read, write,
+    // and delete your data. This is for development convenience only.
+    // SECURE YOUR RULES BEFORE GOING TO PRODUCTION.
     match /{document=**} {
-      allow read, write: if isSignedIn();
+      allow read, write: if true;
     }
   }
 }
