@@ -74,22 +74,21 @@ interface AppState {
 const AppContext = createContext<AppState | undefined>(undefined);
 
 
-// Helper to manage a single collection
+// Helper to manage a single collection from the root of Firestore
 function useFirestoreCollection<T>(collectionName: string) {
     const db = useFirestore();
-    const { user } = useUser();
+    const { user } = useUser(); // Used to wait for auth before fetching
 
-    // Memoize the collection reference. If user is not available, ref will be null.
+    // Memoize the collection reference. If user is not authenticated, ref will be null.
     const collectionRef = useMemoFirebase(() => {
-        if (!user) return null;
-        return collection(db, 'users', user.uid, collectionName)
-    }, [db, user]);
+        if (!user) return null; // Wait for anonymous login to complete
+        return collection(db, collectionName); // Access the root-level collection
+    }, [db, user, collectionName]);
     
     // Use the useCollection hook to get real-time data
     const { data, isLoading } = useCollection<T>(collectionRef);
 
     // This setter function will handle all updates for the collection.
-    // It is designed to be "non-blocking".
     const setter = (newData: T[]) => {
         if (!user || !collectionRef) return;
 
