@@ -1,0 +1,134 @@
+/**
+ * @file firestore.rules
+ * @description Security rules for the Ashley DRP Manager application.
+ *
+ * ## Core Philosophy
+ * This ruleset enforces a strict user-ownership model, augmented with a global admin role for administrative oversight. All user-generated content is private by default and can only be accessed by the user who created it or by a verified administrator.
+ *
+ * ## Data Structure
+ * - `/users/{userId}`: A top-level collection where each document represents a user's private data root.
+ * - `/users/{userId}/{subcollection}`: All user-specific data, such as settings, application data, and volunteers, are stored in subcollections under their unique user ID (`userId`). This path-based ownership is the primary security mechanism.
+ * - `/roles_admin/{userId}`: A separate top-level collection for managing administrative roles. The existence of a document in this collection grants the corresponding user admin privileges across the entire database.
+ *
+ * ## Key Security Decisions
+ * - **Default Deny**: All paths are closed by default. Access is only granted through explicit `allow` statements.
+ * - **User Data Privacy**: A user can only access data within their own `/users/{userId}` tree. They cannot read, list, or write to another user's data tree.
+ * - **Admin Override**: Users with a document in the `/roles_admin` collection are considered administrators. They are granted full read and write access to all user data for support and moderation purposes.
+ * - **Admin Management**: Only existing administrators can add or remove other administrators by writing to the `/roles_admin` collection.
+ * - **No Public Data**: There are no globally readable collections. All data requires user authentication.
+ * - **No User Listing**: The top-level `/users` collection is not exposed, preventing malicious actors from listing all application users.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // -------------------------------------------------------------------------
+    // Helper Functions
+    // -------------------------------------------------------------------------
+
+    /**
+     * Checks if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the currently authenticated user has an admin role.
+     * An admin is defined by the existence of a document in the /roles_admin collection
+     * where the document ID matches their user ID.
+     */
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+
+    /**
+     * Checks if the authenticated user's ID matches the provided userId from the path.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Grants access if the user is the owner of the data (based on the path)
+     * OR if the user is a designated administrator.
+     */
+    function canAccessUserData(userId) {
+      return isOwner(userId) || isAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // User Data Collections
+    // -------------------------------------------------------------------------
+
+    /**
+     * @description Secures user-specific settings documents. Access is restricted to the
+     *              document owner or an administrator.
+     * @path /users/{userId}/settings/{settingsId}
+     * @allow (get) A signed-in user ('user123') can read their own settings document.
+     * @deny (get) A different user ('user456') cannot read 'user123's settings.
+     * @principle Restricts data access to the document owner or an admin.
+     */
+    match /users/{userId}/settings/{settingsId} {
+      allow get: if canAccessUserData(userId);
+      allow list: if canAccessUserData(userId);
+      allow create: if canAccessUserData(userId);
+      allow update: if canAccessUserData(userId) && resource != null;
+      allow delete: if canAccessUserData(userId) && resource != null;
+    }
+
+    /**
+     * @description Secures a user's primary application data, including lists, edits, and assets.
+     *              Access is restricted to the document owner or an administrator.
+     * @path /users/{userId}/applicationData/{applicationDataId}
+     * @allow (create) An admin can create an applicationData document for any user.
+     * @deny (list) A regular user cannot list the applicationData of another user.
+     * @principle Restricts data access to the document owner or an admin.
+     */
+    match /users/{userId}/applicationData/{applicationDataId} {
+      allow get: if canAccessUserData(userId);
+      allow list: if canAccessUserData(userId);
+      allow create: if canAccessUserData(userId);
+      allow update: if canAccessUserData(userId) && resource != null;
+      allow delete: if canAccessUserData(userId) && resource != null;
+    }
+
+    /**
+     * @description Secures the volunteer records managed by a user. Access is restricted to the
+     *              managing user (owner) or an administrator.
+     * @path /users/{userId}/volunteers/{volunteerId}
+     * @allow (update) A user ('user123') can update a volunteer record they manage.
+     * @deny (delete) A user ('user456') cannot delete a volunteer record managed by 'user123'.
+     * @principle Restricts data access to the document owner or an admin.
+     */
+    match /users/{userId}/volunteers/{volunteerId} {
+      allow get: if canAccessUserData(userId);
+      allow list: if canAccessUserData(userId);
+      allow create: if canAccessUserData(userId);
+      allow update: if canAccessUserData(userId) && resource != null;
+      allow delete: if canAccessUserData(userId) && resource != null;
+    }
+
+    // -------------------------------------------------------------------------
+    // Administrative Collections
+    // -------------------------------------------------------------------------
+
+    /**
+     * @description Secures the admin role collection. The existence of a document here
+     *              grants a user admin privileges. Only existing admins can read or
+     *              modify this collection.
+     * @path /roles_admin/{userId}
+     * @allow (create) An existing admin can grant admin rights to 'newUser123' by creating a document at /roles_admin/newUser123.
+     * @deny (create) A non-admin user cannot grant themselves or others admin rights.
+     * @deny (list) A non-admin user cannot list who the administrators are.
+     * @principle Protects administrative privileges by restricting management to existing admins.
+     */
+    match /roles_admin/{userId} {
+      allow get: if isAdmin();
+      allow list: if isAdmin();
+      allow create: if isAdmin();
+      allow update: if isAdmin() && resource != null;
+      allow delete: if isAdmin() && resource != null;
+    }
+  }
+}

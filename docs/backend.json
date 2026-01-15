@@ -1,309 +1,193 @@
-
 {
   "entities": {
-    "Employee": {
-      "title": "Employee",
+    "Volunteer": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Volunteer",
       "type": "object",
-      "description": "Represents an employee, including their personal and employment details.",
+      "description": "Represents a volunteer in the HR section.",
       "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "kurdishName": { "type": "string" },
-        "employeeId": { "type": "string" },
-        "role": { "type": "string" },
-        "employmentStartDate": { "type": "string", "format": "date-time" },
-        "dateOfBirth": { "type": "string", "format": "date-time" },
-        "email": { "type": "string", "format": "email" },
-        "phone": { "type": "string" },
-        "photoUrl": { "type": "string", "format": "uri" },
-        "notes": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "isActive": { "type": "boolean" },
-        "password": { "type": "string" }
-      },
-      "required": ["id", "name", "isActive"]
-    },
-    "ExcelFile": {
-      "title": "ExcelFile",
-      "type": "object",
-      "description": "Metadata for an uploaded Excel file.",
-      "properties": {
-        "id": { "type": "string" },
-        "storekeeperId": { "type": "string" },
-        "storageName": { "type": "string" },
-        "categoryName": { "type": "string" },
-        "date": { "type": "string", "format": "date-time" },
-        "source": { "type": "string" },
-        "type": { "type": "string", "enum": ["new", "imported"] }
-      },
-      "required": ["id", "storageName", "date", "source", "type"]
-    },
-    "Item": {
-      "title": "Item",
-      "type": "object",
-      "description": "An inventory item, usually from an Excel file.",
-      "properties": {
-        "id": { "type": "string" },
-        "fileId": { "type": "string" },
-        "model": { "type": "string" },
-        "quantity": { "type": "number" },
-        "notes": { "type": "string" },
-        "storageStatus": { "type": "string", "enum": ["Correct", "Less", "More", ""] },
-        "modelCondition": { "type": "string", "enum": ["Wrapped", "Damaged", ""] },
-        "quantityPerCondition": { "type": "number" },
-        "locationId": { "type": "string" }
-      },
-      "required": ["id", "fileId", "model", "quantity"]
-    },
-    "StorageLocation": {
-      "title": "StorageLocation",
-      "type": "object",
-      "description": "A physical location in a warehouse.",
-      "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "warehouseType": { "type": "string", "enum": ["Ashley", "Huana"] }
-      },
-      "required": ["id", "name", "warehouseType"]
-    },
-    "Expense": {
-      "title": "Expense",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "employeeId": { "type": "string" },
-        "amount": { "type": "number" },
-        "date": { "type": "string", "format": "date-time" },
-        "notes": { "type": "string" },
-        "expenseReportId": { "type": "string" },
-        "expenseType": { "type": "string" }
-      },
-      "required": ["id", "employeeId", "amount", "date", "expenseReportId"]
-    },
-    "ExpenseReport": {
-      "title": "ExpenseReport",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "reportName": { "type": "string" },
-        "reportDate": { "type": "string", "format": "date-time" },
-        "totalAmount": { "type": "number" }
-      },
-      "required": ["id", "reportName", "reportDate", "totalAmount"]
-    },
-    "Overtime": {
-      "title": "Overtime",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "employeeId": { "type": "string" },
-        "date": { "type": "string", "format": "date-time" },
-        "hours": { "type": "number" },
-        "rate": { "type": "number" },
-        "totalAmount": { "type": "number" },
-        "notes": { "type": "string" }
-      },
-      "required": ["id", "employeeId", "date", "hours", "rate", "totalAmount"]
-    },
-    "Bonus": {
-      "title": "Bonus",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "employeeId": { "type": "string" },
-        "date": { "type": "string", "format": "date-time" },
-        "loadCount": { "type": "number" },
-        "rate": { "type": "number" },
-        "totalAmount": { "type": "number" },
-        "notes": { "type": "string" }
-      },
-      "required": ["id", "employeeId", "date", "loadCount", "rate", "totalAmount"]
-    },
-    "CashWithdrawal": {
-      "title": "CashWithdrawal",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "employeeId": { "type": "string" },
-        "amount": { "type": "number" },
-        "date": { "type": "string", "format": "date-time" },
-        "notes": { "type": "string" }
-      },
-      "required": ["id", "employeeId", "amount", "date"]
-    },
-    "SoldItemReceipt": {
-      "title": "SoldItemReceipt",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "receiptNumber": { "type": "string" },
-        "receiptDate": { "type": "string", "format": "date-time" },
-        "customerName": { "type": "string" },
-        "itemCategories": { "type": "array", "items": { "type": "string" } }
-      },
-      "required": ["id", "receiptNumber", "itemCategories"]
-    },
-    "Transfer": {
-      "title": "Transfer",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "transferDate": { "type": "string", "format": "date-time" },
-        "cargoName": { "type": "string" },
-        "destinationCity": { "type": "string" },
-        "driverName": { "type": "string" },
-        "warehouseManagerName": { "type": "string" },
-        "itemIds": { "type": "array", "items": { "type": "string" } }
-      },
-      "required": ["id", "transferDate", "cargoName", "destinationCity", "driverName", "warehouseManagerName", "itemIds"]
-    },
-    "ItemForTransfer": {
-      "title": "ItemForTransfer",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "model": { "type": "string" },
-        "quantity": { "type": "number" },
-        "destination": { "type": "string" },
-        "notes": { "type": "string" },
-        "transferId": { "type": ["string", "null"] },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["id", "model", "quantity", "destination", "createdAt"]
-    },
-    "MarketingFeedback": {
-      "title": "MarketingFeedback",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "employeeId": { "type": "string" },
-        "totalScore": { "type": "number" },
-        "date": { "type": "string", "format": "date" },
-        "responses": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "questionId": { "type": "string" },
-              "answer": { "type": "number" }
-            },
-            "required": ["questionId", "answer"]
-          }
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Volunteer entity."
+        },
+        "firstName": {
+          "type": "string",
+          "description": "The first name of the volunteer."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "The last name of the volunteer."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the volunteer.",
+          "format": "email"
+        },
+        "phone": {
+          "type": "string",
+          "description": "The phone number of the volunteer."
+        },
+        "address": {
+          "type": "string",
+          "description": "The address of the volunteer."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Any notes about the volunteer."
         }
       },
-      "required": ["id", "employeeId", "totalScore", "date", "responses"]
+      "required": [
+        "id",
+        "firstName",
+        "lastName",
+        "email",
+        "phone"
+      ]
     },
-    "EvaluationQuestion": {
-      "title": "EvaluationQuestion",
+    "Settings": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Settings",
       "type": "object",
+      "description": "Represents the user's application settings.",
       "properties": {
-        "id": { "type": "string" },
-        "text": { "type": "string" },
-        "answers": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "label": { "type": "string" },
-              "value": { "type": "number" }
-            },
-            "required": ["label", "value"]
-          }
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Settings entity."
+        },
+        "designColors": {
+          "type": "string",
+          "description": "The user's preferred design colors."
+        },
+        "applicationFonts": {
+          "type": "string",
+          "description": "The user's preferred application fonts."
+        },
+        "darkModeEnabled": {
+          "type": "boolean",
+          "description": "Whether dark mode is enabled."
         }
       },
-      "required": ["id", "text", "answers"]
+      "required": [
+        "id"
+      ]
     },
-    "User": {
-      "title": "User",
+    "ApplicationData": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ApplicationData",
       "type": "object",
+      "description": "Represents the overall application data, including lists, edits, logo, and fonts.",
       "properties": {
-        "id": { "type": "string" },
-        "username": { "type": "string" },
-        "password": { "type": "string" },
-        "roleId": { "type": "string" }
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the ApplicationData entity."
+        },
+        "lists": {
+          "type": "string",
+          "description": "The application's lists data."
+        },
+        "edits": {
+          "type": "string",
+          "description": "The application's edits data."
+        },
+        "logo": {
+          "type": "string",
+          "description": "The application's logo data (e.g., base64 encoded image)."
+        },
+        "fonts": {
+          "type": "string",
+          "description": "The application's font data."
+        }
       },
-      "required": ["id", "username", "roleId"]
-    },
-    "Role": {
-      "title": "Role",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "permissions": { "type": "array", "items": { "type": "string" } }
-      },
-      "required": ["id", "name", "permissions"]
+      "required": [
+        "id"
+      ]
     }
   },
   "auth": {
     "providers": [
+      "password",
       "anonymous"
     ]
   },
   "firestore": {
-    "employees": {
-      "schema": { "$ref": "#/entities/Employee" },
-      "description": "Stores all employee records."
-    },
-    "excel_files": {
-      "schema": { "$ref": "#/entities/ExcelFile" },
-      "description": "Metadata for uploaded Excel files."
-    },
-    "items": {
-      "schema": { "$ref": "#/entities/Item" },
-      "description": "All individual inventory items from all files."
-    },
-    "storage_locations": {
-      "schema": { "$ref": "#/entities/StorageLocation" },
-      "description": "All physical warehouse storage locations."
-    },
-    "expenses": {
-      "schema": { "$ref": "#/entities/Expense" },
-      "description": "Individual expense records."
-    },
-    "expense_reports": {
-      "schema": { "$ref": "#/entities/ExpenseReport" },
-      "description": "Daily or grouped expense reports."
-    },
-    "overtime": {
-      "schema": { "$ref": "#/entities/Overtime" },
-      "description": "Overtime records for employees."
-    },
-    "bonuses": {
-      "schema": { "$ref": "#/entities/Bonus" },
-      "description": "Bonus records for employees."
-    },
-    "cash_withdrawals": {
-      "schema": { "$ref": "#/entities/CashWithdrawal" },
-      "description": "Cash withdrawal records for employees."
-    },
-    "sold_item_receipts": {
-      "schema": { "$ref": "#/entities/SoldItemReceipt" },
-      "description": "Records of sold items via receipts."
-    },
-    "transfers": {
-      "schema": { "$ref": "#/entities/Transfer" },
-      "description": "Records of cargo transfers."
-    },
-    "transfer_items": {
-      "schema": { "$ref": "#/entities/ItemForTransfer" },
-      "description": "Items staged for or included in transfers."
-    },
-    "marketing_feedbacks": {
-      "schema": { "$ref": "#/entities/MarketingFeedback" },
-      "description": "Feedback submissions for marketing employees."
-    },
-    "evaluation_questions": {
-      "schema": { "$ref": "#/entities/EvaluationQuestion" },
-      "description": "The questions used for marketing evaluations."
-    },
-    "users": {
-      "schema": { "$ref": "#/entities/User" },
-      "description": "User accounts for application access."
-    },
-    "roles": {
-      "schema": { "$ref": "#/entities/Role" },
-      "description": "Roles and their associated permissions."
-    }
+    "structure": [
+      {
+        "path": "/users/{userId}/settings/{settingsId}",
+        "definition": {
+          "entityName": "Settings",
+          "schema": {
+            "$ref": "#/backend/entities/Settings"
+          },
+          "description": "Stores user-specific settings. Uses path-based ownership.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user who owns these settings."
+            },
+            {
+              "name": "settingsId",
+              "description": "The unique ID of the settings document."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/applicationData/{applicationDataId}",
+        "definition": {
+          "entityName": "ApplicationData",
+          "schema": {
+            "$ref": "#/backend/entities/ApplicationData"
+          },
+          "description": "Stores application data (lists, edits, logo, fonts) for a specific user. Uses path-based ownership.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user who owns this application data."
+            },
+            {
+              "name": "applicationDataId",
+              "description": "The unique ID of the application data document."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/volunteers/{volunteerId}",
+        "definition": {
+          "entityName": "Volunteer",
+          "schema": {
+            "$ref": "#/backend/entities/Volunteer"
+          },
+          "description": "Stores volunteer HR data for a specific user. Uses path-based ownership.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user who manages these volunteers."
+            },
+            {
+              "name": "volunteerId",
+              "description": "The unique ID of the volunteer document."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admin/{userId}",
+        "definition": {
+          "entityName": "admin_role",
+          "schema": {
+            "$ref": "#/backend/entities/Volunteer"
+          },
+          "description": "Collection to store admin roles.  Document existence grants admin privileges.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user with admin privileges."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "This Firestore data structure is designed to support the Ashley DRP Manager application, focusing on secure, scalable, and maintainable data management for volunteer HR, application settings, and overall application data.  The structure emphasizes Authorization Independence (CRITICAL), achieved through denormalization where necessary, and supports the required QAPs by using segregation and path-based ownership.\n\nThe design incorporates the following key aspects:\n\n1.  **Authorization Independence:** User-specific data (Settings, ApplicationData, Volunteers) are stored under the `/users/{userId}` path, ensuring that access control can be enforced without needing `get()` calls to other documents. There is no collaborative data, and thus the authorization is simply `request.auth.uid == userId`.\n\n2.  **Structural Segregation:** Each collection is designed to store homogenous data types. This simplifies security rules by ensuring that the same access control applies to all documents within a collection.\n\n3.  **Access Modeling:**\n    *   Private Data: Settings, ApplicationData, and Volunteers are stored using path-based ownership under `/users/{userId}`.\n\n\n4.  **Admin Role:** The existence of a document in the `/roles_admin/{uid}` collection grants admin privileges. This collection will be used in the security rules.\n\nThis design ensures clear separation of concerns, simplifies security rule definitions, and enables efficient data retrieval and management."
   }
 }
