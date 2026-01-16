@@ -108,6 +108,7 @@ export function AppHeader() {
                 <Link href="/">
                     <div className="relative w-full max-w-[240px] h-16 cursor-pointer">
                     <Image
+                        key={settings.appLogo}
                         src={settings.appLogo}
                         alt="App Logo"
                         fill

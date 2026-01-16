@@ -15,6 +15,7 @@ export function SplashScreen() {
         <div className="relative w-48 h-16">
           {logo ? (
             <Image
+              key={logo}
               src={logo}
               alt="Loading..."
               fill

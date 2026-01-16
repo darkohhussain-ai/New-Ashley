@@ -48,6 +48,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4 relative">
        {settings.loginBackground && (
         <Image
+          key={settings.loginBackground}
           src={settings.loginBackground}
           alt="Login background"
           fill
@@ -61,6 +62,7 @@ export default function LoginPage() {
             {settings.appLogo && (
                  <div className="relative w-full h-20 mb-4">
                   <Image
+                    key={settings.appLogo}
                     src={settings.appLogo}
                     alt="App Logo"
                     fill

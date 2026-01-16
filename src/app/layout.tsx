@@ -56,6 +56,7 @@ function MainBackground() {
     return (
         <div className="fixed inset-0 z-[-1]">
             <Image
+                key={settings.mainBackground}
                 src={settings.mainBackground}
                 alt="Main background"
                 fill
@@ -79,6 +80,7 @@ function SystemCornerLogo() {
         <div className="fixed bottom-4 left-4 z-50 w-20 h-20 bg-background/50 backdrop-blur-sm p-2 rounded-full shadow-lg pointer-events-none">
             <div className="relative w-full h-full">
                 <Image 
+                    key={settings.appLogo}
                     src={settings.appLogo}
                     alt="System Logo"
                     fill
