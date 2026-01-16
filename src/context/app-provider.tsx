@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { createContext, useContext, ReactNode, useMemo, useEffect } from 'react';
+import React, { createContext, useContext, ReactNode, useMemo, useEffect, useState } from 'react';
 import { useCollection, useMemoFirebase } from '@/firebase';
 import {
   collection,
@@ -12,7 +12,7 @@ import {
   Query,
   CollectionReference,
 } from 'firebase/firestore';
-import { useFirestore, useUser } from '@/firebase/provider';
+import { useFirestore, useUser, useDoc } from '@/firebase';
 import { 
     Employee, 
     ExcelFile, 
@@ -30,11 +30,13 @@ import {
     EvaluationQuestion,
     User,
     Role,
+    AppSettings,
 } from '@/lib/types';
-import { setDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
-import { initialData } from './initial-data';
+import { setDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { initialData, initialSettings } from './initial-data';
+import { SplashScreen } from '@/components/shared/splash-screen';
 
-// Define the shape of our application state, now with setters for non-blocking Firestore updates
+// Define the shape of our application state
 interface AppState {
     employees: Employee[];
     setEmployees: (employees: Employee[]) => void;
@@ -68,32 +70,31 @@ interface AppState {
     setUsers: (users: User[]) => void;
     roles: Role[];
     setRoles: (roles: Role[]) => void;
+    settings: AppSettings;
+    setSettings: (settings: AppSettings) => void;
+    isLoading: boolean;
 }
 
 // Create the context
 const AppContext = createContext<AppState | undefined>(undefined);
 
-
 // Helper to manage a single collection from the root of Firestore
-function useFirestoreCollection<T>(collectionName: string) {
+function useFirestoreCollection<T extends {id: string}>(collectionName: string) {
     const db = useFirestore();
-    const { user } = useUser(); // Used to wait for auth before fetching
+    const { user } = useUser();
 
-    // Memoize the collection reference. If user is not authenticated, ref will be null.
     const collectionRef = useMemoFirebase(() => {
-        if (!user) return null; // Wait for anonymous login to complete
-        return collection(db, collectionName); // Access the root-level collection
+        if (!user) return null;
+        return collection(db, collectionName);
     }, [db, user, collectionName]);
     
-    // Use the useCollection hook to get real-time data
-    const { data, isLoading } = useCollection<T>(collectionRef);
+    const { data, isLoading, error } = useCollection<T>(collectionRef);
 
-    // This setter function will handle all updates for the collection.
     const setter = (newData: T[]) => {
         if (!user || !collectionRef) return;
 
-        const currentDataMap = new Map((data || []).map(item => [(item as any).id, item]));
-        const newDataMap = new Map(newData.map(item => [(item as any).id, item]));
+        const currentDataMap = new Map((data || []).map(item => [item.id, item]));
+        const newDataMap = new Map(newData.map(item => [item.id, item]));
 
         // Deletes
         for (const id of currentDataMap.keys()) {
@@ -117,45 +118,76 @@ function useFirestoreCollection<T>(collectionName: string) {
         }
     };
     
-    // During initial load from Firestore, if the collection is empty, populate it with initialData
+    // During initial load, if the collection is empty, populate it.
     useEffect(() => {
-        if (!isLoading && data && data.length === 0 && (initialData as any)[collectionName]) {
-             if (user && collectionRef) {
-                const initialItems = (initialData as any)[collectionName];
-                initialItems.forEach((item: any) => {
-                    const docRef = doc(collectionRef, item.id);
-                    setDocumentNonBlocking(docRef, item, { merge: true });
-                });
-             }
+        if (!isLoading && user && collectionRef && data && data.length === 0 && (initialData as any)[collectionName]) {
+            const initialItems = (initialData as any)[collectionName];
+            initialItems.forEach((item: any) => {
+                const docRef = doc(collectionRef, item.id);
+                setDocumentNonBlocking(docRef, item, { merge: true });
+            });
         }
     }, [isLoading, data, collectionName, user, collectionRef]);
 
-
-    return [data || [], setter] as const;
+    return [data || [], setter, isLoading, error] as const;
 }
-
 
 // The provider component
 export function AppProvider({ children }: { children: ReactNode }) {
     const { isUserLoading } = useUser();
 
-    const [employees, setEmployees] = useFirestoreCollection<Employee>('employees');
-    const [excelFiles, setExcelFiles] = useFirestoreCollection<ExcelFile>('excelFiles');
-    const [items, setItems] = useFirestoreCollection<Item>('items');
-    const [locations, setLocations] = useFirestoreCollection<StorageLocation>('locations');
-    const [expenses, setExpenses] = useFirestoreCollection<Expense>('expenses');
-    const [expenseReports, setExpenseReports] = useFirestoreCollection<ExpenseReport>('expenseReports');
-    const [overtime, setOvertime] = useFirestoreCollection<Overtime>('overtime');
-    const [bonuses, setBonuses] = useFirestoreCollection<Bonus>('bonuses');
-    const [withdrawals, setWithdrawals] = useFirestoreCollection<CashWithdrawal>('withdrawals');
-    const [receipts, setReceipts] = useFirestoreCollection<SoldItemReceipt>('receipts');
-    const [transfers, setTransfers] = useFirestoreCollection<Transfer>('transfers');
-    const [transferItems, setTransferItems] = useFirestoreCollection<ItemForTransfer>('transferItems');
-    const [marketingFeedbacks, setMarketingFeedbacks] = useFirestoreCollection<MarketingFeedback>('marketingFeedbacks');
-    const [evaluationQuestions, setEvaluationQuestions] = useFirestoreCollection<EvaluationQuestion>('evaluationQuestions');
-    const [users, setUsers] = useFirestoreCollection<User>('users');
-    const [roles, setRoles] = useFirestoreCollection<Role>('roles');
+    // App Data Collections
+    const [employees, setEmployees, isEmployeesLoading] = useFirestoreCollection<Employee>('employees');
+    const [excelFiles, setExcelFiles, isExcelFilesLoading] = useFirestoreCollection<ExcelFile>('excelFiles');
+    const [items, setItems, isItemsLoading] = useFirestoreCollection<Item>('items');
+    const [locations, setLocations, isLocationsLoading] = useFirestoreCollection<StorageLocation>('locations');
+    const [expenses, setExpenses, isExpensesLoading] = useFirestoreCollection<Expense>('expenses');
+    const [expenseReports, setExpenseReports, isExpenseReportsLoading] = useFirestoreCollection<ExpenseReport>('expenseReports');
+    const [overtime, setOvertime, isOvertimeLoading] = useFirestoreCollection<Overtime>('overtime');
+    const [bonuses, setBonuses, isBonusesLoading] = useFirestoreCollection<Bonus>('bonuses');
+    const [withdrawals, setWithdrawals, isWithdrawalsLoading] = useFirestoreCollection<CashWithdrawal>('withdrawals');
+    const [receipts, setReceipts, isReceiptsLoading] = useFirestoreCollection<SoldItemReceipt>('receipts');
+    const [transfers, setTransfers, isTransfersLoading] = useFirestoreCollection<Transfer>('transfers');
+    const [transferItems, setTransferItems, isTransferItemsLoading] = useFirestoreCollection<ItemForTransfer>('transferItems');
+    const [marketingFeedbacks, setMarketingFeedbacks, isMarketingFeedbacksLoading] = useFirestoreCollection<MarketingFeedback>('marketingFeedbacks');
+    const [evaluationQuestions, setEvaluationQuestions, isEvaluationQuestionsLoading] = useFirestoreCollection<EvaluationQuestion>('evaluationQuestions');
+    const [users, setUsers, isUsersLoading] = useFirestoreCollection<User>('users');
+    const [roles, setRoles, isRolesLoading] = useFirestoreCollection<Role>('roles');
     
+    // Settings Singleton Document
+    const db = useFirestore();
+    const settingsDocRef = useMemoFirebase(() => db ? doc(db, 'settings', 'main') : null, [db]);
+    const { data: firestoreSettings, isLoading: isSettingsLoading } = useDoc<AppSettings>(settingsDocRef);
+    const [settings, setSettingsState] = useState<AppSettings>(initialSettings);
+    
+    useEffect(() => {
+        if (!isSettingsLoading) {
+            if (firestoreSettings) {
+                 const mergedSettings = {
+                    ...initialSettings,
+                    ...firestoreSettings,
+                    pdfSettings: {
+                        ...initialSettings.pdfSettings,
+                        ...(firestoreSettings.pdfSettings || {})
+                    }
+                };
+                setSettingsState(mergedSettings);
+            } else if (settingsDocRef) {
+                setDocumentNonBlocking(settingsDocRef, initialSettings, { merge: false });
+                setSettingsState(initialSettings);
+            }
+        }
+    }, [firestoreSettings, isSettingsLoading, settingsDocRef]);
+
+    const setSettings = (newSettings: AppSettings) => {
+        setSettingsState(newSettings);
+        if (settingsDocRef) {
+            setDocumentNonBlocking(settingsDocRef, newSettings, { merge: true });
+        }
+    };
+    
+    const isLoading = isUserLoading || isSettingsLoading || isEmployeesLoading || isExcelFilesLoading || isItemsLoading || isLocationsLoading || isExpensesLoading || isExpenseReportsLoading || isOvertimeLoading || isBonusesLoading || isWithdrawalsLoading || isReceiptsLoading || isTransfersLoading || isTransferItemsLoading || isMarketingFeedbacksLoading || isEvaluationQuestionsLoading || isUsersLoading || isRolesLoading;
+
     const value = useMemo<AppState>(() => ({
         employees, setEmployees,
         excelFiles, setExcelFiles,
@@ -173,6 +205,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         evaluationQuestions, setEvaluationQuestions,
         users, setUsers,
         roles, setRoles,
+        settings, setSettings,
+        isLoading,
     }), [
         employees, setEmployees,
         excelFiles, setExcelFiles,
@@ -190,11 +224,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         evaluationQuestions, setEvaluationQuestions,
         users, setUsers,
         roles, setRoles,
+        settings,
+        isLoading
     ]);
-
-    if (isUserLoading) {
-        return <div className="flex h-screen items-center justify-center">Loading user data...</div>;
-    }
 
     return (
         <AppContext.Provider value={value}>

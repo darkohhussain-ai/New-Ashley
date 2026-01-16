@@ -1,14 +1,12 @@
+
 'use client';
 
-import React, { createContext, useState, ReactNode, useCallback } from 'react';
+import React, { createContext, useState, ReactNode, useCallback, useEffect } from 'react';
 import useLocalStorage from '@/hooks/use-local-storage';
-import en from '@/locales/en.json';
-import ku from '@/locales/ku.json';
+import { useAppContext } from './app-provider';
+import { Translations } from '@/lib/types';
 
 export type Language = 'en' | 'ku';
-
-// The structure of our translation files
-export type Translations = Record<string, string>;
 
 interface LanguageContextType {
   language: Language;
@@ -23,9 +21,25 @@ export const LanguageContext = createContext<LanguageContextType | undefined>(un
 
 // The provider component
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguage] = useLocalStorage<Language>('app-language', 'en');
-  const [enTranslations, setEnTranslations] = useLocalStorage<Translations>('translations-en', en);
-  const [kuTranslations, setKuTranslations] = useLocalStorage<Translations>('translations-ku', ku);
+  const { settings, setSettings } = useAppContext();
+  const [language, setSavedLanguage] = useLocalStorage<Language>('app-language', 'en');
+  
+  // Safely initialize state, falling back to empty objects if settings are not yet available.
+  const [enTranslations, setEnTranslations] = useState<Translations>(settings?.translations?.en || {});
+  const [kuTranslations, setKuTranslations] = useState<Translations>(settings?.translations?.ku || {});
+  
+  useEffect(() => {
+    // This effect ensures that when the settings are loaded from Firestore,
+    // the local translation states are updated accordingly.
+    if (settings?.translations) {
+      setEnTranslations(settings.translations.en);
+      setKuTranslations(settings.translations.ku);
+    }
+  }, [settings]);
+
+  const setLanguage = (lang: Language) => {
+    setSavedLanguage(lang);
+  };
   
   const translations = {
     en: enTranslations,
@@ -40,12 +54,16 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   }, [language, translations]);
 
   const setTranslations = useCallback((lang: Language, newTranslations: Translations) => {
-    if (lang === 'en') {
-      setEnTranslations(newTranslations);
-    } else if (lang === 'ku') {
-      setKuTranslations(newTranslations);
-    }
-  }, [setEnTranslations, setKuTranslations]);
+    if (!settings) return; // Guard against settings not being ready
+
+    setSettings({
+        ...settings,
+        translations: {
+            ...settings.translations,
+            [lang]: newTranslations,
+        },
+    });
+  }, [setSettings, settings]);
 
   const value = {
     language,

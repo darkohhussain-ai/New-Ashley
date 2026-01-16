@@ -4,7 +4,7 @@
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/shared/theme-provider";
-import { AppProvider } from '@/context/app-provider';
+import { AppProvider, useAppContext } from '@/context/app-provider';
 import { AuthProvider } from '@/hooks/use-auth';
 import { LanguageProvider } from '@/context/language-provider';
 import { useState, useEffect } from 'react';
@@ -12,7 +12,6 @@ import { SplashScreen } from '@/components/shared/splash-screen';
 import { AppHeader } from '@/components/shared/app-header';
 import { Noto_Naskh_Arabic } from 'next/font/google';
 import { usePathname } from 'next/navigation';
-import useLocalStorage from '@/hooks/use-local-storage';
 import { FirebaseClientProvider } from '@/firebase'; // Import the new provider
 
 
@@ -23,14 +22,14 @@ const notoNaskhArabic = Noto_Naskh_Arabic({
 });
 
 function CustomFontInjector() {
-    const [customFont] = useLocalStorage<string | null>('custom-font-base64', null);
+    const { settings } = useAppContext();
     const [isMounted, setIsMounted] = useState(false);
 
     useEffect(() => {
         setIsMounted(true);
     }, []);
 
-    if (!isMounted || !customFont) {
+    if (!isMounted || !settings.customFont) {
         return null;
     }
 
@@ -38,7 +37,7 @@ function CustomFontInjector() {
         <style>{`
             @font-face { 
                 font-family: 'CustomAppFont'; 
-                src: url(${customFont}); 
+                src: url(${settings.customFont}); 
             }
             :root {
                 --font-body: 'CustomAppFont', ${notoNaskhArabic.style.fontFamily};
@@ -47,45 +46,56 @@ function CustomFontInjector() {
     );
 }
 
+function AppContent({ children }: { children: React.ReactNode }) {
+    const { isLoading } = useAppContext();
+    const [showSplash, setShowSplash] = useState(true);
+    const pathname = usePathname();
+    const isLoginPage = pathname === '/login';
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setShowSplash(false);
+        }, 2000); // Shortened splash time a bit
+
+        return () => clearTimeout(timer);
+    }, []);
+
+    if (showSplash || isLoading) {
+        return <SplashScreen />;
+    }
+
+    return (
+        <>
+            <CustomFontInjector />
+            {!isLoginPage && <AppHeader />}
+            {children}
+        </>
+    );
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [showSplash, setShowSplash] = useState(true);
-  const pathname = usePathname();
-  const isLoginPage = pathname === '/login';
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowSplash(false);
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, []);
-
+  
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <CustomFontInjector />
-      </head>
+      <head />
       <body className={`${notoNaskhArabic.variable} font-sans antialiased`} suppressHydrationWarning>
-        {showSplash ? (
-          <SplashScreen />
-        ) : (
-          <ThemeProvider>
-            <FirebaseClientProvider>
-                <AppProvider>
-                <AuthProvider>
-                    <LanguageProvider>
-                    {!isLoginPage && <AppHeader />}
-                    {children}
-                    </LanguageProvider>
-                </AuthProvider>
-                </AppProvider>
-            </FirebaseClientProvider>
-          </ThemeProvider>
-        )}
+        <FirebaseClientProvider>
+            <AppProvider>
+                <LanguageProvider>
+                  <ThemeProvider>
+                    <AuthProvider>
+                        <AppContent>
+                            {children}
+                        </AppContent>
+                    </AuthProvider>
+                  </ThemeProvider>
+                </LanguageProvider>
+            </AppProvider>
+        </FirebaseClientProvider>
         <Toaster />
       </body>
     </html>

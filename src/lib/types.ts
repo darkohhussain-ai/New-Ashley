@@ -1,7 +1,5 @@
 
-
-
-
+export type Translations = Record<string, string>;
 
 export type User = {
     id: string;
@@ -189,4 +187,17 @@ export type AllPdfSettings = {
     report: PdfSettings;
     invoice: PdfSettings;
     card: PdfSettings;
+};
+
+export type AppSettings = {
+  appLogo: string | null;
+  loginBackground: string | null;
+  dashboardBanner: string | null;
+  dashboardBannerHeight: number;
+  customFont: string | null;
+  translations: {
+      en: Translations;
+      ku: Translations;
+  };
+  pdfSettings: AllPdfSettings;
 };

@@ -15,7 +15,6 @@ import {
   Home,
   LogOut,
 } from 'lucide-react';
-import useLocalStorage from '@/hooks/use-local-storage';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -29,6 +28,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
+import { useAppContext } from '@/context/app-provider';
 
 function DateTimeDisplay() {
   const [time, setTime] = useState<Date | null>(null);
@@ -75,12 +75,9 @@ function DateTimeDisplay() {
 export function AppHeader() {
   const { t, setLanguage, language } = useTranslation();
   const { user, logout } = useAuth();
+  const { settings } = useAppContext();
   const router = useRouter();
 
-  const [savedLogo] = useLocalStorage<string | null>(
-    'app-logo',
-    null
-  );
   const [isMounted, setIsMounted] = useState(false);
   
   useEffect(() => {
@@ -104,11 +101,11 @@ export function AppHeader() {
             <DateTimeDisplay />
           </div>
           <div className="flex items-center justify-center w-1/3">
-            {isMounted && savedLogo && (
+            {isMounted && settings.appLogo && (
               <Link href="/">
                 <div className="relative w-full max-w-[240px] h-16 cursor-pointer">
                   <Image
-                    src={savedLogo}
+                    src={settings.appLogo}
                     alt="App Logo"
                     fill
                     className="object-contain"

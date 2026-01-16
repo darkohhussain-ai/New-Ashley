@@ -1,20 +1,21 @@
+
 'use client';
 
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
-import useLocalStorage from '@/hooks/use-local-storage';
+import { useAppContext } from '@/context/app-provider';
 
 export function SplashScreen() {
-  const [savedLogo] = useLocalStorage<string | null>('app-logo', null);
+  const { settings } = useAppContext();
   const [logo, setLogo] = useState('');
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
-    if (savedLogo) {
-      setLogo(savedLogo);
+    if (settings.appLogo) {
+      setLogo(settings.appLogo);
     }
-  }, [savedLogo]);
+  }, [settings.appLogo]);
 
   if (!isMounted || !logo) {
     // Render a consistent placeholder on the server to avoid hydration mismatch

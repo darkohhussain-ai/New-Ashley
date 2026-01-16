@@ -11,7 +11,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import Image from 'next/image';
-import useLocalStorage from '@/hooks/use-local-storage';
+import { useAppContext } from '@/context/app-provider';
 import { useTranslation } from '@/hooks/use-translation';
 
 
@@ -21,11 +21,9 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
+  const { settings } = useAppContext();
   const { toast } = useToast();
   const router = useRouter();
-  
-  const [savedLogo] = useLocalStorage<string | null>('app-logo', null);
-  const [savedLoginBg] = useLocalStorage<string | null>('login-background-image', null);
 
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -48,9 +46,9 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4 relative">
-       {savedLoginBg && (
+       {settings.loginBackground && (
         <Image
-          src={savedLoginBg}
+          src={settings.loginBackground}
           alt="Login background"
           fill
           className="object-cover z-0"
@@ -60,10 +58,10 @@ export default function LoginPage() {
       <div className="absolute inset-0 bg-black/50 z-0"/>
       <Card className="w-full max-w-sm z-10">
         <CardHeader className="text-center">
-            {savedLogo && (
+            {settings.appLogo && (
                  <div className="relative w-full h-20 mb-4">
                   <Image
-                    src={savedLogo}
+                    src={settings.appLogo}
                     alt="App Logo"
                     fill
                     className="object-contain"

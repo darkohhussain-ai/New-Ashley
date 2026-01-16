@@ -3,9 +3,7 @@
 /**
  * @fileOverview An AI flow to generate multiple answers for a "reality check".
  *
- * - realityCheck - A function that generates three distinct answers for a given question.
- * - RealityCheckInput - The input type for the realityCheck function.
- * - RealityCheckResponse - The return type for the realityCheck function.
+ * This file defines the `realityCheck` function, which generates three distinct answers for a given question.
  */
 
 import { ai } from '@/ai/genkit';
@@ -14,14 +12,14 @@ import { z } from 'zod';
 const RealityCheckInputSchema = z.object({
   question: z.string().describe('The question to be answered.'),
 });
-export type RealityCheckInput = z.infer<typeof RealityCheckInputSchema>;
+type RealityCheckInput = z.infer<typeof RealityCheckInputSchema>;
 
 const RealityCheckResponseSchema = z.object({
   answer1: z.string().describe('A concise and direct answer to the question.'),
   answer2: z.string().describe('An alternative answer, potentially from a different perspective or with more detail.'),
   answer3: z.string().describe('A third answer that might be more creative, nuanced, or consider edge cases.'),
 });
-export type RealityCheckResponse = z.infer<typeof RealityCheckResponseSchema>;
+type RealityCheckResponse = z.infer<typeof RealityCheckResponseSchema>;
 
 const realityCheckPrompt = ai.definePrompt({
   name: 'realityCheckPrompt',
