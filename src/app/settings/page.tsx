@@ -588,7 +588,7 @@ function SettingsPage() {
                                     <div className="mt-4">
                                         <Label>Logo Preview</Label>
                                         <div className="relative w-full h-24 mt-2 border rounded-md p-2 flex justify-center items-center bg-muted/30">
-                                            <Image src={localSettings.appLogo} alt="Logo Preview" fill className="object-contain" />
+                                            <Image key={localSettings.appLogo} src={localSettings.appLogo} alt="Logo Preview" fill className="object-contain" />
                                         </div>
                                     </div>
                                 )}
@@ -599,7 +599,7 @@ function SettingsPage() {
                         <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><LayoutDashboard /> {t('dashboard')}</CardTitle></CardHeader>
                         <CardContent className="space-y-6">
                             <div className="w-full h-24 border rounded-md flex items-center justify-center bg-muted/30 relative overflow-hidden">
-                                {localSettings.dashboardBanner ? <Image src={localSettings.dashboardBanner} alt="Current Dashboard Banner" fill={true} className="object-cover" /> : <span className='text-sm text-muted-foreground'>{t('dashboard_banner_preview')}</span>}
+                                {localSettings.dashboardBanner ? <Image key={localSettings.dashboardBanner} src={localSettings.dashboardBanner} alt="Current Dashboard Banner" fill={true} className="object-cover" /> : <span className='text-sm text-muted-foreground'>{t('dashboard_banner_preview')}</span>}
                             </div>
                             <div>
                                 <Label htmlFor="banner-upload">{t('upload_dashboard_banner')}</Label>
@@ -615,7 +615,7 @@ function SettingsPage() {
                         <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><LogIn /> Login Page</CardTitle></CardHeader>
                         <CardContent className="space-y-6">
                             <div className="w-full h-24 border rounded-md flex items-center justify-center bg-muted/30 relative overflow-hidden">
-                                {localSettings.loginBackground ? <Image src={localSettings.loginBackground} alt="Current Login Background" fill={true} className="object-cover" /> : <span className='text-sm text-muted-foreground'>Login Background Preview</span>}
+                                {localSettings.loginBackground ? <Image key={localSettings.loginBackground} src={localSettings.loginBackground} alt="Current Login Background" fill={true} className="object-cover" /> : <span className='text-sm text-muted-foreground'>Login Background Preview</span>}
                             </div>
                             <div>
                                 <Label htmlFor="login-bg-upload">Upload Login Background</Label>
@@ -627,7 +627,7 @@ function SettingsPage() {
                         <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><ImageIconLucide /> Main Background</CardTitle></CardHeader>
                         <CardContent className="space-y-6">
                             <div className="w-full h-24 border rounded-md flex items-center justify-center bg-muted/30 relative overflow-hidden">
-                                {localSettings.mainBackground ? <Image src={localSettings.mainBackground} alt="Current Main Background" fill={true} className="object-cover" /> : <span className='text-sm text-muted-foreground'>Main Background Preview</span>}
+                                {localSettings.mainBackground ? <Image key={localSettings.mainBackground} src={localSettings.mainBackground} alt="Current Main Background" fill={true} className="object-cover" /> : <span className='text-sm text-muted-foreground'>Main Background Preview</span>}
                             </div>
                             <div>
                                 <Label htmlFor="main-bg-upload">Upload Main Background</Label>
