@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react';
 import {
   Query,
   onSnapshot,
-  getDocs,
   DocumentData,
   FirestoreError,
   QuerySnapshot,
@@ -70,49 +69,40 @@ export function useCollection<T = any>(
       return;
     }
 
-    let isMounted = true;
+    setIsLoading(true);
 
-    const fetchData = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const snapshot = await getDocs(memoizedTargetRefOrQuery);
-        if (isMounted) {
-          const results: ResultItemType[] = [];
-          snapshot.forEach((doc) => {
-            results.push({ ...(doc.data() as T), id: doc.id });
-          });
-          setData(results);
-          setError(null);
-          setIsLoading(false);
-        }
-      } catch (e: any) {
-        if (isMounted) {
-            const path: string =
-                memoizedTargetRefOrQuery.type === 'collection'
-                ? (memoizedTargetRefOrQuery as CollectionReference).path
-                : (memoizedTargetRefOrQuery as unknown as InternalQuery)._query.path.canonicalString()
+    const unsubscribe = onSnapshot(
+      memoizedTargetRefOrQuery,
+      (snapshot: QuerySnapshot<DocumentData>) => {
+        const results: ResultItemType[] = [];
+        snapshot.forEach((doc) => {
+          results.push({ ...(doc.data() as T), id: doc.id });
+        });
+        setData(results);
+        setError(null);
+        setIsLoading(false);
+      },
+      (e: FirestoreError) => {
+        const path: string =
+            memoizedTargetRefOrQuery.type === 'collection'
+            ? (memoizedTargetRefOrQuery as CollectionReference).path
+            : (memoizedTargetRefOrQuery as unknown as InternalQuery)._query.path.canonicalString()
 
-            const contextualError = new FirestorePermissionError({
-                operation: 'list',
-                path,
-            })
+        const contextualError = new FirestorePermissionError({
+            operation: 'list',
+            path,
+        })
 
-            setError(contextualError)
-            setData(null)
-            setIsLoading(false)
+        setError(contextualError)
+        setData(null)
+        setIsLoading(false)
 
-            // trigger global error propagation
-            errorEmitter.emit('permission-error', contextualError);
-        }
+        // trigger global error propagation
+        errorEmitter.emit('permission-error', contextualError);
       }
-    };
+    );
 
-    fetchData();
-
-    return () => {
-      isMounted = false;
-    };
+    return () => unsubscribe();
   }, [memoizedTargetRefOrQuery]);
   
   return { data, isLoading, error };

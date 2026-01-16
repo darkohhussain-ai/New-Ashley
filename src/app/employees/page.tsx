@@ -23,7 +23,6 @@ import { EmployeePdfCard } from "@/components/employees/employee-pdf-card"
 import html2canvas from 'html2canvas'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import useLocalStorage from '@/hooks/use-local-storage'
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
@@ -68,8 +67,9 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
         overtime,
         bonuses,
         withdrawals,
+        settings
     } = useAppContext();
-    const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {}, card: {} });
+    const { pdfSettings } = settings;
 
 
     const employee = useMemo(() => employees.find(e => e.id === employeeId), [employees, employeeId]);

@@ -24,7 +24,6 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
 import { AccountPdfCard } from "@/components/account/account-pdf-card";
-import useLocalStorage from "@/hooks/use-local-storage";
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -82,7 +81,8 @@ function AccountPage() {
   const { user, login } = useAuth();
   const { 
     employees, setEmployees, 
-    expenses, overtime, bonuses, withdrawals 
+    expenses, overtime, bonuses, withdrawals,
+    settings 
   } = useAppContext();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -90,8 +90,7 @@ function AccountPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   const pdfCardRef = useRef<HTMLDivElement>(null);
-  const [logoSrc] = useLocalStorage('app-logo', "https://picsum.photos/seed/1/300/100");
-  const [customFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
+  const logoSrc = settings.appLogo;
 
 
   // Form State
@@ -248,10 +247,10 @@ function AccountPage() {
     const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
     const useKurdish = language === 'ku';
 
-    if (customFontBase64 && useKurdish) {
+    if (settings.customFont && useKurdish) {
         try {
             const fontName = "CustomFont";
-            doc.addFileToVFS(`${fontName}.ttf`, customFontBase64.split(',')[1]);
+            doc.addFileToVFS(`${fontName}.ttf`, settings.customFont.split(',')[1]);
             doc.addFont(`${fontName}.ttf`, fontName, "normal");
             doc.setFont(fontName);
         } catch (e) { console.error("Could not add custom font to PDF", e); }
@@ -286,8 +285,8 @@ function AccountPage() {
             head: [[t('date'), t('notes'), t('amount')]],
             body: data.map(item => [format(parseISO(item.date), 'PP'), item.notes || '', formatCurrency(item.amount || item.totalAmount)]),
             theme: 'striped',
-            styles: { font: (useKurdish && customFontBase64) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
-            headStyles: { fillColor: '#3b82f6', font: (useKurdish && customFontBase64) ? 'CustomFont' : 'helvetica' },
+            styles: { font: (useKurdish && settings.customFont) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
+            headStyles: { fillColor: '#3b82f6', font: (useKurdish && settings.customFont) ? 'CustomFont' : 'helvetica' },
             foot: [[{content: t('total'), colSpan: 2, styles: { halign: 'right' }}, formatCurrency(total)]],
             footStyles: { fontStyle: 'bold' },
         });
@@ -454,7 +453,3 @@ function AccountPage() {
 }
 
 export default withAuth(AccountPage);
-
-    
-
-    

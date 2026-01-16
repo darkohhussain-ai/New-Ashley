@@ -18,33 +18,7 @@ const initialRoles: Role[] = [
 ];
 
 const initialEmployees: Employee[] = [
-    { id: 'emp-01', name: 'Darko01', employeeId: '01', role: 'Super Manager', createdAt: '2023-01-01T10:00:00Z', password: 'darko0123' },
-    { id: 'emp-02', name: 'Shexan Ebrahem', employeeId: '02', role: 'Manager', createdAt: '2023-01-02T10:00:00Z', password: 'shexan123' },
-    { id: 'emp-03', name: 'Hunar Jaza', employeeId: '03', role: 'IT', createdAt: '2023-01-03T10:00:00Z', password: 'hunar123' },
-    { id: 'emp-04', name: 'Aram Qadr', employeeId: '04', role: 'Manager', createdAt: '2023-01-04T10:00:00Z', password: 'aram123' },
-    { id: 'emp-05', name: 'Sarkawt Salah', employeeId: '05', role: 'Employee Supervisor', createdAt: '2023-01-05T10:00:00Z', password: 'sarkawt123' },
-    { id: 'emp-06', name: 'Ranjdar Jamal', employeeId: '06', role: 'Employee', createdAt: '2023-01-06T10:00:00Z', password: 'ranjdar123' },
-    { id: 'emp-07', name: 'Omer Taha', employeeId: '07', role: 'Employee', createdAt: '2023-01-07T10:00:00Z', password: 'omer123' },
-    { id: 'emp-08', name: 'Muhamad Jmal', employeeId: '08', role: 'Employee', createdAt: '2023-01-08T10:00:00Z', password: 'muhamad123' },
-    { id: 'emp-09', name: 'Dwha Muhamad', employeeId: '09', role: 'Employee', createdAt: '2023-01-09T10:00:00Z', password: 'dwha123' },
-    { id: 'emp-10', name: 'Shewa Zher', employeeId: '10', role: 'Employee', createdAt: '2023-01-10T10:00:00Z', password: 'shewa123' },
-    { id: 'emp-11', name: 'Bryar Star', employeeId: '11', role: 'Employee', createdAt: '2023-01-11T10:00:00Z', password: 'bryar123' },
-    { id: 'emp-12', name: 'Shad Aram', employeeId: '12', role: 'Employee', createdAt: '2023-01-12T10:00:00Z', password: 'shad123' },
-    { id: 'emp-13', name: 'Srusht Namiq', employeeId: '13', role: 'Employee', createdAt: '2023-01-13T10:00:00Z', password: 'srusht123' },
-    { id: 'emp-14', name: 'Trifa Abdulla', employeeId: '14', role: 'Employee', createdAt: '2023-01-14T10:00:00Z', password: 'trifa123' },
-    { id: 'emp-15', name: 'Ahmad Mhamad', employeeId: '15', role: 'Employee', createdAt: '2023-01-15T10:00:00Z', password: 'ahmad123' },
-    { id: 'emp-16', name: 'Shvan Atta', employeeId: '16', role: 'Employee', createdAt: '2023-01-16T10:00:00Z', password: 'shvan123' },
-    { id: 'emp-17', name: 'Baxan Rauf', employeeId: '17', role: 'Employee', createdAt: '2023-01-17T10:00:00Z', password: 'baxan123' },
-    { id: 'emp-18', name: 'Harem Fayaq', employeeId: '18', role: 'Employee', createdAt: '2023-01-18T10:00:00Z', password: 'harem123' },
-    { id: 'emp-19', name: 'Aland Hussen', employeeId: '19', role: 'Employee', createdAt: '2023-01-19T10:00:00Z', password: 'aland123' },
-    { id: 'emp-20', name: 'Hawkar Salar', employeeId: '20', role: 'Employee', createdAt: '2023-01-20T10:00:00Z', password: 'hawkar123' },
-    { id: 'emp-21', name: 'Aras Abas', employeeId: '21', role: 'Employee', createdAt: '2023-01-21T10:00:00Z', password: 'aras123' },
-    { id: 'emp-22', name: 'Darya Jamal', employeeId: '22', role: 'Employee', createdAt: '2023-01-22T10:00:00Z', password: 'darya123' },
-    { id: 'emp-23', name: 'Payam Salah', employeeId: '23', role: 'Employee', createdAt: '2023-01-23T10:00:00Z', password: 'payam123' },
-    { id: 'emp-24', name: 'Elaf Sabah', employeeId: '24', role: 'Employee', createdAt: '2023-01-24T10:00:00Z', password: 'elaf123' },
-    { id: 'emp-25', name: 'Enas', employeeId: '25', role: 'Employee', createdAt: '2023-01-25T10:00:00Z', password: 'enas123' },
-    { id: 'emp-26', name: 'Chenar', employeeId: '26', role: 'Marketing', createdAt: '2023-01-26T10:00:00Z', password: 'chenar123' },
-    { id: 'emp-27', name: 'Lanya', employeeId: '27', role: 'Marketing', createdAt: '2023-01-27T10:00:00Z', password: 'lanya123' },
+    { id: 'emp-01', name: 'Darko01', employeeId: '01', role: 'Super Manager', createdAt: '2023-01-01T10:00:00Z', password: 'darko0123', isActive: true },
 ];
 
 const initialUsers: User[] = [

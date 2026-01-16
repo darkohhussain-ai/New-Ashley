@@ -11,7 +11,9 @@ import { useState, useEffect, useCallback } from 'react';
 function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((val: T) => T)) => void] {
   const [storedValue, setStoredValue] = useState<T>(initialValue);
 
+  // This function is now a simple state setter. It does not interact with localStorage.
   const setValue = useCallback((value: T | ((val: T) => T)) => {
+    // Allow value to be a function so we have same API as useState
     const valueToStore = value instanceof Function ? value(storedValue) : value;
     setStoredValue(valueToStore);
   }, [storedValue]);

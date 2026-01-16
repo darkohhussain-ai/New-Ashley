@@ -17,7 +17,7 @@ export function SplashScreen() {
             <Image
               src={logo}
               alt="Loading..."
-              layout="fill"
+              fill
               objectFit="contain"
               priority
               unoptimized
