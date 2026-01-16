@@ -97,82 +97,85 @@ export function AppHeader() {
     <header className="bg-card border-b top-0 z-10 print:hidden">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20">
-          <div className="hidden md:flex items-center gap-4 text-sm text-muted-foreground w-1/3">
-            <DateTimeDisplay />
-          </div>
-          <div className="flex items-center justify-center w-1/3">
-            {isMounted && settings.appLogo && (
-              <Link href="/">
-                <div className="relative w-full max-w-[240px] h-16 cursor-pointer">
-                  <Image
-                    src={settings.appLogo}
-                    alt="App Logo"
-                    fill
-                    className="object-contain"
-                    data-ai-hint="logo"
-                  />
+            <div className="flex-1 flex items-center justify-start">
+                 <div className="hidden md:flex items-center gap-4 text-sm text-muted-foreground">
+                    <DateTimeDisplay />
                 </div>
-              </Link>
-            )}
-          </div>
-          <div className="flex items-center justify-end gap-2 w-1/3">
-            <Button variant="ghost" size="icon" asChild>
-                <Link href="/"><Home className="w-5 h-5 text-muted-foreground hover:text-primary" /></Link>
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Languages className="w-5 h-5 text-muted-foreground hover:text-primary" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onSelect={() => setLanguage('en')}
-                  disabled={language === 'en'}
-                >
-                  English
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onSelect={() => setLanguage('ku')}
-                  disabled={language === 'ku'}
-                >
-                  Kurdish (Soranî)
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleRefresh}
-              aria-label={t('refresh_page')}
-            >
-              <RefreshCcw className="w-5 h-5 text-muted-foreground hover:text-primary" />
-            </Button>
-            <Bell className="w-6 h-6 text-muted-foreground hover:text-primary cursor-pointer" />
-            
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <div className="flex items-center gap-2 cursor-pointer">
-                        <Avatar className="w-10 h-10">
-                        <AvatarImage src={undefined} />
-                        <AvatarFallback>{user?.username?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
-                        </Avatar>
-                        <ChevronDown className="w-4 h-4 text-muted-foreground" />
+            </div>
+          
+            <div className="flex-1 flex items-center justify-center">
+                {isMounted && settings.appLogo && (
+                <Link href="/">
+                    <div className="relative w-full max-w-[240px] h-16 cursor-pointer">
+                    <Image
+                        src={settings.appLogo}
+                        alt="App Logo"
+                        fill
+                        className="object-contain"
+                        data-ai-hint="logo"
+                    />
                     </div>
+                </Link>
+                )}
+            </div>
+
+            <div className="flex-1 flex items-center justify-end gap-2">
+                <Button variant="ghost" size="icon" asChild>
+                    <Link href="/"><Home className="w-5 h-5 text-muted-foreground hover:text-primary" /></Link>
+                </Button>
+                <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                    <Languages className="w-5 h-5 text-muted-foreground hover:text-primary" />
+                    </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                    <DropdownMenuItem asChild>
-                        <Link href="/account">My Account</Link>
+                    <DropdownMenuItem
+                    onSelect={() => setLanguage('en')}
+                    disabled={language === 'en'}
+                    >
+                    English
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout}>
-                        <LogOut className="mr-2 h-4 w-4" />
-                        <span>Logout</span>
+                    <DropdownMenuItem
+                    onSelect={() => setLanguage('ku')}
+                    disabled={language === 'ku'}
+                    >
+                    Kurdish (Soranî)
                     </DropdownMenuItem>
                 </DropdownMenuContent>
-            </DropdownMenu>
+                </DropdownMenu>
 
+                <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleRefresh}
+                aria-label={t('refresh_page')}
+                >
+                <RefreshCcw className="w-5 h-5 text-muted-foreground hover:text-primary" />
+                </Button>
+                <Bell className="w-6 h-6 text-muted-foreground hover:text-primary cursor-pointer" />
+                
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <div className="flex items-center gap-2 cursor-pointer">
+                            <Avatar className="w-10 h-10">
+                            <AvatarImage src={undefined} />
+                            <AvatarFallback>{user?.username?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
+                            </Avatar>
+                            <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                        </div>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem asChild>
+                            <Link href="/account">My Account</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={handleLogout}>
+                            <LogOut className="mr-2 h-4 w-4" />
+                            <span>Logout</span>
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
           </div>
         </div>
       </div>

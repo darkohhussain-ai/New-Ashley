@@ -311,49 +311,54 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                 </div>
             </div>
             <div className="w-full h-full flex flex-col">
-                <header className="flex items-center justify-end gap-2 p-4 border-b">
-                    {isEditing ? (
-                        <>
-                            <Button onClick={handleUpdate}><Save className="mr-2 h-4 w-4"/> {t('save_changes')}</Button>
-                            <Button variant="ghost" onClick={() => setIsEditing(false)}><X className="mr-2 h-4 w-4"/> {t('cancel')}</Button>
-                        </>
-                    ) : (
-                        <>
-                            <Button onClick={() => setIsEditing(true)}><Edit className="mr-2 h-4 w-4"/> {t('edit')}</Button>
-                            <Button onClick={handlePrintCard} variant="outline"><Printer className="mr-2 h-4 w-4" /> {t('print_card')}</Button>
-                            <Button onClick={handleDownloadReport} variant="outline"><FileDown className="mr-2 h-4 w-4" /> {t('download_report')}</Button>
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="outline" className={cn(!employee.isActive && "text-destructive border-destructive/50")}>
-                                        <UserX className="mr-2 h-4 w-4"/> {employee.isActive ? 'Deactivate' : 'Reactivate'}
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>Are you sure you want to {employee.isActive ? 'deactivate' : 'reactivate'} {employee.name}?</AlertDialogTitle>
-                                        <AlertDialogDescription>Deactivated employees will not appear in dropdown lists for new entries.</AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-                                        <AlertDialogAction onClick={handleToggleActiveStatus}>{employee.isActive ? 'Deactivate' : 'Reactivate'}</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild><Button variant="destructive"><Trash2 className="mr-2 h-4 w-4"/> {t('delete')}</Button></AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>{t('are_you_sure_delete_employee')}</AlertDialogTitle>
-                                        <AlertDialogDescription>{t('confirm_delete_employee_record', {employeeName: employee.name})}</AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-                                        <AlertDialogAction onClick={handleDelete}>{t('continue')}</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        </>
-                    )}
+                <header className="flex items-center justify-between gap-2 p-4 border-b">
+                    <Button variant="outline" size="icon" className="lg:hidden" onClick={onDeselect}>
+                        <ArrowLeft />
+                    </Button>
+                    <div className="flex-1 flex items-center justify-end gap-2 flex-wrap">
+                        {isEditing ? (
+                            <>
+                                <Button onClick={handleUpdate}><Save className="mr-2 h-4 w-4"/> {t('save_changes')}</Button>
+                                <Button variant="ghost" onClick={() => setIsEditing(false)}><X className="mr-2 h-4 w-4"/> {t('cancel')}</Button>
+                            </>
+                        ) : (
+                            <>
+                                <Button onClick={() => setIsEditing(true)}><Edit className="mr-2 h-4 w-4"/> {t('edit')}</Button>
+                                <Button onClick={handlePrintCard} variant="outline"><Printer className="mr-2 h-4 w-4" /> {t('print_card')}</Button>
+                                <Button onClick={handleDownloadReport} variant="outline"><FileDown className="mr-2 h-4 w-4" /> {t('download_report')}</Button>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="outline" className={cn(!employee.isActive && "text-destructive border-destructive/50")}>
+                                            <UserX className="mr-2 h-4 w-4"/> {employee.isActive ? 'Deactivate' : 'Reactivate'}
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Are you sure you want to {employee.isActive ? 'deactivate' : 'reactivate'} {employee.name}?</AlertDialogTitle>
+                                            <AlertDialogDescription>Deactivated employees will not appear in dropdown lists for new entries.</AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                                            <AlertDialogAction onClick={handleToggleActiveStatus}>{employee.isActive ? 'Deactivate' : 'Reactivate'}</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild><Button variant="destructive"><Trash2 className="mr-2 h-4 w-4"/> {t('delete')}</Button></AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>{t('are_you_sure_delete_employee')}</AlertDialogTitle>
+                                            <AlertDialogDescription>{t('confirm_delete_employee_record', {employeeName: employee.name})}</AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                                            <AlertDialogAction onClick={handleDelete}>{t('continue')}</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </>
+                        )}
+                    </div>
                 </header>
                 <div className="flex-1 overflow-y-auto p-6 space-y-6">
                     <Card className="border-0 shadow-none">
@@ -376,16 +381,6 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                                         <Input className="text-2xl h-12" value={name} onChange={e => setName(e.target.value)} placeholder={t('employee_name')} />
                                         <div className="relative">
                                             <Input dir="rtl" className="text-2xl h-12" value={kurdishName} onChange={e => setKurdishName(e.target.value)} placeholder="ناو بە کوردی" />
-                                            {/* <Button 
-                                                size="icon" 
-                                                variant="ghost" 
-                                                className="absolute right-1 top-1/2 -translate-y-1/2" 
-                                                onClick={handleAutoTranslate}
-                                                disabled={isTranslating || !name}
-                                                type="button"
-                                            >
-                                                {isTranslating ? <Loader2 className="animate-spin" /> : <Wand2 />}
-                                            </Button> */}
                                         </div>
 
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -578,12 +573,6 @@ function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean,
     const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newName = e.target.value;
         setName(newName);
-        // if (nameDebounceTimeout.current) {
-        //     clearTimeout(nameDebounceTimeout.current);
-        // }
-        // nameDebounceTimeout.current = setTimeout(() => {
-        //     handleAutoTranslate(newName);
-        // }, 1000); // 1-second delay
     };
 
     const resetForm = () => {
@@ -789,7 +778,10 @@ function EmployeesPage() {
         </header>
 
         <div className="flex flex-1 overflow-hidden">
-            <aside className="w-full max-w-xs border-r flex flex-col">
+            <aside className={cn(
+                "w-full flex-col border-r lg:w-full lg:max-w-xs",
+                selectedEmployeeId ? "hidden lg:flex" : "flex"
+            )}>
                 <div className="p-4 space-y-4 border-b">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -815,7 +807,10 @@ function EmployeesPage() {
                 </div>
             </aside>
             
-            <main className="flex-1 flex items-center justify-center overflow-y-auto">
+            <main className={cn(
+                "flex-1 overflow-y-auto",
+                selectedEmployeeId ? "block" : "hidden lg:flex lg:items-center lg:justify-center"
+            )}>
                 {selectedEmployeeId ? (
                     <EmployeeDetailView employeeId={selectedEmployeeId} onDeselect={() => setSelectedEmployeeId(null)}/>
                 ) : (
