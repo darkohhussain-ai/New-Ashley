@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import * as React from 'react';
@@ -326,22 +327,14 @@ function TranslationEditor() {
 function SettingsPage() {
   const { toast } = useToast()
   const { theme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
   const { t } = useTranslation();
   const { settings, setSettings } = useAppContext();
   const storage = useStorage();
 
-  const [localSettings, setLocalSettings] = useState<AppSettings>(initialSettings);
   const [activePdfTab, setActivePdfTab] = useState<'report' | 'invoice' | 'card'>('report');
   const [selectedReportType, setSelectedReportType] = useState<keyof NonNullable<AllPdfSettings['report']['reportColors']>>('general');
   const [importFile, setImportFile] = useState<File | null>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
-  
-  useEffect(() => {
-    if (settings) {
-      setLocalSettings(JSON.parse(JSON.stringify(settings))); // Deep copy
-    }
-  }, [settings]);
 
   const applyColors = (colors: ThemeColors) => {
     const root = document.documentElement;
@@ -355,61 +348,57 @@ function SettingsPage() {
   };
 
   useEffect(() => {
-    setMounted(true)
-  }, []);
-
-  useEffect(() => {
-    if (mounted && localSettings) {
+    if (settings) {
       if (theme === 'dark') {
-        applyColors(localSettings.darkThemeColors);
+        applyColors(settings.darkThemeColors);
       } else {
-        applyColors(localSettings.lightThemeColors);
+        applyColors(settings.lightThemeColors);
       }
     }
-  }, [localSettings?.lightThemeColors, localSettings?.darkThemeColors, theme, mounted, localSettings]);
+  }, [settings?.lightThemeColors, settings?.darkThemeColors, theme, settings]);
 
-  const handleLocalSettingChange = (key: keyof AppSettings, value: any) => {
-    setLocalSettings(prev => ({ ...prev, [key]: value }));
+  const handleSettingChange = (key: keyof AppSettings, value: any) => {
+    setSettings({ ...settings, [key]: value });
   };
 
   const handleThemeColorChange = (mode: 'light' | 'dark', property: keyof ThemeColors, value: string) => {
       const themeKey = mode === 'light' ? 'lightThemeColors' : 'darkThemeColors';
-      setLocalSettings(prev => ({
-          ...prev,
+      setSettings({
+          ...settings,
           [themeKey]: {
-              ...prev[themeKey],
+              ...settings[themeKey],
               [property]: value
           }
-      }));
+      });
   };
 
   const handlePdfSettingChange = <K extends keyof PdfSettings>(key: K, value: PdfSettings[K]) => {
-    setLocalSettings(prev => ({
-        ...prev,
+    setSettings({
+        ...settings,
         pdfSettings: {
-            ...prev.pdfSettings,
+            ...settings.pdfSettings,
             [activePdfTab]: {
-                ...prev.pdfSettings[activePdfTab],
+                ...settings.pdfSettings[activePdfTab],
                 [key]: value
             }
         }
-    }));
+    });
   };
   
   const handleReportColorChange = (reportType: keyof NonNullable<AllPdfSettings['report']['reportColors']>, color: string) => {
-    setLocalSettings(prev => ({
-        ...prev,
+    setSettings({
+        ...settings,
         pdfSettings: {
-            ...prev.pdfSettings,
+            ...settings.pdfSettings,
             report: {
-                ...prev.pdfSettings.report,
+                ...settings.pdfSettings.report,
                 reportColors: {
-                    ...(prev.pdfSettings.report.reportColors),
+                    ...(settings.pdfSettings.report.reportColors),
                     [reportType]: color,
                 }
             }
         }
-    }));
+    });
   };
   
   const handleFileUpload = async (
@@ -442,9 +431,9 @@ function SettingsPage() {
           update({ id: toastId, title: 'Upload Complete', description: 'Your image has been uploaded successfully.' });
           setTimeout(() => dismiss(toastId), 3000);
   
-        } catch (error) {
+        } catch (error: any) {
           console.error('File upload failed:', error);
-          update({ id: toastId, title: 'Upload Failed', description: 'There was an error uploading your file.', variant: 'destructive' });
+          update({ id: toastId, title: 'Upload Failed', description: error.message || 'There was an error uploading your file.', variant: 'destructive' });
         }
       };
       reader.onerror = (error) => {
@@ -452,21 +441,14 @@ function SettingsPage() {
         update({ id: toastId, title: 'File Read Failed', description: 'Could not read the selected file.', variant: 'destructive' });
       };
       reader.readAsDataURL(file);
-    } catch (error) {
+    } catch (error: any) {
         console.error('File upload initiation failed:', error);
-        update({ id: toastId, title: 'Upload Failed', description: 'Could not start the file upload process.', variant: 'destructive' });
+        update({ id: toastId, title: 'Upload Failed', description: error.message || 'Could not start the file upload process.', variant: 'destructive' });
     }
-  };
-
-
-  const handleSaveChanges = () => {
-    setSettings(localSettings);
-    toast({ title: t('settings_saved'), description: t('settings_have_been_updated') });
   };
 
   const handleResetToDefault = () => {
     setSettings(initialSettings);
-    setLocalSettings(initialSettings); // Also reset local state to match
     toast({ title: t('settings_reset'), description: t('settings_reset_desc') });
   };
   
@@ -518,7 +500,7 @@ function SettingsPage() {
     }
   };
 
-  if (!mounted || !localSettings) {
+  if (!settings) {
     return (
         <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
             <header className="flex items-center gap-4 mb-8">
@@ -532,7 +514,7 @@ function SettingsPage() {
     );
   }
 
-  const currentPdfSettings = localSettings.pdfSettings[activePdfTab];
+  const currentPdfSettings = settings.pdfSettings[activePdfTab];
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -570,9 +552,6 @@ function SettingsPage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-            <Button onClick={handleSaveChanges}>
-              <Save className="mr-2 h-4 w-4" /> {t('save_all_changes')}
-            </Button>
           </div>
         </div>
       </header>
@@ -597,11 +576,11 @@ function SettingsPage() {
                             </div>
                              <div className="space-y-2">
                                 <Label htmlFor="news-ticker-text">News Ticker Text</Label>
-                                <Input id="news-ticker-text" value={localSettings.newsTickerText} onChange={e => handleLocalSettingChange('newsTickerText', e.target.value)} placeholder="Enter scrolling text for the dashboard..."/>
+                                <Input id="news-ticker-text" value={settings.newsTickerText} onChange={e => handleSettingChange('newsTickerText', e.target.value)} placeholder="Enter scrolling text for the dashboard..."/>
                             </div>
                              <div className="space-y-2">
-                                <Label htmlFor="banner-height">{t('banner_height')}: {localSettings.dashboardBannerHeight}px</Label>
-                                <Slider id="banner-height" min={80} max={300} step={10} value={[localSettings.dashboardBannerHeight]} onValueChange={(value) => handleLocalSettingChange('dashboardBannerHeight', value[0])} />
+                                <Label htmlFor="banner-height">{t('banner_height')}: {settings.dashboardBannerHeight}px</Label>
+                                <Slider id="banner-height" min={80} max={300} step={10} value={[settings.dashboardBannerHeight]} onValueChange={(value) => handleSettingChange('dashboardBannerHeight', value[0])} />
                             </div>
                         </CardContent>
                     </Card>
@@ -615,22 +594,22 @@ function SettingsPage() {
                                     <TabsTrigger value="dark">{t('dark_mode')}</TabsTrigger>
                                 </TabsList>
                                 <TabsContent value="light" className="space-y-4 pt-4">
-                                    <ColorPicker label="Background" value={localSettings.lightThemeColors.background} onChange={(c) => handleThemeColorChange('light', 'background', c)} />
-                                    <ColorPicker label="Foreground" value={localSettings.lightThemeColors.foreground} onChange={(c) => handleThemeColorChange('light', 'foreground', c)} />
-                                    <ColorPicker label="Primary" value={localSettings.lightThemeColors.primary} onChange={(c) => handleThemeColorChange('light', 'primary', c)} />
-                                    <ColorPicker label="Accent" value={localSettings.lightThemeColors.accent} onChange={(c) => handleThemeColorChange('light', 'accent', c)} />
-                                    <ColorPicker label="Card" value={localSettings.lightThemeColors.card} onChange={(c) => handleThemeColorChange('light', 'card', c)} />
-                                    <ColorPicker label="Active Tab Background" value={localSettings.lightThemeColors.tabActiveBackground} onChange={(c) => handleThemeColorChange('light', 'tabActiveBackground', c)} />
-                                    <ColorPicker label="Active Tab Foreground" value={localSettings.lightThemeColors.tabActiveForeground} onChange={(c) => handleThemeColorChange('light', 'tabActiveForeground', c)} />
+                                    <ColorPicker label="Background" value={settings.lightThemeColors.background} onChange={(c) => handleThemeColorChange('light', 'background', c)} />
+                                    <ColorPicker label="Foreground" value={settings.lightThemeColors.foreground} onChange={(c) => handleThemeColorChange('light', 'foreground', c)} />
+                                    <ColorPicker label="Primary" value={settings.lightThemeColors.primary} onChange={(c) => handleThemeColorChange('light', 'primary', c)} />
+                                    <ColorPicker label="Accent" value={settings.lightThemeColors.accent} onChange={(c) => handleThemeColorChange('light', 'accent', c)} />
+                                    <ColorPicker label="Card" value={settings.lightThemeColors.card} onChange={(c) => handleThemeColorChange('light', 'card', c)} />
+                                    <ColorPicker label="Active Tab Background" value={settings.lightThemeColors.tabActiveBackground} onChange={(c) => handleThemeColorChange('light', 'tabActiveBackground', c)} />
+                                    <ColorPicker label="Active Tab Foreground" value={settings.lightThemeColors.tabActiveForeground} onChange={(c) => handleThemeColorChange('light', 'tabActiveForeground', c)} />
                                 </TabsContent>
                                     <TabsContent value="dark" className="space-y-4 pt-4">
-                                    <ColorPicker label="Background" value={localSettings.darkThemeColors.background} onChange={(c) => handleThemeColorChange('dark', 'background', c)} />
-                                    <ColorPicker label="Foreground" value={localSettings.darkThemeColors.foreground} onChange={(c) => handleThemeColorChange('dark', 'foreground', c)} />
-                                    <ColorPicker label="Primary" value={localSettings.darkThemeColors.primary} onChange={(c) => handleThemeColorChange('dark', 'primary', c)} />
-                                    <ColorPicker label="Accent" value={localSettings.darkThemeColors.accent} onChange={(c) => handleThemeColorChange('dark', 'accent', c)} />
-                                    <ColorPicker label="Card" value={localSettings.darkThemeColors.card} onChange={(c) => handleThemeColorChange('dark', 'card', c)} />
-                                    <ColorPicker label="Active Tab Background" value={localSettings.darkThemeColors.tabActiveBackground} onChange={(c) => handleThemeColorChange('dark', 'tabActiveBackground', c)} />
-                                    <ColorPicker label="Active Tab Foreground" value={localSettings.darkThemeColors.tabActiveForeground} onChange={(c) => handleThemeColorChange('dark', 'tabActiveForeground', c)} />
+                                    <ColorPicker label="Background" value={settings.darkThemeColors.background} onChange={(c) => handleThemeColorChange('dark', 'background', c)} />
+                                    <ColorPicker label="Foreground" value={settings.darkThemeColors.foreground} onChange={(c) => handleThemeColorChange('dark', 'foreground', c)} />
+                                    <ColorPicker label="Primary" value={settings.darkThemeColors.primary} onChange={(c) => handleThemeColorChange('dark', 'primary', c)} />
+                                    <ColorPicker label="Accent" value={settings.darkThemeColors.accent} onChange={(c) => handleThemeColorChange('dark', 'accent', c)} />
+                                    <ColorPicker label="Card" value={settings.darkThemeColors.card} onChange={(c) => handleThemeColorChange('dark', 'card', c)} />
+                                    <ColorPicker label="Active Tab Background" value={settings.darkThemeColors.tabActiveBackground} onChange={(c) => handleThemeColorChange('dark', 'tabActiveBackground', c)} />
+                                    <ColorPicker label="Active Tab Foreground" value={settings.darkThemeColors.tabActiveForeground} onChange={(c) => handleThemeColorChange('dark', 'tabActiveForeground', c)} />
                                 </TabsContent>
                             </Tabs>
                         </CardContent>
@@ -647,9 +626,9 @@ function SettingsPage() {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="relative w-full h-24 mt-2 border rounded-md p-2 flex justify-center items-center bg-muted/30">
-                                {localSettings.appLogo ? <Image key={localSettings.appLogo} src={localSettings.appLogo} alt="Logo Preview" fill className="object-contain" /> : <span className="text-sm text-muted-foreground">Logo Preview</span>}
+                                {settings.appLogo ? <Image key={settings.appLogo} src={settings.appLogo} alt="Logo Preview" fill className="object-contain" /> : <span className="text-sm text-muted-foreground">Logo Preview</span>}
                             </div>
-                            <Input id="logo-upload" type="file" accept="image/*" onChange={(e) => handleFileUpload(e, `settings/appLogo.png`, (url) => handleLocalSettingChange('appLogo', url))} />
+                            <Input id="logo-upload" type="file" accept="image/*" onChange={(e) => handleFileUpload(e, `settings/appLogo.png`, (url) => handleSettingChange('appLogo', url))} />
                         </CardContent>
                     </Card>
                      <Card>
@@ -659,9 +638,9 @@ function SettingsPage() {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="relative w-full h-24 mt-2 border rounded-md p-2 flex justify-center items-center bg-muted/30 overflow-hidden">
-                                {localSettings.loginBackground ? <Image key={localSettings.loginBackground} src={localSettings.loginBackground} alt="Login BG Preview" fill className="object-cover" /> : <span className="text-sm text-muted-foreground">Login BG Preview</span>}
+                                {settings.loginBackground ? <Image key={settings.loginBackground} src={settings.loginBackground} alt="Login BG Preview" fill className="object-cover" /> : <span className="text-sm text-muted-foreground">Login BG Preview</span>}
                             </div>
-                            <Input id="login-bg-upload" type="file" accept="image/*" onChange={(e) => handleFileUpload(e, `settings/loginBackground.png`, (url) => handleLocalSettingChange('loginBackground', url))} />
+                            <Input id="login-bg-upload" type="file" accept="image/*" onChange={(e) => handleFileUpload(e, `settings/loginBackground.png`, (url) => handleSettingChange('loginBackground', url))} />
                         </CardContent>
                     </Card>
                      <Card>
@@ -671,9 +650,9 @@ function SettingsPage() {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="relative w-full h-24 mt-2 border rounded-md p-2 flex justify-center items-center bg-muted/30 overflow-hidden">
-                                {localSettings.mainBackground ? <Image key={localSettings.mainBackground} src={localSettings.mainBackground} alt="Main BG Preview" fill className="object-cover" /> : <span className="text-sm text-muted-foreground">Main BG Preview</span>}
+                                {settings.mainBackground ? <Image key={settings.mainBackground} src={settings.mainBackground} alt="Main BG Preview" fill className="object-cover" /> : <span className="text-sm text-muted-foreground">Main BG Preview</span>}
                             </div>
-                            <Input id="main-bg-upload" type="file" accept="image/*" onChange={(e) => handleFileUpload(e, `settings/mainBackground.png`, (url) => handleLocalSettingChange('mainBackground', url))} />
+                            <Input id="main-bg-upload" type="file" accept="image/*" onChange={(e) => handleFileUpload(e, `settings/mainBackground.png`, (url) => handleSettingChange('mainBackground', url))} />
                         </CardContent>
                     </Card>
                     <Card>
@@ -683,9 +662,9 @@ function SettingsPage() {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="relative w-full h-24 mt-2 border rounded-md p-2 flex justify-center items-center bg-muted/30 overflow-hidden">
-                                {localSettings.dashboardBanner ? <Image key={localSettings.dashboardBanner} src={localSettings.dashboardBanner} alt="Banner Preview" fill className="object-contain" /> : <span className="text-sm text-muted-foreground">Banner Preview</span>}
+                                {settings.dashboardBanner ? <Image key={settings.dashboardBanner} src={settings.dashboardBanner} alt="Banner Preview" fill className="object-contain" /> : <span className="text-sm text-muted-foreground">Banner Preview</span>}
                             </div>
-                            <Input id="banner-upload" type="file" accept="image/*" onChange={(e) => handleFileUpload(e, `settings/dashboardBanner.png`, (url) => handleLocalSettingChange('dashboardBanner', url))} />
+                            <Input id="banner-upload" type="file" accept="image/*" onChange={(e) => handleFileUpload(e, `settings/dashboardBanner.png`, (url) => handleSettingChange('dashboardBanner', url))} />
                         </CardContent>
                     </Card>
                 </div>
@@ -713,11 +692,6 @@ function SettingsPage() {
                                     </TabsList>
                                 </Tabs>
                             </CardContent>
-                            <CardFooter>
-                                <Button onClick={handleSaveChanges} className="w-full">
-                                    <Save className="mr-2 h-4 w-4" /> {t('save_design')}
-                                </Button>
-                            </CardFooter>
                         </Card>
                         <Card>
                             <CardHeader>
@@ -762,7 +736,7 @@ function SettingsPage() {
                                             <Input 
                                                 id="theme-color" 
                                                 type="color"
-                                                value={localSettings.pdfSettings.report.reportColors?.[selectedReportType] ?? '#000000'}
+                                                value={settings.pdfSettings.report.reportColors?.[selectedReportType] ?? '#000000'}
                                                 onChange={(e) => handleReportColorChange(selectedReportType, e.target.value)} 
                                                 className="w-10 h-10 p-1" 
                                             />
@@ -796,13 +770,13 @@ function SettingsPage() {
                                 <div className="w-full max-w-2xl bg-white shadow-lg transform origin-top overflow-hidden flex flex-col scale-[0.8]" style={{ aspectRatio: '1 / 1.4142' }}>
                                 {activePdfTab === 'report' && (
                                     <>
-                                        <ReportPdfHeader title="Example Report Title" subtitle="This is an example subtitle" logoSrc={currentPdfSettings.logo ?? null} themeColor={localSettings.pdfSettings.report.reportColors?.[selectedReportType]} headerText={currentPdfSettings.headerText} />
+                                        <ReportPdfHeader title="Example Report Title" subtitle="This is an example subtitle" logoSrc={currentPdfSettings.logo ?? null} themeColor={settings.pdfSettings.report.reportColors?.[selectedReportType]} headerText={currentPdfSettings.headerText} />
                                         <div className="p-6 flex-grow" style={{fontFamily: 'CustomPdfFont'}}>
                                             <h3 className="font-bold text-gray-800 mb-2">{t('sample_section')}</h3>
                                             <p className="text-sm text-gray-600 mb-4">{t('sample_body_text')}</p>
                                              <Table className={cn(currentPdfSettings.tableTheme === 'grid' && 'border')}>
                                                 <TableHeader>
-                                                    <TableRow style={{backgroundColor: localSettings.pdfSettings.report.reportColors?.[selectedReportType], color: 'white'}} className="hover:bg-primary/90">
+                                                    <TableRow style={{backgroundColor: settings.pdfSettings.report.reportColors?.[selectedReportType], color: 'white'}} className="hover:bg-primary/90">
                                                         <TableHead className="text-white">{t('column_1')}</TableHead>
                                                         <TableHead className="text-white">{t('column_2')}</TableHead>
                                                     </TableRow>

@@ -34,6 +34,7 @@ import { Separator } from "@/components/ui/separator"
 import { useTranslation } from "@/hooks/use-translation"
 import { translateNameToKurdish } from "@/ai/flows/translate-name-flow"
 import { Loader2 } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 
 const formatCurrency = (amount: number) => {
@@ -90,7 +91,6 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
     const [phone, setPhone] = useState('');
     const [photoUrl, setPhotoUrl] = useState<string | undefined>(undefined);
     const [notes, setNotes] = useState('');
-    const [isTranslating, setIsTranslating] = useState(false);
     
     const cardPdfRef = useRef<HTMLDivElement>(null);
     const reportPdfRef = useRef<HTMLDivElement>(null);
@@ -160,22 +160,6 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                 setPhotoUrl(result);
             };
             reader.readAsDataURL(file);
-        }
-    };
-    
-    const handleAutoTranslate = async () => {
-        if (!name || isTranslating) return;
-        setIsTranslating(true);
-        try {
-            const result = await translateNameToKurdish({ name });
-            if (result.kurdishName) {
-                setKurdishName(result.kurdishName);
-            }
-        } catch (error) {
-            console.error("Translation error:", error);
-            toast({ variant: 'destructive', title: "Translation Failed", description: "Could not translate the name." });
-        } finally {
-            setIsTranslating(false);
         }
     };
 
@@ -550,25 +534,6 @@ function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean,
     const [phone, setPhone] = useState("");
     const [photoUrl, setPhotoUrl] = useState<string | undefined>();
     const [notes, setNotes] = useState("");
-    const [isTranslating, setIsTranslating] = useState(false);
-
-    const nameDebounceTimeout = useRef<NodeJS.Timeout | null>(null);
-
-    const handleAutoTranslate = useCallback(async (engName: string) => {
-        if (!engName || isTranslating) return;
-        setIsTranslating(true);
-        try {
-            const result = await translateNameToKurdish({ name: engName });
-            if (result.kurdishName) {
-                setKurdishName(result.kurdishName);
-            }
-        } catch (error) {
-            console.error("Translation error:", error);
-            toast({ variant: 'destructive', title: "Translation Failed", description: "Could not translate the name." });
-        } finally {
-            setIsTranslating(false);
-        }
-    }, [isTranslating, toast]);
 
     const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newName = e.target.value;
@@ -595,15 +560,15 @@ function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean,
 
         const employeeData: Omit<Employee, 'id'> = { 
           name,
-          kurdishName: kurdishName || undefined,
-          employeeId: uniqueId || undefined,
-          role: role,
+          kurdishName: kurdishName || null,
+          employeeId: uniqueId || null,
+          role: role || null,
           photoUrl: photoUrl || `https://picsum.photos/seed/${name.replace(/\s/g, '-')}/400`,
-          email: email || undefined,
-          phone: phone || undefined,
-          notes: notes || undefined,
-          employmentStartDate: employmentStartDate?.toISOString(),
-          dateOfBirth: dateOfBirth?.toISOString(),
+          email: email || null,
+          phone: phone || null,
+          notes: notes || null,
+          employmentStartDate: employmentStartDate?.toISOString() || null,
+          dateOfBirth: dateOfBirth?.toISOString() || null,
           createdAt: formatISO(new Date()),
           isActive: true,
         };
@@ -635,7 +600,6 @@ function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean,
                     <div className="space-y-2 relative">
                         <Label htmlFor="kurdishName">ناو بە کوردی</Label>
                         <Input id="kurdishName" value={kurdishName} onChange={e => setKurdishName(e.target.value)} dir="rtl" placeholder="بۆ نموونە، جۆن دۆ" className="pr-10"/>
-                        {isTranslating && <Loader2 className="absolute right-3 top-[calc(50%+8px)] -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />}
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2"><Label htmlFor="employeeId">{t('employee_id_optional')}</Label><Input id="employeeId" value={uniqueId} onChange={e => setUniqueId(e.target.value)} placeholder="e.g. 10234" /></div>
@@ -671,6 +635,7 @@ function EmployeesPage() {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
   const [isAddDialogOpen, setAddDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const isMobile = useIsMobile();
 
   const addEmployee = (employeeData: Omit<Employee, 'id'>) => {
     const newEmployee: Employee = {
@@ -727,14 +692,16 @@ function EmployeesPage() {
 
   useEffect(() => {
     const allSorted = [...warehouseEmployees, ...marketingEmployees];
-    if (!selectedEmployeeId && allSorted.length > 0) {
+    // Only auto-select on desktop if no employee is currently selected.
+    if (!isMobile && !selectedEmployeeId && allSorted.length > 0) {
       setSelectedEmployeeId(allSorted[0].id);
     }
+    // This part handles when a selected employee is filtered out or deleted.
     if (selectedEmployeeId && !allSorted.some(e => e.id === selectedEmployeeId)) {
+        // Select the first available employee, or null if the list is now empty.
         setSelectedEmployeeId(allSorted[0]?.id || null);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [warehouseEmployees, marketingEmployees, selectedEmployeeId]);
+  }, [warehouseEmployees, marketingEmployees, selectedEmployeeId, isMobile]);
   
   const renderEmployeeList = (list: Employee[], title: string) => (
     <>
@@ -780,7 +747,9 @@ function EmployeesPage() {
         <div className="flex flex-1 overflow-hidden">
             <aside className={cn(
                 "w-full flex-col border-r lg:w-full lg:max-w-xs",
-                selectedEmployeeId ? "hidden lg:flex" : "flex"
+                selectedEmployeeId && isMobile ? "hidden" : "flex",
+                !selectedEmployeeId && !isMobile && "flex",
+                selectedEmployeeId && !isMobile && "hidden lg:flex"
             )}>
                 <div className="p-4 space-y-4 border-b">
                     <div className="relative">
@@ -809,7 +778,7 @@ function EmployeesPage() {
             
             <main className={cn(
                 "flex-1 overflow-y-auto",
-                selectedEmployeeId ? "block" : "hidden lg:flex lg:items-center lg:justify-center"
+                 selectedEmployeeId ? "block" : "hidden lg:flex lg:items-center lg:justify-center"
             )}>
                 {selectedEmployeeId ? (
                     <EmployeeDetailView employeeId={selectedEmployeeId} onDeselect={() => setSelectedEmployeeId(null)}/>
