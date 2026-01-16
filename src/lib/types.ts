@@ -189,6 +189,14 @@ export type AllPdfSettings = {
     card: PdfSettings;
 };
 
+export type ThemeColors = {
+  background: string;
+  foreground: string;
+  primary: string;
+  accent: string;
+  card: string;
+}
+
 export type AppSettings = {
   appLogo: string | null;
   loginBackground: string | null;
@@ -200,4 +208,6 @@ export type AppSettings = {
       ku: Translations;
   };
   pdfSettings: AllPdfSettings;
+  lightThemeColors: ThemeColors;
+  darkThemeColors: ThemeColors;
 };
