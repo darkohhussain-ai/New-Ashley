@@ -181,21 +181,25 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
 
     const handleUpdate = () => {
         if (!employeeId || !name) return;
-        
+
         const updatedData: Partial<Employee> = {
-            name,
-            kurdishName,
-            employeeId: uniqueId,
-            role,
+            name: name,
+            kurdishName: kurdishName || null,
+            employeeId: uniqueId || null,
+            role: role || null,
             employmentStartDate: employmentStartDate ? employmentStartDate.toISOString() : null,
             dateOfBirth: dateOfBirth ? dateOfBirth.toISOString() : null,
-            email,
-            phone,
+            email: email || null,
+            phone: phone || null,
             photoUrl: photoUrl || null,
-            notes,
+            notes: notes || null,
         };
 
-        setEmployees(employees.map(emp => emp.id === employeeId ? { ...emp, ...updatedData } : emp));
+        setEmployees(employees.map(emp => 
+            emp.id === employeeId 
+                ? { ...emp, ...updatedData } 
+                : emp
+        ));
         
         toast({ title: t('save_changes'), description: t('employee_details_updated') });
         setIsEditing(false);
