@@ -187,11 +187,11 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
             kurdishName,
             employeeId: uniqueId,
             role,
-            employmentStartDate: employmentStartDate ? employmentStartDate.toISOString() : undefined,
-            dateOfBirth: dateOfBirth ? dateOfBirth.toISOString() : undefined,
+            employmentStartDate: employmentStartDate ? employmentStartDate.toISOString() : null,
+            dateOfBirth: dateOfBirth ? dateOfBirth.toISOString() : null,
             email,
             phone,
-            photoUrl: photoUrl || undefined,
+            photoUrl: photoUrl || null,
             notes,
         };
 
