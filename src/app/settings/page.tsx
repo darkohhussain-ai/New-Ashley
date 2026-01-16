@@ -422,27 +422,33 @@ function SettingsPage() {
 
     const { id: toastId, dismiss } = toast({ title: 'Uploading...', description: 'Please wait while your file is uploaded.' });
 
-    try {
-      const sRef = storageRef(storage, filePath);
-      
-      const reader = new FileReader();
-      reader.onload = async (loadEvent) => {
+    const reader = new FileReader();
+    reader.onload = async (loadEvent) => {
+      try {
         const result = loadEvent.target?.result as string;
-        if (result) {
-          await uploadString(sRef, result, 'data_url');
-          const downloadURL = await getDownloadURL(sRef);
-          onSuccess(downloadURL);
-          dismiss(toastId);
-          toast({ title: "Upload Complete", description: "Save your settings to see the changes." });
+        if (!result) {
+          throw new Error("Could not read file.");
         }
-      };
-      reader.readAsDataURL(file);
-
-    } catch (error) {
-      console.error("File upload failed:", error);
+        const sRef = storageRef(storage, filePath);
+        await uploadString(sRef, result, 'data_url');
+        const downloadURL = await getDownloadURL(sRef);
+        
+        onSuccess(downloadURL);
+        
+        dismiss(toastId);
+        toast({ title: "Upload Complete", description: "Save your settings to see the changes." });
+      } catch (error) {
+        console.error("File upload failed:", error);
+        dismiss(toastId);
+        toast({ variant: 'destructive', title: "Upload Failed", description: "There was an error uploading your file." });
+      }
+    };
+    reader.onerror = () => {
+      console.error("FileReader error");
       dismiss(toastId);
-      toast({ variant: 'destructive', title: "Upload Failed", description: "There was an error uploading your file." });
-    }
+      toast({ variant: 'destructive', title: "File Read Failed", description: "Could not read the selected file." });
+    };
+    reader.readAsDataURL(file);
   };
 
 
