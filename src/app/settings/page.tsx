@@ -31,6 +31,8 @@ import withAuth from '@/hooks/withAuth';
 import { useAppContext } from '@/context/app-provider';
 import { initialSettings } from '@/context/initial-data';
 import { getAllDataForExport, importData } from '@/hooks/use-local-storage';
+import { useStorage } from '@/firebase';
+import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
 
 const reportTypes = [
   { value: 'general', label: 'General' },
@@ -328,6 +330,7 @@ function SettingsPage() {
   const [mounted, setMounted] = useState(false)
   const { t } = useTranslation();
   const { settings, setSettings } = useAppContext();
+  const storage = useStorage();
 
   const [localSettings, setLocalSettings] = useState<AppSettings>(initialSettings);
   const [activePdfTab, setActivePdfTab] = useState<'report' | 'invoice' | 'card'>('report');
@@ -409,19 +412,39 @@ function SettingsPage() {
     }));
   };
   
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, setter: (value: string | null) => void) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = (loadEvent) => {
-        const result = loadEvent.target?.result
-        if (typeof result === 'string') {
-          setter(result)
+  const handleFileUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    filePath: string,
+    onSuccess: (url: string) => void
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const { id: toastId, dismiss } = toast({ title: 'Uploading...', description: 'Please wait while your file is uploaded.' });
+
+    try {
+      const sRef = storageRef(storage, filePath);
+      
+      const reader = new FileReader();
+      reader.onload = async (loadEvent) => {
+        const result = loadEvent.target?.result as string;
+        if (result) {
+          await uploadString(sRef, result, 'data_url');
+          const downloadURL = await getDownloadURL(sRef);
+          onSuccess(downloadURL);
+          dismiss(toastId);
+          toast({ title: "Upload Complete", description: "Save your settings to see the changes." });
         }
-      }
-      reader.readAsDataURL(file)
+      };
+      reader.readAsDataURL(file);
+
+    } catch (error) {
+      console.error("File upload failed:", error);
+      dismiss(toastId);
+      toast({ variant: 'destructive', title: "Upload Failed", description: "There was an error uploading your file." });
     }
   };
+
 
   const handleSaveChanges = () => {
     setSettings(localSettings);
@@ -560,7 +583,7 @@ function SettingsPage() {
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="logo-upload">{t('company_logo')}</Label>
-                                <Input id="logo-upload" type="file" accept="image/*" onChange={(e) => handleImageUpload(e, (val) => handleLocalSettingChange('appLogo', val))} />
+                                <Input id="logo-upload" type="file" accept="image/*" onChange={(e) => handleFileUpload(e, `settings/appLogo.png`, (url) => handleLocalSettingChange('appLogo', url))} />
                                 {localSettings.appLogo && (
                                     <div className="mt-4">
                                         <Label>Logo Preview</Label>
@@ -580,7 +603,7 @@ function SettingsPage() {
                             </div>
                             <div>
                                 <Label htmlFor="banner-upload">{t('upload_dashboard_banner')}</Label>
-                                <Input id="banner-upload" type="file" accept="image/*" className="mt-2" onChange={(e) => handleImageUpload(e, (val) => handleLocalSettingChange('dashboardBanner', val))} />
+                                <Input id="banner-upload" type="file" accept="image/*" className="mt-2" onChange={(e) => handleFileUpload(e, `settings/dashboardBanner.png`, (url) => handleLocalSettingChange('dashboardBanner', url))} />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="banner-height">{t('banner_height')}: {localSettings.dashboardBannerHeight}px</Label>
@@ -596,7 +619,7 @@ function SettingsPage() {
                             </div>
                             <div>
                                 <Label htmlFor="login-bg-upload">Upload Login Background</Label>
-                                <Input id="login-bg-upload" type="file" accept="image/*" className="mt-2" onChange={(e) => handleImageUpload(e, (val) => handleLocalSettingChange('loginBackground', val))} />
+                                <Input id="login-bg-upload" type="file" accept="image/*" className="mt-2" onChange={(e) => handleFileUpload(e, `settings/loginBackground.png`, (url) => handleLocalSettingChange('loginBackground', url))} />
                             </div>
                         </CardContent>
                     </Card>
@@ -663,7 +686,7 @@ function SettingsPage() {
                             <CardContent className="space-y-4">
                                 <div>
                                     <Label htmlFor="logo-upload-pdf">{t('company_logo')}</Label>
-                                    <Input id="logo-upload-pdf" type="file" accept="image/*" onChange={(e) => handleImageUpload(e, (val) => handlePdfSettingChange('logo', val))} />
+                                    <Input id="logo-upload-pdf" type="file" accept="image/*" onChange={(e) => handleFileUpload(e, `settings/pdf/${activePdfTab}_logo.png`, (url) => handlePdfSettingChange('logo', url))} />
                                 </div>
                                 <div className="space-y-2">
                                 <Label htmlFor="header-text">{t('header_text_optional')}</Label>
