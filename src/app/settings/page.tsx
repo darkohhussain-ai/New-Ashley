@@ -1,12 +1,11 @@
 
-
 "use client"
 
 import * as React from 'react';
 import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowLeft, Download, Upload, Save, Palette, Type, ShieldCheck, ImageIcon, LayoutDashboard, RefreshCcw, Play, Newspaper, Building, FileText, Receipt, CreditCard, Languages, Search, LogIn } from 'lucide-react'
+import { ArrowLeft, Download, Upload, Save, Palette, Type, ShieldCheck, ImageIcon, LayoutDashboard, RefreshCcw, Play, Newspaper, Building, FileText, Receipt, CreditCard, Languages, Search, LogIn, Image as ImageIconLucide } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
@@ -133,7 +132,7 @@ function ColorPicker({ label, value, onChange }: { label: string, value: string,
 
   return (
     <div className="flex items-center justify-between">
-      <Label className="capitalize text-sm">{t(label.toLowerCase())}</Label>
+      <Label className="capitalize text-sm">{t(label.toLowerCase().replace(/ /g,'_'))}</Label>
       <div className='flex items-center gap-2'>
         <Input 
           type="color" 
@@ -348,8 +347,9 @@ function SettingsPage() {
     const root = document.documentElement;
     if (!colors) return;
     Object.entries(colors).forEach(([key, value]) => {
+      const cssVar = `--${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`;
       if (key && value) {
-        root.style.setProperty(`--${key}`, value);
+        root.style.setProperty(cssVar, value);
       }
     });
   };
@@ -623,6 +623,18 @@ function SettingsPage() {
                             </div>
                         </CardContent>
                     </Card>
+                    <Card>
+                        <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><ImageIconLucide /> Main Background</CardTitle></CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="w-full h-24 border rounded-md flex items-center justify-center bg-muted/30 relative overflow-hidden">
+                                {localSettings.mainBackground ? <Image src={localSettings.mainBackground} alt="Current Main Background" fill={true} className="object-cover" /> : <span className='text-sm text-muted-foreground'>Main Background Preview</span>}
+                            </div>
+                            <div>
+                                <Label htmlFor="main-bg-upload">Upload Main Background</Label>
+                                <Input id="main-bg-upload" type="file" accept="image/*" className="mt-2" onChange={(e) => handleFileUpload(e, `settings/mainBackground.png`, (url) => handleLocalSettingChange('mainBackground', url))} />
+                            </div>
+                        </CardContent>
+                    </Card>
                     <Card className="lg:col-span-2 xl:col-span-1">
                         <CardHeader><CardTitle className="flex items-center gap-2"><Palette/> {t('color_palette')}</CardTitle><CardDescription>{t('color_palette_desc')}</CardDescription></CardHeader>
                         <CardContent>
@@ -637,6 +649,8 @@ function SettingsPage() {
                                     <ColorPicker label="Primary" value={localSettings.lightThemeColors.primary} onChange={(c) => handleThemeColorChange('light', 'primary', c)} />
                                     <ColorPicker label="Accent" value={localSettings.lightThemeColors.accent} onChange={(c) => handleThemeColorChange('light', 'accent', c)} />
                                     <ColorPicker label="Card" value={localSettings.lightThemeColors.card} onChange={(c) => handleThemeColorChange('light', 'card', c)} />
+                                    <ColorPicker label="Active Tab Background" value={localSettings.lightThemeColors.tabActiveBackground} onChange={(c) => handleThemeColorChange('light', 'tabActiveBackground', c)} />
+                                    <ColorPicker label="Active Tab Foreground" value={localSettings.lightThemeColors.tabActiveForeground} onChange={(c) => handleThemeColorChange('light', 'tabActiveForeground', c)} />
                                 </TabsContent>
                                     <TabsContent value="dark" className="space-y-4 pt-4">
                                     <ColorPicker label="Background" value={localSettings.darkThemeColors.background} onChange={(c) => handleThemeColorChange('dark', 'background', c)} />
@@ -644,6 +658,8 @@ function SettingsPage() {
                                     <ColorPicker label="Primary" value={localSettings.darkThemeColors.primary} onChange={(c) => handleThemeColorChange('dark', 'primary', c)} />
                                     <ColorPicker label="Accent" value={localSettings.darkThemeColors.accent} onChange={(c) => handleThemeColorChange('dark', 'accent', c)} />
                                     <ColorPicker label="Card" value={localSettings.darkThemeColors.card} onChange={(c) => handleThemeColorChange('dark', 'card', c)} />
+                                    <ColorPicker label="Active Tab Background" value={localSettings.darkThemeColors.tabActiveBackground} onChange={(c) => handleThemeColorChange('dark', 'tabActiveBackground', c)} />
+                                    <ColorPicker label="Active Tab Foreground" value={localSettings.darkThemeColors.tabActiveForeground} onChange={(c) => handleThemeColorChange('dark', 'tabActiveForeground', c)} />
                                 </TabsContent>
                             </Tabs>
                         </CardContent>

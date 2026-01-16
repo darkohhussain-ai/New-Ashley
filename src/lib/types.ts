@@ -195,6 +195,8 @@ export type ThemeColors = {
   primary: string;
   accent: string;
   card: string;
+  tabActiveBackground: string;
+  tabActiveForeground: string;
 }
 
 export type SalarySettings = {
@@ -204,6 +206,7 @@ export type SalarySettings = {
 
 export type AppSettings = {
   appLogo: string | null;
+  mainBackground: string | null;
   loginBackground: string | null;
   dashboardBanner: string | null;
   dashboardBannerHeight: number;

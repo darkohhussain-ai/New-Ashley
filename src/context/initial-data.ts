@@ -71,12 +71,13 @@ const defaultPdfSettings: AllPdfSettings = {
     card: defaultCardSettings,
 };
 
-const defaultLightColors: ThemeColors = { background: '0 0% 100%', foreground: '224 71.4% 4.1%', primary: '220 82% 55%', accent: '220 13% 91%', card: '0 0% 100%' };
-const defaultDarkColors: ThemeColors = { background: '222.2 84% 4.9%', foreground: '210 40% 98%', primary: '217.2 91.2% 59.8%', accent: '217.2 32.6% 17.5%', card: '222.2 84% 4.9%' };
+const defaultLightColors: ThemeColors = { background: '0 0% 100%', foreground: '224 71.4% 4.1%', primary: '220 82% 55%', accent: '220 13% 91%', card: '0 0% 100%', tabActiveBackground: '0 0% 100%', tabActiveForeground: '224 71.4% 4.1%' };
+const defaultDarkColors: ThemeColors = { background: '222.2 84% 4.9%', foreground: '210 40% 98%', primary: '217.2 91.2% 59.8%', accent: '217.2 32.6% 17.5%', card: '222.2 84% 4.9%', tabActiveBackground: '222.2 84% 4.9%', tabActiveForeground: '210 40% 98%' };
 
 
 export const initialSettings: AppSettings = {
     appLogo: "https://firebasestorage.googleapis.com/v0/b/ashley-drp-manager-2-119-42612.appspot.com/o/settings%2FappLogo.png?alt=media&token=42b26284-6379-4148-a003-42eb475f8eb5",
+    mainBackground: null,
     loginBackground: "https://firebasestorage.googleapis.com/v0/b/ashley-drp-manager-2-119-42612.appspot.com/o/settings%2FloginBackground.png?alt=media&token=0b5553a9-e374-4b53-93e1-6d739f7535b4",
     dashboardBanner: "https://firebasestorage.googleapis.com/v0/b/ashley-drp-manager-2-119-42612.appspot.com/o/settings%2FdashboardBanner.png?alt=media&token=a05f9799-a53f-4e08-9a2d-15a9e5251a3e",
     dashboardBannerHeight: 150,

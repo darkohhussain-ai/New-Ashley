@@ -13,6 +13,7 @@ import { AppHeader } from '@/components/shared/app-header';
 import { Noto_Naskh_Arabic } from 'next/font/google';
 import { usePathname } from 'next/navigation';
 import { FirebaseClientProvider } from '@/firebase'; // Import the new provider
+import Image from 'next/image';
 
 
 const notoNaskhArabic = Noto_Naskh_Arabic({ 
@@ -46,6 +47,24 @@ function CustomFontInjector() {
     );
 }
 
+function MainBackground() {
+    const { settings } = useAppContext();
+    if (!settings.mainBackground) {
+        return null;
+    }
+    return (
+        <div className="fixed inset-0 z-[-1]">
+            <Image
+                src={settings.mainBackground}
+                alt="Main background"
+                fill
+                className="object-cover"
+            />
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
+        </div>
+    )
+}
+
 function AppContent({ children }: { children: React.ReactNode }) {
     const { isLoading } = useAppContext();
     const [showSplash, setShowSplash] = useState(true);
@@ -67,7 +86,12 @@ function AppContent({ children }: { children: React.ReactNode }) {
     return (
         <>
             <CustomFontInjector />
-            {!isLoginPage && <AppHeader />}
+            {!isLoginPage && (
+              <>
+                <MainBackground />
+                <AppHeader />
+              </>
+            )}
             {children}
         </>
     );

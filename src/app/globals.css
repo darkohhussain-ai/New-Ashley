@@ -35,6 +35,10 @@ body {
     --chart-5: 27 87% 67%;
     --radius: 0.8rem;
 
+    /* Custom Added Colors */
+    --tab-active-background: hsl(var(--background));
+    --tab-active-foreground: hsl(var(--foreground));
+
     /* Custom Status Colors */
     --status-correct-bg: 142 90% 92%;
     --status-less-bg: 38 92% 90%; /* Darker Orange */
@@ -72,6 +76,10 @@ body {
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+
+    /* Custom Added Colors */
+    --tab-active-background: hsl(var(--background));
+    --tab-active-foreground: hsl(var(--foreground));
 
     /* Custom Status Colors */
     --status-correct-bg: 142 76% 15%; 
