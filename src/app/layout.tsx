@@ -14,6 +14,7 @@ import { Noto_Naskh_Arabic } from 'next/font/google';
 import { usePathname } from 'next/navigation';
 import { FirebaseClientProvider } from '@/firebase'; // Import the new provider
 import Image from 'next/image';
+import { cn } from '@/lib/utils';
 
 
 const notoNaskhArabic = Noto_Naskh_Arabic({ 
@@ -65,6 +66,29 @@ function MainBackground() {
     )
 }
 
+function SystemCornerLogo() {
+    const { settings } = useAppContext();
+    const pathname = usePathname();
+    const isLoginPage = pathname === '/login';
+
+    if (isLoginPage || !settings.appLogo) {
+        return null;
+    }
+
+    return (
+        <div className="fixed bottom-4 left-4 z-50 w-20 h-20 bg-background/50 backdrop-blur-sm p-2 rounded-full shadow-lg pointer-events-none">
+            <div className="relative w-full h-full">
+                <Image 
+                    src={settings.appLogo}
+                    alt="System Logo"
+                    fill
+                    className="object-contain"
+                />
+            </div>
+        </div>
+    )
+}
+
 function AppContent({ children }: { children: React.ReactNode }) {
     const { isLoading } = useAppContext();
     const [showSplash, setShowSplash] = useState(true);
@@ -90,6 +114,7 @@ function AppContent({ children }: { children: React.ReactNode }) {
               <>
                 <MainBackground />
                 <AppHeader />
+                <SystemCornerLogo />
               </>
             )}
             {children}
@@ -106,7 +131,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head />
-      <body className={`${notoNaskhArabic.variable} font-sans antialiased`} suppressHydrationWarning>
+      <body className={cn(`${notoNaskhArabic.variable} font-sans antialiased`, 'min-h-screen')} suppressHydrationWarning>
         <FirebaseClientProvider>
             <AppProvider>
                 <LanguageProvider>

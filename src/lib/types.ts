@@ -210,6 +210,7 @@ export type AppSettings = {
   loginBackground: string | null;
   dashboardBanner: string | null;
   dashboardBannerHeight: number;
+  newsTickerText: string;
   customFont: string | null;
   translations: {
       en: Translations;

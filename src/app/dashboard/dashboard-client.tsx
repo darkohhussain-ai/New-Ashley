@@ -77,6 +77,27 @@ const allMenuItems = [
     },
 ];
 
+const NewsTicker = () => {
+    const { settings } = useAppContext();
+
+    if (!settings.newsTickerText) {
+        return null;
+    }
+    
+    return (
+        <div className="relative flex overflow-x-hidden bg-primary/80 text-primary-foreground py-2">
+            <div className="animate-marquee whitespace-nowrap">
+                <span className="mx-4">{settings.newsTickerText}</span>
+            </div>
+
+            <div className="absolute top-0 animate-marquee2 whitespace-nowrap">
+                 <span className="mx-4">{settings.newsTickerText}</span>
+            </div>
+        </div>
+    );
+};
+
+
 export function DashboardClient() {
   const { t } = useTranslation();
   const { hasPermission } = useAuth();
@@ -95,6 +116,7 @@ export function DashboardClient() {
 
   return (
     <>
+      <NewsTicker />
       {settings.dashboardBanner && (
         <div className="container mx-auto px-4">
             <div

@@ -339,7 +339,7 @@ function SettingsPage() {
   
   useEffect(() => {
     if (settings) {
-      setLocalSettings(settings);
+      setLocalSettings(JSON.parse(JSON.stringify(settings))); // Deep copy
     }
   }, [settings]);
 
@@ -419,36 +419,43 @@ function SettingsPage() {
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    const { id: toastId, dismiss } = toast({ title: 'Uploading...', description: 'Please wait while your file is uploaded.' });
-
-    const reader = new FileReader();
-    reader.onload = async (loadEvent) => {
-      try {
-        const result = loadEvent.target?.result as string;
-        if (!result) {
-          throw new Error("Could not read file.");
+  
+    const { id: toastId, update, dismiss } = toast({
+      title: 'Uploading...',
+      description: 'Please wait while your file is uploaded.',
+    });
+  
+    try {
+      const reader = new FileReader();
+      reader.onload = async (loadEvent) => {
+        try {
+          const result = loadEvent.target?.result as string;
+          if (!result) {
+            throw new Error('Could not read file.');
+          }
+          const sRef = storageRef(storage, filePath);
+          await uploadString(sRef, result, 'data_url');
+          const downloadURL = await getDownloadURL(sRef);
+          
+          onSuccess(downloadURL);
+          
+          update({ id: toastId, title: 'Upload Complete', description: 'Your image has been uploaded successfully.' });
+          setTimeout(() => dismiss(toastId), 3000);
+  
+        } catch (error) {
+          console.error('File upload failed:', error);
+          update({ id: toastId, title: 'Upload Failed', description: 'There was an error uploading your file.', variant: 'destructive' });
         }
-        const sRef = storageRef(storage, filePath);
-        await uploadString(sRef, result, 'data_url');
-        const downloadURL = await getDownloadURL(sRef);
-        
-        onSuccess(downloadURL);
-        
-        dismiss(toastId);
-        toast({ title: "Upload Complete", description: "Save your settings to see the changes." });
-      } catch (error) {
-        console.error("File upload failed:", error);
-        dismiss(toastId);
-        toast({ variant: 'destructive', title: "Upload Failed", description: "There was an error uploading your file." });
-      }
-    };
-    reader.onerror = () => {
-      console.error("FileReader error");
-      dismiss(toastId);
-      toast({ variant: 'destructive', title: "File Read Failed", description: "Could not read the selected file." });
-    };
-    reader.readAsDataURL(file);
+      };
+      reader.onerror = (error) => {
+        console.error('FileReader error:', error);
+        update({ id: toastId, title: 'File Read Failed', description: 'Could not read the selected file.', variant: 'destructive' });
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+        console.error('File upload initiation failed:', error);
+        update({ id: toastId, title: 'Upload Failed', description: 'Could not start the file upload process.', variant: 'destructive' });
+    }
   };
 
 
@@ -571,15 +578,16 @@ function SettingsPage() {
       </header>
       <main className="p-4 md:p-6 container mx-auto">
         <Tabs defaultValue="design" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="design"><Palette className="mr-2" />{t('design')}</TabsTrigger>
+                <TabsTrigger value="images"><ImageIcon className="mr-2" />Images</TabsTrigger>
                 <TabsTrigger value="language"><Languages className="mr-2" />{t('language_text')}</TabsTrigger>
                 <TabsTrigger value="pdf"><FileText className="mr-2" />{t('pdf_reports')}</TabsTrigger>
                 <TabsTrigger value="data"><ShieldCheck className="mr-2" />{t('data_management')}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="design" className="pt-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <Card>
                         <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Palette /> {t('general')}</CardTitle></CardHeader>
                         <CardContent className="space-y-6">
@@ -587,61 +595,18 @@ function SettingsPage() {
                                 <Label htmlFor="dark-mode">{t('dark_mode')}</Label>
                                 <Switch id="dark-mode" checked={theme === 'dark'} onCheckedChange={() => setTheme(theme === 'light' ? 'dark' : 'light')} />
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="logo-upload">{t('company_logo')}</Label>
-                                <Input id="logo-upload" type="file" accept="image/*" onChange={(e) => handleFileUpload(e, `settings/appLogo.png`, (url) => handleLocalSettingChange('appLogo', url))} />
-                                {localSettings.appLogo && (
-                                    <div className="mt-4">
-                                        <Label>Logo Preview</Label>
-                                        <div className="relative w-full h-24 mt-2 border rounded-md p-2 flex justify-center items-center bg-muted/30">
-                                            <Image key={localSettings.appLogo} src={localSettings.appLogo} alt="Logo Preview" fill className="object-contain" />
-                                        </div>
-                                    </div>
-                                )}
+                             <div className="space-y-2">
+                                <Label htmlFor="news-ticker-text">News Ticker Text</Label>
+                                <Input id="news-ticker-text" value={localSettings.newsTickerText} onChange={e => handleLocalSettingChange('newsTickerText', e.target.value)} placeholder="Enter scrolling text for the dashboard..."/>
                             </div>
-                        </CardContent>
-                    </Card>
-                     <Card>
-                        <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><LayoutDashboard /> {t('dashboard')}</CardTitle></CardHeader>
-                        <CardContent className="space-y-6">
-                            <div className="w-full h-24 border rounded-md flex items-center justify-center bg-muted/30 relative overflow-hidden">
-                                {localSettings.dashboardBanner ? <Image key={localSettings.dashboardBanner} src={localSettings.dashboardBanner} alt="Current Dashboard Banner" fill={true} className="object-cover" /> : <span className='text-sm text-muted-foreground'>{t('dashboard_banner_preview')}</span>}
-                            </div>
-                            <div>
-                                <Label htmlFor="banner-upload">{t('upload_dashboard_banner')}</Label>
-                                <Input id="banner-upload" type="file" accept="image/*" className="mt-2" onChange={(e) => handleFileUpload(e, `settings/dashboardBanner.png`, (url) => handleLocalSettingChange('dashboardBanner', url))} />
-                            </div>
-                            <div className="space-y-2">
+                             <div className="space-y-2">
                                 <Label htmlFor="banner-height">{t('banner_height')}: {localSettings.dashboardBannerHeight}px</Label>
                                 <Slider id="banner-height" min={80} max={300} step={10} value={[localSettings.dashboardBannerHeight]} onValueChange={(value) => handleLocalSettingChange('dashboardBannerHeight', value[0])} />
                             </div>
                         </CardContent>
                     </Card>
-                     <Card>
-                        <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><LogIn /> Login Page</CardTitle></CardHeader>
-                        <CardContent className="space-y-6">
-                            <div className="w-full h-24 border rounded-md flex items-center justify-center bg-muted/30 relative overflow-hidden">
-                                {localSettings.loginBackground ? <Image key={localSettings.loginBackground} src={localSettings.loginBackground} alt="Current Login Background" fill={true} className="object-cover" /> : <span className='text-sm text-muted-foreground'>Login Background Preview</span>}
-                            </div>
-                            <div>
-                                <Label htmlFor="login-bg-upload">Upload Login Background</Label>
-                                <Input id="login-bg-upload" type="file" accept="image/*" className="mt-2" onChange={(e) => handleFileUpload(e, `settings/loginBackground.png`, (url) => handleLocalSettingChange('loginBackground', url))} />
-                            </div>
-                        </CardContent>
-                    </Card>
+                    
                     <Card>
-                        <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><ImageIconLucide /> Main Background</CardTitle></CardHeader>
-                        <CardContent className="space-y-6">
-                            <div className="w-full h-24 border rounded-md flex items-center justify-center bg-muted/30 relative overflow-hidden">
-                                {localSettings.mainBackground ? <Image key={localSettings.mainBackground} src={localSettings.mainBackground} alt="Current Main Background" fill={true} className="object-cover" /> : <span className='text-sm text-muted-foreground'>Main Background Preview</span>}
-                            </div>
-                            <div>
-                                <Label htmlFor="main-bg-upload">Upload Main Background</Label>
-                                <Input id="main-bg-upload" type="file" accept="image/*" className="mt-2" onChange={(e) => handleFileUpload(e, `settings/mainBackground.png`, (url) => handleLocalSettingChange('mainBackground', url))} />
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="lg:col-span-2 xl:col-span-1">
                         <CardHeader><CardTitle className="flex items-center gap-2"><Palette/> {t('color_palette')}</CardTitle><CardDescription>{t('color_palette_desc')}</CardDescription></CardHeader>
                         <CardContent>
                             <Tabs defaultValue="light" className="w-full">
@@ -668,6 +633,59 @@ function SettingsPage() {
                                     <ColorPicker label="Active Tab Foreground" value={localSettings.darkThemeColors.tabActiveForeground} onChange={(c) => handleThemeColorChange('dark', 'tabActiveForeground', c)} />
                                 </TabsContent>
                             </Tabs>
+                        </CardContent>
+                    </Card>
+                </div>
+            </TabsContent>
+
+            <TabsContent value="images" className="pt-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2"><ImageIconLucide/> App Logo</CardTitle>
+                            <CardDescription>The main logo for the header, login page, and corner display.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="relative w-full h-24 mt-2 border rounded-md p-2 flex justify-center items-center bg-muted/30">
+                                {localSettings.appLogo ? <Image key={localSettings.appLogo} src={localSettings.appLogo} alt="Logo Preview" fill className="object-contain" /> : <span className="text-sm text-muted-foreground">Logo Preview</span>}
+                            </div>
+                            <Input id="logo-upload" type="file" accept="image/*" onChange={(e) => handleFileUpload(e, `settings/appLogo.png`, (url) => handleLocalSettingChange('appLogo', url))} />
+                        </CardContent>
+                    </Card>
+                     <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2"><LogIn /> Login Page Background</CardTitle>
+                            <CardDescription>Background image for the main login screen.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="relative w-full h-24 mt-2 border rounded-md p-2 flex justify-center items-center bg-muted/30 overflow-hidden">
+                                {localSettings.loginBackground ? <Image key={localSettings.loginBackground} src={localSettings.loginBackground} alt="Login BG Preview" fill className="object-cover" /> : <span className="text-sm text-muted-foreground">Login BG Preview</span>}
+                            </div>
+                            <Input id="login-bg-upload" type="file" accept="image/*" onChange={(e) => handleFileUpload(e, `settings/loginBackground.png`, (url) => handleLocalSettingChange('loginBackground', url))} />
+                        </CardContent>
+                    </Card>
+                     <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2"><LayoutDashboard /> Main Dashboard Background</CardTitle>
+                             <CardDescription>Background for the main dashboard area, behind the cards.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="relative w-full h-24 mt-2 border rounded-md p-2 flex justify-center items-center bg-muted/30 overflow-hidden">
+                                {localSettings.mainBackground ? <Image key={localSettings.mainBackground} src={localSettings.mainBackground} alt="Main BG Preview" fill className="object-cover" /> : <span className="text-sm text-muted-foreground">Main BG Preview</span>}
+                            </div>
+                            <Input id="main-bg-upload" type="file" accept="image/*" onChange={(e) => handleFileUpload(e, `settings/mainBackground.png`, (url) => handleLocalSettingChange('mainBackground', url))} />
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2"><ImageIcon /> Dashboard Banner</CardTitle>
+                             <CardDescription>A banner image displayed at the top of the dashboard.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="relative w-full h-24 mt-2 border rounded-md p-2 flex justify-center items-center bg-muted/30 overflow-hidden">
+                                {localSettings.dashboardBanner ? <Image key={localSettings.dashboardBanner} src={localSettings.dashboardBanner} alt="Banner Preview" fill className="object-contain" /> : <span className="text-sm text-muted-foreground">Banner Preview</span>}
+                            </div>
+                            <Input id="banner-upload" type="file" accept="image/*" onChange={(e) => handleFileUpload(e, `settings/dashboardBanner.png`, (url) => handleLocalSettingChange('dashboardBanner', url))} />
                         </CardContent>
                     </Card>
                 </div>
