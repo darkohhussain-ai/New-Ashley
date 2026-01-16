@@ -197,6 +197,11 @@ export type ThemeColors = {
   card: string;
 }
 
+export type SalarySettings = {
+    overtimeRate: number;
+    bonusRate: number;
+}
+
 export type AppSettings = {
   appLogo: string | null;
   loginBackground: string | null;
@@ -210,4 +215,5 @@ export type AppSettings = {
   pdfSettings: AllPdfSettings;
   lightThemeColors: ThemeColors;
   darkThemeColors: ThemeColors;
+  salarySettings: SalarySettings;
 };

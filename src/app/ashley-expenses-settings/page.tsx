@@ -8,34 +8,29 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useTranslation } from '@/hooks/use-translation';
 import { useToast } from '@/hooks/use-toast';
-import useLocalStorage from '@/hooks/use-local-storage';
+import { useAppContext } from '@/context/app-provider';
 import { useState, useEffect } from 'react';
 import withAuth from '@/hooks/withAuth';
+import { SalarySettings } from '@/lib/types';
 
-type SalarySettings = {
-    overtimeRate: number;
-    bonusRate: number;
-}
-
-const defaultSettings: SalarySettings = {
-    overtimeRate: 5000,
-    bonusRate: 5000,
-}
 
 function AshleyExpensesSettingsPage() {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const [savedSettings, setSavedSettings] = useLocalStorage<SalarySettings>('ashley-salary-settings', defaultSettings);
-  const [settings, setSettings] = useState<SalarySettings>(defaultSettings);
+  const { settings: globalSettings, setSettings: setGlobalSettings } = useAppContext();
+  
+  const [settings, setSettings] = useState<SalarySettings>({ overtimeRate: 5000, bonusRate: 5000 });
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    setSettings(savedSettings);
-  }, [savedSettings]);
+    if (globalSettings?.salarySettings) {
+      setSettings(globalSettings.salarySettings);
+    }
+  }, [globalSettings]);
 
   const handleSave = () => {
     setIsSaving(true);
-    setSavedSettings(settings);
+    setGlobalSettings({ ...globalSettings, salarySettings: settings });
     toast({
         title: "Settings Saved",
         description: "Your salary settings have been updated.",

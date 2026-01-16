@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -15,7 +16,6 @@ import { format, startOfDay, endOfDay, isWithinInterval, parseISO } from 'date-f
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import useLocalStorage from '@/hooks/use-local-storage';
 import { useAppContext } from '@/context/app-provider';
 import type { Bonus, AllPdfSettings } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
@@ -38,8 +38,8 @@ export default function AddBonusPage() {
   const router = useRouter();
   const { user, hasPermission } = useAuth();
 
-  const { employees, bonuses, setBonuses } = useAppContext();
-  const [salarySettings] = useLocalStorage('ashley-salary-settings', { bonusRate: 5000 });
+  const { employees, bonuses, setBonuses, settings } = useAppContext();
+  const { salarySettings } = settings;
 
   const dateParam = searchParams.get('date');
   const isReadOnly = !hasPermission('page:admin');

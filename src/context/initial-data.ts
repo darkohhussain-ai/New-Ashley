@@ -102,9 +102,9 @@ const defaultDarkColors: ThemeColors = { background: '222.2 84% 4.9%', foregroun
 
 
 export const initialSettings: AppSettings = {
-    appLogo: null,
-    loginBackground: null,
-    dashboardBanner: null,
+    appLogo: "https://firebasestorage.googleapis.com/v0/b/ashley-drp-manager-2-119-42612.appspot.com/o/settings%2FappLogo.png?alt=media&token=42b26284-6379-4148-a003-42eb475f8eb5",
+    loginBackground: "https://firebasestorage.googleapis.com/v0/b/ashley-drp-manager-2-119-42612.appspot.com/o/settings%2FloginBackground.png?alt=media&token=0b5553a9-e374-4b53-93e1-6d739f7535b4",
+    dashboardBanner: "https://firebasestorage.googleapis.com/v0/b/ashley-drp-manager-2-119-42612.appspot.com/o/settings%2FdashboardBanner.png?alt=media&token=a05f9799-a53f-4e08-9a2d-15a9e5251a3e",
     dashboardBannerHeight: 150,
     customFont: null,
     translations: {
@@ -114,6 +114,10 @@ export const initialSettings: AppSettings = {
     pdfSettings: defaultPdfSettings,
     lightThemeColors: defaultLightColors,
     darkThemeColors: defaultDarkColors,
+    salarySettings: {
+        overtimeRate: 5000,
+        bonusRate: 5000,
+    },
 };
 
 

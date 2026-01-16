@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -21,7 +22,6 @@ import * as XLSX from 'xlsx';
 import { ChartConfig, ChartContainer } from '@/components/ui/chart';
 import html2canvas from 'html2canvas';
 import { FilePdfCard } from '@/components/archive/file-pdf-card';
-import useLocalStorage from '@/hooks/use-local-storage';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
 import { useAppContext } from '@/context/app-provider';
 import type { ExcelFile, Item, Employee, StorageLocation } from '@/lib/types';
@@ -111,7 +111,8 @@ export default function FileDetailPage() {
     excelFiles, setExcelFiles, 
     items, setItems: setAllItems, 
     employees, 
-    locations 
+    locations,
+    settings
   } = useAppContext();
 
   const [isLoading, setIsLoading] = useState(true);
@@ -130,9 +131,7 @@ export default function FileDetailPage() {
   const [filterAshleyFloor, setFilterAshleyFloor] = useState('All');
   const [filterAshleyArea, setFilterAshleyArea] = useState('All');
 
-  const defaultLogo = "https://picsum.photos/seed/1/300/100";
-  const [logoSrc] = useLocalStorage('app-logo', defaultLogo);
-  const [customFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
+  const { appLogo: logoSrc, customFont: customFontBase64 } = settings;
   
   const updateFileInputRef = useRef<HTMLInputElement>(null);
   const pdfCardRef = useRef<HTMLDivElement>(null);

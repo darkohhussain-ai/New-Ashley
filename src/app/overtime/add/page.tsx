@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -15,7 +16,6 @@ import { format, startOfDay, endOfDay, isWithinInterval, parseISO } from 'date-f
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import useLocalStorage from '@/hooks/use-local-storage';
 import { useAppContext } from '@/context/app-provider';
 import type { Overtime, AllPdfSettings } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
@@ -38,10 +38,9 @@ export default function AddOvertimePage() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const { employees, overtime: allOvertimeRecords, setOvertime: setAllOvertimeRecords } = useAppContext();
-  const [salarySettings] = useLocalStorage('ashley-salary-settings', { overtimeRate: 5000 });
-  const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {}, card: {} });
-  const [customFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
+  const { employees, overtime: allOvertimeRecords, setOvertime: setAllOvertimeRecords, settings } = useAppContext();
+  const { salarySettings, pdfSettings } = settings;
+  const { customFont } = settings;
 
 
   const dateParam = searchParams.get('date');
@@ -179,10 +178,10 @@ export default function AddOvertimePage() {
     const doc = new jsPDF();
     const useKurdish = language === 'ku';
 
-    if (customFontBase64 && useKurdish) {
+    if (customFont && useKurdish) {
         try {
             const fontName = "CustomFont";
-            doc.addFileToVFS(`${fontName}.ttf`, customFontBase64.split(',')[1]);
+            doc.addFileToVFS(`${fontName}.ttf`, customFont.split(',')[1]);
             doc.addFont(`${fontName}.ttf`, fontName, "normal");
             doc.setFont(fontName);
         } catch (e) {
@@ -210,11 +209,11 @@ export default function AddOvertimePage() {
       body,
       foot: [[t('total'), totalHours.toFixed(2), formatCurrency(totalAmount), '']],
       theme: 'striped',
-      styles: { font: (customFontBase64 && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
+      styles: { font: (customFont && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
       headStyles: { fillColor: pdfSettings.report.reportColors?.overtime || '#f97316' },
       footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' },
       didParseCell: (data) => {
-        if (useKurdish && customFontBase64) {
+        if (useKurdish && customFont) {
           data.cell.styles.font = "CustomFont";
           data.cell.styles.halign = 'right';
         }

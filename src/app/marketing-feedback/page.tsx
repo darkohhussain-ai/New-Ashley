@@ -22,7 +22,6 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { MarketingFeedbackPdfCard } from '@/components/marketing/marketing-feedback-pdf-card';
-import useLocalStorage from '@/hooks/use-local-storage';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import html2canvas from 'html2canvas';
 import { cn } from '@/lib/utils';
@@ -248,11 +247,10 @@ function MarketingFeedbackPage() {
     const { 
         employees, setEmployees, 
         marketingFeedbacks, setMarketingFeedbacks,
-        evaluationQuestions
+        evaluationQuestions,
+        settings
     } = useAppContext();
-    const defaultLogo = "https://picsum.photos/seed/1/300/100";
-    const [logoSrc] = useLocalStorage('app-logo', defaultLogo);
-    const [customFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
+    const { appLogo: logoSrc, customFont: customFontBase64 } = settings;
 
     const [isLoading, setIsLoading] = useState(true);
     const [isAddDialogOpen, setAddDialogOpen] = useState(false);

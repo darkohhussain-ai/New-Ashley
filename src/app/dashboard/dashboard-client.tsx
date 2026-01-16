@@ -13,7 +13,7 @@ import {
   UserCircle,
   ShieldCheck,
 } from 'lucide-react';
-import useLocalStorage from '@/hooks/use-local-storage';
+import { useAppContext } from '@/context/app-provider';
 import { useTranslation } from '@/hooks/use-translation';
 import { DashboardCard } from '@/components/dashboard/dashboard-card';
 import { useAuth } from '@/hooks/use-auth';
@@ -80,13 +80,8 @@ const allMenuItems = [
 export function DashboardClient() {
   const { t } = useTranslation();
   const { hasPermission } = useAuth();
+  const { settings } = useAppContext();
 
-  const [savedBannerHeight] = useLocalStorage('dashboard-banner-height', 150);
-  const [savedDashboardBanner] = useLocalStorage<string | null>(
-    'dashboard-banner',
-    null
-  );
-  
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => {
     setIsMounted(true);
@@ -100,14 +95,14 @@ export function DashboardClient() {
 
   return (
     <>
-      {savedDashboardBanner && (
+      {settings.dashboardBanner && (
         <div className="container mx-auto px-4">
             <div
             className="relative w-full mx-auto my-4 max-w-6xl rounded-lg overflow-hidden"
-            style={{ height: `${savedBannerHeight}px` }}
+            style={{ height: `${settings.dashboardBannerHeight}px` }}
             >
             <Image
-                src={savedDashboardBanner}
+                src={settings.dashboardBanner}
                 alt="Dashboard Banner"
                 fill
                 className="object-contain"
