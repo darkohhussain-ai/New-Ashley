@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import {
   Query,
   onSnapshot,
+  getDocs,
   DocumentData,
   FirestoreError,
   QuerySnapshot,
@@ -69,44 +70,50 @@ export function useCollection<T = any>(
       return;
     }
 
-    setIsLoading(true);
-    setError(null);
+    let isMounted = true;
 
-    // Directly use memoizedTargetRefOrQuery as it's assumed to be the final query
-    const unsubscribe = onSnapshot(
-      memoizedTargetRefOrQuery,
-      (snapshot: QuerySnapshot<DocumentData>) => {
-        const results: ResultItemType[] = [];
-        for (const doc of snapshot.docs) {
-          results.push({ ...(doc.data() as T), id: doc.id });
+    const fetchData = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const snapshot = await getDocs(memoizedTargetRefOrQuery);
+        if (isMounted) {
+          const results: ResultItemType[] = [];
+          snapshot.forEach((doc) => {
+            results.push({ ...(doc.data() as T), id: doc.id });
+          });
+          setData(results);
+          setError(null);
+          setIsLoading(false);
         }
-        setData(results);
-        setError(null);
-        setIsLoading(false);
-      },
-      (error: FirestoreError) => {
-        // This logic extracts the path from either a ref or a query
-        const path: string =
-          memoizedTargetRefOrQuery.type === 'collection'
-            ? (memoizedTargetRefOrQuery as CollectionReference).path
-            : (memoizedTargetRefOrQuery as unknown as InternalQuery)._query.path.canonicalString()
+      } catch (e: any) {
+        if (isMounted) {
+            const path: string =
+                memoizedTargetRefOrQuery.type === 'collection'
+                ? (memoizedTargetRefOrQuery as CollectionReference).path
+                : (memoizedTargetRefOrQuery as unknown as InternalQuery)._query.path.canonicalString()
 
-        const contextualError = new FirestorePermissionError({
-          operation: 'list',
-          path,
-        })
+            const contextualError = new FirestorePermissionError({
+                operation: 'list',
+                path,
+            })
 
-        setError(contextualError)
-        setData(null)
-        setIsLoading(false)
+            setError(contextualError)
+            setData(null)
+            setIsLoading(false)
 
-        // trigger global error propagation
-        errorEmitter.emit('permission-error', contextualError);
+            // trigger global error propagation
+            errorEmitter.emit('permission-error', contextualError);
+        }
       }
-    );
+    };
 
-    return () => unsubscribe();
-  }, [memoizedTargetRefOrQuery]); // Re-run if the target query/reference changes.
+    fetchData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [memoizedTargetRefOrQuery]);
   
   return { data, isLoading, error };
 }
