@@ -55,7 +55,7 @@ export default function LoginPage() {
           priority
         />
       )}
-      <div className="absolute inset-0 bg-black/50 z-0"/>
+      <div className="absolute inset-0 bg-black/30 z-0"/>
       <Card className="w-full max-w-sm z-10">
         <CardHeader className="text-center">
             {settings.appLogo && (
