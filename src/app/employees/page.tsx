@@ -371,8 +371,8 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                                     <div className='space-y-4'>
                                         <Input className="text-2xl h-12" value={name} onChange={e => setName(e.target.value)} placeholder={t('employee_name')} />
                                         <div className="relative">
-                                            <Input dir="rtl" className="text-2xl h-12 pr-12" value={kurdishName} onChange={e => setKurdishName(e.target.value)} placeholder="ناو بە کوردی" />
-                                            <Button 
+                                            <Input dir="rtl" className="text-2xl h-12" value={kurdishName} onChange={e => setKurdishName(e.target.value)} placeholder="ناو بە کوردی" />
+                                            {/* <Button 
                                                 size="icon" 
                                                 variant="ghost" 
                                                 className="absolute right-1 top-1/2 -translate-y-1/2" 
@@ -381,7 +381,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                                                 type="button"
                                             >
                                                 {isTranslating ? <Loader2 className="animate-spin" /> : <Wand2 />}
-                                            </Button>
+                                            </Button> */}
                                         </div>
 
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -574,12 +574,12 @@ function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean,
     const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newName = e.target.value;
         setName(newName);
-        if (nameDebounceTimeout.current) {
-            clearTimeout(nameDebounceTimeout.current);
-        }
-        nameDebounceTimeout.current = setTimeout(() => {
-            handleAutoTranslate(newName);
-        }, 1000); // 1-second delay
+        // if (nameDebounceTimeout.current) {
+        //     clearTimeout(nameDebounceTimeout.current);
+        // }
+        // nameDebounceTimeout.current = setTimeout(() => {
+        //     handleAutoTranslate(newName);
+        // }, 1000); // 1-second delay
     };
 
     const resetForm = () => {
