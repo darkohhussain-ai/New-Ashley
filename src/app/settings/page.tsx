@@ -221,7 +221,7 @@ function TranslationEditor() {
           const reader = new FileReader()
           reader.onload = (loadEvent) => {
             const result = loadEvent.target?.result as string;
-            setSettings({ ...settings, customFont: result });
+            setSettings(prev => ({ ...prev, customFont: result }));
           }
           reader.readAsDataURL(file)
         }
@@ -358,47 +358,47 @@ function SettingsPage() {
   }, [settings?.lightThemeColors, settings?.darkThemeColors, theme, settings]);
 
   const handleSettingChange = (key: keyof AppSettings, value: any) => {
-    setSettings({ ...settings, [key]: value });
+    setSettings(prev => ({ ...prev, [key]: value }));
   };
 
   const handleThemeColorChange = (mode: 'light' | 'dark', property: keyof ThemeColors, value: string) => {
       const themeKey = mode === 'light' ? 'lightThemeColors' : 'darkThemeColors';
-      setSettings({
-          ...settings,
+      setSettings(prev => ({
+          ...prev,
           [themeKey]: {
-              ...settings[themeKey],
+              ...prev[themeKey],
               [property]: value
           }
-      });
+      }));
   };
 
   const handlePdfSettingChange = <K extends keyof PdfSettings>(key: K, value: PdfSettings[K]) => {
-    setSettings({
-        ...settings,
+    setSettings(prev => ({
+        ...prev,
         pdfSettings: {
-            ...settings.pdfSettings,
+            ...prev.pdfSettings,
             [activePdfTab]: {
-                ...settings.pdfSettings[activePdfTab],
+                ...prev.pdfSettings[activePdfTab],
                 [key]: value
             }
         }
-    });
+    }));
   };
   
   const handleReportColorChange = (reportType: keyof NonNullable<AllPdfSettings['report']['reportColors']>, color: string) => {
-    setSettings({
-        ...settings,
+    setSettings(prev => ({
+        ...prev,
         pdfSettings: {
-            ...settings.pdfSettings,
+            ...prev.pdfSettings,
             report: {
-                ...settings.pdfSettings.report,
+                ...prev.pdfSettings.report,
                 reportColors: {
-                    ...(settings.pdfSettings.report.reportColors),
+                    ...(prev.pdfSettings.report.reportColors),
                     [reportType]: color,
                 }
             }
         }
-    });
+    }));
   };
   
   const handleFileUpload = async (

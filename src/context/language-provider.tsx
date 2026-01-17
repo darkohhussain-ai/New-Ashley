@@ -54,16 +54,18 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   }, [language, translations]);
 
   const setTranslations = useCallback((lang: Language, newTranslations: Translations) => {
-    if (!settings) return; // Guard against settings not being ready
-
-    setSettings({
-        ...settings,
-        translations: {
-            ...settings.translations,
-            [lang]: newTranslations,
-        },
+    setSettings(prevSettings => {
+        // Guard against settings not being ready
+        if (!prevSettings) return prevSettings;
+        return {
+            ...prevSettings,
+            translations: {
+                ...prevSettings.translations,
+                [lang]: newTranslations,
+            },
+        }
     });
-  }, [setSettings, settings]);
+  }, [setSettings]);
 
   const value = {
     language,

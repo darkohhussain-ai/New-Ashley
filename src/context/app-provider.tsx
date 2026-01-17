@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { createContext, useContext, ReactNode, useMemo, useEffect, useState } from 'react';
+import React, { createContext, useContext, ReactNode, useMemo, useEffect, useState, useRef } from 'react';
 import { useCollection, useMemoFirebase } from '@/firebase';
 import {
   collection,
@@ -71,7 +71,7 @@ interface AppState {
     roles: Role[];
     setRoles: (roles: Role[]) => void;
     settings: AppSettings;
-    setSettings: (settings: AppSettings) => void;
+    setSettings: React.Dispatch<React.SetStateAction<AppSettings>>;
     isLoading: boolean;
 }
 
@@ -158,33 +158,40 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const db = useFirestore();
     const settingsDocRef = useMemoFirebase(() => db ? doc(db, 'settings', 'main') : null, [db]);
     const { data: firestoreSettings, isLoading: isSettingsLoading } = useDoc<AppSettings>(settingsDocRef);
-    const [settings, setSettingsState] = useState<AppSettings>(initialSettings);
+    const [settings, setSettings] = useState<AppSettings>(initialSettings);
     
+    // This effect runs once on initial load to populate settings from Firestore
     useEffect(() => {
-        if (!isSettingsLoading) {
-            if (firestoreSettings) {
-                 const mergedSettings = {
-                    ...initialSettings,
-                    ...firestoreSettings,
-                    pdfSettings: {
-                        ...initialSettings.pdfSettings,
-                        ...(firestoreSettings.pdfSettings || {})
-                    }
-                };
-                setSettingsState(mergedSettings);
-            } else if (settingsDocRef) {
+        if (!isSettingsLoading && firestoreSettings) {
+             const mergedSettings = {
+                ...initialSettings,
+                ...firestoreSettings,
+                pdfSettings: {
+                    ...initialSettings.pdfSettings,
+                    ...(firestoreSettings.pdfSettings || {})
+                }
+            };
+            // Only update if the fetched settings are different from the current state
+            if (JSON.stringify(mergedSettings) !== JSON.stringify(settings)) {
+                setSettings(mergedSettings);
+            }
+        } else if (!isSettingsLoading && !firestoreSettings) {
+            // If no doc exists, create it with initial settings
+            if(settingsDocRef) {
                 setDocumentNonBlocking(settingsDocRef, initialSettings, { merge: false });
-                setSettingsState(initialSettings);
             }
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [firestoreSettings, isSettingsLoading, settingsDocRef]);
-
-    const setSettings = (newSettings: AppSettings) => {
-        setSettingsState(newSettings);
-        if (settingsDocRef) {
-            setDocumentNonBlocking(settingsDocRef, newSettings, { merge: true });
+    
+    // This effect runs whenever the local `settings` state changes, persisting it to Firestore.
+    useEffect(() => {
+        // Avoid writing back during initial load or if settings haven't changed from Firestore's data
+        if (isUserLoading || isSettingsLoading || !settingsDocRef || JSON.stringify(settings) === JSON.stringify(firestoreSettings)) {
+            return;
         }
-    };
+        setDocumentNonBlocking(settingsDocRef, settings, { merge: true });
+    }, [settings, settingsDocRef, firestoreSettings, isUserLoading, isSettingsLoading]);
     
     const isLoading = isUserLoading || isSettingsLoading || isEmployeesLoading || isExcelFilesLoading || isItemsLoading || isLocationsLoading || isExpensesLoading || isExpenseReportsLoading || isOvertimeLoading || isBonusesLoading || isWithdrawalsLoading || isReceiptsLoading || isTransfersLoading || isTransferItemsLoading || isMarketingFeedbacksLoading || isEvaluationQuestionsLoading || isUsersLoading || isRolesLoading;
 
