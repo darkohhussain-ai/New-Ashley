@@ -124,6 +124,7 @@ export function DashboardClient() {
             style={{ height: `${settings.dashboardBannerHeight}px` }}
             >
             <Image
+                key={settings.dashboardBanner}
                 src={settings.dashboardBanner}
                 alt="Dashboard Banner"
                 fill

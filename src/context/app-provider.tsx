@@ -11,6 +11,7 @@ import {
   where,
   Query,
   CollectionReference,
+  setDoc,
 } from 'firebase/firestore';
 import { useFirestore, useUser, useDoc } from '@/firebase';
 import { 
@@ -71,7 +72,7 @@ interface AppState {
     roles: Role[];
     setRoles: (roles: Role[]) => void;
     settings: AppSettings;
-    setSettings: React.Dispatch<React.SetStateAction<AppSettings>>;
+    setSettings: (value: React.SetStateAction<AppSettings>) => void;
     isLoading: boolean;
 }
 
@@ -81,8 +82,6 @@ const AppContext = createContext<AppState | undefined>(undefined);
 // Helper to manage a single collection from the root of Firestore
 function useFirestoreCollection<T extends {id: string}>(collectionName: string) {
     const db = useFirestore();
-    const { user } = useUser();
-    const populationCompleted = React.useRef(false);
 
     const collectionRef = useMemoFirebase(() => {
         if (!db) return null;
@@ -97,61 +96,74 @@ function useFirestoreCollection<T extends {id: string}>(collectionName: string) 
     }, [data]);
 
     const setter = useCallback((newData: T[]) => {
-        if (!user || !collectionRef) return;
+        if (!collectionRef) return;
 
-        const currentData = dataRef.current;
-        const currentDataMap = new Map((currentData || []).map(item => [item.id, item]));
+        const currentData = dataRef.current || [];
+        const currentDataMap = new Map(currentData.map(item => [item.id, item]));
         const newDataMap = new Map(newData.map(item => [item.id, item]));
 
+        // Deletions
         for (const id of currentDataMap.keys()) {
             if (!newDataMap.has(id)) {
-                const docRef = doc(collectionRef, id);
-                deleteDocumentNonBlocking(docRef);
+                deleteDocumentNonBlocking(doc(collectionRef, id));
             }
         }
         
+        // Additions and Updates
         for (const [id, item] of newDataMap.entries()) {
-            const docRef = doc(collectionRef, id);
             const existingItem = currentDataMap.get(id);
             if (!existingItem) {
-                setDocumentNonBlocking(docRef, item, { merge: false });
-            } else {
-                 if (JSON.stringify(existingItem) !== JSON.stringify(item)) {
-                    updateDocumentNonBlocking(docRef, item);
-                 }
+                setDocumentNonBlocking(doc(collectionRef, id), item, { merge: false });
+            } else if (JSON.stringify(existingItem) !== JSON.stringify(item)) {
+                updateDocumentNonBlocking(doc(collectionRef, id), item);
             }
         }
-    }, [user, collectionRef]);
+    }, [collectionRef]);
     
-    useEffect(() => {
-        if (isLoading || !collectionRef || populationCompleted.current) {
-            return;
-        }
-
-        if (data) { // data is not null
-            if (data.length > 0) {
-                populationCompleted.current = true; // Mark as complete if data already exists
-            } else { // data is []
-                // Only populate if we have initial data for this collection
-                if ((initialData as any)[collectionName]) {
-                    const initialItems = (initialData as any)[collectionName];
-                    initialItems.forEach((item: any) => {
-                        const docRef = doc(collectionRef, item.id);
-                        setDocumentNonBlocking(docRef, item, { merge: true });
-                    });
-                }
-                populationCompleted.current = true; // Mark as complete after attempting population
-            }
-        }
-    }, [data, isLoading, collectionName, user, collectionRef]);
-
-
     return [data || [], setter, isLoading, error] as const;
 }
 
 // The provider component
 export function AppProvider({ children }: { children: ReactNode }) {
     const { isUserLoading } = useUser();
+    const db = useFirestore();
+
+    // One-time effect to populate initial data if needed.
+    useEffect(() => {
+        if (!db) return;
+
+        const populateInitialData = async () => {
+            const isPopulated = localStorage.getItem('dataPopulated');
+            if (isPopulated) return;
+
+            console.log("First time setup: Populating initial data into Firestore...");
+
+            try {
+                for (const [collectionName, dataArray] of Object.entries(initialData)) {
+                    if (Array.isArray(dataArray)) {
+                        const collectionRef = collection(db, collectionName);
+                        for (const item of dataArray) {
+                            if (item.id) {
+                                const docRef = doc(collectionRef, item.id);
+                                await setDoc(docRef, item, { merge: true });
+                            }
+                        }
+                    }
+                }
+                
+                const settingsRef = doc(db, 'settings', 'main');
+                await setDoc(settingsRef, initialSettings, { merge: true });
+
+                localStorage.setItem('dataPopulated', 'true');
+                console.log("Initial data population complete.");
+            } catch (error) {
+                console.error("Error populating initial data:", error);
+            }
+        };
+
+        populateInitialData();
+    }, [db]);
+
 
     // App Data Collections
     const [employees, setEmployees, isEmployeesLoading] = useFirestoreCollection<Employee>('employees');
@@ -172,10 +184,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const [roles, setRoles, isRolesLoading] = useFirestoreCollection<Role>('roles');
     
     // Settings Singleton Document
-    const db = useFirestore();
     const settingsDocRef = useMemoFirebase(() => db ? doc(db, 'settings', 'main') : null, [db]);
     const { data: firestoreSettings, isLoading: isSettingsLoading } = useDoc<AppSettings>(settingsDocRef);
-    const populationCompleted = React.useRef(false);
     
     const settings = useMemo(() => {
         if (firestoreSettings) {
@@ -202,19 +212,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
             }
         }
     }, [settingsDocRef, settings]);
-    
-    useEffect(() => {
-        if (isSettingsLoading || !settingsDocRef || populationCompleted.current) {
-            return;
-        }
-
-        if (firestoreSettings) { // Data exists
-            populationCompleted.current = true;
-        } else { // Data is null (doesn't exist)
-            setDocumentNonBlocking(settingsDocRef, initialSettings, { merge: false });
-            populationCompleted.current = true;
-        }
-    }, [firestoreSettings, isSettingsLoading, settingsDocRef]);
     
     const isLoading = isUserLoading || isSettingsLoading || isEmployeesLoading || isExcelFilesLoading || isItemsLoading || isLocationsLoading || isExpensesLoading || isExpenseReportsLoading || isOvertimeLoading || isBonusesLoading || isWithdrawalsLoading || isReceiptsLoading || isTransfersLoading || isTransferItemsLoading || isMarketingFeedbacksLoading || isEvaluationQuestionsLoading || isUsersLoading || isRolesLoading;
 

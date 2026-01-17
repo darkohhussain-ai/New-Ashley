@@ -6,7 +6,7 @@ import * as React from 'react';
 import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowLeft, Download, Upload, Save, Palette, Type, ShieldCheck, ImageIcon, LayoutDashboard, RefreshCcw, Play, Newspaper, Building, FileText, Receipt, CreditCard, Languages, Search, LogIn, Image as ImageIconLucide } from 'lucide-react'
+import { ArrowLeft, Download, Upload, Save, Palette, Type, ShieldCheck, ImageIcon, LayoutDashboard, RefreshCcw, Play, Newspaper, Building, FileText, Receipt, CreditCard, Languages, Search, LogIn, Image as ImageIconLucide, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
@@ -331,10 +331,28 @@ function SettingsPage() {
   const { settings, setSettings } = useAppContext();
   const storage = useStorage();
 
+  const [draftSettings, setDraftSettings] = useState<AppSettings>(initialSettings);
+  const [isDirty, setIsDirty] = useState(false);
+  
   const [activePdfTab, setActivePdfTab] = useState<'report' | 'invoice' | 'card'>('report');
   const [selectedReportType, setSelectedReportType] = useState<keyof NonNullable<AllPdfSettings['report']['reportColors']>>('general');
   const [importFile, setImportFile] = useState<File | null>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (settings) {
+        setDraftSettings(JSON.parse(JSON.stringify(settings)));
+    }
+  }, [settings]);
+
+  useEffect(() => {
+    if(JSON.stringify(settings) !== JSON.stringify(draftSettings)) {
+        setIsDirty(true);
+    } else {
+        setIsDirty(false);
+    }
+  }, [settings, draftSettings]);
+
 
   const applyColors = (colors: ThemeColors) => {
     const root = document.documentElement;
@@ -348,22 +366,22 @@ function SettingsPage() {
   };
 
   useEffect(() => {
-    if (settings) {
+    if (draftSettings) {
       if (theme === 'dark') {
-        applyColors(settings.darkThemeColors);
+        applyColors(draftSettings.darkThemeColors);
       } else {
-        applyColors(settings.lightThemeColors);
+        applyColors(draftSettings.lightThemeColors);
       }
     }
-  }, [settings?.lightThemeColors, settings?.darkThemeColors, theme, settings]);
+  }, [draftSettings?.lightThemeColors, draftSettings?.darkThemeColors, theme, draftSettings]);
 
-  const handleSettingChange = (key: keyof AppSettings, value: any) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
+  const handleDraftChange = (key: keyof AppSettings, value: any) => {
+    setDraftSettings(prev => ({ ...prev, [key]: value }));
   };
 
   const handleThemeColorChange = (mode: 'light' | 'dark', property: keyof ThemeColors, value: string) => {
       const themeKey = mode === 'light' ? 'lightThemeColors' : 'darkThemeColors';
-      setSettings(prev => ({
+      setDraftSettings(prev => ({
           ...prev,
           [themeKey]: {
               ...prev[themeKey],
@@ -373,7 +391,7 @@ function SettingsPage() {
   };
 
   const handlePdfSettingChange = <K extends keyof PdfSettings>(key: K, value: PdfSettings[K]) => {
-    setSettings(prev => ({
+    setDraftSettings(prev => ({
         ...prev,
         pdfSettings: {
             ...prev.pdfSettings,
@@ -386,7 +404,7 @@ function SettingsPage() {
   };
   
   const handleReportColorChange = (reportType: keyof NonNullable<AllPdfSettings['report']['reportColors']>, color: string) => {
-    setSettings(prev => ({
+    setDraftSettings(prev => ({
         ...prev,
         pdfSettings: {
             ...prev.pdfSettings,
@@ -401,54 +419,55 @@ function SettingsPage() {
     }));
   };
   
-  const handleFileUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-    filePath: string,
-    onSuccess: (url: string) => void
-  ) => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, filePath: string, settingKey: keyof AppSettings) => {
     const file = e.target.files?.[0];
     if (!file) return;
-  
-    const { id: toastId, update, dismiss } = toast({
-      title: 'Uploading...',
-      description: 'Please wait while your file is uploaded.',
-    });
-  
-    try {
-      const reader = new FileReader();
-      reader.onload = async (loadEvent) => {
-        try {
-          const result = loadEvent.target?.result as string;
-          if (!result) {
-            throw new Error('Could not read file.');
-          }
-          const sRef = storageRef(storage, filePath);
-          await uploadString(sRef, result, 'data_url');
-          const downloadURL = await getDownloadURL(sRef);
-          
-          onSuccess(downloadURL);
-          
-          update({ id: toastId, title: 'Upload Complete', description: 'Your image has been uploaded successfully.' });
-          setTimeout(() => dismiss(toastId), 3000);
-  
-        } catch (error: any) {
-          console.error('File upload failed:', error);
-          update({ id: toastId, title: 'Upload Failed', description: error.message || 'There was an error uploading your file.', variant: 'destructive' });
+
+    // 1. Instant preview with local Data URL
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        const localUrl = event.target?.result as string;
+        if (localUrl) {
+            setDraftSettings(prev => ({ ...prev, [settingKey]: localUrl }));
+
+            // 2. Upload in the background
+            const sRef = storageRef(storage, filePath);
+            uploadString(sRef, localUrl, 'data_url').then(() => {
+                getDownloadURL(sRef).then(downloadURL => {
+                    // 3. Silently update the draft with the permanent URL
+                    setDraftSettings(prev => {
+                        if (prev[settingKey] === localUrl) {
+                            return { ...prev, [settingKey]: downloadURL };
+                        }
+                        return prev;
+                    });
+                }).catch(err => {
+                    console.error("Error getting download URL", err);
+                });
+            }).catch(err => {
+                console.error("Error uploading file", err);
+                toast({ variant: 'destructive', title: 'Upload Failed', description: 'Could not upload the image.' });
+                setDraftSettings(prev => ({ ...prev, [settingKey]: settings[settingKey] }));
+            });
         }
-      };
-      reader.onerror = (error) => {
-        console.error('FileReader error:', error);
-        update({ id: toastId, title: 'File Read Failed', description: 'Could not read the selected file.', variant: 'destructive' });
-      };
-      reader.readAsDataURL(file);
-    } catch (error: any) {
-        console.error('File upload initiation failed:', error);
-        update({ id: toastId, title: 'Upload Failed', description: error.message || 'Could not start the file upload process.', variant: 'destructive' });
-    }
+    };
+    reader.readAsDataURL(file);
+};
+
+
+  const handleSave = () => {
+    setSettings(draftSettings);
+    toast({ title: "Settings Saved", description: "Your changes have been saved." });
   };
+  
+  const handleCancel = () => {
+    setDraftSettings(settings);
+    toast({ title: "Cancelled", description: "Your changes have been discarded." });
+  }
 
   const handleResetToDefault = () => {
     setSettings(initialSettings);
+    setDraftSettings(initialSettings);
     toast({ title: t('settings_reset'), description: t('settings_reset_desc') });
   };
   
@@ -500,7 +519,7 @@ function SettingsPage() {
     }
   };
 
-  if (!settings) {
+  if (!settings || !draftSettings) {
     return (
         <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
             <header className="flex items-center gap-4 mb-8">
@@ -514,7 +533,7 @@ function SettingsPage() {
     );
   }
 
-  const currentPdfSettings = settings.pdfSettings[activePdfTab];
+  const currentPdfSettings = draftSettings.pdfSettings[activePdfTab];
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -552,6 +571,8 @@ function SettingsPage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+            <Button onClick={handleSave} disabled={!isDirty}><Save className="mr-2 h-4 w-4" /> {t('save_all_changes')}</Button>
+            <Button onClick={handleCancel} disabled={!isDirty} variant="ghost"><X className="mr-2 h-4 w-4" /> {t('cancel')}</Button>
           </div>
         </div>
       </header>
@@ -576,11 +597,11 @@ function SettingsPage() {
                             </div>
                              <div className="space-y-2">
                                 <Label htmlFor="news-ticker-text">News Ticker Text</Label>
-                                <Input id="news-ticker-text" value={settings.newsTickerText} onChange={e => handleSettingChange('newsTickerText', e.target.value)} placeholder="Enter scrolling text for the dashboard..."/>
+                                <Input id="news-ticker-text" value={draftSettings.newsTickerText} onChange={e => handleDraftChange('newsTickerText', e.target.value)} placeholder="Enter scrolling text for the dashboard..."/>
                             </div>
                              <div className="space-y-2">
-                                <Label htmlFor="banner-height">{t('banner_height')}: {settings.dashboardBannerHeight}px</Label>
-                                <Slider id="banner-height" min={80} max={300} step={10} value={[settings.dashboardBannerHeight]} onValueChange={(value) => handleSettingChange('dashboardBannerHeight', value[0])} />
+                                <Label htmlFor="banner-height">{t('banner_height')}: {draftSettings.dashboardBannerHeight}px</Label>
+                                <Slider id="banner-height" min={80} max={300} step={10} value={[draftSettings.dashboardBannerHeight]} onValueChange={(value) => handleDraftChange('dashboardBannerHeight', value[0])} />
                             </div>
                         </CardContent>
                     </Card>
@@ -594,22 +615,22 @@ function SettingsPage() {
                                     <TabsTrigger value="dark">{t('dark_mode')}</TabsTrigger>
                                 </TabsList>
                                 <TabsContent value="light" className="space-y-4 pt-4">
-                                    <ColorPicker label="Background" value={settings.lightThemeColors.background} onChange={(c) => handleThemeColorChange('light', 'background', c)} />
-                                    <ColorPicker label="Foreground" value={settings.lightThemeColors.foreground} onChange={(c) => handleThemeColorChange('light', 'foreground', c)} />
-                                    <ColorPicker label="Primary" value={settings.lightThemeColors.primary} onChange={(c) => handleThemeColorChange('light', 'primary', c)} />
-                                    <ColorPicker label="Accent" value={settings.lightThemeColors.accent} onChange={(c) => handleThemeColorChange('light', 'accent', c)} />
-                                    <ColorPicker label="Card" value={settings.lightThemeColors.card} onChange={(c) => handleThemeColorChange('light', 'card', c)} />
-                                    <ColorPicker label="Active Tab Background" value={settings.lightThemeColors.tabActiveBackground} onChange={(c) => handleThemeColorChange('light', 'tabActiveBackground', c)} />
-                                    <ColorPicker label="Active Tab Foreground" value={settings.lightThemeColors.tabActiveForeground} onChange={(c) => handleThemeColorChange('light', 'tabActiveForeground', c)} />
+                                    <ColorPicker label="Background" value={draftSettings.lightThemeColors.background} onChange={(c) => handleThemeColorChange('light', 'background', c)} />
+                                    <ColorPicker label="Foreground" value={draftSettings.lightThemeColors.foreground} onChange={(c) => handleThemeColorChange('light', 'foreground', c)} />
+                                    <ColorPicker label="Primary" value={draftSettings.lightThemeColors.primary} onChange={(c) => handleThemeColorChange('light', 'primary', c)} />
+                                    <ColorPicker label="Accent" value={draftSettings.lightThemeColors.accent} onChange={(c) => handleThemeColorChange('light', 'accent', c)} />
+                                    <ColorPicker label="Card" value={draftSettings.lightThemeColors.card} onChange={(c) => handleThemeColorChange('light', 'card', c)} />
+                                    <ColorPicker label="Active Tab Background" value={draftSettings.lightThemeColors.tabActiveBackground} onChange={(c) => handleThemeColorChange('light', 'tabActiveBackground', c)} />
+                                    <ColorPicker label="Active Tab Foreground" value={draftSettings.lightThemeColors.tabActiveForeground} onChange={(c) => handleThemeColorChange('light', 'tabActiveForeground', c)} />
                                 </TabsContent>
                                     <TabsContent value="dark" className="space-y-4 pt-4">
-                                    <ColorPicker label="Background" value={settings.darkThemeColors.background} onChange={(c) => handleThemeColorChange('dark', 'background', c)} />
-                                    <ColorPicker label="Foreground" value={settings.darkThemeColors.foreground} onChange={(c) => handleThemeColorChange('dark', 'foreground', c)} />
-                                    <ColorPicker label="Primary" value={settings.darkThemeColors.primary} onChange={(c) => handleThemeColorChange('dark', 'primary', c)} />
-                                    <ColorPicker label="Accent" value={settings.darkThemeColors.accent} onChange={(c) => handleThemeColorChange('dark', 'accent', c)} />
-                                    <ColorPicker label="Card" value={settings.darkThemeColors.card} onChange={(c) => handleThemeColorChange('dark', 'card', c)} />
-                                    <ColorPicker label="Active Tab Background" value={settings.darkThemeColors.tabActiveBackground} onChange={(c) => handleThemeColorChange('dark', 'tabActiveBackground', c)} />
-                                    <ColorPicker label="Active Tab Foreground" value={settings.darkThemeColors.tabActiveForeground} onChange={(c) => handleThemeColorChange('dark', 'tabActiveForeground', c)} />
+                                    <ColorPicker label="Background" value={draftSettings.darkThemeColors.background} onChange={(c) => handleThemeColorChange('dark', 'background', c)} />
+                                    <ColorPicker label="Foreground" value={draftSettings.darkThemeColors.foreground} onChange={(c) => handleThemeColorChange('dark', 'foreground', c)} />
+                                    <ColorPicker label="Primary" value={draftSettings.darkThemeColors.primary} onChange={(c) => handleThemeColorChange('dark', 'primary', c)} />
+                                    <ColorPicker label="Accent" value={draftSettings.darkThemeColors.accent} onChange={(c) => handleThemeColorChange('dark', 'accent', c)} />
+                                    <ColorPicker label="Card" value={draftSettings.darkThemeColors.card} onChange={(c) => handleThemeColorChange('dark', 'card', c)} />
+                                    <ColorPicker label="Active Tab Background" value={draftSettings.darkThemeColors.tabActiveBackground} onChange={(c) => handleThemeColorChange('dark', 'tabActiveBackground', c)} />
+                                    <ColorPicker label="Active Tab Foreground" value={draftSettings.darkThemeColors.tabActiveForeground} onChange={(c) => handleThemeColorChange('dark', 'tabActiveForeground', c)} />
                                 </TabsContent>
                             </Tabs>
                         </CardContent>
@@ -626,9 +647,9 @@ function SettingsPage() {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="relative w-full h-24 mt-2 border rounded-md p-2 flex justify-center items-center bg-muted/30">
-                                {settings.appLogo ? <Image key={settings.appLogo} src={settings.appLogo} alt="Logo Preview" fill className="object-contain" /> : <span className="text-sm text-muted-foreground">Logo Preview</span>}
+                                {draftSettings.appLogo ? <Image key={draftSettings.appLogo} src={draftSettings.appLogo} alt="Logo Preview" fill className="object-contain" /> : <span className="text-sm text-muted-foreground">Logo Preview</span>}
                             </div>
-                            <Input id="logo-upload" type="file" accept="image/*" onChange={(e) => handleFileUpload(e, `settings/appLogo.png`, (url) => handleSettingChange('appLogo', url))} />
+                            <Input id="logo-upload" type="file" accept="image/*" onChange={(e) => handleFileUpload(e, `settings/appLogo.png`, 'appLogo')} />
                         </CardContent>
                     </Card>
                      <Card>
@@ -638,9 +659,9 @@ function SettingsPage() {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="relative w-full h-24 mt-2 border rounded-md p-2 flex justify-center items-center bg-muted/30 overflow-hidden">
-                                {settings.loginBackground ? <Image key={settings.loginBackground} src={settings.loginBackground} alt="Login BG Preview" fill className="object-cover" /> : <span className="text-sm text-muted-foreground">Login BG Preview</span>}
+                                {draftSettings.loginBackground ? <Image key={draftSettings.loginBackground} src={draftSettings.loginBackground} alt="Login BG Preview" fill className="object-cover" /> : <span className="text-sm text-muted-foreground">Login BG Preview</span>}
                             </div>
-                            <Input id="login-bg-upload" type="file" accept="image/*" onChange={(e) => handleFileUpload(e, `settings/loginBackground.png`, (url) => handleSettingChange('loginBackground', url))} />
+                            <Input id="login-bg-upload" type="file" accept="image/*" onChange={(e) => handleFileUpload(e, `settings/loginBackground.png`, 'loginBackground')} />
                         </CardContent>
                     </Card>
                      <Card>
@@ -650,9 +671,9 @@ function SettingsPage() {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="relative w-full h-24 mt-2 border rounded-md p-2 flex justify-center items-center bg-muted/30 overflow-hidden">
-                                {settings.mainBackground ? <Image key={settings.mainBackground} src={settings.mainBackground} alt="Main BG Preview" fill className="object-cover" /> : <span className="text-sm text-muted-foreground">Main BG Preview</span>}
+                                {draftSettings.mainBackground ? <Image key={draftSettings.mainBackground} src={draftSettings.mainBackground} alt="Main BG Preview" fill className="object-cover" /> : <span className="text-sm text-muted-foreground">Main BG Preview</span>}
                             </div>
-                            <Input id="main-bg-upload" type="file" accept="image/*" onChange={(e) => handleFileUpload(e, `settings/mainBackground.png`, (url) => handleSettingChange('mainBackground', url))} />
+                            <Input id="main-bg-upload" type="file" accept="image/*" onChange={(e) => handleFileUpload(e, `settings/mainBackground.png`, 'mainBackground')} />
                         </CardContent>
                     </Card>
                     <Card>
@@ -662,9 +683,9 @@ function SettingsPage() {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="relative w-full h-24 mt-2 border rounded-md p-2 flex justify-center items-center bg-muted/30 overflow-hidden">
-                                {settings.dashboardBanner ? <Image key={settings.dashboardBanner} src={settings.dashboardBanner} alt="Banner Preview" fill className="object-contain" /> : <span className="text-sm text-muted-foreground">Banner Preview</span>}
+                                {draftSettings.dashboardBanner ? <Image key={draftSettings.dashboardBanner} src={draftSettings.dashboardBanner} alt="Banner Preview" fill className="object-contain" /> : <span className="text-sm text-muted-foreground">Banner Preview</span>}
                             </div>
-                            <Input id="banner-upload" type="file" accept="image/*" onChange={(e) => handleFileUpload(e, `settings/dashboardBanner.png`, (url) => handleSettingChange('dashboardBanner', url))} />
+                            <Input id="banner-upload" type="file" accept="image/*" onChange={(e) => handleFileUpload(e, `settings/dashboardBanner.png`, 'dashboardBanner')} />
                         </CardContent>
                     </Card>
                 </div>
@@ -700,7 +721,7 @@ function SettingsPage() {
                             <CardContent className="space-y-4">
                                 <div>
                                     <Label htmlFor="logo-upload-pdf">{t('company_logo')}</Label>
-                                    <Input id="logo-upload-pdf" type="file" accept="image/*" onChange={(e) => handleFileUpload(e, `settings/pdf/${activePdfTab}_logo.png`, (url) => handlePdfSettingChange('logo', url))} />
+                                    <Input id="logo-upload-pdf" type="file" accept="image/*" onChange={(e) => handleFileUpload(e, `settings/pdf/${activePdfTab}_logo.png`, `pdfSettings.${activePdfTab}.logo` as any)} />
                                 </div>
                                 <div className="space-y-2">
                                 <Label htmlFor="header-text">{t('header_text_optional')}</Label>
@@ -736,7 +757,7 @@ function SettingsPage() {
                                             <Input 
                                                 id="theme-color" 
                                                 type="color"
-                                                value={settings.pdfSettings.report.reportColors?.[selectedReportType] ?? '#000000'}
+                                                value={draftSettings.pdfSettings.report.reportColors?.[selectedReportType] ?? '#000000'}
                                                 onChange={(e) => handleReportColorChange(selectedReportType, e.target.value)} 
                                                 className="w-10 h-10 p-1" 
                                             />
@@ -770,13 +791,13 @@ function SettingsPage() {
                                 <div className="w-full max-w-2xl bg-white shadow-lg transform origin-top overflow-hidden flex flex-col scale-[0.8]" style={{ aspectRatio: '1 / 1.4142' }}>
                                 {activePdfTab === 'report' && (
                                     <>
-                                        <ReportPdfHeader title="Example Report Title" subtitle="This is an example subtitle" logoSrc={currentPdfSettings.logo ?? null} themeColor={settings.pdfSettings.report.reportColors?.[selectedReportType]} headerText={currentPdfSettings.headerText} />
+                                        <ReportPdfHeader title="Example Report Title" subtitle="This is an example subtitle" logoSrc={currentPdfSettings.logo ?? null} themeColor={draftSettings.pdfSettings.report.reportColors?.[selectedReportType]} headerText={currentPdfSettings.headerText} />
                                         <div className="p-6 flex-grow" style={{fontFamily: 'CustomPdfFont'}}>
                                             <h3 className="font-bold text-gray-800 mb-2">{t('sample_section')}</h3>
                                             <p className="text-sm text-gray-600 mb-4">{t('sample_body_text')}</p>
                                              <Table className={cn(currentPdfSettings.tableTheme === 'grid' && 'border')}>
                                                 <TableHeader>
-                                                    <TableRow style={{backgroundColor: settings.pdfSettings.report.reportColors?.[selectedReportType], color: 'white'}} className="hover:bg-primary/90">
+                                                    <TableRow style={{backgroundColor: draftSettings.pdfSettings.report.reportColors?.[selectedReportType], color: 'white'}} className="hover:bg-primary/90">
                                                         <TableHead className="text-white">{t('column_1')}</TableHead>
                                                         <TableHead className="text-white">{t('column_2')}</TableHead>
                                                     </TableRow>
