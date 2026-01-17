@@ -4,14 +4,14 @@
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, Trash2, Save, Loader2, Calendar } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Save, Loader2, Calendar as CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { format, formatISO } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -192,12 +192,12 @@ export default function NewFilePage() {
                         <Popover>
                             <PopoverTrigger asChild>
                             <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}>
-                                <CalendarComponent className="mr-2 h-4 w-4" />
+                                <CalendarIcon className="mr-2 h-4 w-4" />
                                 {date ? format(date, 'PPP') : <span>{t('pick_a_date')}</span>}
                             </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0">
-                            <CalendarComponent mode="single" selected={date} onSelect={setDate} initialFocus captionLayout="dropdown-nav" fromYear={2020} toYear={2040} />
+                            <Calendar mode="single" selected={date} onSelect={setDate} initialFocus captionLayout="dropdown-nav" fromYear={2020} toYear={2040} />
                             </PopoverContent>
                         </Popover>
                     </div>
@@ -328,5 +328,7 @@ export default function NewFilePage() {
     </div>
   );
 }
+
+    
 
     
