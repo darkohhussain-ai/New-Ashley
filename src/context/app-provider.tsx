@@ -82,6 +82,7 @@ const AppContext = createContext<AppState | undefined>(undefined);
 function useFirestoreCollection<T extends {id: string}>(collectionName: string) {
     const db = useFirestore();
     const { user } = useUser();
+    const populationAttempted = React.useRef(false);
 
     const collectionRef = useMemoFirebase(() => {
         if (!user) return null;
@@ -90,7 +91,6 @@ function useFirestoreCollection<T extends {id: string}>(collectionName: string) 
     
     const { data, isLoading, error } = useCollection<T>(collectionRef);
     
-    // Use a ref to hold the current data to break dependency cycle in the setter
     const dataRef = React.useRef(data);
     useEffect(() => {
       dataRef.current = data;
@@ -99,11 +99,10 @@ function useFirestoreCollection<T extends {id: string}>(collectionName: string) 
     const setter = useCallback((newData: T[]) => {
         if (!user || !collectionRef) return;
 
-        const currentData = dataRef.current; // Read from ref to avoid dependency
+        const currentData = dataRef.current;
         const currentDataMap = new Map((currentData || []).map(item => [item.id, item]));
         const newDataMap = new Map(newData.map(item => [item.id, item]));
 
-        // Deletes
         for (const id of currentDataMap.keys()) {
             if (!newDataMap.has(id)) {
                 const docRef = doc(collectionRef, id);
@@ -111,28 +110,29 @@ function useFirestoreCollection<T extends {id: string}>(collectionName: string) 
             }
         }
         
-        // Adds or Updates
         for (const [id, item] of newDataMap.entries()) {
             const docRef = doc(collectionRef, id);
             const existingItem = currentDataMap.get(id);
-            if (!existingItem) { // Add
+            if (!existingItem) {
                 setDocumentNonBlocking(docRef, item, { merge: false });
-            } else { // Update
+            } else {
                  if (JSON.stringify(existingItem) !== JSON.stringify(item)) {
                     updateDocumentNonBlocking(docRef, item);
                  }
             }
         }
-    }, [user, collectionRef]); // 'data' is removed from dependencies to stabilize the setter
+    }, [user, collectionRef]);
     
-    // During initial load, if the collection is empty, populate it.
     useEffect(() => {
-        if (!isLoading && user && collectionRef && data && data.length === 0 && (initialData as any)[collectionName]) {
-            const initialItems = (initialData as any)[collectionName];
-            initialItems.forEach((item: any) => {
-                const docRef = doc(collectionRef, item.id);
-                setDocumentNonBlocking(docRef, item, { merge: true });
-            });
+        if (!isLoading && user && collectionRef && data && !populationAttempted.current) {
+            populationAttempted.current = true; // Mark as attempted
+            if (data.length === 0 && (initialData as any)[collectionName]) {
+                const initialItems = (initialData as any)[collectionName];
+                initialItems.forEach((item: any) => {
+                    const docRef = doc(collectionRef, item.id);
+                    setDocumentNonBlocking(docRef, item, { merge: true });
+                });
+            }
         }
     }, [isLoading, data, collectionName, user, collectionRef]);
 
@@ -166,42 +166,36 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const settingsDocRef = useMemoFirebase(() => db ? doc(db, 'settings', 'main') : null, [db]);
     const { data: firestoreSettings, isLoading: isSettingsLoading } = useDoc<AppSettings>(settingsDocRef);
     const [settings, _setSettings] = useState<AppSettings>(initialSettings);
+    const settingsPopulationAttempted = React.useRef(false);
     
-    // This effect runs on initial load and when remote settings change.
     useEffect(() => {
-        if (!isSettingsLoading && firestoreSettings) {
-            _setSettings(prev => {
-                const mergedSettings = {
-                    ...initialSettings,
-                    ...firestoreSettings,
-                    pdfSettings: {
-                        ...initialSettings.pdfSettings,
-                        ...(firestoreSettings.pdfSettings || {})
+        if (!isSettingsLoading) {
+            if (firestoreSettings) {
+                _setSettings(prev => {
+                    const mergedSettings = {
+                        ...initialSettings,
+                        ...firestoreSettings,
+                        pdfSettings: { ...initialSettings.pdfSettings, ...(firestoreSettings.pdfSettings || {}) }
+                    };
+                    if (JSON.stringify(mergedSettings) !== JSON.stringify(prev)) {
+                        return mergedSettings;
                     }
-                };
-                // Only update local state if it's different from the incoming Firestore data.
-                if (JSON.stringify(mergedSettings) !== JSON.stringify(prev)) {
-                    return mergedSettings;
+                    return prev;
+                });
+            } else if (!settingsPopulationAttempted.current) {
+                settingsPopulationAttempted.current = true;
+                if (settingsDocRef) {
+                    setDocumentNonBlocking(settingsDocRef, initialSettings, { merge: false });
                 }
-                return prev;
-            });
-        } else if (!isSettingsLoading && !firestoreSettings) {
-            // If no document exists in Firestore, create it using the initial default settings.
-            if(settingsDocRef) {
-                setDocumentNonBlocking(settingsDocRef, initialSettings, { merge: false });
             }
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [firestoreSettings, isSettingsLoading, settingsDocRef]);
     
-    // Create a new setter function that persists changes to Firestore.
     const setSettings = useCallback((value: React.SetStateAction<AppSettings>) => {
-        // Use the functional update form of useState's setter to get the latest state.
         _setSettings(prevState => {
             const newSettings = value instanceof Function ? value(prevState) : value;
-            // Only write to Firestore if the new settings are actually different.
             if (settingsDocRef && JSON.stringify(newSettings) !== JSON.stringify(prevState)) {
-                setDocumentNonBlocking(settingsDocRef, newSettings, { merge: true });
+                updateDocumentNonBlocking(settingsDocRef, newSettings);
             }
             return newSettings;
         });
