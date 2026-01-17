@@ -6,8 +6,6 @@ import { ChevronLeft, ChevronRight } from "lucide-react"
 import { DayPicker, DropdownProps } from "react-day-picker"
 
 import { cn } from "@/lib/utils"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select"
-import { ScrollArea } from "./scroll-area"
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>
 
@@ -69,38 +67,33 @@ function Calendar({
         Dropdown: ({ value, onChange, children, ...props }: DropdownProps) => {
           const options = React.Children.toArray(
             children
-          ) as React.ReactElement<React.HTMLProps<HTMLOptionElement>>[]
-          const selected = options.find((child) => child.props.value === value)
-          const handleChange = (value: string) => {
+          ) as React.ReactElement<React.HTMLProps<HTMLOptionElement>>[];
+          
+          const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
             const changeEvent = {
-              target: { value },
-            } as React.ChangeEvent<HTMLSelectElement>
-            onChange?.(changeEvent)
-          }
+              target: { value: e.target.value },
+            } as React.ChangeEvent<HTMLSelectElement>;
+            onChange?.(changeEvent);
+          };
+
           return (
-            <Select
+            <select
               value={value?.toString()}
-              onValueChange={(value) => {
-                handleChange(value)
-              }}
+              onChange={handleChange}
+              className={cn(
+                "h-7 appearance-none rounded-md border border-input bg-transparent px-2 py-0 text-sm font-medium ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              )}
             >
-              <SelectTrigger className="pr-1.5 focus:ring-0">
-                <SelectValue>{selected?.props?.children}</SelectValue>
-              </SelectTrigger>
-              <SelectContent position="popper">
-                <ScrollArea className="h-80">
-                  {options.map((option, id: number) => (
-                    <SelectItem
-                      key={`${option.props.value}-${id}`}
-                      value={option.props.value?.toString() ?? ""}
-                    >
-                      {option.props.children}
-                    </SelectItem>
-                  ))}
-                </ScrollArea>
-              </SelectContent>
-            </Select>
-          )
+              {options.map((option) => (
+                <option
+                  key={option.props.value}
+                  value={option.props.value}
+                >
+                  {option.props.children}
+                </option>
+              ))}
+            </select>
+          );
         },
       }}
       {...props}
