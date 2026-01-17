@@ -89,11 +89,18 @@ function useFirestoreCollection<T extends {id: string}>(collectionName: string) 
     }, [db, user, collectionName]);
     
     const { data, isLoading, error } = useCollection<T>(collectionRef);
+    
+    // Use a ref to hold the current data to break dependency cycle in the setter
+    const dataRef = React.useRef(data);
+    useEffect(() => {
+      dataRef.current = data;
+    }, [data]);
 
-    const setter = (newData: T[]) => {
+    const setter = useCallback((newData: T[]) => {
         if (!user || !collectionRef) return;
 
-        const currentDataMap = new Map((data || []).map(item => [item.id, item]));
+        const currentData = dataRef.current; // Read from ref to avoid dependency
+        const currentDataMap = new Map((currentData || []).map(item => [item.id, item]));
         const newDataMap = new Map(newData.map(item => [item.id, item]));
 
         // Deletes
@@ -116,7 +123,7 @@ function useFirestoreCollection<T extends {id: string}>(collectionName: string) 
                  }
             }
         }
-    };
+    }, [user, collectionRef]); // 'data' is removed from dependencies to stabilize the setter
     
     // During initial load, if the collection is empty, populate it.
     useEffect(() => {
@@ -163,18 +170,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // This effect runs on initial load and when remote settings change.
     useEffect(() => {
         if (!isSettingsLoading && firestoreSettings) {
-             const mergedSettings = {
-                ...initialSettings,
-                ...firestoreSettings,
-                pdfSettings: {
-                    ...initialSettings.pdfSettings,
-                    ...(firestoreSettings.pdfSettings || {})
+            _setSettings(prev => {
+                const mergedSettings = {
+                    ...initialSettings,
+                    ...firestoreSettings,
+                    pdfSettings: {
+                        ...initialSettings.pdfSettings,
+                        ...(firestoreSettings.pdfSettings || {})
+                    }
+                };
+                // Only update local state if it's different from the incoming Firestore data.
+                if (JSON.stringify(mergedSettings) !== JSON.stringify(prev)) {
+                    return mergedSettings;
                 }
-            };
-            // Only update local state if it's different from the incoming Firestore data.
-            if (JSON.stringify(mergedSettings) !== JSON.stringify(settings)) {
-                _setSettings(mergedSettings);
-            }
+                return prev;
+            });
         } else if (!isSettingsLoading && !firestoreSettings) {
             // If no document exists in Firestore, create it using the initial default settings.
             if(settingsDocRef) {
