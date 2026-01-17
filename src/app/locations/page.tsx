@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -175,51 +174,50 @@ export default function LocationsPage() {
   };
   
   const handleGenerateAll = async () => {
-    if (!locations) return;
-
     setIsGenerating(true);
-    const existingNames = new Set(locations.map(l => l.name));
-    let newLocations: StorageLocation[] = [];
-
-    // Huana: 3 warehouses, 2 floors, 8 sections
-    for (let w = 1; w <= 3; w++) {
-      for (let f = 1; f <= 2; f++) {
-        for (let s = 1; s <= 8; s++) {
-          const code = `H-${w}-${f}-${s}`;
-          if (!existingNames.has(code)) newLocations.push({ id: crypto.randomUUID(), name: code, warehouseType: 'Huana' });
+    setLocations(prevLocations => {
+      const existingNames = new Set(prevLocations.map(l => l.name));
+      let newLocations: StorageLocation[] = [];
+  
+      // Huana: 3 warehouses, 2 floors, 8 sections
+      for (let w = 1; w <= 3; w++) {
+        for (let f = 1; f <= 2; f++) {
+          for (let s = 1; s <= 8; s++) {
+            const code = `H-${w}-${f}-${s}`;
+            if (!existingNames.has(code)) newLocations.push({ id: crypto.randomUUID(), name: code, warehouseType: 'Huana' });
+          }
         }
       }
-    }
-
-    // Ashley Floor 4: 16 sections
-    for (let s = 1; s <= 16; s++) {
-      const code = `A-4-${s}`;
-      if (!existingNames.has(code)) newLocations.push({ id: crypto.randomUUID(), name: code, warehouseType: 'Ashley' });
-    }
-
-    // Ashley Floor 3, Area 1: 6 units, 4 sections
-    for (let u = 1; u <= 6; u++) {
-      for (let s = 1; s <= 4; s++) {
-        const code = `A-3-1-${u}-${s}`;
+  
+      // Ashley Floor 4: 16 sections
+      for (let s = 1; s <= 16; s++) {
+        const code = `A-4-${s}`;
         if (!existingNames.has(code)) newLocations.push({ id: crypto.randomUUID(), name: code, warehouseType: 'Ashley' });
       }
-    }
-
-    // Ashley Floor 3, Area 2 (Office): 6 locations
-    const officeCodes = ['RF', 'RB', 'MF', 'MB', 'LF', 'LB'];
-    for (const oc of officeCodes) {
-      const code = `A-3-O-${oc}`;
-      if (!existingNames.has(code)) newLocations.push({ id: crypto.randomUUID(), name: code, warehouseType: 'Ashley' });
-    }
-
-    if (newLocations.length === 0) {
-      toast({ title: "No new locations", description: "All possible locations already exist in the database." });
-      setIsGenerating(false);
-      return;
-    }
-
-    setLocations(prev => [...prev, ...newLocations]);
-    toast({ title: "Success", description: `${newLocations.length} new location(s) have been added.` });
+  
+      // Ashley Floor 3, Area 1: 6 units, 4 sections
+      for (let u = 1; u <= 6; u++) {
+        for (let s = 1; s <= 4; s++) {
+          const code = `A-3-1-${u}-${s}`;
+          if (!existingNames.has(code)) newLocations.push({ id: crypto.randomUUID(), name: code, warehouseType: 'Ashley' });
+        }
+      }
+  
+      // Ashley Floor 3, Area 2 (Office): 6 locations
+      const officeCodes = ['RF', 'RB', 'MF', 'MB', 'LF', 'LB'];
+      for (const oc of officeCodes) {
+        const code = `A-3-O-${oc}`;
+        if (!existingNames.has(code)) newLocations.push({ id: crypto.randomUUID(), name: code, warehouseType: 'Ashley' });
+      }
+  
+      if (newLocations.length === 0) {
+        toast({ title: "No new locations", description: "All possible locations already exist in the database." });
+        return prevLocations;
+      }
+  
+      toast({ title: "Success", description: `${newLocations.length} new location(s) have been added.` });
+      return [...prevLocations, ...newLocations];
+    });
     setIsGenerating(false);
   };
 
