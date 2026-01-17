@@ -82,12 +82,12 @@ const AppContext = createContext<AppState | undefined>(undefined);
 function useFirestoreCollection<T extends {id: string}>(collectionName: string) {
     const db = useFirestore();
     const { user } = useUser();
-    const populationAttempted = React.useRef(false);
+    const populationCompleted = React.useRef(false);
 
     const collectionRef = useMemoFirebase(() => {
-        if (!user) return null;
+        if (!db) return null;
         return collection(db, collectionName);
-    }, [db, user, collectionName]);
+    }, [db, collectionName]);
     
     const { data, isLoading, error } = useCollection<T>(collectionRef);
     
@@ -124,17 +124,27 @@ function useFirestoreCollection<T extends {id: string}>(collectionName: string) 
     }, [user, collectionRef]);
     
     useEffect(() => {
-        if (!isLoading && user && collectionRef && data && !populationAttempted.current) {
-            populationAttempted.current = true; // Mark as attempted
-            if (data.length === 0 && (initialData as any)[collectionName]) {
-                const initialItems = (initialData as any)[collectionName];
-                initialItems.forEach((item: any) => {
-                    const docRef = doc(collectionRef, item.id);
-                    setDocumentNonBlocking(docRef, item, { merge: true });
-                });
+        if (isLoading || !collectionRef || populationCompleted.current) {
+            return;
+        }
+
+        if (data) { // data is not null
+            if (data.length > 0) {
+                populationCompleted.current = true; // Mark as complete if data already exists
+            } else { // data is []
+                // Only populate if we have initial data for this collection
+                if ((initialData as any)[collectionName]) {
+                    const initialItems = (initialData as any)[collectionName];
+                    initialItems.forEach((item: any) => {
+                        const docRef = doc(collectionRef, item.id);
+                        setDocumentNonBlocking(docRef, item, { merge: true });
+                    });
+                }
+                populationCompleted.current = true; // Mark as complete after attempting population
             }
         }
-    }, [isLoading, data, collectionName, user, collectionRef]);
+    }, [data, isLoading, collectionName, user, collectionRef]);
+
 
     return [data || [], setter, isLoading, error] as const;
 }
@@ -165,41 +175,46 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const db = useFirestore();
     const settingsDocRef = useMemoFirebase(() => db ? doc(db, 'settings', 'main') : null, [db]);
     const { data: firestoreSettings, isLoading: isSettingsLoading } = useDoc<AppSettings>(settingsDocRef);
-    const [settings, _setSettings] = useState<AppSettings>(initialSettings);
-    const settingsPopulationAttempted = React.useRef(false);
+    const populationCompleted = React.useRef(false);
     
-    useEffect(() => {
-        if (!isSettingsLoading) {
-            if (firestoreSettings) {
-                _setSettings(prev => {
-                    const mergedSettings = {
-                        ...initialSettings,
-                        ...firestoreSettings,
-                        pdfSettings: { ...initialSettings.pdfSettings, ...(firestoreSettings.pdfSettings || {}) }
-                    };
-                    if (JSON.stringify(mergedSettings) !== JSON.stringify(prev)) {
-                        return mergedSettings;
-                    }
-                    return prev;
-                });
-            } else if (!settingsPopulationAttempted.current) {
-                settingsPopulationAttempted.current = true;
-                if (settingsDocRef) {
-                    setDocumentNonBlocking(settingsDocRef, initialSettings, { merge: false });
+    const settings = useMemo(() => {
+        if (firestoreSettings) {
+            return {
+                ...initialSettings,
+                ...firestoreSettings,
+                pdfSettings: {
+                    ...initialSettings.pdfSettings,
+                    ...(firestoreSettings.pdfSettings || {}),
+                    report: { ...initialSettings.pdfSettings.report, ...(firestoreSettings.pdfSettings?.report || {})},
+                    invoice: { ...initialSettings.pdfSettings.invoice, ...(firestoreSettings.pdfSettings?.invoice || {})},
+                    card: { ...initialSettings.pdfSettings.card, ...(firestoreSettings.pdfSettings?.card || {})},
                 }
-            }
+            };
         }
-    }, [firestoreSettings, isSettingsLoading, settingsDocRef]);
-    
+        return initialSettings;
+    }, [firestoreSettings]);
+
     const setSettings = useCallback((value: React.SetStateAction<AppSettings>) => {
-        _setSettings(prevState => {
-            const newSettings = value instanceof Function ? value(prevState) : value;
-            if (settingsDocRef && JSON.stringify(newSettings) !== JSON.stringify(prevState)) {
+        if (settingsDocRef) {
+            const newSettings = value instanceof Function ? value(settings) : value;
+            if (JSON.stringify(newSettings) !== JSON.stringify(settings)) {
                 updateDocumentNonBlocking(settingsDocRef, newSettings);
             }
-            return newSettings;
-        });
-    }, [settingsDocRef]);
+        }
+    }, [settingsDocRef, settings]);
+    
+    useEffect(() => {
+        if (isSettingsLoading || !settingsDocRef || populationCompleted.current) {
+            return;
+        }
+
+        if (firestoreSettings) { // Data exists
+            populationCompleted.current = true;
+        } else { // Data is null (doesn't exist)
+            setDocumentNonBlocking(settingsDocRef, initialSettings, { merge: false });
+            populationCompleted.current = true;
+        }
+    }, [firestoreSettings, isSettingsLoading, settingsDocRef]);
     
     const isLoading = isUserLoading || isSettingsLoading || isEmployeesLoading || isExcelFilesLoading || isItemsLoading || isLocationsLoading || isExpensesLoading || isExpenseReportsLoading || isOvertimeLoading || isBonusesLoading || isWithdrawalsLoading || isReceiptsLoading || isTransfersLoading || isTransferItemsLoading || isMarketingFeedbacksLoading || isEvaluationQuestionsLoading || isUsersLoading || isRolesLoading;
 
