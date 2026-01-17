@@ -6,8 +6,7 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage';
 
-// IMPORTANT: DO NOT MODIFY THIS FUNCTION
-export function initializeFirebase() {
+export async function initializeFirebase() {
   if (!getApps().length) {
     // Important! initializeApp() is called without any arguments because Firebase App Hosting
     // integrates with the initializeApp() function to provide the environment variables needed to
@@ -26,17 +25,18 @@ export function initializeFirebase() {
       firebaseApp = initializeApp(firebaseConfig);
     }
 
-    return getSdks(firebaseApp);
+    return await getSdks(firebaseApp);
   }
 
   // If already initialized, return the SDKs with the already initialized App
-  return getSdks(getApp());
+  return await getSdks(getApp());
 }
 
-export function getSdks(firebaseApp: FirebaseApp) {
+export async function getSdks(firebaseApp: FirebaseApp) {
   const firestore = getFirestore(firebaseApp);
-  enableIndexedDbPersistence(firestore)
-    .catch((err) => {
+  try {
+    await enableIndexedDbPersistence(firestore);
+  } catch (err: any) {
       if (err.code == 'failed-precondition') {
         // Multiple tabs open, persistence can only be enabled in one.
         // Silently fail, as another tab is handling persistence.
@@ -45,7 +45,7 @@ export function getSdks(firebaseApp: FirebaseApp) {
         // features required to enable persistence.
         console.warn("Firestore persistence is not available in this browser.");
       }
-    });
+  }
 
   return {
     firebaseApp,

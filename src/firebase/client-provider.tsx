@@ -1,18 +1,39 @@
 'use client';
 
-import React, { useMemo, type ReactNode } from 'react';
+import React, { useState, useEffect, type ReactNode } from 'react';
 import { FirebaseProvider } from '@/firebase/provider';
 import { initializeFirebase } from '@/firebase';
+
+type FirebaseServices = Awaited<ReturnType<typeof initializeFirebase>>;
 
 interface FirebaseClientProviderProps {
   children: ReactNode;
 }
 
 export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
-  const firebaseServices = useMemo(() => {
-    // Initialize Firebase on the client side, once per component mount.
-    return initializeFirebase();
-  }, []); // Empty dependency array ensures this runs only once on mount
+  const [firebaseServices, setFirebaseServices] = useState<FirebaseServices | null>(null);
+
+  useEffect(() => {
+    const init = async () => {
+      const services = await initializeFirebase();
+      setFirebaseServices(services);
+    };
+    init();
+  }, []);
+
+  if (!firebaseServices) {
+    // This is a simplified, context-free splash screen to show while Firebase initializes.
+    // It prevents the "useAppContext must be used within an AppProvider" error.
+    return (
+        <div className="fixed inset-0 flex items-center justify-center bg-background z-50">
+          <div className="animate-pulse">
+            <div className="relative w-48 h-16">
+              <div className="w-full h-full bg-muted rounded-md" />
+            </div>
+          </div>
+        </div>
+    );
+  }
 
   return (
     <FirebaseProvider
