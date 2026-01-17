@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -196,7 +197,7 @@ export default function NewFilePage() {
                             </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0">
-                            <CalendarComponent mode="single" selected={date} onSelect={setDate} initialFocus />
+                            <CalendarComponent mode="single" selected={date} onSelect={setDate} initialFocus captionLayout="dropdown-nav" fromYear={2020} toYear={2040} />
                             </PopoverContent>
                         </Popover>
                     </div>

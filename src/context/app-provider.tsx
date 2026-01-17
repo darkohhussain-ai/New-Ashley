@@ -142,7 +142,6 @@ function useFirestoreCollection<T extends {id: string}>(collectionName: string) 
 export function AppProvider({ children }: { children: ReactNode }) {
     const { isUserLoading } = useUser();
     const db = useFirestore();
-    const hasAttemptedInitialSettingsLoad = useRef(false);
 
     // One-time effect to populate initial data if needed.
     useEffect(() => {
@@ -220,21 +219,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return initialSettings;
     }, [firestoreSettings]);
 
-    useEffect(() => {
-        if (db && !isSettingsLoading && !firestoreSettings && !hasAttemptedInitialSettingsLoad.current) {
-            hasAttemptedInitialSettingsLoad.current = true;
-            console.log(`Populating initial data for settings...`);
-            if (settingsDocRef) {
-                setDoc(settingsDocRef, initialSettings, { merge: true });
-            }
-        }
-    }, [db, isSettingsLoading, firestoreSettings, settingsDocRef]);
-    
     const setSettings = useCallback((value: React.SetStateAction<AppSettings>) => {
         if (settingsDocRef) {
             const newSettings = value instanceof Function ? value(settings) : value;
             if (JSON.stringify(newSettings) !== JSON.stringify(settings)) {
-                updateDocumentNonBlocking(settingsDocRef, newSettings);
+                setDocumentNonBlocking(settingsDocRef, newSettings, { merge: true });
             }
         }
     }, [settingsDocRef, settings]);

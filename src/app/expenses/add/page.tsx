@@ -305,7 +305,7 @@ export default function AddExpensePage() {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
-                <Calendar mode="single" selected={date} onSelect={(d) => { if(d) setDate(d); router.push('/expenses/add')}} />
+                <Calendar mode="single" selected={date} onSelect={(d) => { if(d) setDate(d); router.push('/expenses/add')}} captionLayout="dropdown-nav" fromYear={2020} toYear={2040} initialFocus />
               </PopoverContent>
             </Popover>
             <Button variant="outline" onClick={handlePrint} disabled={isLoading || dailyExpenses.length === 0}><Printer className="mr-2"/>{t('print')}</Button>

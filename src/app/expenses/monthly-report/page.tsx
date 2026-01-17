@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -166,7 +167,7 @@ export default function MonthlyExpenseReportPage() {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="end">
-                <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} captionLayout="dropdown-buttons" fromYear={2020} toYear={2040} />
+                <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} captionLayout="dropdown-nav" fromYear={2020} toYear={2040} />
               </PopoverContent>
             </Popover>
             <Button variant="outline" onClick={handlePrint} disabled={isLoading || monthlyData.expenses.length === 0}><Printer className="mr-2"/>{t('print')}</Button>
