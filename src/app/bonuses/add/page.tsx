@@ -45,6 +45,7 @@ export default function AddBonusPage() {
   const isReadOnly = !hasPermission('page:admin');
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   
   useEffect(() => {
     const getInitialDate = () => {
@@ -191,7 +192,7 @@ export default function AddBonusPage() {
             <h1 className="text-xl">{t('daily_bonuses')}</h1>
           </div>
           <div className="flex items-center gap-2">
-            <Popover>
+            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
               <PopoverTrigger asChild>
                 <Button variant={"outline"} className={cn("w-48 justify-start text-left", !selectedDate && "text-muted-foreground")}>
                   <CalendarIcon className="mr-2 h-4 w-4" />
@@ -199,7 +200,16 @@ export default function AddBonusPage() {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="end">
-                <Calendar mode="single" selected={selectedDate} onSelect={(date) => { setSelectedDate(date); if (dateParam) router.push('/bonuses/add'); }} initialFocus captionLayout="dropdown-nav" fromYear={2020} toYear={2040} />
+                <Calendar 
+                    mode="single" 
+                    selected={selectedDate} 
+                    onSelect={(date) => {
+                        setSelectedDate(date);
+                        setIsCalendarOpen(false);
+                    }} 
+                    initialFocus 
+                    captionLayout="dropdown-nav" fromYear={2020} toYear={2040} 
+                />
               </PopoverContent>
             </Popover>
           </div>

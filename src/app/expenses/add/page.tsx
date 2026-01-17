@@ -40,6 +40,7 @@ export default function AddExpensePage() {
   const dateParam = searchParams.get('date');
 
   const [date, setDate] = useState<Date | undefined>(undefined);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [expenseType, setExpenseType] = useState('');
   const [amount, setAmount] = useState('');
@@ -86,7 +87,7 @@ export default function AddExpensePage() {
         grouped[exp.employeeId].total += exp.amount;
       }
     });
-    return Object.values(grouped).sort((a, b) => a.employee.name.localeCompare(b.employee.name));
+    return Object.values(grouped).sort((a, b) => a.employee.name.localeCompare(b.name));
   }, [dailyExpenses, employees]);
 
   const grandTotal = useMemo(() => dailyExpenses.reduce((sum, exp) => sum + exp.amount, 0), [dailyExpenses]);
@@ -297,7 +298,7 @@ export default function AddExpensePage() {
         </div>
         <div className="flex items-center gap-2">
             <Label className="hidden sm:block">{t('date')}:</Label>
-            <Popover>
+            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
               <PopoverTrigger asChild>
                 <Button variant="outline" className={cn("w-48 justify-start text-left font-normal", !date && "text-muted-foreground")}>
                   <CalendarIcon className="mr-2 h-4 w-4" />
@@ -305,7 +306,15 @@ export default function AddExpensePage() {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
-                <Calendar mode="single" selected={date} onSelect={(d) => { if(d) setDate(d); router.push('/expenses/add')}} captionLayout="dropdown-nav" fromYear={2020} toYear={2040} initialFocus />
+                <Calendar 
+                    mode="single" 
+                    selected={date} 
+                    onSelect={(d) => {
+                        if(d) setDate(d);
+                        setIsCalendarOpen(false);
+                    }}
+                    captionLayout="dropdown-nav" fromYear={2020} toYear={2040} initialFocus 
+                />
               </PopoverContent>
             </Popover>
             <Button variant="outline" onClick={handlePrint} disabled={isLoading || dailyExpenses.length === 0}><Printer className="mr-2"/>{t('print')}</Button>

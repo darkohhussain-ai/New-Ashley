@@ -4,7 +4,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, Trash2, Save, Loader2, Calendar as CalendarIcon } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Save, Loader2, Calendar as CalendarIcon, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -31,6 +31,7 @@ export default function NewFilePage() {
   const { employees, locations, setExcelFiles, setItems: setAllItems } = useAppContext();
 
   const [isSaving, setIsSaving] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   // Form State
   const [storageName, setStorageName] = useState('');
@@ -96,6 +97,10 @@ export default function NewFilePage() {
       router.push('/archive');
       setIsSaving(false);
   };
+
+  const handlePrint = () => {
+    window.print();
+  };
   
   const getWarehouseTypeFromSource = (source?: string) => {
       if (source === 'Ashley Store') return 'Ashley';
@@ -137,7 +142,7 @@ export default function NewFilePage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
-      <header className="flex items-center justify-between gap-4 mb-8">
+      <header className="flex items-center justify-between gap-4 mb-8 print:hidden">
         <div className="flex items-center gap-4">
           <Button variant="outline" size="icon" asChild>
             <Link href="/items">
@@ -146,10 +151,13 @@ export default function NewFilePage() {
           </Button>
           <h1 className="text-2xl md:text-3xl font-bold">{t('new_excel_file')}</h1>
         </div>
-        <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? <Loader2 className="animate-spin mr-2"/> : <Save className="mr-2" />}
-            {t('save_report')}
-        </Button>
+        <div className="flex items-center gap-2">
+            <Button onClick={handlePrint} variant="outline" disabled={items.length === 0}><Printer className="mr-2"/> {t('print')}</Button>
+            <Button onClick={handleSave} disabled={isSaving}>
+                {isSaving ? <Loader2 className="animate-spin mr-2"/> : <Save className="mr-2" />}
+                {t('save_report')}
+            </Button>
+        </div>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -189,7 +197,7 @@ export default function NewFilePage() {
                     </div>
                      <div className="space-y-2">
                         <Label>{t('date')}</Label>
-                        <Popover>
+                        <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                             <PopoverTrigger asChild>
                             <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}>
                                 <CalendarIcon className="mr-2 h-4 w-4" />
@@ -197,7 +205,16 @@ export default function NewFilePage() {
                             </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0">
-                            <Calendar mode="single" selected={date} onSelect={setDate} initialFocus captionLayout="dropdown-nav" fromYear={2020} toYear={2040} />
+                                <Calendar 
+                                    mode="single" 
+                                    selected={date} 
+                                    onSelect={(d) => {
+                                        if (d) setDate(d);
+                                        setIsCalendarOpen(false);
+                                    }} 
+                                    initialFocus 
+                                    captionLayout="dropdown-nav" fromYear={2020} toYear={2040} 
+                                />
                             </PopoverContent>
                         </Popover>
                     </div>
@@ -328,7 +345,3 @@ export default function NewFilePage() {
     </div>
   );
 }
-
-    
-
-    
