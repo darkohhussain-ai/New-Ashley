@@ -94,6 +94,8 @@ export const initialSettings: AppSettings = {
         overtimeRate: 5000,
         bonusRate: 5000,
     },
+    theme: 'light',
+    language: 'en',
 };
 
 

@@ -15,7 +15,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Bar, BarChart as RechartsBarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { useTranslation } from '@/hooks/use-translation';
 import { useAuth } from '@/hooks/use-auth';
-import useLocalStorage from '@/hooks/use-local-storage';
 import { ReportPdfHeader } from '@/components/reports/report-pdf-header';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -32,11 +31,11 @@ const formatCurrency = (amount: number) => {
 
 export default function MonthlyWithdrawalReportPage() {
   const { t, language } = useTranslation();
-  const { withdrawals, employees } = useAppContext();
+  const { withdrawals, employees, settings } = useAppContext();
+  const { pdfSettings } = settings;
   const { user, hasPermission } = useAuth();
   const isReadOnly = !hasPermission('page:admin');
   
-  const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {}, card: {} });
   const reportContentRef = useRef<HTMLDivElement>(null);
 
 

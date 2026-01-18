@@ -2,11 +2,10 @@
 'use client';
 
 import React, { createContext, useState, ReactNode, useCallback, useEffect } from 'react';
-import useLocalStorage from '@/hooks/use-local-storage';
 import { useAppContext } from './app-provider';
-import { Translations } from '@/lib/types';
+import { Translations, Language } from '@/lib/types';
 
-export type Language = 'en' | 'ku';
+export type { Language };
 
 interface LanguageContextType {
   language: Language;
@@ -21,24 +20,16 @@ export const LanguageContext = createContext<LanguageContextType | undefined>(un
 
 // The provider component
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const { settings, setSettings } = useAppContext();
-  const [language, setSavedLanguage] = useLocalStorage<Language>('app-language', 'en');
+  const { settings, setSettings, isLoading } = useAppContext();
   
-  // Safely initialize state, falling back to empty objects if settings are not yet available.
-  const [enTranslations, setEnTranslations] = useState<Translations>(settings?.translations?.en || {});
-  const [kuTranslations, setKuTranslations] = useState<Translations>(settings?.translations?.ku || {});
-  
-  useEffect(() => {
-    // This effect ensures that when the settings are loaded from Firestore,
-    // the local translation states are updated accordingly.
-    if (settings?.translations) {
-      setEnTranslations(settings.translations.en);
-      setKuTranslations(settings.translations.ku);
-    }
-  }, [settings]);
+  const language = settings?.language || 'en';
+  const enTranslations = settings?.translations?.en || {};
+  const kuTranslations = settings?.translations?.ku || {};
 
   const setLanguage = (lang: Language) => {
-    setSavedLanguage(lang);
+    if (settings) {
+      setSettings({ ...settings, language: lang });
+    }
   };
   
   const translations = {
@@ -74,6 +65,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     translations,
     setTranslations,
   };
+  
+  if (isLoading) {
+    return null; // or a minimal loader, but AppProvider handles the main splash
+  }
 
   return (
     <LanguageContext.Provider value={value}>

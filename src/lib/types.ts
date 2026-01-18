@@ -1,6 +1,8 @@
 
 export type Translations = Record<string, string>;
 
+export type Language = 'en' | 'ku';
+
 export type User = {
     id: string;
     username: string;
@@ -221,4 +223,6 @@ export type AppSettings = {
   lightThemeColors: ThemeColors;
   darkThemeColors: ThemeColors;
   salarySettings: SalarySettings;
+  theme: 'light' | 'dark';
+  language: Language;
 };
