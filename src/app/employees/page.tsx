@@ -22,7 +22,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { EmployeePdfCard } from "@/components/employees/employee-pdf-card"
 import html2canvas from 'html2canvas'
 import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
@@ -37,6 +36,7 @@ import { Loader2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useStorage } from "@/firebase";
 import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
+import { EmployeeFullReportPdf } from "@/components/employees/employee-full-report-pdf";
 
 
 const formatCurrency = (amount: number) => {
@@ -96,7 +96,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
     const [notes, setNotes] = useState('');
     
     const cardPdfRef = useRef<HTMLDivElement>(null);
-    const reportPdfRef = useRef<HTMLDivElement>(null);
+    const fullReportPdfRef = useRef<HTMLDivElement>(null);
     const photoUploadRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -251,50 +251,40 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
     };
 
     const handleDownloadReport = async () => {
-        if (!reportPdfRef.current || !employee) return;
+        if (!fullReportPdfRef.current || !employee) return;
         
+        const canvas = await html2canvas(fullReportPdfRef.current, { 
+            scale: 2, 
+            useCORS: true,
+            onclone: (document) => {
+                if (settings.customFont && language === 'ku') {
+                    const style = document.createElement('style');
+                    style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${settings.customFont}); } body { font-family: 'CustomPdfFont', sans-serif !important; }`;
+                    document.head.appendChild(style);
+                }
+            }
+        });
+        
+        const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
         
-        // 1. Add Header from the new component
-        const headerCanvas = await html2canvas(reportPdfRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
-        const headerImgData = headerCanvas.toDataURL('image/png');
         const pdfWidth = pdf.internal.pageSize.getWidth();
-        const headerRatio = headerCanvas.width / headerCanvas.height;
-        const finalHeaderWidth = pdfWidth; // Use full width
-        const finalHeaderHeight = finalHeaderWidth / headerRatio;
-        pdf.addImage(headerImgData, 'PNG', 0, 0, finalHeaderWidth, finalHeaderHeight);
-
-        let startY = finalHeaderHeight + 20;
-
-        // 2. Add Tables for each financial section
-        const addSection = (title: string, data: any[], columns: string[], bodyMapper: (item: any) => any[], total: number) => {
-            if (data.length === 0) return;
-            // Check if there is enough space, add new page if not
-            if (startY + (data.length * 15) + 40 > pdf.internal.pageSize.getHeight()) {
-                pdf.addPage();
-                startY = 20;
-            }
-
-            pdf.setFontSize(14);
-            pdf.text(title, 14, startY);
-            startY += 10;
-            autoTable(pdf, {
-                startY,
-                head: [columns],
-                body: data.map(bodyMapper),
-                foot: [['Total', '', formatCurrency(total)]],
-                theme: 'striped',
-                headStyles: { fillColor: pdfSettings.report.themeColor || '#22c55e', font: 'helvetica' },
-                footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold', font: 'helvetica' },
-            });
-            startY = (pdf as any).lastAutoTable.finalY + 20;
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
+        const ratio = imgWidth / imgHeight;
+        
+        let finalImgWidth = pdfWidth;
+        let finalImgHeight = finalImgWidth / ratio;
+        
+        if (finalImgHeight > pdfHeight) {
+            finalImgHeight = pdfHeight;
+            finalImgWidth = finalImgHeight * ratio;
         }
 
-        addSection(t('expenses'), sortedExpenses, [t('date'), t('notes'), t('amount')], (e) => [format(parseISO(e.date), 'PP'), e.notes || '', formatCurrency(e.amount)], totalExpenses);
-        addSection(t('overtime'), sortedOvertime, [t('date'), 'Hours', t('amount')], (o) => [format(parseISO(o.date), 'PP'), o.hours.toFixed(2), formatCurrency(o.totalAmount)], totalOvertimeAmount);
-        addSection(t('bonuses'), sortedBonuses, [t('date'), 'Reason', t('amount')], (b) => [format(parseISO(b.date), 'PP'), b.notes || '', formatCurrency(b.totalAmount)], totalBonuses);
-        addSection(t('cash_withdrawals'), sortedWithdrawals, [t('date'), t('notes'), t('amount')], (w) => [format(parseISO(w.date), 'PP'), w.notes || '', formatCurrency(w.amount)], totalWithdrawals);
-        
+        const x = (pdfWidth - finalImgWidth) / 2;
+
+        pdf.addImage(imgData, 'PNG', x, 0, finalImgWidth, finalImgHeight);
         pdf.save(`${employee.name}_report_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
     };
 
@@ -314,12 +304,22 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
 
     return (
         <>
-            <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+             <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
                 <div ref={cardPdfRef}><EmployeePdfCard employee={employee} settings={pdfSettings.card || {}} /></div>
-                <div ref={reportPdfRef} style={{ width: '700px', background: 'white', color: 'black' }}>
-                    <EmployeeReportPdfHeader
+                <div ref={fullReportPdfRef} style={{ width: '800px', background: 'white', color: 'black' }}>
+                    <style>{`
+                        @font-face { 
+                            font-family: 'CustomPdfFont'; 
+                            src: ${settings.customFont ? `url(${settings.customFont})` : 'none'}; 
+                        }
+                    `}</style>
+                    <EmployeeFullReportPdf 
                         employee={employee}
                         settings={pdfSettings.report || {}}
+                        expenses={{ items: sortedExpenses, total: totalExpenses }}
+                        overtime={{ items: sortedOvertime, total: totalOvertimeAmount }}
+                        bonuses={{ items: sortedBonuses, total: totalBonuses }}
+                        withdrawals={{ items: sortedWithdrawals, total: totalWithdrawals }}
                     />
                 </div>
             </div>
