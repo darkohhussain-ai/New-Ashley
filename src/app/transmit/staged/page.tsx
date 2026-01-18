@@ -1,27 +1,27 @@
-
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, ListPlus, FileDown, Building } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import html2canvas from 'html2canvas';
 import { format } from 'date-fns';
 import { useAppContext } from '@/context/app-provider';
 import { useTranslation } from '@/hooks/use-translation';
-
+import { StagedItemsPdf } from '@/components/transmit/StagedItemsPdf';
 
 const destinations = ["Erbil", "Baghdad", "Diwan", "Dohuk"];
 
 export default function StagedItemsPage() {
   const { t, language } = useTranslation();
   const { transferItems, settings } = useAppContext();
-  const { customFont } = settings;
+  const { customFont, appLogo } = settings;
   const [selectedDestination, setSelectedDestination] = useState<string | null>(null);
 
+  const pdfRef = useRef<HTMLDivElement>(null);
 
   const isLoadingItems = !transferItems;
   const stagedItems = useMemo(() => transferItems.filter(item => !item.transferId), [transferItems]);
@@ -34,56 +34,42 @@ export default function StagedItemsPage() {
       .sort((a,b) => a.model.localeCompare(b.model));
   }, [stagedItems, selectedDestination]);
   
-  const handleDownloadPdf = () => {
-    if (!itemsForSelectedDestination || itemsForSelectedDestination.length === 0 || !selectedDestination) return;
-    const doc = new jsPDF();
-    const useKurdish = language === 'ku';
-
-    if (customFont && useKurdish) {
-      const fontName = "CustomFont";
-      const fontStyle = "normal";
-      try {
-        const fontBase64 = customFont.split(',')[1];
-        doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
-        doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
-        doc.setFont(fontName);
-      } catch (e) {
-        console.error("Failed to load custom font for PDF:", e);
-      }
-    }
-
-    doc.setFontSize(18);
-    doc.text(`${t('staged_items_for')} ${selectedDestination}`, doc.internal.pageSize.getWidth() / 2, 22, { align: 'center' });
-    doc.setFontSize(11);
-    doc.setTextColor(100);
-    doc.text(`${t('report_date')}: ${format(new Date(), 'PPP')}`, doc.internal.pageSize.getWidth() / 2, 30, { align: 'center' });
+  const handleDownloadPdf = async () => {
+    if (!pdfRef.current || !selectedDestination) return;
     
-    const head = [t('model'), t('quantity'), t('notes')];
-    const body = itemsForSelectedDestination.map(item => [item.model, item.quantity, item.notes || '']);
-
-    autoTable(doc, {
-        startY: 40,
-        head: [head],
-        body: body,
-        styles: { font: (customFont && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
-         didParseCell: (data) => {
-            if (useKurdish && customFont) {
-              data.cell.styles.font = "CustomFont";
-              data.cell.styles.halign = 'right';
+    const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
+    
+    const canvas = await html2canvas(pdfRef.current, { 
+        scale: 2, 
+        useCORS: true, 
+        backgroundColor: 'white',
+        onclone: (document) => {
+            if (customFont && language === 'ku') {
+                const style = document.createElement('style');
+                style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
+                document.head.appendChild(style);
             }
-          }
+        }
     });
 
-    const finalY = (doc as any).lastAutoTable.finalY + 40;
-    const pageHeight = doc.internal.pageSize.height;
-    if (finalY > pageHeight - 30) {
-        doc.addPage();
+    const imgData = canvas.toDataURL('image/png');
+    const pdfWidth = doc.internal.pageSize.getWidth();
+    const pdfHeight = doc.internal.pageSize.getHeight();
+    const imgWidth = canvas.width;
+    const imgHeight = canvas.height;
+    const ratio = imgWidth / imgHeight;
+    
+    let finalImgWidth = pdfWidth;
+    let finalImgHeight = pdfWidth / ratio;
+    
+    if (finalImgHeight > pdfHeight) {
+        finalImgHeight = pdfHeight;
+        finalImgWidth = finalImgHeight * ratio;
     }
-    const signatureY = finalY > pageHeight - 50 ? 40 : finalY;
-    doc.setFontSize(10);
-    doc.text("...................................", doc.internal.pageSize.width - 120, signatureY, { align: 'center' });
-    doc.text(t('warehouse_manager_signature'), doc.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
+    
+    const x = (pdfWidth - finalImgWidth) / 2;
 
+    doc.addImage(imgData, 'PNG', x, 0, finalImgWidth, finalImgHeight);
     doc.save(`staged-items-${selectedDestination}-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
   };
 
@@ -103,51 +89,62 @@ export default function StagedItemsPage() {
 
   if (selectedDestination) {
     return (
-        <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
-            <header className="flex items-center justify-between gap-4 mb-8">
-                <div className="flex items-center gap-4">
-                    <Button variant="outline" size="icon" onClick={() => setSelectedDestination(null)}>
-                        <ArrowLeft />
-                    </Button>
-                    <h1 className="text-2xl md:text-3xl font-bold">{t('staged_items_for')} {selectedDestination}</h1>
+        <>
+            <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+                <div ref={pdfRef} style={{ width: '700px' }}>
+                    <StagedItemsPdf
+                        destination={selectedDestination}
+                        items={itemsForSelectedDestination}
+                        logoSrc={appLogo}
+                    />
                 </div>
-                <Button onClick={handleDownloadPdf} disabled={itemsForSelectedDestination.length === 0}>
-                    <FileDown className="mr-2 h-4 w-4" /> {t('download_pdf')}
-                </Button>
-            </header>
-             <Card>
-              <CardContent className="pt-6">
-                {itemsForSelectedDestination.length > 0 ? (
-                    <div className="overflow-x-auto">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>{t('model')}</TableHead>
-                                    <TableHead className="w-24">{t('quantity')}</TableHead>
-                                    <TableHead>{t('notes')}</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {itemsForSelectedDestination.map(item => (
-                                    <TableRow key={item.id}>
-                                        <TableCell className="font-medium">{item.model}</TableCell>
-                                        <TableCell>{item.quantity}</TableCell>
-                                        <TableCell className="text-muted-foreground">{item.notes || t('na')}</TableCell>
+            </div>
+            <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
+                <header className="flex items-center justify-between gap-4 mb-8">
+                    <div className="flex items-center gap-4">
+                        <Button variant="outline" size="icon" onClick={() => setSelectedDestination(null)}>
+                            <ArrowLeft />
+                        </Button>
+                        <h1 className="text-2xl md:text-3xl font-bold">{t('staged_items_for')} {selectedDestination}</h1>
+                    </div>
+                    <Button onClick={handleDownloadPdf} disabled={itemsForSelectedDestination.length === 0}>
+                        <FileDown className="mr-2 h-4 w-4" /> {t('download_pdf')}
+                    </Button>
+                </header>
+                <Card>
+                <CardContent className="pt-6">
+                    {itemsForSelectedDestination.length > 0 ? (
+                        <div className="overflow-x-auto">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>{t('model')}</TableHead>
+                                        <TableHead className="w-24">{t('quantity')}</TableHead>
+                                        <TableHead>{t('notes')}</TableHead>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                ) : (
-                    <div className="text-center py-16">
-                        <ListPlus className="mx-auto h-12 w-12 text-muted-foreground" />
-                        <h3 className="mt-4 text-lg font-medium">{t('no_items_staged')}</h3>
-                        <p className="mt-2 text-sm text-muted-foreground">{t('no_items_staged_for_destination', {destination: selectedDestination})}</p>
-                    </div>
-                )}
-              </CardContent>
-            </Card>
-        </div>
+                                </TableHeader>
+                                <TableBody>
+                                    {itemsForSelectedDestination.map(item => (
+                                        <TableRow key={item.id}>
+                                            <TableCell className="font-medium">{item.model}</TableCell>
+                                            <TableCell>{item.quantity}</TableCell>
+                                            <TableCell className="text-muted-foreground">{item.notes || t('na')}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    ) : (
+                        <div className="text-center py-16">
+                            <ListPlus className="mx-auto h-12 w-12 text-muted-foreground" />
+                            <h3 className="mt-4 text-lg font-medium">{t('no_items_staged')}</h3>
+                            <p className="mt-2 text-sm text-muted-foreground">{t('no_items_staged_for_destination', {destination: selectedDestination})}</p>
+                        </div>
+                    )}
+                </CardContent>
+                </Card>
+            </div>
+        </>
     )
   }
 
