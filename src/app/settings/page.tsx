@@ -325,7 +325,7 @@ function TranslationEditor() {
 
 function SettingsPage() {
   const { toast } = useToast()
-  const { theme, setTheme } = useTheme()
+  const { theme } = useTheme()
   const { t } = useTranslation();
   const { settings, setSettings } = useAppContext();
   const storage = useStorage();
@@ -590,10 +590,6 @@ function SettingsPage() {
                     <Card>
                         <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Palette /> {t('general')}</CardTitle></CardHeader>
                         <CardContent className="space-y-6">
-                            <div className="flex items-center justify-between">
-                                <Label htmlFor="dark-mode">{t('dark_mode')}</Label>
-                                <Switch id="dark-mode" checked={theme === 'dark'} onCheckedChange={() => setTheme(theme === 'light' ? 'dark' : 'light')} />
-                            </div>
                              <div className="space-y-2">
                                 <Label htmlFor="news-ticker-text">News Ticker Text</Label>
                                 <Input id="news-ticker-text" value={draftSettings.newsTickerText} onChange={e => handleDraftChange('newsTickerText', e.target.value)} placeholder="Enter scrolling text for the dashboard..."/>

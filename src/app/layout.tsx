@@ -11,14 +11,14 @@ import { useTranslation } from '@/hooks/use-translation';
 import { useState, useEffect } from 'react';
 import { SplashScreen } from '@/components/shared/splash-screen';
 import { AppHeader } from '@/components/shared/app-header';
-import { Noto_Naskh_Arabic } from 'next/font/google';
+import { Noto_Sans_Arabic } from 'next/font/google';
 import { usePathname } from 'next/navigation';
 import { FirebaseClientProvider } from '@/firebase';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
 
-const notoNaskhArabic = Noto_Naskh_Arabic({ 
+const notoSansArabic = Noto_Sans_Arabic({ 
   subsets: ['arabic'],
   variable: '--font-body',
   display: 'swap',
@@ -43,7 +43,7 @@ function CustomFontInjector() {
                 src: url(${settings.customFont}); 
             }
             :root {
-                --font-body: 'CustomAppFont', ${notoNaskhArabic.style.fontFamily};
+                --font-body: 'CustomAppFont', ${notoSansArabic.style.fontFamily};
             }
         `}</style>
     );
@@ -142,19 +142,19 @@ export default function RootLayout({
   return (
     <html suppressHydrationWarning>
       <head />
-      <body className={cn(`${notoNaskhArabic.variable} font-sans antialiased`, 'min-h-screen')} suppressHydrationWarning>
+      <body className={cn(`${notoSansArabic.variable} font-sans antialiased`, 'min-h-screen')} suppressHydrationWarning>
         <FirebaseClientProvider>
           <AppProvider>
-            <LanguageProvider>
-              <ThemeProvider>
-                <AuthProvider>
+            <AuthProvider>
+              <LanguageProvider>
+                <ThemeProvider>
                   <AppContent>
                       {children}
                   </AppContent>
                   <Toaster />
-                </AuthProvider>
-              </ThemeProvider>
-            </LanguageProvider>
+                </ThemeProvider>
+              </LanguageProvider>
+            </AuthProvider>
           </AppProvider>
         </FirebaseClientProvider>
       </body>
