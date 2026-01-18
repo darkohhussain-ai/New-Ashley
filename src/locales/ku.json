@@ -471,5 +471,9 @@
   "data_imported_successfully": "داتا بە سەرکەوتوویی هاوردەکرا!",
   "page_will_reload": "پەڕەکە ئێستا نوێ دەبێتەوە.",
   "import_failed": "هاوردەکردن سەرکەوتوو نەبوو",
-  "invalid_or_corrupted_file": "فایلی پاشەکەوتەکە نادروستە یان خراپ بووە."
+  "invalid_or_corrupted_file": "فایلی پاشەکەوتەکە نادروستە یان خراپ بووە.",
+  "monthly_overview": "پوختەی مانگانە",
+  "monthly_overview_desc": "پوختەیەکی هەموو خەرجییەکان بۆ مانگی هەڵبژێردراو.",
+  "no_data_for_selected_month": "هیچ داتایەک بۆ مانگی هەڵبژێردراو بەردەست نییە.",
+  "employee_breakdown": "شیکردنەوەی کارمەندان"
 }

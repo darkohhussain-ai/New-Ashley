@@ -471,5 +471,9 @@
   "data_imported_successfully": "Data imported successfully!",
   "page_will_reload": "The page will now reload.",
   "import_failed": "Import Failed",
-  "invalid_or_corrupted_file": "The backup file is invalid or corrupted."
+  "invalid_or_corrupted_file": "The backup file is invalid or corrupted.",
+  "monthly_overview": "Monthly Overview",
+  "monthly_overview_desc": "A summary of all expenses for the selected month.",
+  "no_data_for_selected_month": "No data available for the selected month.",
+  "employee_breakdown": "Employee Breakdown"
 }

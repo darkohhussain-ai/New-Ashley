@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Calendar as CalendarIcon, FileText, Printer, Loader2, FileDown } from 'lucide-react';
+import { ArrowLeft, Calendar as CalendarIcon, FileText, Printer, Loader2, FileDown, BarChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -13,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { useAppContext } from '@/context/app-provider';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Bar, BarChart as RechartsBarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { useTranslation } from '@/hooks/use-translation';
 import { useAuth } from '@/hooks/use-auth';
 import useLocalStorage from '@/hooks/use-local-storage';
@@ -58,7 +58,7 @@ export default function MonthlyExpenseReportPage() {
   };
 
   const monthlyData = useMemo(() => {
-    if (!expenses || !employees || !selectedDate) return { summary: [], grandTotal: 0 };
+    if (isLoading || !expenses || !employees || !selectedDate) return { summary: [], grandTotal: 0, chartData: [] };
 
     const start = startOfMonth(selectedDate);
     const end = endOfMonth(selectedDate);
@@ -104,8 +104,13 @@ export default function MonthlyExpenseReportPage() {
 
     const grandTotal = summaryArray.reduce((sum, item) => sum + item.totalAmount, 0);
 
-    return { summary: summaryArray, grandTotal };
-  }, [expenses, employees, selectedDate, language, getEmployeeName, t, isReadOnly, user]);
+    const chartData = summaryArray.map(item => ({
+        name: item.employeeName,
+        [t('expenses')]: item.totalAmount,
+    }));
+
+    return { summary: summaryArray, grandTotal, chartData };
+  }, [isLoading, expenses, employees, selectedDate, language, getEmployeeName, t, isReadOnly, user]);
 
 
   const handlePrint = () => {
@@ -225,6 +230,21 @@ export default function MonthlyExpenseReportPage() {
             <div className="space-y-6"><Skeleton className="h-64 w-full" /></div>
             ) : monthlyData.summary.length > 0 ? (
             <div className="space-y-8">
+                <Card className="print:shadow-none print:border-none">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><BarChart/> {t('employee_breakdown')}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="h-[300px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <RechartsBarChart data={monthlyData.chartData}>
+                                <XAxis dataKey="name" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} angle={-45} textAnchor="end" interval={0} />
+                                <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => formatCurrency(value as number)} />
+                                <Tooltip formatter={(value) => formatCurrency(value as number)} cursor={{fill: 'hsl(var(--muted))'}} />
+                                <Bar dataKey={t('expenses')} fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
+                            </RechartsBarChart>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </Card>
                 <Card className="print:shadow-none print:border-none">
                     <CardHeader>
                         <div className="hidden print:block text-center">
