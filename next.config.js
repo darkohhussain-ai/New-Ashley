@@ -54,6 +54,7 @@ const nextConfig = {
       }
     ],
   },
+  allowedDevOrigins: ['*.cloudworkstations.dev'],
 };
 
 module.exports = nextConfig;
