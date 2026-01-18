@@ -11,7 +11,6 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format, parseISO } from 'date-fns';
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { ChartConfig, ChartContainer } from '@/components/ui/chart';
 import html2canvas from 'html2canvas';
@@ -47,7 +46,7 @@ export default function PdfViewPage() {
   const file = useMemo(() => excelFiles.find(f => f.id === fileId), [excelFiles, fileId]);
   const fileItems = useMemo(() => items.filter(i => i.fileId === fileId), [items, fileId]);
   
-  const pdfCardRef = useRef<HTMLDivElement>(null);
+  const pdfContentRef = useRef<HTMLDivElement>(null);
 
   const { statusChartData, conditionChartData } = useMemo(() => {
     if (!fileItems) return { statusChartData: [], conditionChartData: [] };
@@ -95,67 +94,41 @@ export default function PdfViewPage() {
   const getLocationName = (id?: string) => locations?.find(l => l.id === id)?.name || 'N/A';
 
   const handleDownloadPdf = async () => {
-    if (!file || !fileItems || !pdfCardRef.current) return;
+    if (!file || !pdfContentRef.current) return;
     
-    const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
-    const useKurdish = language === 'ku';
-
-    if (customFont && useKurdish) {
-        try {
-            const fontName = "CustomFont";
-            pdf.addFileToVFS(`${fontName}.ttf`, customFont.split(',')[1]);
-            pdf.addFont(`${fontName}.ttf`, fontName, "normal");
-            pdf.setFont(fontName);
-        } catch (e) {
-            console.error("Could not add custom font to PDF", e);
-        }
-    } else {
-        pdf.setFont('helvetica');
-    }
-
-    const canvas = await html2canvas(pdfCardRef.current, { scale: 2, useCORS: true, backgroundColor: null });
-    const imgData = canvas.toDataURL('image/png');
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const imgWidth = canvas.width;
-    const imgHeight = canvas.height;
-    const ratio = imgWidth / imgHeight;
-    const finalImgWidth = pdfWidth - 28;
-    const finalImgHeight = finalImgWidth / ratio;
+    const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
     
-    pdf.addImage(imgData, 'PNG', 14, 14, finalImgWidth, finalImgHeight);
-    
-    autoTable(pdf, {
-      startY: finalImgHeight + 30,
-      head: [[t('model'), t('quantity'), t('storage_status'), t('condition'), t('qty_per_condition'), t('location'), t('notes')]],
-      body: fileItems.map(item => [
-        item.model,
-        item.quantity,
-        t(item.storageStatus?.toLowerCase() || '') || item.storageStatus || '',
-        t(item.modelCondition?.toLowerCase() || '') || item.modelCondition || '',
-        item.quantityPerCondition ?? '',
-        item.locationId ? getLocationName(item.locationId) : '',
-        item.notes || ''
-      ]),
-      theme: 'grid',
-      styles: {
-        font: (useKurdish && customFont) ? 'CustomFont' : 'helvetica',
-        halign: useKurdish ? 'right' : 'left',
-        fontSize: 8,
-        cellPadding: 2,
-      },
-      headStyles: {
-        fillColor: [22, 163, 74],
-        textColor: 255,
-        fontStyle: 'bold',
-      },
-      didParseCell: (data) => {
-        if (useKurdish && customFont) {
-          data.cell.styles.font = "CustomFont";
-          data.cell.styles.halign = 'right';
+    const canvas = await html2canvas(pdfContentRef.current, { 
+      scale: 2, 
+      useCORS: true, 
+      backgroundColor: 'white',
+      onclone: (document) => {
+        if (customFont && language === 'ku') {
+            const style = document.createElement('style');
+            style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
+            document.head.appendChild(style);
         }
       }
     });
+
+    const imgData = canvas.toDataURL('image/png');
+    const pdfWidth = doc.internal.pageSize.getWidth();
+    const pdfHeight = doc.internal.pageSize.getHeight();
+    const imgWidth = canvas.width;
+    const imgHeight = canvas.height;
+    const ratio = imgWidth / imgHeight;
     
+    let finalImgWidth = pdfWidth;
+    let finalImgHeight = finalImgWidth / ratio;
+    
+    if (finalImgHeight > pdfHeight) {
+        finalImgHeight = pdfHeight;
+        finalImgWidth = finalImgHeight * ratio;
+    }
+
+    const x = (pdfWidth - finalImgWidth) / 2;
+    
+    doc.addImage(imgData, 'PNG', x, 0, finalImgWidth, finalImgHeight);
     pdf.save(`${file.storageName}.pdf`);
   };
 
@@ -204,19 +177,6 @@ export default function PdfViewPage() {
 
   return (
     <>
-     <div style={{ position: 'absolute', left: '-9999px', top: '-9999px', background: 'white', color: 'black' }}>
-          {file && employeeForFile && fileItems && (
-            <div ref={pdfCardRef} style={{ width: '700px' }}>
-                <FilePdfCard
-                    file={file}
-                    employee={employeeForFile}
-                    logoSrc={logoSrc}
-                    statusData={statusChartData}
-                    conditionData={conditionChartData}
-                />
-            </div>
-          )}
-      </div>
       <div className="p-4 md:p-8">
         <header className="flex items-center justify-between gap-4 mb-8">
           <Button variant="outline" size="icon" asChild>
@@ -228,73 +188,15 @@ export default function PdfViewPage() {
           </div>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-1 space-y-8">
-              <Card>
-                <CardHeader>
-                    <div className="flex justify-between items-start">
-                        <div>
-                            <CardTitle className="text-2xl md:text-3xl font-bold">{file.storageName}</CardTitle>
-                            <CardDescription className="font-semibold text-primary">{file.categoryName}</CardDescription>
-                        </div>
-                        <Badge variant={file.type === 'imported' ? 'default' : 'secondary'}>{file.type}</Badge>
-                    </div>
-                    <CardDescription className="grid grid-cols-2 md:flex md:items-center gap-x-6 gap-y-2 text-sm pt-2">
-                        <span className="flex items-center gap-2"><User className="w-4 h-4"/>{getEmployeeName(file.storekeeperId, language === 'ku')}</span>
-                        <span className="flex items-center gap-2"><Building className="w-4 h-4"/>{file.source}</span>
-                        <span className="flex items-center gap-2"><CalendarIcon className="w-4 h-4"/>{file.date ? format(parseISO(file.date), 'PPP') : 'Invalid Date'}</span>
-                    </CardDescription>
-                </CardHeader>
-              </Card>
-              
-               <div className='flex gap-4 items-center justify-center flex-wrap'>
-                    {statusChartData.length > 0 && (
-                      <ChartContainer config={statusChartConfig} className="min-h-[120px] w-full max-w-[300px]">
-                        <ResponsiveContainer>
-                          <PieChart>
-                            <Tooltip content={({ active, payload }) => {
-                                if (active && payload && payload.length) {
-                                  const { name, value } = payload[0].payload;
-                                  const total = statusChartData.reduce((acc, curr) => acc + curr.value, 0);
-                                  return (<div className="p-2 text-sm bg-background/80 backdrop-blur-sm rounded-lg border shadow-sm"><p className="font-bold">{`${name}: ${((value / total) * 100).toFixed(0)}% (${value})`}</p></div>);
-                                }
-                                return null;
-                              }} />
-                            <Pie data={statusChartData} dataKey="value" nameKey="name" innerRadius={25} outerRadius={40} strokeWidth={2}>
-                              {statusChartData.map((entry) => (<Cell key={`cell-${entry.name}`} fill={entry.fill} />))}
-                            </Pie>
-                            <Legend content={() => (<div className="text-center text-xs text-muted-foreground -mt-2">Inventory Status</div>)} />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </ChartContainer>
-                    )}
-                    {conditionChartData.length > 0 && (
-                      <ChartContainer config={conditionChartConfig} className="min-h-[120px] w-full max-w-[300px]">
-                        <ResponsiveContainer>
-                          <PieChart>
-                            <Tooltip content={({ active, payload }) => {
-                                if (active && payload && payload.length) {
-                                  const { name, value } = payload[0].payload;
-                                  const total = conditionChartData.reduce((acc, curr) => acc + curr.value, 0);
-                                  return (<div className="p-2 text-sm bg-background/80 backdrop-blur-sm rounded-lg border shadow-sm"><p className="font-bold">{`${name}: ${((value / total) * 100).toFixed(0)}% (${value})`}</p></div>);
-                                }
-                                return null;
-                              }}/>
-                            <Pie data={conditionChartData} dataKey="value" nameKey="name" innerRadius={25} outerRadius={40} strokeWidth={2}>
-                              {conditionChartData.map((entry) => (<Cell key={`cell-${entry.name}`} fill={entry.fill} />))}
-                            </Pie>
-                            <Legend content={() => (<div className="text-center text-xs text-muted-foreground -mt-2">Condition Status</div>)} />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </ChartContainer>
-                    )}
-                  </div>
-          </div>
-        
-          <Card className="lg:col-span-2">
-            <CardHeader><CardTitle>Items ({fileItems?.length || 0})</CardTitle></CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
+        <div ref={pdfContentRef} className="bg-white text-black p-4 rounded-lg shadow-lg">
+            {employeeForFile && <FilePdfCard
+                file={file}
+                employee={employeeForFile}
+                logoSrc={logoSrc}
+                statusData={statusChartData}
+                conditionData={conditionChartData}
+            />}
+             <div className="overflow-x-auto mt-4">
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -330,8 +232,11 @@ export default function PdfViewPage() {
                     </TableBody>
                 </Table>
               </div>
-            </CardContent>
-          </Card>
+              <div className="pt-24 px-4 text-right">
+                <div className="inline-block text-center mt-8">
+                    <p className="border-t border-gray-400 pt-2 w-48 text-sm text-gray-700">{t('warehouse_manager_signature')}</p>
+                </div>
+              </div>
         </div>
       </div>
     </>

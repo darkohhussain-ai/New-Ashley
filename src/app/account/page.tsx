@@ -21,9 +21,8 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
-import { AccountPdfCard } from "@/components/account/account-pdf-card";
+import { AccountReportPdf } from "@/components/account/AccountReportPdf";
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -89,7 +88,7 @@ function AccountPage() {
   const [employeeDetails, setEmployeeDetails] = useState<Employee | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
-  const pdfCardRef = useRef<HTMLDivElement>(null);
+  const fullReportPdfRef = useRef<HTMLDivElement>(null);
   const logoSrc = settings.appLogo;
 
 
@@ -242,23 +241,23 @@ function AccountPage() {
   };
 
   const handleDownloadPdf = async () => {
-    if (!pdfCardRef.current || !employeeDetails || !monthlyFinancials) return;
+    if (!fullReportPdfRef.current || !employeeDetails) return;
     
     const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
-    const useKurdish = language === 'ku';
-
-    if (settings.customFont && useKurdish) {
-        try {
-            const fontName = "CustomFont";
-            doc.addFileToVFS(`${fontName}.ttf`, settings.customFont.split(',')[1]);
-            doc.addFont(`${fontName}.ttf`, fontName, "normal");
-            doc.setFont(fontName);
-        } catch (e) { console.error("Could not add custom font to PDF", e); }
-    } else {
-        doc.setFont('helvetica');
-    }
     
-    const canvas = await html2canvas(pdfCardRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
+    const canvas = await html2canvas(fullReportPdfRef.current, { 
+      scale: 2, 
+      useCORS: true, 
+      backgroundColor: 'white',
+      onclone: (document) => {
+        if (settings.customFont && language === 'ku') {
+            const style = document.createElement('style');
+            style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${settings.customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
+            document.head.appendChild(style);
+        }
+      }
+    });
+
     const imgData = canvas.toDataURL('image/png');
     const pdfWidth = doc.internal.pageSize.getWidth();
     const imgWidth = canvas.width;
@@ -268,36 +267,6 @@ function AccountPage() {
     const finalImgHeight = finalImgWidth / ratio;
     
     doc.addImage(imgData, 'PNG', 0, 0, finalImgWidth, finalImgHeight);
-    let startY = finalImgHeight + 20;
-
-    const addSection = (title: string, data: any[], total: number) => {
-        if (data.length === 0) return;
-        if (startY + (data.length * 15) + 40 > doc.internal.pageSize.getHeight()) {
-            doc.addPage();
-            startY = 20;
-        }
-
-        doc.setFontSize(14);
-        doc.text(title, useKurdish ? doc.internal.pageSize.width - 14 : 14, startY, { align: useKurdish ? 'right' : 'left' });
-        startY += 10;
-        autoTable(doc, {
-            startY,
-            head: [[t('date'), t('notes'), t('amount')]],
-            body: data.map(item => [format(parseISO(item.date), 'PP'), item.notes || '', formatCurrency(item.amount || item.totalAmount)]),
-            theme: 'striped',
-            styles: { font: (useKurdish && settings.customFont) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
-            headStyles: { fillColor: '#3b82f6', font: (useKurdish && settings.customFont) ? 'CustomFont' : 'helvetica' },
-            foot: [[{content: t('total'), colSpan: 2, styles: { halign: 'right' }}, formatCurrency(total)]],
-            footStyles: { fontStyle: 'bold' },
-        });
-        startY = (doc as any).lastAutoTable.finalY + 20;
-    }
-
-    addSection(t('expenses'), monthlyFinancials.selected.expenses.items, monthlyFinancials.selected.expenses.total);
-    addSection(t('overtime'), monthlyFinancials.selected.overtime.items, monthlyFinancials.selected.overtime.total);
-    addSection(t('bonuses'), monthlyFinancials.selected.bonuses.items, monthlyFinancials.selected.bonuses.total);
-    addSection(t('cash_withdrawals'), monthlyFinancials.selected.withdrawals.items, monthlyFinancials.selected.withdrawals.total);
-    
     doc.save(`${employeeDetails.name}_report_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
   };
 
@@ -312,12 +281,13 @@ function AccountPage() {
   return (
     <>
     <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-      <div ref={pdfCardRef} style={{ width: '700px', background: 'white' }}>
-          {employeeDetails && (
-              <AccountPdfCard
+      <div ref={fullReportPdfRef} style={{ width: '700px' }}>
+          {employeeDetails && monthlyFinancials && (
+              <AccountReportPdf
                   employee={employeeDetails}
                   logoSrc={logoSrc}
                   selectedDate={selectedDate}
+                  financials={monthlyFinancials}
               />
           )}
       </div>

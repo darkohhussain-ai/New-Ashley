@@ -19,11 +19,10 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import * as XLSX from 'xlsx';
-import { MarketingFeedbackPdfCard } from '@/components/marketing/marketing-feedback-pdf-card';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import html2canvas from 'html2canvas';
+import * as XLSX from 'xlsx';
+import { MarketingReportPdf } from '@/components/marketing/MarketingReportPdf';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useTranslation } from '@/hooks/use-translation';
@@ -261,7 +260,7 @@ function MarketingFeedbackPage() {
     const [currentEmployeeId, setCurrentEmployeeId] = useState<string | null>(null);
     
     const [selectedEmployeeForHistory, setSelectedEmployeeForHistory] = useState<string | null>(null);
-    const pdfCardRef = useRef<HTMLDivElement>(null);
+    const pdfReportRef = useRef<HTMLDivElement>(null);
 
     const marketingEmployees = useMemo(() => {
         return employees.filter(e => e.role === 'Marketing').sort((a, b) => {
@@ -402,87 +401,44 @@ function MarketingFeedbackPage() {
     }, [marketingFeedbacks, selectedEmployeeForHistory]);
 
     const handleDownloadPdf = async () => {
-        if (!marketingFeedbacks.length) {
+        if (!marketingFeedbacks.length || !pdfReportRef.current) {
             toast({ title: t('no_data'), description: t('no_data_to_export') });
             return;
         }
 
         const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
-        const useKurdish = language === 'ku';
-
-        if (customFontBase64 && useKurdish) {
-            const fontName = "CustomFont";
-            const fontStyle = "normal";
-            try {
-                const fontBase64 = customFontBase64.split(',')[1];
-                doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
-                doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
-                doc.setFont(fontName);
-            } catch(e) {
-                console.error("Could not add custom font to PDF:", e);
-            }
-        }
         
-        const canvas = await html2canvas(pdfCardRef.current!, { scale: 2, useCORS: true, backgroundColor: 'white' });
+        const canvas = await html2canvas(pdfReportRef.current, { 
+          scale: 2, 
+          useCORS: true, 
+          backgroundColor: 'white',
+          onclone: (document) => {
+            if (customFontBase64 && language === 'ku') {
+                const style = document.createElement('style');
+                style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${customFontBase64}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
+                document.head.appendChild(style);
+            }
+          }
+        });
+
         const imgData = canvas.toDataURL('image/png');
         const pdfWidth = doc.internal.pageSize.getWidth();
+        const pdfHeight = doc.internal.pageSize.getHeight();
         const imgWidth = canvas.width;
         const imgHeight = canvas.height;
         const ratio = imgWidth / imgHeight;
-        const finalImgWidth = pdfWidth;
-        const finalImgHeight = finalImgWidth / ratio;
         
-        doc.addImage(imgData, 'PNG', 0, 0, finalImgWidth, finalImgHeight);
-        doc.addPage();
-        
-        if (evaluationSummary.length > 0) {
-            doc.setFontSize(16);
-            doc.text(t('employee_performance'), useKurdish ? doc.internal.pageSize.width - 14 : 14, 22, { align: useKurdish ? 'right' : 'left' });
-            autoTable(doc, {
-                startY: 30,
-                head: [[t('rank'), t('employee'), t('total_score')]],
-                body: evaluationSummary.map((item, index) => [index + 1, item.name, item.score]),
-                theme: 'striped',
-                styles: { font: (customFontBase64 && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
-                headStyles: { fillColor: [40, 40, 40] },
-                didDrawCell: (data) => {
-                    if (data.section === 'body') {
-                        if (data.row.index === 0) { doc.setFillColor(255, 251, 204); }
-                        else if (data.row.index === 1) { doc.setFillColor(229, 231, 235); }
-                        else if (data.row.index === 2) { doc.setFillColor(255, 237, 213); }
-                    }
-                },
-                 didParseCell: (data) => {
-                    if (useKurdish && customFontBase64) {
-                      data.cell.styles.font = "CustomFont";
-                      data.cell.styles.halign = 'right';
-                    }
-                  }
-            });
+        let finalImgWidth = pdfWidth;
+        let finalImgHeight = finalImgWidth / ratio;
+
+        if (finalImgHeight > pdfHeight) {
+          finalImgHeight = pdfHeight;
+          finalImgWidth = finalImgHeight * ratio;
         }
+
+        const x = (pdfWidth - finalImgWidth) / 2;
         
-        if (perQuestionRankings && perQuestionRankings.length > 0) {
-            perQuestionRankings.forEach((q) => {
-                doc.addPage();
-                doc.setFontSize(16);
-                doc.text(q.questionText, useKurdish ? doc.internal.pageSize.width - 14 : 14, 22, { maxWidth: doc.internal.pageSize.getWidth() - 28, align: useKurdish ? 'right' : 'left' });
-                autoTable(doc, {
-                    startY: 40,
-                    head: [[t('rank'), t('employee'), t('total_score')]],
-                    body: q.scores.map((s, rankIndex) => [rankIndex + 1, s.name, s.score]),
-                    theme: 'striped',
-                    styles: { font: (customFontBase64 && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
-                    headStyles: { fillColor: [40, 40, 40] },
-                    didParseCell: (data) => {
-                        if (useKurdish && customFontBase64) {
-                          data.cell.styles.font = "CustomFont";
-                          data.cell.styles.halign = 'right';
-                        }
-                    }
-                });
-            });
-        }
-        
+        doc.addImage(imgData, 'PNG', x, 0, finalImgWidth, finalImgHeight);
         doc.save(`Marketing_Feedback_Report_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
     };
 
@@ -547,11 +503,12 @@ function MarketingFeedbackPage() {
     return (
         <div className="h-screen bg-background text-foreground flex flex-col">
              <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-                <div ref={pdfCardRef} style={{ width: '700px' }}>
-                    <MarketingFeedbackPdfCard
+                <div ref={pdfReportRef} style={{ width: '700px' }}>
+                    <MarketingReportPdf
                         logoSrc={logoSrc}
                         totalEvaluations={marketingFeedbacks.length}
                         evaluationSummary={evaluationSummary}
+                        perQuestionRankings={perQuestionRankings || []}
                     />
                 </div>
             </div>
