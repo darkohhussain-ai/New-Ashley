@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -21,7 +20,7 @@ import type { Overtime, AllPdfSettings } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import html2canvas from 'html2canvas';
 
 
 const formatCurrency = (amount: number) => {
@@ -46,6 +45,7 @@ export default function AddOvertimePage() {
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const pdfRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const getInitialDate = () => {
@@ -174,52 +174,31 @@ export default function AddOvertimePage() {
   };
 
   const handleDownloadPdf = async () => {
-    if (!selectedDate || overtimeRecords.length === 0) return;
+    if (!pdfRef.current || !selectedDate || overtimeRecords.length === 0) return;
     const doc = new jsPDF();
-    const useKurdish = language === 'ku';
-
-    if (customFont && useKurdish) {
-        try {
-            const fontName = "CustomFont";
-            doc.addFileToVFS(`${fontName}.ttf`, customFont.split(',')[1]);
-            doc.addFont(`${fontName}.ttf`, fontName, "normal");
-            doc.setFont(fontName);
-        } catch (e) {
-            console.error("Could not add custom font to PDF", e);
-        }
-    }
     
-    doc.setFontSize(18);
-    doc.text(t('daily_overtime_report'), doc.internal.pageSize.getWidth() / 2, 22, { align: 'center' });
-    doc.setFontSize(12);
-    doc.text(format(selectedDate, 'PPP'), doc.internal.pageSize.getWidth() / 2, 32, { align: 'center' });
-
-    
-    const head = [[t('employee'), t('overtime_hours'), t('salary'), t('notes')]];
-    const body = overtimeRecords.map(r => [
-        getEmployeeName(r.employeeId, useKurdish),
-        r.hours.toFixed(2),
-        formatCurrency(r.totalAmount),
-        r.notes || ''
-    ]);
-
-    autoTable(doc, {
-      startY: 40,
-      head,
-      body,
-      foot: [[t('total'), totalHours.toFixed(2), formatCurrency(totalAmount), '']],
-      theme: 'striped',
-      styles: { font: (customFont && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
-      headStyles: { fillColor: pdfSettings.report.reportColors?.overtime || '#f97316' },
-      footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' },
-      didParseCell: (data) => {
-        if (useKurdish && customFont) {
-          data.cell.styles.font = "CustomFont";
-          data.cell.styles.halign = 'right';
+    const canvas = await html2canvas(pdfRef.current, { 
+        scale: 2, 
+        useCORS: true, 
+        backgroundColor: 'white',
+        onclone: (document) => {
+            if (customFont && language === 'ku') {
+                const style = document.createElement('style');
+                style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
+                document.head.appendChild(style);
+            }
         }
-      }
     });
 
+    const imgData = canvas.toDataURL('image/png');
+    const pdfWidth = doc.internal.pageSize.getWidth();
+    const imgWidth = canvas.width;
+    const imgHeight = canvas.height;
+    const ratio = imgWidth / imgHeight;
+    const finalImgWidth = pdfWidth;
+    const finalImgHeight = finalImgWidth / ratio;
+
+    doc.addImage(imgData, 'PNG', 0, 0, finalImgWidth, finalImgHeight);
     doc.save(`overtime-report-${format(selectedDate, 'yyyy-MM-dd')}.pdf`);
   };
   
@@ -228,7 +207,34 @@ export default function AddOvertimePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <>
+    <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+      <div ref={pdfRef} className="bg-white p-8" style={{width: '700px'}}>
+        <h1 className="text-2xl font-bold text-center">{t('daily_overtime_report')}</h1>
+        <p className="text-center text-muted-foreground mb-4">{selectedDate ? format(selectedDate, 'PPP') : '...'}</p>
+        <Table>
+          <TableHeader><TableRow><TableHead>{t('employee')}</TableHead><TableHead>{t('overtime_hours')}</TableHead><TableHead>{t('salary')}</TableHead><TableHead>{t('notes')}</TableHead></TableRow></TableHeader>
+          <TableBody>
+            {overtimeRecords.map(record => (
+              <TableRow key={record.id}>
+                <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{getEmployeeName(record.employeeId, language === 'ku')}</TableCell>
+                <TableCell>{record.hours.toFixed(2)}</TableCell>
+                <TableCell>{formatCurrency(record.totalAmount)}</TableCell>
+                <TableCell>{record.notes || t('na')}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+          <CardFooter className="justify-between bg-muted/50 py-4 rounded-b-lg mt-4">
+              <span className="font-semibold">{t('total')}</span>
+              <div className='text-right'>
+                  <p>{totalHours.toFixed(2)} {t('hours_short')}</p>
+                  <p className="font-semibold text-primary">{formatCurrency(totalAmount)}</p>
+              </div>
+          </CardFooter>
+        </Table>
+      </div>
+    </div>
+    <div className="h-[calc(100vh-80px)] flex flex-col">
       <header className="bg-card border-b p-4 print:hidden">
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -266,7 +272,7 @@ export default function AddOvertimePage() {
         </div>
       </header>
 
-      <main className="container mx-auto p-4 md:p-8">
+      <main className="container mx-auto p-4 md:p-8 flex-1 overflow-y-auto">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1 print:hidden">
                 <Card>
@@ -423,5 +429,6 @@ export default function AddOvertimePage() {
             </div>
       </main>
     </div>
+    </>
   );
 }

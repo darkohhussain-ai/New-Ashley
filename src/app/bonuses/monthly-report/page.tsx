@@ -32,7 +32,7 @@ const formatCurrency = (amount: number) => {
 export default function MonthlyBonusReportPage() {
   const { t, language } = useTranslation();
   const { bonuses, employees, settings } = useAppContext();
-  const { pdfSettings } = settings;
+  const { pdfSettings, customFont } = settings;
   const { user, hasPermission } = useAuth();
   const isReadOnly = !hasPermission('page:admin');
   
@@ -96,7 +96,19 @@ export default function MonthlyBonusReportPage() {
     
     const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
     
-    const canvas = await html2canvas(reportContentRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
+    const canvas = await html2canvas(reportContentRef.current, { 
+      scale: 2, 
+      useCORS: true, 
+      backgroundColor: 'white',
+      onclone: (document) => {
+        if (customFont && language === 'ku') {
+          const style = document.createElement('style');
+          style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
+          document.head.appendChild(style);
+        }
+      }
+    });
+
     const imgData = canvas.toDataURL('image/png');
     const pdfWidth = doc.internal.pageSize.getWidth();
     const imgWidth = canvas.width;
@@ -155,8 +167,8 @@ export default function MonthlyBonusReportPage() {
              </div>
           </div>
       </div>
-      <div className="min-h-screen bg-background text-foreground p-4 md:p-8 print:p-0">
-        <header className="flex items-center justify-between gap-4 mb-8 print:hidden">
+      <div className="h-[calc(100vh-80px)] flex flex-col">
+        <header className="flex items-center justify-between gap-4 mb-8 print:hidden p-4 md:p-8">
           <div className="flex items-center gap-4">
             <Button variant="outline" size="icon" asChild>
               <Link href="/bonuses"><ArrowLeft /></Link>
@@ -180,7 +192,7 @@ export default function MonthlyBonusReportPage() {
           </div>
         </header>
 
-        <main className="print:p-8">
+        <main className="flex-1 overflow-y-auto px-4 md:px-8 print:p-8">
             {isLoading ? (
             <div className="space-y-6"><Skeleton className="h-64 w-full" /></div>
             ) : monthlyData.records.length > 0 ? (

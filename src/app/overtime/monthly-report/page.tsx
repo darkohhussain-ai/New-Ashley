@@ -14,9 +14,6 @@ import { useAppContext } from '@/context/app-provider';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslation } from '@/hooks/use-translation';
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import useLocalStorage from '@/hooks/use-local-storage';
-import type { AllPdfSettings } from '@/lib/types';
 import { ReportPdfHeader } from '@/components/reports/report-pdf-header';
 import html2canvas from 'html2canvas';
 import { Bar, BarChart as RechartsBarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
@@ -32,9 +29,8 @@ const formatCurrency = (amount: number) => {
 
 export default function MonthlyOvertimeReportPage() {
   const { t, language } = useTranslation();
-  const { overtime, employees } = useAppContext();
-  const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {}, card: {} });
-  const [customFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
+  const { overtime, employees, settings } = useAppContext();
+  const { pdfSettings, customFont } = settings;
   
   const reportContentRef = useRef<HTMLDivElement>(null);
 
@@ -94,20 +90,20 @@ export default function MonthlyOvertimeReportPage() {
   const handleDownloadPdf = async () => {
     if (!reportContentRef.current || !selectedDate) return;
     const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
-    const useKurdish = language === 'ku';
-
-    if (customFontBase64 && useKurdish) {
-        try {
-            const fontName = "CustomFont";
-            doc.addFileToVFS(`${fontName}.ttf`, customFontBase64.split(',')[1]);
-            doc.addFont(`${fontName}.ttf`, fontName, "normal");
-            doc.setFont(fontName);
-        } catch (e) {
-            console.error("Could not add custom font to PDF", e);
-        }
-    }
     
-    const canvas = await html2canvas(reportContentRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
+    const canvas = await html2canvas(reportContentRef.current, { 
+        scale: 2, 
+        useCORS: true, 
+        backgroundColor: 'white',
+        onclone: (document) => {
+            if (customFont && language === 'ku') {
+                const style = document.createElement('style');
+                style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
+                document.head.appendChild(style);
+            }
+        }
+    });
+
     const imgData = canvas.toDataURL('image/png');
     const pdfWidth = doc.internal.pageSize.getWidth();
     const imgWidth = canvas.width;
@@ -126,7 +122,7 @@ export default function MonthlyOvertimeReportPage() {
 
   return (
     <>
-      <div className="min-h-screen bg-background text-foreground">
+      <div className="h-[calc(100vh-80px)] flex flex-col">
         <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
           <div ref={reportContentRef} className="bg-white" style={{width: '700px'}}>
              <ReportPdfHeader 
@@ -171,7 +167,7 @@ export default function MonthlyOvertimeReportPage() {
              </div>
           </div>
         </div>
-        <div className="p-4 md:p-8 print:p-0">
+        <div className="p-4 md:p-8 print:p-0 flex-1 overflow-y-auto">
             <header className="flex items-center justify-between gap-4 mb-8 print:hidden">
             <div className="flex items-center gap-4">
                 <Button variant="outline" size="icon" asChild>
