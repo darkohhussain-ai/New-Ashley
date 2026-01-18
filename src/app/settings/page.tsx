@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import * as React from 'react';
@@ -521,14 +520,14 @@ function SettingsPage() {
 
   if (!settings || !draftSettings) {
     return (
-        <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
+        <div className="h-screen bg-background text-foreground flex flex-col">
             <header className="flex items-center gap-4 mb-8">
                 <Button variant="outline" size="icon" asChild>
                     <Link href="/"> <ArrowLeft /> </Link>
                 </Button>
                 <h1 className="text-2xl md:text-3xl font-bold">{t('settings')}</h1>
             </header>
-            <div className="flex items-center justify-center">{t('loading')}</div>
+            <div className="flex items-center justify-center flex-1">{t('loading')}</div>
         </div>
     );
   }
@@ -536,7 +535,7 @@ function SettingsPage() {
   const currentPdfSettings = draftSettings.pdfSettings[activePdfTab];
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="h-screen bg-background text-foreground flex flex-col">
         <style>{`
             @font-face {
               font-family: 'CustomPdfFont';
@@ -576,7 +575,7 @@ function SettingsPage() {
           </div>
         </div>
       </header>
-      <main className="p-4 md:p-6 container mx-auto">
+      <main className="flex-1 overflow-y-auto p-4 md:p-6 container mx-auto">
         <Tabs defaultValue="design" className="w-full">
             <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="design"><Palette className="mr-2" />{t('design')}</TabsTrigger>
