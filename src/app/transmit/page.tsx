@@ -46,7 +46,7 @@ function TransmitDashboardPage() {
     ];
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="h-screen bg-background text-foreground flex flex-col">
       <header className="bg-card border-b p-4">
         <div className="container mx-auto flex items-center gap-4">
           <Button variant="outline" size="icon" asChild>
@@ -58,7 +58,7 @@ function TransmitDashboardPage() {
           <h1 className="text-xl font-bold">{t('transmit_cargo')}</h1>
         </div>
       </header>
-      <main className='container mx-auto p-4 md:p-8'>
+      <main className='container mx-auto p-4 md:p-8 flex-1 overflow-y-auto'>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {menuItems.filter(item => hasPermission(item.permission)).map((item) => (
             <Link key={item.title} href={item.href} className="group block" passHref>

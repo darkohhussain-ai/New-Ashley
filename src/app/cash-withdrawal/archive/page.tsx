@@ -44,8 +44,8 @@ export default function WithdrawalArchivePage() {
   }, [withdrawals]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
-      <header className="flex items-center justify-between gap-4 mb-8">
+    <div className="h-screen bg-background text-foreground flex flex-col">
+      <header className="flex items-center justify-between gap-4 p-4 md:p-8 border-b">
         <div className="flex items-center gap-4">
           <Button variant="outline" size="icon" asChild>
             <Link href="/cash-withdrawal"><ArrowLeft /></Link>
@@ -56,7 +56,7 @@ export default function WithdrawalArchivePage() {
             <Link href="/cash-withdrawal/add"><Plus className="mr-2"/> {t('add_withdrawal')}</Link>
         </Button>
       </header>
-      <main>
+      <main className="flex-1 overflow-y-auto p-4 md:p-8">
         {isLoading ? (
           <div className="flex justify-center p-8"><Loader2 className="animate-spin text-primary h-8 w-8"/></div>
         ) : groupedByDay.length > 0 ? (

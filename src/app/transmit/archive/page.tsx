@@ -23,8 +23,8 @@ export default function TransferArchivePage() {
   }, [transfers]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
-      <header className="flex items-center gap-4 mb-8">
+    <div className="h-screen bg-background text-foreground flex flex-col">
+      <header className="p-4 md:p-8 flex items-center gap-4 border-b">
         <Button variant="outline" size="icon" asChild>
           <Link href="/transmit">
             <ArrowLeft />
@@ -32,7 +32,7 @@ export default function TransferArchivePage() {
         </Button>
         <h1 className="text-2xl md:text-3xl font-bold">{t('view_transfers')}</h1>
       </header>
-      <main>
+      <main className="flex-1 overflow-y-auto p-4 md:p-8">
         {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[...Array(6)].map((_, i) => (

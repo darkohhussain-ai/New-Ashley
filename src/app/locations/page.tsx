@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -273,9 +274,9 @@ export default function LocationsPage() {
   }, [locations, filterWarehouse, filterHuanaWarehouse, filterHuanaFloor, filterAshleyFloor, filterAshleyArea]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
+    <div className="h-screen bg-background text-foreground flex flex-col">
       <Dialog open={open} onOpenChange={(isOpen) => { setOpen(isOpen); if (!isOpen) resetForm(); }}>
-        <header className="flex items-center justify-between gap-4 mb-8 flex-wrap">
+        <header className="p-4 md:p-8 flex items-center justify-between gap-4 flex-wrap border-b">
           <div className="flex items-center gap-4">
             <Button variant="outline" size="icon" asChild>
               <Link href="/items">
@@ -446,7 +447,7 @@ export default function LocationsPage() {
           </form>
         </DialogContent>
 
-      <main>
+      <main className="flex-1 overflow-y-auto p-4 md:p-8">
           <Card className="mb-8">
             <CardHeader>
                 <CardTitle>{t('search_item_by_model')}</CardTitle>

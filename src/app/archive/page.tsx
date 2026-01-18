@@ -41,7 +41,7 @@ export default function ArchivePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background text-foreground">
+      <div className="h-screen bg-background text-foreground flex flex-col">
         <header className="bg-card border-b p-4">
           <div className="container mx-auto flex items-center gap-4">
             <Button variant="outline" size="icon" asChild>
@@ -53,7 +53,7 @@ export default function ArchivePage() {
             <h1 className="text-xl">{t('excel_archive')}</h1>
           </div>
         </header>
-        <main className="container mx-auto p-4 md:p-8">
+        <main className="container mx-auto p-4 md:p-8 flex-1 overflow-y-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
               <Card key={i} className="animate-pulse">
@@ -75,7 +75,7 @@ export default function ArchivePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="h-screen bg-background text-foreground flex flex-col">
       <header className="bg-card border-b p-4">
         <div className="container mx-auto flex items-center gap-4">
           <Button variant="outline" size="icon" asChild>
@@ -87,7 +87,7 @@ export default function ArchivePage() {
           <h1 className="text-xl">{t('excel_archive')}</h1>
         </div>
       </header>
-      <main className="container mx-auto p-4 md:p-8">
+      <main className="container mx-auto p-4 md:p-8 flex-1 overflow-y-auto">
         {sortedFiles.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {sortedFiles.map(file => (

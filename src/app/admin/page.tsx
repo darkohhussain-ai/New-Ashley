@@ -409,20 +409,22 @@ function AdminPage() {
   }
 
   return (
-    <main className="container mx-auto p-4 md:p-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <ShieldCheck className="h-8 w-8" />
-          Admin Panel
-        </h1>
-        <p className="text-muted-foreground">System configuration and user management.</p>
-      </div>
+    <div className="h-[calc(100vh-80px)] flex flex-col">
+        <main className="container mx-auto p-4 md:p-8 flex-1 overflow-y-auto">
+        <div className="mb-8">
+            <h1 className="text-3xl font-bold flex items-center gap-2">
+            <ShieldCheck className="h-8 w-8" />
+            Admin Panel
+            </h1>
+            <p className="text-muted-foreground">System configuration and user management.</p>
+        </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <UserManagement />
-        <RoleManagement />
-      </div>
-    </main>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <UserManagement />
+            <RoleManagement />
+        </div>
+        </main>
+    </div>
   );
 }
 

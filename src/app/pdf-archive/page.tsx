@@ -30,8 +30,8 @@ export default function PdfArchivePage() {
   }, [files]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
-      <header className="flex items-center gap-4 mb-8">
+    <div className="h-screen bg-background text-foreground flex flex-col">
+      <header className="p-4 md:p-8 flex items-center gap-4 border-b">
         <Button variant="outline" size="icon" asChild>
           <Link href="/items">
             <ArrowLeft />
@@ -40,7 +40,7 @@ export default function PdfArchivePage() {
         </Button>
         <h1 className="text-2xl md:text-3xl">{t('pdf_archive')}</h1>
       </header>
-      <main>
+      <main className="flex-1 overflow-y-auto p-4 md:p-8">
         {isLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {[...Array(8)].map((_, i) => (

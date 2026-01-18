@@ -127,8 +127,8 @@ function AshleyExpensesDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <main className='container mx-auto p-4 md:p-8'>
+    <div className="h-[calc(100vh-80px)] flex flex-col">
+      <main className='container mx-auto p-4 md:p-8 flex-1 overflow-y-auto'>
          <div className="flex flex-wrap justify-between items-center gap-4 mb-8">
             <h1 className="text-xl">{t('ashley_employees_management')}</h1>
              <Popover>

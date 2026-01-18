@@ -24,8 +24,8 @@ export default function ExpenseArchivePage() {
   }, [expenseReports]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
-      <header className="flex items-center justify-between gap-4 mb-8">
+    <div className="h-screen bg-background text-foreground flex flex-col">
+      <header className="flex items-center justify-between gap-4 p-4 md:p-8 border-b">
         <div className="flex items-center gap-4">
           <Button variant="outline" size="icon" asChild>
             <Link href="/expenses"><ArrowLeft /></Link>
@@ -36,7 +36,7 @@ export default function ExpenseArchivePage() {
           <Link href="/expenses/add"><Plus className="mr-2" /> {t('create_report')}</Link>
         </Button>
       </header>
-      <main>
+      <main className="flex-1 overflow-y-auto p-4 md:p-8">
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
