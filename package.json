@@ -1,12 +1,12 @@
 {
-  "name": "nextn",
+  "name": "ashley-staff",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "genkit:dev": "genkit start -- tsx src/ai/dev.ts",
     "genkit:watch": "genkit start -- tsx --watch src/ai/dev.ts",
-    "build": "next build",
+    "build": "NODE_ENV=production next build",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit"
@@ -49,7 +49,7 @@
     "immer": "latest",
     "jspdf": "latest",
     "lucide-react": "latest",
-    "next": "latest",
+    "next": "15.5.9",
     "patch-package": "latest",
     "react": "18.3.1",
     "react-day-picker": "latest",
