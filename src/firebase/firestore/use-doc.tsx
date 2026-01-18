@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import {
   DocumentReference,
-  getDoc, // Changed from onSnapshot
+  onSnapshot,
   DocumentData,
   FirestoreError,
   DocumentSnapshot,
@@ -58,8 +58,9 @@ export function useDoc<T = any>(
     setIsLoading(true);
     setError(null);
 
-    getDoc(memoizedDocRef)
-      .then((snapshot: DocumentSnapshot<DocumentData>) => {
+    const unsubscribe = onSnapshot(
+      memoizedDocRef,
+      (snapshot: DocumentSnapshot<DocumentData>) => {
         if (snapshot.exists()) {
           setData({ ...(snapshot.data() as T), id: snapshot.id });
         } else {
@@ -67,8 +68,8 @@ export function useDoc<T = any>(
         }
         setError(null);
         setIsLoading(false);
-      })
-      .catch((error: FirestoreError) => {
+      },
+      (error: FirestoreError) => {
         const contextualError = new FirestorePermissionError({
           operation: 'get',
           path: memoizedDocRef.path,
@@ -80,7 +81,10 @@ export function useDoc<T = any>(
 
         // trigger global error propagation
         errorEmitter.emit('permission-error', contextualError);
-      });
+      }
+    );
+    
+    return () => unsubscribe();
       
   }, [memoizedDocRef]);
 
