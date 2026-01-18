@@ -6,7 +6,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/shared/theme-provider";
 import { AppProvider, useAppContext } from '@/context/app-provider';
 import { AuthProvider } from '@/hooks/use-auth';
-import { LanguageProvider, useTranslation } from '@/context/language-provider';
+import { LanguageProvider } from '@/context/language-provider';
+import { useTranslation } from '@/hooks/use-translation';
 import { useState, useEffect } from 'react';
 import { SplashScreen } from '@/components/shared/splash-screen';
 import { AppHeader } from '@/components/shared/app-header';
@@ -93,14 +94,20 @@ function SystemCornerLogo() {
 
 function AppContent({ children }: { children: React.ReactNode }) {
     const { isLoading } = useAppContext();
+    const { language } = useTranslation();
     const [showSplash, setShowSplash] = useState(true);
     const pathname = usePathname();
     const isLoginPage = pathname === '/login';
 
     useEffect(() => {
+        document.documentElement.lang = language;
+        document.documentElement.dir = language === 'ku' ? 'rtl' : 'ltr';
+    }, [language]);
+
+    useEffect(() => {
         const timer = setTimeout(() => {
             setShowSplash(false);
-        }, 2000); // Shortened splash time a bit
+        }, 2000);
 
         return () => clearTimeout(timer);
     }, []);
@@ -124,15 +131,6 @@ function AppContent({ children }: { children: React.ReactNode }) {
     );
 }
 
-function HtmlWrapper({ children }: { children: React.ReactNode }) {
-  const { language } = useTranslation();
-  return (
-    <html lang={language} dir={language === 'ku' ? 'rtl' : 'ltr'} suppressHydrationWarning>
-      {children}
-    </html>
-  );
-}
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -140,24 +138,24 @@ export default function RootLayout({
 }>) {
   
   return (
-    <FirebaseClientProvider>
-      <AppProvider>
-        <LanguageProvider>
-          <ThemeProvider>
-            <AuthProvider>
-              <HtmlWrapper>
-                <head />
-                <body className={cn(`${notoNaskhArabic.variable} font-sans antialiased`, 'min-h-screen')} suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
+      <head />
+      <body className={cn(`${notoNaskhArabic.variable} font-sans antialiased`, 'min-h-screen')} suppressHydrationWarning>
+        <FirebaseClientProvider>
+          <AppProvider>
+            <LanguageProvider>
+              <ThemeProvider>
+                <AuthProvider>
                   <AppContent>
                       {children}
                   </AppContent>
                   <Toaster />
-                </body>
-              </HtmlWrapper>
-            </AuthProvider>
-          </ThemeProvider>
-        </LanguageProvider>
-      </AppProvider>
-    </FirebaseClientProvider>
+                </AuthProvider>
+              </ThemeProvider>
+            </LanguageProvider>
+          </AppProvider>
+        </FirebaseClientProvider>
+      </body>
+    </html>
   );
 }
