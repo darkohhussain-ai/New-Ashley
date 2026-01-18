@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useState } from 'react';
@@ -10,7 +11,6 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import { useAppContext } from '@/context/app-provider';
-import useLocalStorage from '@/hooks/use-local-storage';
 import { useTranslation } from '@/hooks/use-translation';
 
 
@@ -18,9 +18,9 @@ const destinations = ["Erbil", "Baghdad", "Diwan", "Dohuk"];
 
 export default function StagedItemsPage() {
   const { t, language } = useTranslation();
-  const { transferItems } = useAppContext();
+  const { transferItems, settings } = useAppContext();
+  const { customFont } = settings;
   const [selectedDestination, setSelectedDestination] = useState<string | null>(null);
-  const [customFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
 
 
   const isLoadingItems = !transferItems;
@@ -39,11 +39,11 @@ export default function StagedItemsPage() {
     const doc = new jsPDF();
     const useKurdish = language === 'ku';
 
-    if (customFontBase64 && useKurdish) {
+    if (customFont && useKurdish) {
       const fontName = "CustomFont";
       const fontStyle = "normal";
       try {
-        const fontBase64 = customFontBase64.split(',')[1];
+        const fontBase64 = customFont.split(',')[1];
         doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
         doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
         doc.setFont(fontName);
@@ -65,9 +65,9 @@ export default function StagedItemsPage() {
         startY: 40,
         head: [head],
         body: body,
-        styles: { font: (customFontBase64 && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
+        styles: { font: (customFont && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
          didParseCell: (data) => {
-            if (useKurdish && customFontBase64) {
+            if (useKurdish && customFont) {
               data.cell.styles.font = "CustomFont";
               data.cell.styles.halign = 'right';
             }

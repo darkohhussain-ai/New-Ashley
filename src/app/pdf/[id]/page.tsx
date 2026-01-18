@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useRef } from 'react';
@@ -15,7 +16,6 @@ import * as XLSX from 'xlsx';
 import { ChartConfig, ChartContainer } from '@/components/ui/chart';
 import html2canvas from 'html2canvas';
 import { FilePdfCard } from '@/components/archive/file-pdf-card';
-import useLocalStorage from '@/hooks/use-local-storage';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
 import { useAppContext } from '@/context/app-provider';
 import type { Employee, ExcelFile, Item, StorageLocation } from '@/lib/types';
@@ -40,11 +40,8 @@ export default function PdfViewPage() {
   const params = useParams();
   const fileId = params.id as string;
   const { t, language } = useTranslation();
-  const { excelFiles, items, employees, locations } = useAppContext();
-
-  const defaultLogo = "https://picsum.photos/seed/1/300/100";
-  const [logoSrc] = useLocalStorage('app-logo', defaultLogo);
-  const [customFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
+  const { excelFiles, items, employees, locations, settings } = useAppContext();
+  const { appLogo: logoSrc, customFont } = settings;
 
 
   const file = useMemo(() => excelFiles.find(f => f.id === fileId), [excelFiles, fileId]);
@@ -103,10 +100,10 @@ export default function PdfViewPage() {
     const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
     const useKurdish = language === 'ku';
 
-    if (customFontBase64 && useKurdish) {
+    if (customFont && useKurdish) {
         try {
             const fontName = "CustomFont";
-            pdf.addFileToVFS(`${fontName}.ttf`, customFontBase64.split(',')[1]);
+            pdf.addFileToVFS(`${fontName}.ttf`, customFont.split(',')[1]);
             pdf.addFont(`${fontName}.ttf`, fontName, "normal");
             pdf.setFont(fontName);
         } catch (e) {
@@ -141,7 +138,7 @@ export default function PdfViewPage() {
       ]),
       theme: 'grid',
       styles: {
-        font: (useKurdish && customFontBase64) ? 'CustomFont' : 'helvetica',
+        font: (useKurdish && customFont) ? 'CustomFont' : 'helvetica',
         halign: useKurdish ? 'right' : 'left',
         fontSize: 8,
         cellPadding: 2,
@@ -152,7 +149,7 @@ export default function PdfViewPage() {
         fontStyle: 'bold',
       },
       didParseCell: (data) => {
-        if (useKurdish && customFontBase64) {
+        if (useKurdish && customFont) {
           data.cell.styles.font = "CustomFont";
           data.cell.styles.halign = 'right';
         }

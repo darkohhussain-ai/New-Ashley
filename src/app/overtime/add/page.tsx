@@ -39,8 +39,7 @@ export default function AddOvertimePage() {
   const router = useRouter();
 
   const { employees, overtime: allOvertimeRecords, setOvertime: setAllOvertimeRecords, settings } = useAppContext();
-  const { salarySettings, pdfSettings } = settings;
-  const { customFont } = settings;
+  const { salarySettings, pdfSettings, customFont } = settings;
 
 
   const dateParam = searchParams.get('date');

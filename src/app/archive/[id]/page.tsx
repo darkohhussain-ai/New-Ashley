@@ -131,7 +131,7 @@ export default function FileDetailPage() {
   const [filterAshleyFloor, setFilterAshleyFloor] = useState('All');
   const [filterAshleyArea, setFilterAshleyArea] = useState('All');
 
-  const { appLogo: logoSrc, customFont: customFontBase64 } = settings;
+  const { appLogo: logoSrc, customFont } = settings;
   
   const updateFileInputRef = useRef<HTMLInputElement>(null);
   const pdfCardRef = useRef<HTMLDivElement>(null);
@@ -449,10 +449,10 @@ export default function FileDetailPage() {
     const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
     const useKurdish = language === 'ku';
 
-    if (customFontBase64 && useKurdish) {
+    if (customFont && useKurdish) {
         try {
             const fontName = "CustomFont";
-            pdf.addFileToVFS(`${fontName}.ttf`, customFontBase64.split(',')[1]);
+            pdf.addFileToVFS(`${fontName}.ttf`, customFont.split(',')[1]);
             pdf.addFont(`${fontName}.ttf`, fontName, "normal");
             pdf.setFont(fontName);
         } catch (e) {
@@ -492,7 +492,7 @@ export default function FileDetailPage() {
       ]),
       theme: 'grid',
       styles: {
-          font: (useKurdish && customFontBase64) ? 'CustomFont' : 'helvetica',
+          font: (useKurdish && customFont) ? 'CustomFont' : 'helvetica',
           halign: useKurdish ? 'right' : 'left',
           fontSize: 8,
           cellPadding: 2,
@@ -503,7 +503,7 @@ export default function FileDetailPage() {
           fontStyle: 'bold',
       },
        didParseCell: (data) => {
-        if (useKurdish && customFontBase64) {
+        if (useKurdish && customFont) {
           data.cell.styles.font = "CustomFont";
           data.cell.styles.halign = 'right';
         }

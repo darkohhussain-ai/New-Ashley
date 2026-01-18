@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -16,7 +17,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { TransferPdfCard } from '@/components/transmit/transfer-pdf-card';
-import useLocalStorage from '@/hooks/use-local-storage';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -31,7 +31,8 @@ const destinations = ["Erbil", "Baghdad", "Diwan", "Dohuk"];
 export default function CreateTransferPage() {
   const { toast } = useToast();
   const { t, language } = useTranslation();
-  const { transferItems, setTransferItems, transfers, setTransfers } = useAppContext();
+  const { transferItems, setTransferItems, transfers, setTransfers, settings } = useAppContext();
+  const { pdfSettings, customFont } = settings;
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -51,8 +52,6 @@ export default function CreateTransferPage() {
   const [lastTransferItems, setLastTransferItems] = useState<ItemForTransfer[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   
-  const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {}, card: {} });
-  const [customFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
   const pdfCardRef = useRef<HTMLDivElement>(null);
   
   const stagedItems = useMemo(() => transferItems.filter(item => !item.transferId), [transferItems]);
@@ -127,14 +126,14 @@ export default function CreateTransferPage() {
     if (!pdfCardRef.current || !lastTransfer || !lastTransferItems) return;
     
     const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
-    const settings = pdfSettings.invoice || {};
+    const pdfGenSettings = pdfSettings.invoice || {};
     const useKurdish = language === 'ku';
 
-    if (customFontBase64 && useKurdish) {
+    if (customFont && useKurdish) {
         const fontName = "CustomFont";
         const fontStyle = "normal";
-        const fontBase64 = customFontBase64.split(',')[1];
         try {
+            const fontBase64 = customFont.split(',')[1];
             doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
             doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
             doc.setFont(fontName);
@@ -162,10 +161,10 @@ export default function CreateTransferPage() {
       head: [head],
       body: body,
       theme: 'grid',
-      styles: { font: (customFontBase64 && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
-      headStyles: { fillColor: settings.themeColor || '#3b82f6', textColor: 255, fontStyle: 'bold' },
+      styles: { font: (customFont && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
+      headStyles: { fillColor: pdfGenSettings.themeColor || '#3b82f6', textColor: 255, fontStyle: 'bold' },
       didParseCell: (data) => {
-        if (useKurdish && customFontBase64) {
+        if (useKurdish && customFont) {
           data.cell.styles.font = "CustomFont";
           data.cell.styles.halign = 'right';
         }
