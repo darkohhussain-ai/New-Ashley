@@ -1,10 +1,9 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
 import {
   Query,
-  onSnapshot,
+  getDocs, // Changed from onSnapshot
   DocumentData,
   FirestoreError,
   QuerySnapshot,
@@ -39,7 +38,7 @@ export interface InternalQuery extends Query<DocumentData> {
 }
 
 /**
- * React hook to subscribe to a Firestore collection or query in real-time.
+ * React hook to fetch a Firestore collection or query once.
  * Handles nullable references/queries.
  * 
  *
@@ -71,9 +70,8 @@ export function useCollection<T = any>(
 
     setIsLoading(true);
 
-    const unsubscribe = onSnapshot(
-      memoizedTargetRefOrQuery,
-      (snapshot: QuerySnapshot<DocumentData>) => {
+    getDocs(memoizedTargetRefOrQuery)
+      .then((snapshot: QuerySnapshot<DocumentData>) => {
         const results: ResultItemType[] = [];
         snapshot.forEach((doc) => {
           results.push({ ...(doc.data() as T), id: doc.id });
@@ -81,8 +79,8 @@ export function useCollection<T = any>(
         setData(results);
         setError(null);
         setIsLoading(false);
-      },
-      (e: FirestoreError) => {
+      })
+      .catch((e: FirestoreError) => {
         const path: string =
             memoizedTargetRefOrQuery.type === 'collection'
             ? (memoizedTargetRefOrQuery as CollectionReference).path
@@ -99,10 +97,7 @@ export function useCollection<T = any>(
 
         // trigger global error propagation
         errorEmitter.emit('permission-error', contextualError);
-      }
-    );
-
-    return () => unsubscribe();
+      });
   }, [memoizedTargetRefOrQuery]);
   
   return { data, isLoading, error };

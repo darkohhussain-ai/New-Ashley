@@ -1,10 +1,9 @@
-
 'use client';
     
 import { useState, useEffect } from 'react';
 import {
   DocumentReference,
-  onSnapshot,
+  getDoc, // Changed from onSnapshot
   DocumentData,
   FirestoreError,
   DocumentSnapshot,
@@ -26,7 +25,7 @@ export interface UseDocResult<T> {
 }
 
 /**
- * React hook to subscribe to a single Firestore document in real-time.
+ * React hook to fetch a single Firestore document once.
  * Handles nullable references.
  * 
  * IMPORTANT! YOU MUST MEMOIZE the inputted memoizedTargetRefOrQuery or BAD THINGS WILL HAPPEN
@@ -59,9 +58,8 @@ export function useDoc<T = any>(
     setIsLoading(true);
     setError(null);
 
-    const unsubscribe = onSnapshot(
-      memoizedDocRef,
-      (snapshot: DocumentSnapshot<DocumentData>) => {
+    getDoc(memoizedDocRef)
+      .then((snapshot: DocumentSnapshot<DocumentData>) => {
         if (snapshot.exists()) {
           setData({ ...(snapshot.data() as T), id: snapshot.id });
         } else {
@@ -69,8 +67,8 @@ export function useDoc<T = any>(
         }
         setError(null);
         setIsLoading(false);
-      },
-      (error: FirestoreError) => {
+      })
+      .catch((error: FirestoreError) => {
         const contextualError = new FirestorePermissionError({
           operation: 'get',
           path: memoizedDocRef.path,
@@ -82,10 +80,8 @@ export function useDoc<T = any>(
 
         // trigger global error propagation
         errorEmitter.emit('permission-error', contextualError);
-      }
-    );
-
-    return () => unsubscribe();
+      });
+      
   }, [memoizedDocRef]);
 
   return { data, isLoading, error };
