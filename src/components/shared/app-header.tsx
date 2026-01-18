@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -155,7 +154,7 @@ export function AppHeader() {
                   variant="ghost"
                   size="icon"
                   onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-                  aria-label="Toggle theme"
+                  aria-label={t('toggle_theme')}
                 >
                   <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
                   <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
@@ -183,12 +182,12 @@ export function AppHeader() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                         <DropdownMenuItem asChild>
-                            <Link href="/account">My Account</Link>
+                            <Link href="/account">{t('my_account')}</Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={handleLogout}>
                             <LogOut className="mr-2 h-4 w-4" />
-                            <span>Logout</span>
+                            <span>{t('logout')}</span>
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>

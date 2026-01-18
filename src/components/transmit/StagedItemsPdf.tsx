@@ -1,3 +1,4 @@
+
 'use client';
 import { ItemForTransfer } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -11,7 +12,7 @@ export const StagedItemsPdf = ({ destination, items, logoSrc }: { destination: s
         <div className="bg-white text-black p-6">
             <ReportPdfHeader 
                 title={`${t('staged_items_for')} ${destination}`}
-                subtitle={`${t('report_date')}: ${format(new Date(), 'PPP')}`}
+                subtitle={`${t('report_date_colon')} ${format(new Date(), 'PPP')}`}
                 logoSrc={logoSrc}
                 themeColor="#f97316" // Orange
             />

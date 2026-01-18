@@ -1,3 +1,4 @@
+
 'use client';
 
 import { format } from 'date-fns';
@@ -31,7 +32,7 @@ export function MarketingFeedbackPdfCard({ logoSrc, totalEvaluations, evaluation
           <p className="text-lg font-semibold text-gray-600">{formattedDate}</p>
         </div>
         <div className="w-[80px] h-[80px] flex items-center justify-center">
-            {logoSrc && <Image src={logoSrc} alt="Company Logo" width={60} height={60} className="object-contain" />}
+            {logoSrc && <Image src={logoSrc} alt={t('company_logo')} width={60} height={60} className="object-contain" />}
         </div>
       </div>
       

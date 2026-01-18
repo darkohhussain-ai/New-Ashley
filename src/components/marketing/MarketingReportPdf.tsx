@@ -27,7 +27,7 @@ export const MarketingReportPdf = ({ logoSrc, totalEvaluations, evaluationSummar
 
                 {perQuestionRankings && perQuestionRankings.length > 0 && perQuestionRankings.map(q => (
                     <div key={q.questionId} className="mt-8">
-                        <h3 className="text-lg font-bold mb-2">{q.questionText}</h3>
+                        <h3 className="text-lg font-bold mb-2">{t(q.questionText.toLowerCase().replace(/ /g, '_')) || q.questionText}</h3>
                         <Table>
                              <TableHeader><TableRow><TableHead>{t('rank')}</TableHead><TableHead>{t('employee')}</TableHead><TableHead className="text-right">{t('total_score')}</TableHead></TableRow></TableHeader>
                             <TableBody>
