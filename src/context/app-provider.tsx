@@ -7,6 +7,7 @@ import {
   doc,
   DocumentData,
   setDoc,
+  getDoc,
 } from 'firebase/firestore';
 import { useFirestore, useUser, useDoc } from '@/firebase';
 import { 
@@ -148,8 +149,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (!db) return;
 
         const populateInitialData = async () => {
-            const isPopulated = localStorage.getItem('dataPopulated');
-            if (isPopulated) return;
+            const settingsRef = doc(db, 'settings', 'main');
+            const settingsSnap = await getDoc(settingsRef);
+
+            if (settingsSnap.exists()) {
+                // Settings doc exists, so we assume data is populated.
+                return;
+            }
 
             console.log("First time setup: Populating initial data into Firestore...");
 
@@ -166,10 +172,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
                     }
                 }
                 
-                const settingsRef = doc(db, 'settings', 'main');
+                // Now set the initial settings since we know the doc doesn't exist
                 await setDoc(settingsRef, initialSettings, { merge: true });
 
-                localStorage.setItem('dataPopulated', 'true');
                 console.log("Initial data population complete.");
             } catch (error) {
                 console.error("Error populating initial data:", error);

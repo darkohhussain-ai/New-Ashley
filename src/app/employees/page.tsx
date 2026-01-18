@@ -35,6 +35,8 @@ import { useTranslation } from "@/hooks/use-translation"
 import { translateNameToKurdish } from "@/ai/flows/translate-name-flow"
 import { Loader2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useStorage } from "@/firebase";
+import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
 
 
 const formatCurrency = (amount: number) => {
@@ -71,6 +73,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
         settings
     } = useAppContext();
     const { pdfSettings } = settings;
+    const storage = useStorage();
 
 
     const employee = useMemo(() => employees.find(e => e.id === employeeId), [employees, employeeId]);
@@ -153,14 +156,40 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
 
     const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                const result = event.target?.result as string;
-                setPhotoUrl(result);
-            };
-            reader.readAsDataURL(file);
-        }
+        if (!file || !employee) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const localUrl = event.target?.result as string;
+            if (localUrl) {
+                // Instant preview
+                setPhotoUrl(localUrl);
+
+                // Upload to storage
+                const filePath = `employees/${employee.id}/photo.png`;
+                const sRef = storageRef(storage, filePath);
+                
+                const uploadToast = toast({
+                    title: "Uploading...",
+                    description: "Your new photo is being uploaded.",
+                });
+
+                uploadString(sRef, localUrl, 'data_url').then(() => {
+                    getDownloadURL(sRef).then(downloadURL => {
+                        // Update the state with the permanent URL
+                        setPhotoUrl(downloadURL);
+                        uploadToast.update({ id: uploadToast.id, title: "Upload Complete", description: "Photo updated. Click Save to apply changes." });
+                    }).catch(err => {
+                        console.error("Error getting download URL", err);
+                        uploadToast.update({ id: uploadToast.id, variant: 'destructive', title: "Upload Failed", description: "Could not get the photo URL." });
+                    });
+                }).catch(err => {
+                    console.error("Error uploading file", err);
+                     uploadToast.update({ id: uploadToast.id, variant: 'destructive', title: "Upload Failed", description: "The photo could not be uploaded." });
+                });
+            }
+        };
+        reader.readAsDataURL(file);
     };
 
     const handleUpdate = () => {
