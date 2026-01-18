@@ -334,7 +334,7 @@ export default function AddExpensePage() {
                         <Select value={expenseType} onValueChange={(v) => { setExpenseType(v); setExpenseSubType(''); }} disabled={isSaving}>
                             <SelectTrigger><SelectValue placeholder={t('select_expense_type')} /></SelectTrigger>
                             <SelectContent>
-                                {mainExpenseTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
+                                {mainExpenseTypes.map(type => <SelectItem key={type} value={type}>{t(type.toLowerCase().replace(/[\s()]/g, '_'))}</SelectItem>)}
                             </SelectContent>
                         </Select>
                     </div>
@@ -342,9 +342,9 @@ export default function AddExpensePage() {
                         <div className="space-y-2">
                             <Label htmlFor="expense-sub-type">Taxi Sub-Type</Label>
                             <Select value={expenseSubType} onValueChange={setExpenseSubType} disabled={isSaving}>
-                                <SelectTrigger id="expense-sub-type"><SelectValue placeholder="Select taxi sub-type" /></SelectTrigger>
+                                <SelectTrigger id="expense-sub-type"><SelectValue placeholder={t('select_taxi_sub_type')} /></SelectTrigger>
                                 <SelectContent>
-                                    {taxiSubTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
+                                    {taxiSubTypes.map(type => <SelectItem key={type} value={type}>{t(type.toLowerCase().replace(/\s/g, '_'))}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -383,8 +383,8 @@ export default function AddExpensePage() {
                                 {expenses.map(exp => (
                                     <div key={exp.id} className="p-4 flex justify-between items-start">
                                     <div>
-                                        <p className="font-medium">{exp.expenseType}</p>
-                                        {exp.expenseSubType && <p className="text-xs text-muted-foreground">{exp.expenseSubType}</p>}
+                                        <p className="font-medium">{t(exp.expenseType.toLowerCase().replace(/[\s()]/g, '_'))}</p>
+                                        {exp.expenseSubType && <p className="text-xs text-muted-foreground">{t(exp.expenseSubType.toLowerCase().replace(/\s/g, '_'))}</p>}
                                         <p className="text-sm text-muted-foreground">{exp.notes || t('na')}</p>
                                     </div>
                                     <div className="text-right">

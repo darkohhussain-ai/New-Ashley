@@ -1,4 +1,5 @@
 
+
 {
   "welcome_back": "بەخێربێیتەوە",
   "select_service": "خزمەتگوزارییەک هەڵبژێرە بۆ بەردەوامبوون.",
@@ -94,6 +95,7 @@
   "pick_a_date": "بەروارێک هەڵبژێرە",
   "add_bonus_record": "زیادکردنی تۆماری پاداشت",
   "add_bonus_record_desc": "کارمەندێک هەڵبژێرە و ژمارەی بارەکانیان بۆ بەرواری هەڵبژێردراو بنووسە.",
+  "employee": "کارمەند",
   "select_an_employee": "کارمەندێک هەڵبژێرە",
   "loading": "بارکردن...",
   "number_of_loads": "ژمارەی بارەکان",
@@ -432,7 +434,7 @@
   "print": "چاپکردن",
   "salary": "مووچە",
   "monthly_reports": "ڕاپۆرتی مانگانە",
-  "no_records_found": "هیچ تۆمارێک نەدۆزرایەوە",
+  "no_records_found": "هیچ تۆمارێک نەدۆزرایەوە.",
   "no_records_found_for_month": "هیچ تۆمارێک بۆ مانگی {month} نەدۆزرایەوە.",
   "total_loads": "کۆی گشتی بارەکان",
   "this_month_activity_summary": "چالاکی ئەم مانگە ({month})",
@@ -566,5 +568,14 @@
   "deactivate": "ناچالاککردن",
   "reactivate": "دووبارە چالاککردنەوە",
   "deactivate_desc": "کارمەندە ناچالاککراوەکان لە لیستە دابەزینەکاندا بۆ تۆمارە نوێیەکان دەرناکەون.",
-  "report_date_colon": "بەرواری ڕاپۆرت:"
+  "report_date": "بەرواری ڕاپۆرت",
+  "taxi_expenses": "خەرجییەکانی تاکسی",
+  "purchases_buying_items": "کڕینەکان (کڕینی کاڵا)",
+  "taxi_for_warehouse_organization": "تاکسی بۆ ڕێکخستنی کۆگا",
+  "taxi_for_loading_items": "تاکسی بۆ بارکردنی کاڵا",
+  "taxi_to_driver": "تاکسی بۆ شۆفێر",
+  "taxi_return_from_driver": "تاکسی گەڕانەوە لە شۆفێر",
+  "taxi_to_technician_for_fixing_defective_items": "تاکسی بۆ تەکنیکار بۆ چاککردنی کاڵای تێکچوو",
+  "taxi_for_transporting_furniture_parts": "تاکسی بۆ گواستنەوەی پارچەی مۆبیلیات",
+  "select_taxi_sub_type": "جۆری لاوەکی تاکسی هەڵبژێرە"
 }

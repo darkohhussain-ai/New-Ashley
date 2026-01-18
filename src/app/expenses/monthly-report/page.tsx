@@ -183,12 +183,12 @@ export default function MonthlyExpenseReportPage() {
                                 {item.taxiTotal > 0 && (
                                 <>
                                     <TableRow>
-                                    <TableCell className="font-medium pl-4">Taxi Expenses</TableCell>
+                                    <TableCell className="font-medium pl-4">{t('taxi_expenses')}</TableCell>
                                     <TableCell className="text-right">{isReadOnly ? '***' : formatCurrency(item.taxiTotal)}</TableCell>
                                     </TableRow>
                                     {Object.entries(item.taxiBreakdown).map(([subType, amount]) => (
                                     <TableRow key={subType} className="text-sm">
-                                        <TableCell className="text-muted-foreground pl-8">- {subType}</TableCell>
+                                        <TableCell className="text-muted-foreground pl-8">- {t(subType.toLowerCase().replace(/\s/g, '_'))}</TableCell>
                                         <TableCell className="text-right text-muted-foreground">{isReadOnly ? '***' : formatCurrency(amount)}</TableCell>
                                     </TableRow>
                                     ))}
@@ -196,7 +196,7 @@ export default function MonthlyExpenseReportPage() {
                                 )}
                                 {item.purchasesTotal > 0 && (
                                 <TableRow>
-                                    <TableCell className="font-medium pl-4">Purchases (Buying Items)</TableCell>
+                                    <TableCell className="font-medium pl-4">{t('purchases_buying_items')}</TableCell>
                                     <TableCell className="text-right">{isReadOnly ? '***' : formatCurrency(item.purchasesTotal)}</TableCell>
                                 </TableRow>
                                 )}
@@ -288,12 +288,12 @@ export default function MonthlyExpenseReportPage() {
                                       {item.taxiTotal > 0 && (
                                         <>
                                           <TableRow>
-                                            <TableCell className="font-medium pl-4">Taxi Expenses</TableCell>
+                                            <TableCell className="font-medium pl-4">{t('taxi_expenses')}</TableCell>
                                             <TableCell className="text-right">{isReadOnly ? '***' : formatCurrency(item.taxiTotal)}</TableCell>
                                           </TableRow>
                                           {Object.entries(item.taxiBreakdown).map(([subType, amount]) => (
                                             <TableRow key={subType} className="text-sm">
-                                              <TableCell className="text-muted-foreground pl-8">- {subType}</TableCell>
+                                              <TableCell className="text-muted-foreground pl-8">- {t(subType.toLowerCase().replace(/\s/g, '_'))}</TableCell>
                                               <TableCell className="text-right text-muted-foreground">{isReadOnly ? '***' : formatCurrency(amount)}</TableCell>
                                             </TableRow>
                                           ))}
@@ -301,7 +301,7 @@ export default function MonthlyExpenseReportPage() {
                                       )}
                                       {item.purchasesTotal > 0 && (
                                         <TableRow>
-                                          <TableCell className="font-medium pl-4">Purchases (Buying Items)</TableCell>
+                                          <TableCell className="font-medium pl-4">{t('purchases_buying_items')}</TableCell>
                                           <TableCell className="text-right">{isReadOnly ? '***' : formatCurrency(item.purchasesTotal)}</TableCell>
                                         </TableRow>
                                       )}
