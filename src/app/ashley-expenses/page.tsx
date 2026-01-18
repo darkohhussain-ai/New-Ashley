@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -75,7 +76,7 @@ function AshleyExpensesDashboard() {
       title: t('expenses'),
       icon: FileText,
       href: "/expenses",
-      color: "bg-blue-500",
+      textColor: "text-blue-500",
       permission: 'page:ashley-expenses:expenses',
       total: monthlyTotals.expenses
     },
@@ -83,7 +84,7 @@ function AshleyExpensesDashboard() {
       title: t('overtime'),
       icon: Clock,
       href: "/overtime",
-      color: "bg-orange-500",
+      textColor: "text-orange-500",
       permission: 'page:ashley-expenses:overtime',
       total: monthlyTotals.overtime
     },
@@ -91,7 +92,7 @@ function AshleyExpensesDashboard() {
       title: t('bonuses'),
       icon: Gift,
       href: "/bonuses",
-      color: "bg-yellow-500",
+      textColor: "text-yellow-500",
       permission: 'page:ashley-expenses:bonuses',
       total: monthlyTotals.bonuses
     },
@@ -99,7 +100,7 @@ function AshleyExpensesDashboard() {
       title: t('cash_withdrawals'),
       icon: Banknote,
       href: "/cash-withdrawal",
-      color: "bg-rose-500",
+      textColor: "text-rose-500",
       permission: 'page:ashley-expenses:withdrawals',
       total: monthlyTotals.withdrawals
     },
@@ -107,7 +108,7 @@ function AshleyExpensesDashboard() {
         title: t('monthly_reports'),
         icon: Calendar,
         href: "/monthly-report",
-        color: "bg-teal-500",
+        textColor: "text-teal-500",
         permission: 'page:ashley-expenses:reports',
         total: null
     },
@@ -115,7 +116,7 @@ function AshleyExpensesDashboard() {
       title: t('settings'),
       icon: Settings,
       href: "/ashley-expenses-settings",
-      color: "bg-gray-500",
+      textColor: "text-gray-500",
       permission: 'page:ashley-expenses:settings',
       total: null
     }
@@ -145,7 +146,7 @@ function AshleyExpensesDashboard() {
 
         <Card className="mb-8">
             <CardHeader>
-                <CardTitle className='flex items-center gap-2'><BarChart2/> {t('monthly_overview')} - {selectedDate ? format(selectedDate, 'MMMM yyyy') : ''}</CardTitle>
+                <CardTitle className='flex items-center gap-2'><BarChart2/> {t('monthly_overview')}</CardTitle>
                 <CardDescription>{t('monthly_overview_desc')}</CardDescription>
             </CardHeader>
             <CardContent>
@@ -172,16 +173,17 @@ function AshleyExpensesDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {menuItems.filter(item => hasPermission(item.permission)).map((item) => (
             <Link key={item.title} href={item.href} className="group block" passHref>
-                <Card className={cn("h-48 flex flex-col items-center justify-center text-white transition-transform transform hover:-translate-y-1 hover:shadow-xl", item.color)}>
-                  <CardContent className="flex flex-col items-center justify-center p-6 text-center">
-                    <div className="p-4 bg-white/20 rounded-full mb-4">
-                        <item.icon className="w-8 h-8" />
+                <Card className="h-48 flex flex-col justify-between p-6 transition-all hover:shadow-lg hover:-translate-y-1 border-2 border-transparent hover:border-primary/50">
+                    <div>
+                        <item.icon className={cn("w-8 h-8 mb-4", item.textColor)} />
+                        <CardTitle className="text-lg">{item.title}</CardTitle>
                     </div>
-                    <CardTitle className="text-lg">{item.title}</CardTitle>
-                    {item.total !== null && (
-                         <CardDescription className="text-white/80 text-lg font-bold mt-2">{formatCurrency(item.total)}</CardDescription>
+                     {item.total !== null && (
+                        <div className="text-right">
+                           <p className="text-2xl font-bold">{formatCurrency(item.total)}</p>
+                           <p className="text-xs text-muted-foreground">{t('for_month', { month: selectedDate ? format(selectedDate, 'MMMM') : '' })}</p>
+                        </div>
                     )}
-                  </CardContent>
                 </Card>
             </Link>
           ))}

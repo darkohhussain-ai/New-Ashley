@@ -475,5 +475,6 @@
   "monthly_overview": "پوختەی مانگانە",
   "monthly_overview_desc": "پوختەیەکی هەموو خەرجییەکان بۆ مانگی هەڵبژێردراو.",
   "no_data_for_selected_month": "هیچ داتایەک بۆ مانگی هەڵبژێردراو بەردەست نییە.",
-  "employee_breakdown": "شیکردنەوەی کارمەندان"
+  "employee_breakdown": "شیکردنەوەی کارمەندان",
+  "for_month": "بۆ مانگی {month}"
 }

@@ -200,7 +200,7 @@
   "report_saved_desc": "Expense report \\\"{reportName}\\\" has been successfully saved.",
   "expense_report_details": "Expense Report Details",
   "delete_report": "Delete Report",
-  "confirm_delete_expense_report": "This action will permanently delete the report \\\"{reportName}\\\" and all its associated expenses. This cannot be undone.",
+  "confirm_delete_expense_report": "This action will permanently delete the report \\\"{reportName}\\\" and all its associated expenses. This action cannot be undone.",
   "report_deleted": "Report Deleted",
   "report_deleted_desc": "The expense report and all its items have been deleted.",
   "report_not_found": "Report Not Found",
@@ -475,5 +475,6 @@
   "monthly_overview": "Monthly Overview",
   "monthly_overview_desc": "A summary of all expenses for the selected month.",
   "no_data_for_selected_month": "No data available for the selected month.",
-  "employee_breakdown": "Employee Breakdown"
+  "employee_breakdown": "Employee Breakdown",
+  "for_month": "For {month}"
 }
