@@ -17,7 +17,6 @@ import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { ChartConfig, ChartContainer } from '@/components/ui/chart';
 import html2canvas from 'html2canvas';
@@ -444,84 +443,42 @@ export default function FileDetailPage() {
   };
 
   const handleDownloadPdf = async () => {
-    if (!file || !sortedItems || !pdfCardRef.current) return;
+    if (!file || !pdfCardRef.current) return;
     
     const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
-    const useKurdish = language === 'ku';
-
-    if (customFont && useKurdish) {
-        try {
-            const fontName = "CustomFont";
-            pdf.addFileToVFS(`${fontName}.ttf`, customFont.split(',')[1]);
-            pdf.addFont(`${fontName}.ttf`, fontName, "normal");
-            pdf.setFont(fontName);
-        } catch (e) {
-            console.error("Could not add custom font to PDF", e);
-        }
-    } else {
-        pdf.setFont('helvetica');
-    }
     
     const canvas = await html2canvas(pdfCardRef.current, {
         scale: 2, 
         useCORS: true,
-        backgroundColor: null,
+        backgroundColor: 'white',
+        onclone: (document) => {
+          if (customFont && language === 'ku') {
+            const style = document.createElement('style');
+            style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
+            document.head.appendChild(style);
+          }
+        }
     });
     
     const imgData = canvas.toDataURL('image/png');
     const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
     const imgWidth = canvas.width;
     const imgHeight = canvas.height;
     const ratio = imgWidth / imgHeight;
-    const finalImgWidth = pdfWidth - 28; // with some margin
-    const finalImgHeight = finalImgWidth / ratio;
     
-    pdf.addImage(imgData, 'PNG', 14, 14, finalImgWidth, finalImgHeight);
-    
-    autoTable(pdf, {
-      startY: finalImgHeight + 30,
-      head: [[t('model'), t('quantity'), t('storage_status'), t('condition'), t('qty_per_condition'), t('location'), t('notes')]],
-      body: sortedItems.map(item => [
-        item.model,
-        item.quantity,
-        t(item.storageStatus?.toLowerCase() || '') || item.storageStatus || '',
-        t(item.modelCondition?.toLowerCase() || '') || item.modelCondition || '',
-        item.quantityPerCondition ?? '',
-        item.locationId ? getLocationName(item.locationId) : '',
-        item.notes || ''
-      ]),
-      theme: 'grid',
-      styles: {
-          font: (useKurdish && customFont) ? 'CustomFont' : 'helvetica',
-          halign: useKurdish ? 'right' : 'left',
-          fontSize: 8,
-          cellPadding: 2,
-      },
-      headStyles: {
-          fillColor: [34, 197, 94], // Tailwind green-500
-          textColor: 255,
-          fontStyle: 'bold',
-      },
-       didParseCell: (data) => {
-        if (useKurdish && customFont) {
-          data.cell.styles.font = "CustomFont";
-          data.cell.styles.halign = 'right';
-        }
-      }
-    });
+    let finalImgWidth = pdfWidth;
+    let finalImgHeight = finalImgWidth / ratio;
 
-    const finalY = (pdf as any).lastAutoTable.finalY + 40;
-    const pageHeight = pdf.internal.pageSize.height;
-    if (finalY > pageHeight - 30) {
-        pdf.addPage();
+    if (finalImgHeight > pdfHeight) {
+      finalImgHeight = pdfHeight;
+      finalImgWidth = finalImgHeight * ratio;
     }
-    const signatureY = finalY > pageHeight - 50 ? 40 : finalY;
 
-    pdf.setFontSize(10);
-    pdf.text("...................................", 14, signatureY, { align: 'left' });
-    pdf.text(t('warehouse_manager_signature'), 14, signatureY + 10, { align: 'left' });
-
-
+    const x = (pdfWidth - finalImgWidth) / 2;
+    const y = 0;
+    
+    pdf.addImage(imgData, 'PNG', x, y, finalImgWidth, finalImgHeight);
     pdf.save(`${file.storageName}.pdf`);
   };
 
@@ -601,8 +558,8 @@ export default function FileDetailPage() {
         accept=".xlsx,.xls"
       />
      <div style={{ position: 'absolute', left: '-9999px', top: '-9999px', background: 'white', color: 'black' }}>
-          {file && employeeForFile && fileItems && (
-            <div ref={pdfCardRef} style={{ width: '700px' }}>
+          {file && employeeForFile && (
+            <div ref={pdfCardRef} style={{ width: '800px' }}>
                 <FilePdfCard
                     file={{...(file || {}), ...editableFile} as ExcelFile}
                     employee={employeeForFile}
@@ -610,6 +567,41 @@ export default function FileDetailPage() {
                     statusData={statusChartData}
                     conditionData={conditionChartData}
                 />
+                <div className="p-4">
+                  <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>{t('model')}</TableHead>
+                            <TableHead>{t('quantity')}</TableHead>
+                            <TableHead>{t('storage_status')}</TableHead>
+                            <TableHead>{t('condition')}</TableHead>
+                            <TableHead>{t('qty_per_condition')}</TableHead>
+                            <TableHead>{t('location')}</TableHead>
+                            <TableHead>{t('notes')}</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {sortedItems.map(item => (
+                            <TableRow key={item.id}>
+                                <TableCell>{item.model}</TableCell>
+                                <TableCell>{item.quantity}</TableCell>
+                                <TableCell>{t(item.storageStatus?.toLowerCase() || '') || item.storageStatus || ''}</TableCell>
+                                <TableCell>{t(item.modelCondition?.toLowerCase() || '') || item.modelCondition || ''}</TableCell>
+                                <TableCell>{item.quantityPerCondition ?? ''}</TableCell>
+                                <TableCell>{item.locationId ? getLocationName(item.locationId) : ''}</TableCell>
+                                <TableCell>{item.notes || ''}</TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                <div className="pt-24 px-4">
+                    <div className="flex justify-end">
+                        <div className="w-64 text-center">
+                            <p className="border-t pt-2">{t('warehouse_manager_signature')}</p>
+                        </div>
+                    </div>
+                </div>
             </div>
           )}
       </div>

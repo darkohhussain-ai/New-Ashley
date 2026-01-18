@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -19,7 +20,6 @@ import useLocalStorage from '@/hooks/use-local-storage';
 import { ReportPdfHeader } from '@/components/reports/report-pdf-header';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import type { AllPdfSettings } from '@/lib/types';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
@@ -34,11 +34,11 @@ const formatCurrency = (amount: number) => {
 
 export default function MonthlyExpenseReportPage() {
   const { t, language } = useTranslation();
-  const { expenses, employees } = useAppContext();
+  const { expenses, employees, settings } = useAppContext();
   const { user, hasPermission } = useAuth();
   const isReadOnly = !hasPermission('page:admin');
   
-  const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {}, card: {} });
+  const { pdfSettings, customFont } = settings;
   const reportContentRef = useRef<HTMLDivElement>(null);
 
 
@@ -122,65 +122,37 @@ export default function MonthlyExpenseReportPage() {
     
     const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
     
-    const canvas = await html2canvas(reportContentRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
+    const canvas = await html2canvas(reportContentRef.current, { 
+      scale: 2, 
+      useCORS: true, 
+      backgroundColor: 'white',
+      onclone: (document) => {
+        if (customFont && language === 'ku') {
+            const style = document.createElement('style');
+            style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
+            document.head.appendChild(style);
+        }
+      }
+    });
+
     const imgData = canvas.toDataURL('image/png');
     const pdfWidth = doc.internal.pageSize.getWidth();
+    const pdfHeight = doc.internal.pageSize.getHeight();
     const imgWidth = canvas.width;
     const imgHeight = canvas.height;
     const ratio = imgWidth / imgHeight;
-    const finalImgWidth = pdfWidth;
-    const finalImgHeight = finalImgWidth / ratio;
     
-    doc.addImage(imgData, 'PNG', 0, 0, finalImgWidth, finalImgHeight);
+    let finalImgWidth = pdfWidth;
+    let finalImgHeight = finalImgWidth / ratio;
     
-    const body: any[] = [];
-    monthlyData.summary.forEach(item => {
-        body.push([
-            { content: item.employeeName, styles: { fontStyle: 'bold' } },
-            { content: isReadOnly ? '***' : formatCurrency(item.totalAmount), styles: { fontStyle: 'bold', halign: 'right' } },
-        ]);
-        if(item.taxiTotal > 0) {
-            body.push([
-                { content: '  Taxi Expenses', styles: { fontStyle: 'italic'} },
-                { content: isReadOnly ? '***' : formatCurrency(item.taxiTotal), styles: { halign: 'right' } },
-            ]);
-            Object.entries(item.taxiBreakdown).forEach(([subType, amount]) => {
-                 body.push([
-                    { content: `    - ${subType}`, styles: {textColor: [100,100,100]} },
-                    { content: isReadOnly ? '***' : formatCurrency(amount), styles: { halign: 'right', textColor: [100,100,100] } },
-                ]);
-            });
-        }
-         if(item.purchasesTotal > 0) {
-            body.push([
-                { content: '  Purchases (Buying Items)', styles: { fontStyle: 'italic'} },
-                { content: isReadOnly ? '***' : formatCurrency(item.purchasesTotal), styles: { halign: 'right' } },
-            ]);
-        }
-    });
-
-    autoTable(doc, {
-      startY: finalImgHeight + 20,
-      head: [[t('employee'), t('total_amount')]],
-      body: body,
-      foot: [[
-          { content: t('grand_total'), styles: { fontStyle: 'bold' } },
-          { content: isReadOnly ? '***' : formatCurrency(monthlyData.grandTotal), styles: { fontStyle: 'bold', halign: 'right' } },
-      ]],
-      theme: 'striped',
-      headStyles: { fillColor: pdfSettings.report.reportColors?.expense || '#3b82f6' }
-    });
-
-    let finalY = (doc as any).lastAutoTable.finalY + 40;
-    const pageHeight = doc.internal.pageSize.height;
-    if (finalY > pageHeight - 30) {
-        doc.addPage();
-        finalY = 40;
+    if (finalImgHeight > pdfHeight) {
+        finalImgHeight = pdfHeight;
+        finalImgWidth = finalImgHeight * ratio;
     }
 
-    doc.text("...................................", doc.internal.pageSize.width - 120, finalY, { align: 'center' });
-    doc.text(t('warehouse_manager_signature'), doc.internal.pageSize.width - 120, finalY + 10, { align: 'center' });
+    const x = (pdfWidth - finalImgWidth) / 2;
     
+    doc.addImage(imgData, 'PNG', x, 0, finalImgWidth, finalImgHeight);
     doc.save(`monthly-expense-report-${format(selectedDate, 'yyyy-MM')}.pdf`);
   };
   
@@ -191,13 +163,60 @@ export default function MonthlyExpenseReportPage() {
   return (
     <>
       <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-          <div ref={reportContentRef} className="bg-white" style={{width: '700px'}}>
+          <div ref={reportContentRef} className="bg-white text-black" style={{width: '800px'}}>
              <ReportPdfHeader 
                 title="Monthly Expense Report" 
                 subtitle={selectedDate ? format(selectedDate, 'MMMM yyyy') : ''}
                 logoSrc={pdfSettings.report.logo ?? null} 
                 themeColor={pdfSettings.report.reportColors?.expense}
              />
+             <div className="p-8">
+                {monthlyData.summary.map(item => (
+                  <div key={item.employeeId} className="mb-4">
+                    <div className="flex justify-between w-full pr-4 p-2 rounded-t-lg bg-gray-100 border">
+                        <span className="font-bold" dir={language === 'ku' ? 'rtl' : 'ltr'}>{item.employeeName}</span>
+                        <span className="font-bold">{isReadOnly ? '***' : formatCurrency(item.totalAmount)}</span>
+                    </div>
+                    <div className="p-2 border border-t-0 rounded-b-lg">
+                        <Table>
+                            <TableBody>
+                                {item.taxiTotal > 0 && (
+                                <>
+                                    <TableRow>
+                                    <TableCell className="font-medium pl-4">Taxi Expenses</TableCell>
+                                    <TableCell className="text-right">{isReadOnly ? '***' : formatCurrency(item.taxiTotal)}</TableCell>
+                                    </TableRow>
+                                    {Object.entries(item.taxiBreakdown).map(([subType, amount]) => (
+                                    <TableRow key={subType} className="text-sm">
+                                        <TableCell className="text-muted-foreground pl-8">- {subType}</TableCell>
+                                        <TableCell className="text-right text-muted-foreground">{isReadOnly ? '***' : formatCurrency(amount)}</TableCell>
+                                    </TableRow>
+                                    ))}
+                                </>
+                                )}
+                                {item.purchasesTotal > 0 && (
+                                <TableRow>
+                                    <TableCell className="font-medium pl-4">Purchases (Buying Items)</TableCell>
+                                    <TableCell className="text-right">{isReadOnly ? '***' : formatCurrency(item.purchasesTotal)}</TableCell>
+                                </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
+                  </div>
+                ))}
+                <div className="flex justify-end font-bold text-xl mt-4 pr-4">
+                    <span>{t('grand_total')}:</span>
+                    <span className="text-primary ml-2">{isReadOnly ? '***' : formatCurrency(monthlyData.grandTotal)}</span>
+                </div>
+                 <div className="pt-24">
+                    <div className="flex justify-end">
+                        <div className="w-64 text-center">
+                            <p className="border-t pt-2">{t('warehouse_manager_signature')}</p>
+                        </div>
+                    </div>
+                </div>
+             </div>
           </div>
       </div>
       <div className="min-h-screen bg-background text-foreground p-4 md:p-8 print:p-0">

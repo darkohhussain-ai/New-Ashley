@@ -19,7 +19,6 @@ import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFoo
 import { TransferPdfCard } from '@/components/transmit/transfer-pdf-card';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAppContext } from '@/context/app-provider';
 import type { Transfer, ItemForTransfer, AllPdfSettings } from '@/lib/types';
@@ -126,81 +125,80 @@ export default function CreateTransferPage() {
     if (!pdfCardRef.current || !lastTransfer || !lastTransferItems) return;
     
     const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
-    const pdfGenSettings = pdfSettings.invoice || {};
-    const useKurdish = language === 'ku';
-
-    if (customFont && useKurdish) {
-        const fontName = "CustomFont";
-        const fontStyle = "normal";
-        try {
-            const fontBase64 = customFont.split(',')[1];
-            doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
-            doc.addFont(`${fontName}.ttf`, fontName, fontStyle);
-            doc.setFont(fontName);
-        } catch(e) {
-            console.error("Could not add custom font to PDF", e);
-        }
-    }
     
-    const canvas = await html2canvas(pdfCardRef.current, { scale: 2, useCORS: true, backgroundColor: 'white' });
-    const imgData = canvas.toDataURL('image/png');
-    const pdfWidth = doc.internal.pageSize.getWidth();
-    const imgWidth = canvas.width;
-    const imgHeight = canvas.height;
-    const ratio = imgWidth / imgHeight;
-    const finalImgWidth = pdfWidth - 28;
-    const finalImgHeight = finalImgWidth / ratio;
-    
-    doc.addImage(imgData, 'PNG', 14, 14, finalImgWidth, finalImgHeight);
-    
-    const head = [t('model'), t('quantity'), t('notes')];
-    const body = lastTransferItems.map(item => [item.model, item.quantity, item.notes || '']);
-
-    autoTable(doc, {
-      startY: finalImgHeight + 30,
-      head: [head],
-      body: body,
-      theme: 'grid',
-      styles: { font: (customFont && useKurdish) ? 'CustomFont' : 'helvetica', halign: useKurdish ? 'right' : 'left' },
-      headStyles: { fillColor: pdfGenSettings.themeColor || '#3b82f6', textColor: 255, fontStyle: 'bold' },
-      didParseCell: (data) => {
-        if (useKurdish && customFont) {
-          data.cell.styles.font = "CustomFont";
-          data.cell.styles.halign = 'right';
+    const canvas = await html2canvas(pdfCardRef.current, { 
+      scale: 2, 
+      useCORS: true, 
+      backgroundColor: 'white',
+      onclone: (document) => {
+        if (customFont && language === 'ku') {
+            const style = document.createElement('style');
+            style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
+            document.head.appendChild(style);
         }
       }
     });
 
-    let finalY = (doc as any).lastAutoTable.finalY + 20;
+    const imgData = canvas.toDataURL('image/png');
+    const pdfWidth = doc.internal.pageSize.getWidth();
+    const pdfHeight = doc.internal.pageSize.getHeight();
+    const imgWidth = canvas.width;
+    const imgHeight = canvas.height;
+    const ratio = imgWidth / imgHeight;
+    
+    let finalImgWidth = pdfWidth;
+    let finalImgHeight = finalImgWidth / ratio;
 
-    doc.setFontSize(10);
-    doc.text(`${t('driver')}: ${lastTransfer.driverName}`, useKurdish ? doc.internal.pageSize.width - 14 : 14, finalY, { align: useKurdish ? 'right' : 'left' });
-    doc.text(`${t('warehouse_manager')}: ${lastTransfer.warehouseManagerName}`, useKurdish ? doc.internal.pageSize.width - 14 : 14, finalY + 15, { align: useKurdish ? 'right' : 'left' });
-
-    finalY += 40;
-    const pageHeight = doc.internal.pageSize.height;
-    if (finalY > pageHeight - 30) {
-        doc.addPage();
-        finalY = 40; // Reset Y for new page
+    if (finalImgHeight > pdfHeight) {
+      finalImgHeight = pdfHeight;
+      finalImgWidth = finalImgHeight * ratio;
     }
-    const signatureY = finalY;
-    doc.setFontSize(10);
-    doc.text("...................................", doc.internal.pageSize.width - 120, signatureY, { align: 'center' });
-    doc.text(t('warehouse_manager_signature'), doc.internal.pageSize.width - 120, signatureY + 10, { align: 'center' });
 
+    const x = (pdfWidth - finalImgWidth) / 2;
+
+    doc.addImage(imgData, 'PNG', x, 0, finalImgWidth, finalImgHeight);
     doc.save(`${lastTransfer.cargoName}.pdf`);
   };
 
   return (
     <>
     {lastTransfer && (
-       <div style={{ position: 'absolute', left: '-9999px', top: '-9999px', background: 'white', color: 'black' }}>
-          <div ref={pdfCardRef} style={{ width: '700px' }}>
+       <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+          <div ref={pdfCardRef} className="bg-white text-black" style={{ width: '800px' }}>
               <TransferPdfCard
                   transfer={lastTransfer}
                   logoSrc={pdfSettings.invoice?.logo ?? null}
                   totalItems={lastTransfer.itemIds.length}
               />
+               <div className="p-8">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>{t('model')}</TableHead>
+                            <TableHead>{t('quantity')}</TableHead>
+                            <TableHead>{t('notes')}</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {lastTransferItems.map(item => (
+                            <TableRow key={item.id}>
+                                <TableCell>{item.model}</TableCell>
+                                <TableCell>{item.quantity}</TableCell>
+                                <TableCell>{item.notes || ''}</TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+                <div className="mt-8 grid grid-cols-2 gap-4 text-sm">
+                    <p><strong>{t('driver')}:</strong> {lastTransfer.driverName}</p>
+                    <p><strong>{t('warehouse_manager')}:</strong> {lastTransfer.warehouseManagerName}</p>
+                </div>
+                <div className="pt-24 text-right">
+                    <div className="inline-block text-center mt-8">
+                        <p className="border-t pt-2 w-48">{t('warehouse_manager_signature')}</p>
+                    </div>
+                </div>
+              </div>
           </div>
        </div>
     )}
