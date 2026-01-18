@@ -126,7 +126,9 @@ function AppContent({ children }: { children: React.ReactNode }) {
                 <SystemCornerLogo />
               </>
             )}
-            {children}
+            <div key={pathname} className="animate-fade-in-down">
+              {children}
+            </div>
         </>
     );
 }
