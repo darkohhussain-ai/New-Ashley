@@ -19,7 +19,10 @@ import useLocalStorage from '@/hooks/use-local-storage';
 import { ReportPdfHeader } from '@/components/reports/report-pdf-header';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import type { AllPdfSettings } from '@/lib/types';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -55,29 +58,53 @@ export default function MonthlyExpenseReportPage() {
   };
 
   const monthlyData = useMemo(() => {
-    if (!expenses || !employees || !selectedDate) return { expenses: [], summary: [], total: 0 };
+    if (!expenses || !employees || !selectedDate) return { summary: [], grandTotal: 0 };
 
     const start = startOfMonth(selectedDate);
     const end = endOfMonth(selectedDate);
 
     const filteredExpenses = expenses.filter(e => isWithinInterval(parseISO(e.date), { start, end }));
 
-    const employeeTotals = new Map<string, { totalAmount: number }>();
+    const employeeSummaries = new Map<string, {
+        employeeName: string;
+        totalAmount: number;
+        taxiTotal: number;
+        purchasesTotal: number;
+        taxiBreakdown: Record<string, number>;
+    }>();
+
     filteredExpenses.forEach(expense => {
-      const current = employeeTotals.get(expense.employeeId) || { totalAmount: 0 };
-      current.totalAmount += expense.amount;
-      employeeTotals.set(expense.employeeId, current);
+        if (!employeeSummaries.has(expense.employeeId)) {
+            employeeSummaries.set(expense.employeeId, {
+                employeeName: getEmployeeName(expense.employeeId, language === 'ku'),
+                totalAmount: 0,
+                taxiTotal: 0,
+                purchasesTotal: 0,
+                taxiBreakdown: {},
+            });
+        }
+
+        const summary = employeeSummaries.get(expense.employeeId)!;
+        summary.totalAmount += expense.amount;
+
+        if (expense.expenseType === 'Taxi Expenses') {
+            summary.taxiTotal += expense.amount;
+            if (expense.expenseSubType) {
+                summary.taxiBreakdown[expense.expenseSubType] = (summary.taxiBreakdown[expense.expenseSubType] || 0) + expense.amount;
+            }
+        } else if (expense.expenseType === 'Purchases (Buying Items)') {
+            summary.purchasesTotal += expense.amount;
+        }
     });
 
-    const summary = Array.from(employeeTotals.entries()).map(([employeeId, totals]) => ({
+    const summaryArray = Array.from(employeeSummaries.entries()).map(([employeeId, summary]) => ({
       employeeId,
-      employeeName: getEmployeeName(employeeId, language === 'ku'),
-      ...totals
-    })).sort((a,b) => b.totalAmount - a.totalAmount);
-    
-    const total = summary.reduce((sum, item) => sum + item.totalAmount, 0);
+      ...summary
+    })).sort((a, b) => b.totalAmount - a.totalAmount);
 
-    return { expenses: filteredExpenses, summary, total };
+    const grandTotal = summaryArray.reduce((sum, item) => sum + item.totalAmount, 0);
+
+    return { summary: summaryArray, grandTotal };
   }, [expenses, employees, selectedDate, language, getEmployeeName, t, isReadOnly, user]);
 
 
@@ -100,6 +127,55 @@ export default function MonthlyExpenseReportPage() {
     const finalImgHeight = finalImgWidth / ratio;
     
     doc.addImage(imgData, 'PNG', 0, 0, finalImgWidth, finalImgHeight);
+    
+    const body: any[] = [];
+    monthlyData.summary.forEach(item => {
+        body.push([
+            { content: item.employeeName, styles: { fontStyle: 'bold' } },
+            { content: isReadOnly ? '***' : formatCurrency(item.totalAmount), styles: { fontStyle: 'bold', halign: 'right' } },
+        ]);
+        if(item.taxiTotal > 0) {
+            body.push([
+                { content: '  Taxi Expenses', styles: { fontStyle: 'italic'} },
+                { content: isReadOnly ? '***' : formatCurrency(item.taxiTotal), styles: { halign: 'right' } },
+            ]);
+            Object.entries(item.taxiBreakdown).forEach(([subType, amount]) => {
+                 body.push([
+                    { content: `    - ${subType}`, styles: {textColor: [100,100,100]} },
+                    { content: isReadOnly ? '***' : formatCurrency(amount), styles: { halign: 'right', textColor: [100,100,100] } },
+                ]);
+            });
+        }
+         if(item.purchasesTotal > 0) {
+            body.push([
+                { content: '  Purchases (Buying Items)', styles: { fontStyle: 'italic'} },
+                { content: isReadOnly ? '***' : formatCurrency(item.purchasesTotal), styles: { halign: 'right' } },
+            ]);
+        }
+    });
+
+    autoTable(doc, {
+      startY: finalImgHeight + 20,
+      head: [[t('employee'), t('total_amount')]],
+      body: body,
+      foot: [[
+          { content: t('grand_total'), styles: { fontStyle: 'bold' } },
+          { content: isReadOnly ? '***' : formatCurrency(monthlyData.grandTotal), styles: { fontStyle: 'bold', halign: 'right' } },
+      ]],
+      theme: 'striped',
+      headStyles: { fillColor: pdfSettings.report.reportColors?.expense || '#3b82f6' }
+    });
+
+    let finalY = (doc as any).lastAutoTable.finalY + 40;
+    const pageHeight = doc.internal.pageSize.height;
+    if (finalY > pageHeight - 30) {
+        doc.addPage();
+        finalY = 40;
+    }
+
+    doc.text("...................................", doc.internal.pageSize.width - 120, finalY, { align: 'center' });
+    doc.text(t('warehouse_manager_signature'), doc.internal.pageSize.width - 120, finalY + 10, { align: 'center' });
+    
     doc.save(`monthly-expense-report-${format(selectedDate, 'yyyy-MM')}.pdf`);
   };
   
@@ -117,37 +193,6 @@ export default function MonthlyExpenseReportPage() {
                 logoSrc={pdfSettings.report.logo ?? null} 
                 themeColor={pdfSettings.report.reportColors?.expense}
              />
-             <div className="p-8">
-                 <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>{t('employee')}</TableHead>
-                            <TableHead className="text-right">{t('total_amount')}</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {monthlyData.summary.map(item => (
-                            <TableRow key={item.employeeId}>
-                                <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{item.employeeName}</TableCell>
-                                <TableCell className="text-right">{isReadOnly ? '***' : formatCurrency(item.totalAmount)}</TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                    <TableFooter>
-                        <TableRow>
-                            <TableCell className="text-lg">{t('grand_total')}</TableCell>
-                            <TableCell className="text-right text-lg text-primary">{isReadOnly ? '***' : formatCurrency(monthlyData.total)}</TableCell>
-                        </TableRow>
-                    </TableFooter>
-                </Table>
-                 <div className="pt-24">
-                    <div className="flex justify-end">
-                        <div className="w-64 text-center">
-                            <p className="border-t pt-2">{t('warehouse_manager_signature')}</p>
-                        </div>
-                    </div>
-                </div>
-             </div>
           </div>
       </div>
       <div className="min-h-screen bg-background text-foreground p-4 md:p-8 print:p-0">
@@ -170,49 +215,69 @@ export default function MonthlyExpenseReportPage() {
                 <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} captionLayout="dropdown-nav" fromYear={2020} toYear={2040} />
               </PopoverContent>
             </Popover>
-            <Button variant="outline" onClick={handlePrint} disabled={isLoading || monthlyData.expenses.length === 0}><Printer className="mr-2"/>{t('print')}</Button>
-            <Button variant="outline" onClick={handleDownloadPdf} disabled={isLoading || monthlyData.expenses.length === 0}><FileDown className="mr-2"/>PDF</Button>
+            <Button variant="outline" onClick={handlePrint} disabled={isLoading || monthlyData.summary.length === 0}><Printer className="mr-2"/>{t('print')}</Button>
+            <Button variant="outline" onClick={handleDownloadPdf} disabled={isLoading || monthlyData.summary.length === 0}><FileDown className="mr-2"/>PDF</Button>
           </div>
         </header>
 
         <main className="print:p-8">
             {isLoading ? (
             <div className="space-y-6"><Skeleton className="h-64 w-full" /></div>
-            ) : monthlyData.expenses.length > 0 ? (
+            ) : monthlyData.summary.length > 0 ? (
             <div className="space-y-8">
                 <Card className="print:shadow-none print:border-none">
-                <CardHeader>
-                    <div className="hidden print:block text-center">
-                        <h1 className="text-2xl">{t('monthly_expense_report')}</h1>
-                        <p className="text-muted-foreground">{selectedDate ? format(selectedDate, 'MMMM yyyy') : ''}</p>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <div className="overflow-x-auto">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>{t('employee')}</TableHead>
-                                    <TableHead className="text-right">{t('total_amount')}</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {monthlyData.summary.map(item => (
-                                    <TableRow key={item.employeeId}>
-                                        <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{item.employeeName}</TableCell>
-                                        <TableCell className="text-right">{isReadOnly ? '***' : formatCurrency(item.totalAmount)}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                            <TableFooter>
-                                <TableRow>
-                                    <TableCell className="text-lg">{t('grand_total')}</TableCell>
-                                    <TableCell className="text-right text-lg text-primary">{isReadOnly ? '***' : formatCurrency(monthlyData.total)}</TableCell>
-                                </TableRow>
-                            </TableFooter>
-                        </Table>
-                    </div>
-                </CardContent>
+                    <CardHeader>
+                        <div className="hidden print:block text-center">
+                            <h1 className="text-2xl">{t('monthly_expense_report')}</h1>
+                            <p className="text-muted-foreground">{selectedDate ? format(selectedDate, 'MMMM yyyy') : ''}</p>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                       <Accordion type="single" collapsible className="w-full">
+                          {monthlyData.summary.map(item => (
+                            <AccordionItem value={item.employeeId} key={item.employeeId}>
+                              <AccordionTrigger className="hover:no-underline">
+                                <div className="flex justify-between w-full pr-4">
+                                  <span dir={language === 'ku' ? 'rtl' : 'ltr'}>{item.employeeName}</span>
+                                  <span className="font-semibold">{isReadOnly ? '***' : formatCurrency(item.totalAmount)}</span>
+                                </div>
+                              </AccordionTrigger>
+                              <AccordionContent>
+                                <div className="p-4 bg-muted/50 rounded-md">
+                                  <Table>
+                                    <TableBody>
+                                      {item.taxiTotal > 0 && (
+                                        <>
+                                          <TableRow>
+                                            <TableCell className="font-medium pl-4">Taxi Expenses</TableCell>
+                                            <TableCell className="text-right">{isReadOnly ? '***' : formatCurrency(item.taxiTotal)}</TableCell>
+                                          </TableRow>
+                                          {Object.entries(item.taxiBreakdown).map(([subType, amount]) => (
+                                            <TableRow key={subType} className="text-sm">
+                                              <TableCell className="text-muted-foreground pl-8">- {subType}</TableCell>
+                                              <TableCell className="text-right text-muted-foreground">{isReadOnly ? '***' : formatCurrency(amount)}</TableCell>
+                                            </TableRow>
+                                          ))}
+                                        </>
+                                      )}
+                                      {item.purchasesTotal > 0 && (
+                                        <TableRow>
+                                          <TableCell className="font-medium pl-4">Purchases (Buying Items)</TableCell>
+                                          <TableCell className="text-right">{isReadOnly ? '***' : formatCurrency(item.purchasesTotal)}</TableCell>
+                                        </TableRow>
+                                      )}
+                                    </TableBody>
+                                  </Table>
+                                </div>
+                              </AccordionContent>
+                            </AccordionItem>
+                          ))}
+                       </Accordion>
+                       <div className="flex justify-end font-bold text-lg mt-4 pr-4">
+                          <span>{t('grand_total')}:</span>
+                          <span className="text-primary ml-2">{isReadOnly ? '***' : formatCurrency(monthlyData.grandTotal)}</span>
+                       </div>
+                    </CardContent>
                 </Card>
                 <div className="hidden print:block pt-24">
                     <div className="flex justify-end">

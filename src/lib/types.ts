@@ -72,7 +72,8 @@ export type Expense = {
   date: string;
   notes?: string;
   expenseReportId: string; // Link to the parent report
-  expenseType?: string;
+  expenseType: string;
+  expenseSubType?: string;
 };
 
 export type ExpenseReport = {

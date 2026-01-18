@@ -26,7 +26,15 @@ import useLocalStorage from '@/hooks/use-local-storage';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'IQD', maximumFractionDigits: 0 }).format(amount);
 
-const expenseTypes = ["Taxi Fare", "General Expense", "Food & Beverage", "Office Supplies", "Other"];
+const mainExpenseTypes = ["Taxi Expenses", "Purchases (Buying Items)"];
+const taxiSubTypes = [
+  "Taxi for warehouse organization",
+  "Taxi for loading items",
+  "Taxi to driver",
+  "Taxi return from driver",
+  "Taxi to technician for fixing defective items",
+  "Taxi for transporting furniture parts"
+];
 
 export default function AddExpensePage() {
   const { t, language } = useTranslation();
@@ -43,6 +51,7 @@ export default function AddExpensePage() {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [expenseType, setExpenseType] = useState('');
+  const [expenseSubType, setExpenseSubType] = useState('');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   
@@ -95,14 +104,15 @@ export default function AddExpensePage() {
   const resetForm = () => {
     setSelectedEmployee('');
     setExpenseType('');
+    setExpenseSubType('');
     setAmount('');
     setDescription('');
   }
   
   const handleAddOrUpdateExpense = () => {
     const parsedAmount = parseFloat(amount);
-    if (!selectedEmployee || !amount || !date || isNaN(parsedAmount) || parsedAmount <= 0) {
-      toast({ variant: 'destructive', title: t('missing_information'), description: "Please select an employee and enter a valid positive amount." });
+    if (!selectedEmployee || !amount || !date || isNaN(parsedAmount) || parsedAmount <= 0 || !expenseType) {
+      toast({ variant: 'destructive', title: t('missing_information'), description: "Please select an employee, type, and enter a valid positive amount." });
       return;
     }
 
@@ -122,14 +132,19 @@ export default function AddExpensePage() {
         newReportCreated = true;
     }
 
+    const expensePayload = {
+      employeeId: selectedEmployee,
+      date: date.toISOString(),
+      amount: parsedAmount,
+      notes: description,
+      expenseType: expenseType,
+      expenseSubType: expenseType === 'Taxi Expenses' ? expenseSubType : '',
+    };
+
     if (editingExpense) {
       const updatedExpense: Expense = {
         ...editingExpense,
-        employeeId: selectedEmployee,
-        date: date.toISOString(),
-        amount: parsedAmount,
-        notes: description,
-        expenseType: expenseType,
+        ...expensePayload
       };
       setExpenses(expenses.map(e => e.id === editingExpense.id ? updatedExpense : e));
       toast({ title: "Expense Updated", description: "The expense record has been successfully updated."});
@@ -137,19 +152,14 @@ export default function AddExpensePage() {
     } else {
       const newExpense: Expense = {
         id: crypto.randomUUID(),
-        employeeId: selectedEmployee,
-        amount: parsedAmount,
-        date: date.toISOString(),
-        notes: description,
-        expenseReportId: report.id,
-        expenseType: expenseType
+        ...expensePayload,
+        expenseReportId: report.id
       };
       setExpenses([...expenses, newExpense]);
       toast({ title: "Expense Added", description: `An expense of ${formatCurrency(newExpense.amount)} has been added.`});
     }
 
     // This logic is complex because it has to recalculate totals after an update/add.
-    // We defer this to a useEffect that watches the `expenses` array.
     // This is a placeholder for that logic, which should ideally be a more robust state management pattern.
     const allReports = newReportCreated ? [...expenseReports, report] : [...expenseReports];
     const finalReports = allReports.map(rep => {
@@ -158,17 +168,13 @@ export default function AddExpensePage() {
             .filter(ex => !(editingExpense && ex.id === editingExpense.id)); // exclude old version if editing
 
         if(editingExpense && rep.id === report?.id) {
-            relevantExpenses.push({ ...editingExpense, employeeId: selectedEmployee, amount: parsedAmount, notes: description, expenseType });
+            relevantExpenses.push({ ...editingExpense, ...expensePayload });
         }
         if(!editingExpense && rep.id === report?.id) {
              relevantExpenses.push({
                 id: crypto.randomUUID(), // temp id
-                employeeId: selectedEmployee,
-                amount: parsedAmount || 0,
-                date: date.toISOString(),
-                notes: description,
+                ...expensePayload,
                 expenseReportId: report.id,
-                expenseType: expenseType
             });
         }
         
@@ -178,7 +184,6 @@ export default function AddExpensePage() {
 
     setExpenseReports(finalReports.filter(r => r.totalAmount > 0));
 
-
     resetForm();
     setIsSaving(false);
   }
@@ -187,6 +192,7 @@ export default function AddExpensePage() {
     setEditingExpense(expense);
     setSelectedEmployee(expense.employeeId);
     setExpenseType(expense.expenseType || '');
+    setExpenseSubType(expense.expenseSubType || '');
     setAmount(String(expense.amount));
     setDescription(expense.notes || '');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -282,7 +288,6 @@ export default function AddExpensePage() {
     }, 1000);
   }
 
-
   if (isLoading) {
     return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
@@ -340,13 +345,24 @@ export default function AddExpensePage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="expense-type">{t('expense_type')}</Label>
-                <Select value={expenseType} onValueChange={setExpenseType} disabled={isSaving}>
+                <Select value={expenseType} onValueChange={(v) => { setExpenseType(v); setExpenseSubType(''); }} disabled={isSaving}>
                     <SelectTrigger><SelectValue placeholder={t('select_expense_type')} /></SelectTrigger>
                     <SelectContent>
-                        {expenseTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
+                        {mainExpenseTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
                     </SelectContent>
                 </Select>
               </div>
+              {expenseType === 'Taxi Expenses' && (
+                <div className="space-y-2">
+                    <Label htmlFor="expense-sub-type">Taxi Sub-Type</Label>
+                    <Select value={expenseSubType} onValueChange={setExpenseSubType} disabled={isSaving}>
+                        <SelectTrigger id="expense-sub-type"><SelectValue placeholder="Select taxi sub-type" /></SelectTrigger>
+                        <SelectContent>
+                            {taxiSubTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="amount">{t('amount_iqd')}</Label>
                 <Input id="amount" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="e.g., 25000" disabled={isSaving}/>
@@ -381,7 +397,8 @@ export default function AddExpensePage() {
                           {expenses.map(exp => (
                             <div key={exp.id} className="p-4 flex justify-between items-start">
                               <div>
-                                <p className="font-medium">{exp.expenseType || 'General'}</p>
+                                <p className="font-medium">{exp.expenseType}</p>
+                                {exp.expenseSubType && <p className="text-xs text-muted-foreground">{exp.expenseSubType}</p>}
                                 <p className="text-sm text-muted-foreground">{exp.notes || t('na')}</p>
                               </div>
                               <div className="text-right">
