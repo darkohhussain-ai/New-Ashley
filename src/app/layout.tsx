@@ -13,7 +13,7 @@ import { SplashScreen } from '@/components/shared/splash-screen';
 import { AppHeader } from '@/components/shared/app-header';
 import { Noto_Naskh_Arabic } from 'next/font/google';
 import { usePathname } from 'next/navigation';
-import { FirebaseClientProvider } from '@/firebase'; // Import the new provider
+import { FirebaseClientProvider } from '@/firebase';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
