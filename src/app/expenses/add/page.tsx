@@ -23,7 +23,6 @@ import { useTranslation } from '@/hooks/use-translation';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import useLocalStorage from '@/hooks/use-local-storage';
 import { DailyExpenseReportPdf } from '@/components/expenses/daily-expense-report-pdf';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'IQD', maximumFractionDigits: 0 }).format(amount);

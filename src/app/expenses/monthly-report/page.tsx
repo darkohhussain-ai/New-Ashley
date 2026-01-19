@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -172,40 +173,49 @@ export default function MonthlyExpenseReportPage() {
              />
              <div className="p-8">
                 {monthlyData.summary.map(item => (
-                  <div key={item.employeeId} className="mb-4">
-                    <div className="flex justify-between w-full pr-4 p-2 rounded-t-lg bg-gray-100 border">
-                        <span className="font-bold" dir={language === 'ku' ? 'rtl' : 'ltr'}>{item.employeeName}</span>
-                        <span className="font-bold">{isReadOnly ? '***' : formatCurrency(item.totalAmount)}</span>
-                    </div>
-                    <div className="p-2 border border-t-0 rounded-b-lg">
-                        <Table>
-                            <TableBody>
-                                {item.taxiTotal > 0 && (
+                  <div key={item.employeeId} className="mb-6">
+                    <h3 className="font-bold text-lg mb-2" dir={language === 'ku' ? 'rtl' : 'ltr'}>
+                        {item.employeeName}
+                    </h3>
+                    <Table>
+                        <TableHeader>
+                            <TableRow style={{ backgroundColor: pdfSettings.report.reportColors?.expense || '#3b82f6', color: 'white' }}>
+                                <TableHead className="text-white">Expense Type</TableHead>
+                                <TableHead className="text-right text-white">Amount</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {item.taxiTotal > 0 && (
                                 <>
                                     <TableRow>
-                                    <TableCell className="font-medium pl-4">{t('taxi_expenses')}</TableCell>
-                                    <TableCell className="text-right">{isReadOnly ? '***' : formatCurrency(item.taxiTotal)}</TableCell>
+                                        <TableCell className="font-medium">{t('taxi_expenses')}</TableCell>
+                                        <TableCell className="text-right">{isReadOnly ? '***' : formatCurrency(item.taxiTotal)}</TableCell>
                                     </TableRow>
                                     {Object.entries(item.taxiBreakdown).map(([subType, amount]) => (
-                                    <TableRow key={subType} className="text-sm">
-                                        <TableCell className="text-muted-foreground pl-8">- {t(subType.toLowerCase().replace(/\s/g, '_'))}</TableCell>
-                                        <TableCell className="text-right text-muted-foreground">{isReadOnly ? '***' : formatCurrency(amount)}</TableCell>
-                                    </TableRow>
+                                        <TableRow key={subType} className="text-sm">
+                                            <TableCell className="pl-8 text-gray-600">- {t(subType.toLowerCase().replace(/\s/g, '_'))}</TableCell>
+                                            <TableCell className="text-right text-gray-600">{isReadOnly ? '***' : formatCurrency(amount)}</TableCell>
+                                        </TableRow>
                                     ))}
                                 </>
-                                )}
-                                {item.purchasesTotal > 0 && (
+                            )}
+                            {item.purchasesTotal > 0 && (
                                 <TableRow>
-                                    <TableCell className="font-medium pl-4">{t('purchases_buying_items')}</TableCell>
+                                    <TableCell className="font-medium">{t('purchases_buying_items')}</TableCell>
                                     <TableCell className="text-right">{isReadOnly ? '***' : formatCurrency(item.purchasesTotal)}</TableCell>
                                 </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
-                  </div>
+                            )}
+                        </TableBody>
+                        <TableFooter>
+                            <TableRow>
+                                <TableCell className="text-right font-bold">{t('total')}</TableCell>
+                                <TableCell className="text-right font-bold">{isReadOnly ? '***' : formatCurrency(item.totalAmount)}</TableCell>
+                            </TableRow>
+                        </TableFooter>
+                    </Table>
+                </div>
                 ))}
-                <div className="flex justify-end font-bold text-xl mt-4 pr-4">
+                <div className="flex justify-end font-bold text-xl mt-4 pt-4 border-t">
                     <span>{t('grand_total')}:</span>
                     <span className="ml-2" style={{color: pdfSettings.report.reportColors?.expense}}>{isReadOnly ? '***' : formatCurrency(monthlyData.grandTotal)}</span>
                 </div>

@@ -1,4 +1,3 @@
-
 'use client';
 import { Employee, Expense, AllPdfSettings } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
@@ -72,5 +71,3 @@ export function DailyExpenseReportPdf({ date, expensesByEmployee, grandTotal, se
         </div>
     );
 }
-
-    
