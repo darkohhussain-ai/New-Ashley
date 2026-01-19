@@ -58,21 +58,26 @@ export default function CreateTransferPage() {
 
   const filteredItems = useMemo(() => {
     if (!stagedItems) return [];
-    if (!destinationCity) return stagedItems;
+    if (!destinationCity) return []; // Return empty array if no destination is selected
     return stagedItems.filter(item => item.destination === destinationCity);
   }, [stagedItems, destinationCity]);
+  
+  const selectedInFilterCount = useMemo(() => {
+    return filteredItems.filter(item => selectedItems[item.id]).length;
+  }, [filteredItems, selectedItems]);
+  
+  const isAllSelected = filteredItems.length > 0 && selectedInFilterCount === filteredItems.length;
+  const isIndeterminate = selectedInFilterCount > 0 && !isAllSelected;
 
   const handleSelectAll = (checked: boolean) => {
-    const newSelectedItems: Record<string, boolean> = {};
-    if(checked) {
+    setSelectedItems(prev => {
+      const newSelected = { ...prev };
       filteredItems.forEach(item => {
-        newSelectedItems[item.id] = true;
+        newSelected[item.id] = checked;
       });
-    }
-    setSelectedItems(newSelectedItems);
+      return newSelected;
+    });
   };
-  
-  const isAllSelected = filteredItems.length > 0 && Object.keys(selectedItems).filter(id => selectedItems[id]).length === filteredItems.length;
 
   const handleCreateTransfer = async () => {
     const selectedItemIds = Object.keys(selectedItems).filter(id => selectedItems[id]);
@@ -269,10 +274,10 @@ export default function CreateTransferPage() {
                                 <TableRow>
                                     <TableHead className="w-[50px]">
                                         <Checkbox 
-                                          checked={isAllSelected}
-                                          onCheckedChange={(checked) => handleSelectAll(Boolean(checked))}
+                                          checked={isIndeterminate ? 'indeterminate' : isAllSelected}
+                                          onCheckedChange={(checked) => handleSelectAll(checked === true)}
                                           aria-label="Select all"
-                                          disabled={!destinationCity}
+                                          disabled={!destinationCity || filteredItems.length === 0}
                                         />
                                     </TableHead>
                                     <TableHead>{t('model')}</TableHead>
