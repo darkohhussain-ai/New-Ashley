@@ -96,23 +96,6 @@ function useFirestoreCollection<T extends {id: string}>(collectionName: string) 
       dataRef.current = data;
     }, [data]);
 
-    useEffect(() => {
-        if (db && !isLoading && !data && !hasAttemptedInitialLoad.current) {
-            hasAttemptedInitialLoad.current = true;
-            const collectionData = initialData[collectionName as keyof typeof initialData];
-            if (Array.isArray(collectionData)) {
-                console.log(`Populating initial data for ${collectionName}...`);
-                const collectionRef = collection(db, collectionName);
-                collectionData.forEach(item => {
-                    if (item.id) {
-                        const docRef = doc(collectionRef, item.id);
-                        setDoc(docRef, item, { merge: true });
-                    }
-                });
-            }
-        }
-    }, [db, isLoading, data, collectionName]);
-
     const setter = useCallback((newDataOrFn: T[] | ((current: T[]) => T[])) => {
         if (!collectionRef) return;
 
@@ -148,44 +131,48 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const { isUserLoading } = useUser();
     const db = useFirestore();
 
-    // One-time effect to populate initial data if needed.
+    // Effect to merge initial data on startup.
     useEffect(() => {
         if (!db) return;
 
-        const populateInitialData = async () => {
-            const settingsRef = doc(db, 'settings', 'main');
-            const settingsSnap = await getDoc(settingsRef);
-
-            if (settingsSnap.exists()) {
-                // Settings doc exists, so we assume data is populated.
-                return;
-            }
-
-            console.log("First time setup: Populating initial data into Firestore...");
+        const mergeInitialData = async () => {
+            console.log("Checking and merging initial data...");
 
             try {
+                // For each collection in our initial data...
                 for (const [collectionName, dataArray] of Object.entries(initialData)) {
                     if (Array.isArray(dataArray)) {
                         const collectionRef = collection(db, collectionName);
+                        // For each item in the initial data array...
                         for (const item of dataArray) {
                             if (item.id) {
                                 const docRef = doc(collectionRef, item.id);
-                                await setDoc(docRef, item, { merge: true });
+                                const docSnap = await getDoc(docRef);
+                                // If the document does not already exist in Firestore, add it.
+                                if (!docSnap.exists()) {
+                                    await setDoc(docRef, item);
+                                    console.log(`Added initial document ${item.id} to ${collectionName}`);
+                                }
                             }
                         }
                     }
                 }
                 
-                // Now set the initial settings since we know the doc doesn't exist
-                await setDoc(settingsRef, initialSettings, { merge: true });
+                // Ensure initial settings exist
+                const settingsRef = doc(db, 'settings', 'main');
+                const settingsSnap = await getDoc(settingsRef);
+                if (!settingsSnap.exists()) {
+                    await setDoc(settingsRef, initialSettings);
+                    console.log("Initialized main settings document.");
+                }
 
-                console.log("Initial data population complete.");
+                console.log("Initial data merge check complete.");
             } catch (error) {
-                console.error("Error populating initial data:", error);
+                console.error("Error merging initial data:", error);
             }
         };
 
-        populateInitialData();
+        mergeInitialData();
     }, [db]);
 
 
