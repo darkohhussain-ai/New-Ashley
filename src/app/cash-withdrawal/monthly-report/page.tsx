@@ -15,7 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Bar, BarChart as RechartsBarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { useTranslation } from '@/hooks/use-translation';
 import { useAuth } from '@/hooks/use-auth';
-import { ReportPdfHeader } from '@/components/reports/report-pdf-header';
+import { ReportWrapper } from '@/components/reports/ReportWrapper';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import type { AllPdfSettings } from '@/lib/types';
@@ -126,18 +126,17 @@ export default function MonthlyWithdrawalReportPage() {
     <>
       <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
           <div ref={reportContentRef} className="bg-white" style={{width: '700px'}}>
-             <ReportPdfHeader 
+             <ReportWrapper 
                 title={t('monthly_withdrawal_report')} 
-                subtitle={selectedDate ? format(selectedDate, 'MMMM yyyy') : ''}
+                date={selectedDate ? format(selectedDate, 'MMMM yyyy') : ''}
                 logoSrc={pdfSettings.report.logo ?? null} 
                 themeColor={pdfSettings.report.reportColors?.withdrawal}
-             />
-             <div className="p-8">
+             >
                  <Table>
                     <TableHeader>
-                        <TableRow style={{ backgroundColor: pdfSettings.report.reportColors?.withdrawal, color: 'white' }}>
-                            <TableHead className="text-white">{t('employee')}</TableHead>
-                            <TableHead className="text-right text-white">{t('total_withdrawn')}</TableHead>
+                        <TableRow>
+                            <TableHead>{t('employee')}</TableHead>
+                            <TableHead className="text-right">{t('total_withdrawn')}</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -155,12 +154,7 @@ export default function MonthlyWithdrawalReportPage() {
                         </TableRow>
                     </TableFooter>
                 </Table>
-                 <div className="pt-24 text-right">
-                    <div className="inline-block text-center mt-8">
-                        <p className="border-t pt-2 w-48">{t('warehouse_manager_signature')}</p>
-                    </div>
-                </div>
-             </div>
+             </ReportWrapper>
           </div>
       </div>
       <div className="h-[calc(100vh-80px)] flex flex-col">

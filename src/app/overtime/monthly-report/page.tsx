@@ -14,7 +14,7 @@ import { useAppContext } from '@/context/app-provider';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslation } from '@/hooks/use-translation';
 import jsPDF from 'jspdf';
-import { ReportPdfHeader } from '@/components/reports/report-pdf-header';
+import { ReportWrapper } from '@/components/reports/ReportWrapper';
 import html2canvas from 'html2canvas';
 import { Bar, BarChart as RechartsBarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 
@@ -125,13 +125,12 @@ export default function MonthlyOvertimeReportPage() {
       <div className="h-[calc(100vh-80px)] flex flex-col">
         <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
           <div ref={reportContentRef} className="bg-white" style={{width: '700px'}}>
-             <ReportPdfHeader 
+             <ReportWrapper 
                 title="Monthly Overtime Report" 
-                subtitle={selectedDate ? format(selectedDate, 'MMMM yyyy') : ''}
+                date={selectedDate ? format(selectedDate, 'MMMM yyyy') : ''}
                 logoSrc={pdfSettings.report.logo ?? null} 
                 themeColor={pdfSettings.report.reportColors?.overtime}
-             />
-             <div className="p-8">
+             >
                  <Table>
                     <TableHeader>
                         <TableRow>
@@ -157,14 +156,7 @@ export default function MonthlyOvertimeReportPage() {
                         </TableRow>
                     </TableFooter>
                 </Table>
-                 <div className="pt-24">
-                    <div className="flex justify-end">
-                        <div className="w-64 text-center">
-                            <p className="border-t pt-2">{t('warehouse_manager_signature')}</p>
-                        </div>
-                    </div>
-                </div>
-             </div>
+             </ReportWrapper>
           </div>
         </div>
         <div className="p-4 md:p-8 print:p-0 flex-1 overflow-y-auto">
