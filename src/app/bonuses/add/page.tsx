@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -271,8 +270,7 @@ export default function AddBonusPage() {
                 <Card>
                 <CardHeader>
                     <div className="text-center">
-                        <CardTitle className='text-2xl'>{t('bonus_records_for_date', {date: ''})}</CardTitle>
-                        <CardDescription className="text-lg">{selectedDate ? format(selectedDate, 'PPP') : '...'}</CardDescription>
+                        <CardTitle className='text-2xl'>{t('bonus_records_for_date', {date: selectedDate ? format(selectedDate, 'PPP') : '...'})}</CardTitle>
                     </div>
                 </CardHeader>
                 <CardContent>

@@ -256,8 +256,7 @@ export default function AddCashWithdrawalPage() {
                 <Card>
                 <CardHeader>
                     <div className='text-center'>
-                        <CardTitle className='text-2xl'>{t('withdrawals_for_date', {date: ''})}</CardTitle>
-                        <CardDescription className='text-lg'>{selectedDate ? format(selectedDate, 'PPP') : '...'}</CardDescription>
+                        <CardTitle className='text-2xl'>{t('withdrawals_for_date', {date: selectedDate ? format(selectedDate, 'PPP') : '...'})}</CardTitle>
                     </div>
                 </CardHeader>
                 <CardContent>
