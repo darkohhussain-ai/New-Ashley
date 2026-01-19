@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, ReactNode, useMemo, useEffect, useState, useCallback, useRef } from 'react';
@@ -21,6 +22,7 @@ import {
     Bonus,
     CashWithdrawal,
     SoldItemReceipt,
+    ItemCategory,
     Transfer,
     ItemForTransfer,
     MarketingFeedback,
@@ -55,6 +57,8 @@ interface AppState {
     setWithdrawals: React.Dispatch<React.SetStateAction<CashWithdrawal[]>>;
     receipts: SoldItemReceipt[];
     setReceipts: React.Dispatch<React.SetStateAction<SoldItemReceipt[]>>;
+    itemCategories: ItemCategory[];
+    setItemCategories: React.Dispatch<React.SetStateAction<ItemCategory[]>>;
     transfers: Transfer[];
     setTransfers: React.Dispatch<React.SetStateAction<Transfer[]>>;
     transferItems: ItemForTransfer[];
@@ -196,6 +200,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const [bonuses, setBonuses, isBonusesLoading] = useFirestoreCollection<Bonus>('bonuses');
     const [withdrawals, setWithdrawals, isWithdrawalsLoading] = useFirestoreCollection<CashWithdrawal>('withdrawals');
     const [receipts, setReceipts, isReceiptsLoading] = useFirestoreCollection<SoldItemReceipt>('receipts');
+    const [itemCategories, setItemCategories, isItemCategoriesLoading] = useFirestoreCollection<ItemCategory>('itemCategories');
     const [transfers, setTransfers, isTransfersLoading] = useFirestoreCollection<Transfer>('transfers');
     const [transferItems, setTransferItems, isTransferItemsLoading] = useFirestoreCollection<ItemForTransfer>('transferItems');
     const [marketingFeedbacks, setMarketingFeedbacks, isMarketingFeedbacksLoading] = useFirestoreCollection<MarketingFeedback>('marketingFeedbacks');
@@ -233,7 +238,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
     }, [settingsDocRef, settings]);
     
-    const isLoading = isUserLoading || isSettingsLoading || isEmployeesLoading || isExcelFilesLoading || isItemsLoading || isLocationsLoading || isExpensesLoading || isExpenseReportsLoading || isOvertimeLoading || isBonusesLoading || isWithdrawalsLoading || isReceiptsLoading || isTransfersLoading || isTransferItemsLoading || isMarketingFeedbacksLoading || isEvaluationQuestionsLoading || isUsersLoading || isRolesLoading;
+    const isLoading = isUserLoading || isSettingsLoading || isEmployeesLoading || isExcelFilesLoading || isItemsLoading || isLocationsLoading || isExpensesLoading || isExpenseReportsLoading || isOvertimeLoading || isBonusesLoading || isWithdrawalsLoading || isReceiptsLoading || isItemCategoriesLoading || isTransfersLoading || isTransferItemsLoading || isMarketingFeedbacksLoading || isEvaluationQuestionsLoading || isUsersLoading || isRolesLoading;
 
     const value = useMemo<AppState>(() => ({
         employees, setEmployees,
@@ -246,6 +251,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         bonuses, setBonuses,
         withdrawals, setWithdrawals,
         receipts, setReceipts,
+        itemCategories, setItemCategories,
         transfers, setTransfers,
         transferItems, setTransferItems,
         marketingFeedbacks, setMarketingFeedbacks,
@@ -266,6 +272,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         bonuses, setBonuses,
         withdrawals, setWithdrawals,
         receipts, setReceipts,
+        itemCategories, setItemCategories,
         transfers, setTransfers,
         transferItems, setTransferItems,
         marketingFeedbacks, setMarketingFeedbacks,

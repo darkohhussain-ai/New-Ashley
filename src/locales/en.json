@@ -1,5 +1,4 @@
 
-
 {
   "welcome_back": "Welcome Back!",
   "select_service": "Select a service to continue.",
@@ -26,7 +25,7 @@
   "cancel": "Cancel",
   "are_you_sure": "Are you sure?",
   "cannot_be_undone": "This action cannot be undone.",
-  "confirm_delete_file": "This will permanently delete the file \\\"{fileName}\\\". This action cannot be undone.",
+  "confirm_delete_file": "This will permanently delete the file \"{fileName}\". This action cannot be undone.",
   "enter_file_name": "Enter File Name",
   "invalid_date": "Invalid Date",
   "location_filters": "Location Filters",
@@ -194,10 +193,10 @@
   "invalid_items": "Invalid Items",
   "invalid_items_desc": "All expense items must have an employee selected and an amount greater than zero.",
   "report_saved": "Report Saved",
-  "report_saved_desc": "Expense report \\\"{reportName}\\\" has been successfully saved.",
+  "report_saved_desc": "Expense report \"{reportName}\" has been successfully saved.",
   "expense_report_details": "Expense Report Details",
   "delete_report": "Delete Report",
-  "confirm_delete_expense_report": "This action will permanently delete the report \\\"{reportName}\\\" and all its associated expenses. This action cannot be undone.",
+  "confirm_delete_expense_report": "This action will permanently delete the report \"{reportName}\" and all its associated expenses. This action cannot be undone.",
   "report_deleted": "Report Deleted",
   "report_deleted_desc": "The expense report and all its items have been deleted.",
   "report_not_found": "Report Not Found",
@@ -230,7 +229,7 @@
   "invalid_file_type": "Invalid File Type",
   "invalid_file_type_desc": "Please upload an XLSX or XLS file.",
   "no_data_found": "No Data Found",
-  "no_data_found_desc": "The Excel file seems to be empty or not formatted correctly. Ensure it has \\\"Model\\\" and \\\"Quantity\\\" columns with data.",
+  "no_data_found_desc": "The Excel file seems to be empty or not formatted correctly. Ensure it has \"Model\" and \"Quantity\" columns with data.",
   "import_success": "Success!",
   "import_success_desc": "File imported. You can now edit the item details.",
   "import_error": "Error",
@@ -263,7 +262,7 @@
   "search_item_by_model_desc": "Find item locations across all Excel files.",
   "search": "Search",
   "no_results": "No results",
-  "no_results_desc": "No items found with model containing \\\"{query}\\\".",
+  "no_results_desc": "No items found with model containing \"{query}\".",
   "file_name": "File Name",
   "file_date": "File Date",
   "view_on_map": "View on Map",
@@ -577,5 +576,11 @@
   "taxi_return_from_driver": "Taxi return from driver",
   "taxi_to_technician_for_fixing_defective_items": "Taxi to technician for fixing defective items",
   "taxi_for_transporting_furniture_parts": "Taxi for transporting furniture parts",
-  "select_taxi_sub_type": "Select taxi sub-type"
+  "select_taxi_sub_type": "Select taxi sub-type",
+  "manage_categories": "Manage Categories",
+  "new_category_name": "New category name",
+  "add": "Add",
+  "no_categories_yet": "No categories created yet.",
+  "select_categories": "Select categories...",
+  "available_categories": "Available Categories"
 }

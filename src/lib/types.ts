@@ -121,6 +121,11 @@ export type SoldItemReceipt = {
     itemCategories: string[];
 }
 
+export type ItemCategory = {
+    id: string;
+    name: string;
+};
+
 export type Transfer = {
   id: string;
   transferDate: string;

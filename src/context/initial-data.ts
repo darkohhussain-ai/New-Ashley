@@ -1,5 +1,5 @@
 
-import { Employee, ExcelFile, Item, StorageLocation, Expense, ExpenseReport, Overtime, Bonus, CashWithdrawal, SoldItemReceipt, Transfer, ItemForTransfer, MarketingFeedback, EvaluationQuestion, AnswerOption, User, Role, AppSettings, AllPdfSettings, PdfSettings, ThemeColors } from '@/lib/types';
+import { Employee, ExcelFile, Item, StorageLocation, Expense, ExpenseReport, Overtime, Bonus, CashWithdrawal, SoldItemReceipt, Transfer, ItemForTransfer, MarketingFeedback, EvaluationQuestion, AnswerOption, User, Role, AppSettings, AllPdfSettings, PdfSettings, ThemeColors, ItemCategory } from '@/lib/types';
 import { adminPermissions, adminAssistantPermissions, viewerPermissions, employeePermissions } from '@/lib/permissions';
 import en from '@/locales/en.json';
 import ku from '@/locales/ku.json';
@@ -110,6 +110,7 @@ export const initialData: {
     bonuses: Bonus[],
     withdrawals: CashWithdrawal[],
     receipts: SoldItemReceipt[],
+    itemCategories: ItemCategory[],
     transfers: Transfer[],
     transferItems: ItemForTransfer[],
     marketingFeedbacks: MarketingFeedback[],
@@ -127,6 +128,12 @@ export const initialData: {
     bonuses: [],
     withdrawals: [],
     receipts: [],
+    itemCategories: [
+        { id: 'cat-1', name: 'Sofas' },
+        { id: 'cat-2', name: 'Tables' },
+        { id: 'cat-3', name: 'Chairs' },
+        { id: 'cat-4', name: 'Beds' },
+    ],
     transfers: [],
     transferItems: [],
     marketingFeedbacks: [],
