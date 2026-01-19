@@ -18,11 +18,12 @@ import { Bar, BarChart as RechartsBarChart, ResponsiveContainer, XAxis, YAxis, T
 import { useTranslation } from '@/hooks/use-translation';
 import { useAuth } from '@/hooks/use-auth';
 import useLocalStorage from '@/hooks/use-local-storage';
-import { ReportPdfHeader } from '@/components/reports/report-pdf-header';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import type { AllPdfSettings } from '@/lib/types';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { ReportWrapper } from '@/components/reports/ReportWrapper';
+import Image from 'next/image';
 
 
 const formatCurrency = (amount: number) => {
@@ -164,67 +165,42 @@ export default function MonthlyExpenseReportPage() {
   return (
     <>
       <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-          <div ref={reportContentRef} className="bg-white text-black" style={{width: '800px'}}>
-             <ReportPdfHeader 
-                title={t('monthly_expense_report')} 
-                subtitle={selectedDate ? format(selectedDate, 'MMMM yyyy') : ''}
-                logoSrc={pdfSettings.report.logo ?? null} 
-                themeColor={pdfSettings.report.reportColors?.expense}
-             />
-             <div className="p-8">
-                {monthlyData.summary.map(item => (
-                  <div key={item.employeeId} className="mb-6">
-                    <h3 className="font-bold text-lg mb-2" dir={language === 'ku' ? 'rtl' : 'ltr'}>
-                        {item.employeeName}
-                    </h3>
+          <div ref={reportContentRef} style={{width: '800px'}}>
+              {selectedDate && (
+                <ReportWrapper
+                    title={t('monthly_expense_report')}
+                    date={format(selectedDate, 'MMMM yyyy')}
+                    logoSrc={pdfSettings.report.logo}
+                    themeColor={pdfSettings.report.reportColors?.expense || '#3b82f6'}
+                >
                     <Table>
                         <TableHeader>
-                            <TableRow style={{ backgroundColor: pdfSettings.report.reportColors?.expense || '#3b82f6', color: 'white' }}>
-                                <TableHead className="text-white">Expense Type</TableHead>
-                                <TableHead className="text-right text-white">Amount</TableHead>
+                            <TableRow>
+                                <TableHead>{t('employee')}</TableHead>
+                                <TableHead className="text-right">{t('taxi_expenses')}</TableHead>
+                                <TableHead className="text-right">{t('purchases_buying_items')}</TableHead>
+                                <TableHead className="text-right font-bold">{t('total_amount')}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {item.taxiTotal > 0 && (
-                                <>
-                                    <TableRow>
-                                        <TableCell className="font-medium">{t('taxi_expenses')}</TableCell>
-                                        <TableCell className="text-right">{isReadOnly ? '***' : formatCurrency(item.taxiTotal)}</TableCell>
-                                    </TableRow>
-                                    {Object.entries(item.taxiBreakdown).map(([subType, amount]) => (
-                                        <TableRow key={subType} className="text-sm">
-                                            <TableCell className="pl-8 text-gray-600">- {t(subType.toLowerCase().replace(/\s/g, '_'))}</TableCell>
-                                            <TableCell className="text-right text-gray-600">{isReadOnly ? '***' : formatCurrency(amount)}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </>
-                            )}
-                            {item.purchasesTotal > 0 && (
-                                <TableRow>
-                                    <TableCell className="font-medium">{t('purchases_buying_items')}</TableCell>
-                                    <TableCell className="text-right">{isReadOnly ? '***' : formatCurrency(item.purchasesTotal)}</TableCell>
-                                </TableRow>
-                            )}
+                        {monthlyData.summary.map((item, index) => (
+                            <TableRow key={item.employeeId} className={index % 2 === 0 ? 'bg-gray-100' : ''}>
+                                <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{item.employeeName}</TableCell>
+                                <TableCell className="text-right">{isReadOnly ? '***' : formatCurrency(item.taxiTotal)}</TableCell>
+                                <TableCell className="text-right">{isReadOnly ? '***' : formatCurrency(item.purchasesTotal)}</TableCell>
+                                <TableCell className="text-right font-bold">{isReadOnly ? '***' : formatCurrency(item.totalAmount)}</TableCell>
+                            </TableRow>
+                        ))}
                         </TableBody>
                         <TableFooter>
                             <TableRow>
-                                <TableCell className="text-right font-bold">{t('total')}</TableCell>
-                                <TableCell className="text-right font-bold">{isReadOnly ? '***' : formatCurrency(item.totalAmount)}</TableCell>
+                                <TableCell colSpan={3} className="text-right font-bold">{t('grand_total')}:</TableCell>
+                                <TableCell className="text-right font-bold">{isReadOnly ? '***' : formatCurrency(monthlyData.grandTotal)}</TableCell>
                             </TableRow>
                         </TableFooter>
                     </Table>
-                </div>
-                ))}
-                <div className="flex justify-end font-bold text-xl mt-4 pt-4 border-t">
-                    <span>{t('grand_total')}:</span>
-                    <span className="ml-2" style={{color: pdfSettings.report.reportColors?.expense}}>{isReadOnly ? '***' : formatCurrency(monthlyData.grandTotal)}</span>
-                </div>
-                 <div className="pt-24 text-right">
-                    <div className="inline-block text-center mt-8">
-                        <p className="border-t pt-2 w-48">{t('warehouse_manager_signature')}</p>
-                    </div>
-                </div>
-             </div>
+                </ReportWrapper>
+              )}
           </div>
       </div>
       <div className="min-h-screen bg-background text-foreground p-4 md:p-8 print:p-0">
