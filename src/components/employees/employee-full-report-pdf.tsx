@@ -1,10 +1,12 @@
 
+
 'use client';
 import { EmployeeReportPdfHeader } from './employee-report-pdf-header';
 import { Employee, Expense, Overtime, Bonus, CashWithdrawal, PdfSettings } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { format, parseISO } from 'date-fns';
 import { useTranslation } from '@/hooks/use-translation';
+import { ReportWrapper } from '@/components/reports/ReportWrapper';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -28,7 +30,7 @@ const FinancialSection = ({ title, items, columns, bodyMapper, total, themeColor
     if (items.length === 0) return null;
     return (
         <div className="mb-6">
-            <h3 className="text-lg font-bold text-gray-800 mb-2" style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" }}>{title}</h3>
+            <h3 className="text-lg font-bold text-gray-800 mb-2">{title}</h3>
             <Table>
                 <TableHeader>
                     <TableRow style={{ backgroundColor: themeColor || '#22c55e', color: 'white' }}>
@@ -57,9 +59,13 @@ export function EmployeeFullReportPdf({ employee, settings, expenses, overtime, 
     const { t } = useTranslation();
 
     return (
-        <div className="bg-white text-black w-full p-6" style={{ fontFamily: (settings.customFont) ? 'CustomPdfFont' : "'Helvetica Neue', Helvetica, Arial, sans-serif" }}>
-            <EmployeeReportPdfHeader employee={employee} settings={settings} />
-            <div className="mt-6">
+        <ReportWrapper
+            title={t('employee_report')}
+            date={`${t('for')} ${employee.name}`}
+            logoSrc={settings.logo}
+            themeColor={settings.reportColors?.general || '#22c55e'}
+        >
+             <div className="mt-6">
                 <FinancialSection 
                     title={t('expenses')}
                     items={expenses.items}
@@ -93,8 +99,7 @@ export function EmployeeFullReportPdf({ employee, settings, expenses, overtime, 
                     themeColor={settings.reportColors?.withdrawal}
                 />
             </div>
-             {settings.footerText && <div className="mt-8 pt-4 border-t text-center text-xs text-gray-500">{settings.footerText}</div>}
-        </div>
+        </ReportWrapper>
     )
 }
     

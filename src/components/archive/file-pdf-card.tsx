@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -82,20 +83,23 @@ export function FilePdfCard({ file, employee, logoSrc, statusData, conditionData
   const formattedDate = isMounted && file.date ? format(parseISO(file.date), 'MMMM d, yyyy') : 'N/A';
 
   return (
-    <div className="bg-white text-black w-full p-4 font-sans border-2 border-gray-200 rounded-xl" style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" }}>
+    <div className="bg-white text-black w-full p-4 font-sans border border-gray-400 rounded-lg">
       {/* Header */}
-      <div className="flex justify-between items-start pb-4 border-b-2 border-gray-200">
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold text-gray-800">{file.storageName}</h1>
-          <p className="text-lg font-semibold text-green-600">{file.categoryName}</p>
-        </div>
-        <div className="w-[80px] h-[80px] flex items-center justify-center">
-            {logoSrc && <Image src={logoSrc} alt="Company Logo" width={60} height={60} className="object-contain" />}
-        </div>
+      <header className="p-2 text-center text-white font-bold" style={{backgroundColor: '#22c55e'}}>
+          <h1>{file.storageName}</h1>
+      </header>
+      <div className="flex justify-between items-center my-4 px-2">
+          <div className="w-24 h-12 relative">
+            {logoSrc ? <Image src={logoSrc} alt="logo" fill objectFit="contain" /> : <p className="text-gray-400">logo</p>}
+          </div>
+          <div className="text-right text-sm">
+            <p className="font-bold">Date: {formattedDate}</p>
+             <p>Category: {file.categoryName}</p>
+          </div>
       </div>
       
       {/* Details Section */}
-      <div className="grid grid-cols-3 gap-4 py-4 text-sm">
+      <div className="grid grid-cols-2 gap-4 py-4 text-sm border-t">
         <div className="flex items-center gap-2 text-gray-700">
           <User className="w-4 h-4 text-gray-500" />
           <div>
@@ -110,18 +114,11 @@ export function FilePdfCard({ file, employee, logoSrc, statusData, conditionData
             <p className="font-semibold">{file.source}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 text-gray-700">
-          <Calendar className="w-4 h-4 text-gray-500" />
-          <div>
-            <p className="text-xs text-gray-500">Date</p>
-            <p className="font-semibold">{formattedDate}</p>
-          </div>
-        </div>
       </div>
 
       {/* Charts Section */}
       {(statusData.length > 0 || conditionData.length > 0) && (
-        <div className="grid grid-cols-2 gap-4 py-4 border-t-2 border-gray-200">
+        <div className="grid grid-cols-2 gap-4 py-4 border-t-2 border-gray-100">
             {statusData.length > 0 && <ChartWithSummary title="Inventory Status" data={statusData} config={statusChartConfig} />}
             {conditionData.length > 0 && <ChartWithSummary title="Condition Status" data={conditionData} config={conditionChartConfig} />}
         </div>
