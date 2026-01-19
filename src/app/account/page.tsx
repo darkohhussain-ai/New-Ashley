@@ -3,7 +3,7 @@
 
 import withAuth from "@/hooks/withAuth";
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { UserCircle, Edit, Save, X, KeyRound, Upload, Mail, Phone, Building, DollarSign, Clock, Gift, Banknote, Calendar as CalendarIcon, FileDown, Printer } from 'lucide-react';
+import { UserCircle, Edit, Save, X, KeyRound, Upload, Mail, Phone, Building, DollarSign, Clock, Gift, Banknote, Calendar as CalendarIcon, FileDown, Printer, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -86,7 +86,12 @@ function AccountPage() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [employeeDetails, setEmployeeDetails] = useState<Employee | null>(null);
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  
+  useEffect(() => {
+    setSelectedDate(new Date());
+  }, []);
+
 
   const fullReportPdfRef = useRef<HTMLDivElement>(null);
   const logoSrc = settings.appLogo;
@@ -123,7 +128,7 @@ function AccountPage() {
   }, [employeeDetails]);
   
   const monthlyFinancials = useMemo(() => {
-    if (!employeeDetails) return null;
+    if (!employeeDetails || !selectedDate) return null;
 
     const empId = employeeDetails.id;
     const selectedMonthStart = startOfMonth(selectedDate);
@@ -270,10 +275,10 @@ function AccountPage() {
     doc.save(`${employeeDetails.name}_report_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
   };
 
-  if (!employeeDetails || !monthlyFinancials) {
+  if (!employeeDetails || !monthlyFinancials || !selectedDate) {
     return (
       <div className="flex items-center justify-center h-full">
-        <p>Loading account details...</p>
+        <Loader2 className="h-8 w-8 animate-spin"/>
       </div>
     );
   }
@@ -282,7 +287,7 @@ function AccountPage() {
     <>
     <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
       <div ref={fullReportPdfRef} style={{ width: '700px' }}>
-          {employeeDetails && monthlyFinancials && (
+          {employeeDetails && monthlyFinancials && selectedDate && (
               <AccountReportPdf
                   employee={employeeDetails}
                   logoSrc={logoSrc}

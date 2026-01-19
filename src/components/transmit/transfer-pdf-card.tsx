@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { Calendar, Truck, Package } from "lucide-react";
@@ -22,20 +21,28 @@ export function TransferPdfCard({ transfer, logoSrc, totalItems }: TransferPdfCa
 
   return (
     <div className="bg-white text-black w-full p-4 font-sans border border-gray-400 rounded-lg">
-      <header className="p-2 text-center text-white font-bold" style={{backgroundColor: '#3b82f6'}}>
-          <h1>{t('cargo_transfer_slip')}</h1>
-      </header>
-       <div className="flex justify-between items-center my-4 px-2">
-          <div className="w-24 h-12 relative">
-            {logoSrc ? <Image src={logoSrc} alt="logo" fill objectFit="contain" /> : <p className="text-gray-400">logo</p>}
+       <header
+          className="p-4 flex justify-between items-center"
+          style={{ backgroundColor: '#3b82f6' }}
+        >
+          <div className="w-20 h-20 relative">
+            {logoSrc ? (
+              <Image src={logoSrc} alt="logo" fill className="object-contain" />
+            ) : (
+              <div className="w-20 h-20 bg-white/20 rounded-md flex items-center justify-center text-white/50">
+                <span>{t('logo')}</span>
+              </div>
+            )}
           </div>
-          <div className="text-right text-sm">
-            <p className="font-bold">{t('date')}: {formattedDate}</p>
+          <div className="text-center text-white">
+            <h1 className="text-xl font-bold">{t('cargo_transfer_slip')}</h1>
+            <p className="text-sm">{formattedDate}</p>
           </div>
-      </div>
+          <div className="w-20" /> {/* Spacer */}
+        </header>
       
       {/* Details Section */}
-       <div className="py-4 border-t">
+       <div className="py-4">
             <h2 className="font-bold text-lg mb-2">{transfer.cargoName}</h2>
             <div className="grid grid-cols-2 gap-4 text-sm">
                 <p className="flex gap-2 items-center"><Truck className="w-4 h-4 text-primary"/> <strong>{t('destination')}:</strong> {transfer.destinationCity}</p>

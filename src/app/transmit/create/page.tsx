@@ -99,8 +99,8 @@ export default function CreateTransferPage() {
         
         const itemsForThisTransfer = stagedItems?.filter(item => selectedItemIds.includes(item.id)) || [];
 
-        setTransfers([...transfers, transferData]);
-        setTransferItems(transferItems.map(item => selectedItemIds.includes(item.id) ? { ...item, transferId } : item));
+        setTransfers(prev => [...prev, transferData]);
+        setTransferItems(prevItems => prevItems.map(item => selectedItemIds.includes(item.id) ? { ...item, transferId } : item));
         
         setLastTransfer(transferData);
         setLastTransferItems(itemsForThisTransfer);
