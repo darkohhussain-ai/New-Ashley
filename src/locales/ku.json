@@ -282,7 +282,7 @@
   "driver": "شۆفێر",
   "warehouse_manager": "بەڕێوەبەری کۆگا",
   "logo": "لۆگۆ",
-  "id_no": "ژمارەی ناسنامە",
+  "id_no": "ژ. ناسنامە",
   "joined_date": "بەرواری دەستبەکاربوون",
   "dob": "بەرواری لەدایکبوون",
   "expire_date": "بەرواری بەسەرچوون",
@@ -582,5 +582,7 @@
   "add": "زیادکردن",
   "no_categories_yet": "هێشتا هیچ پۆلێک دروست نەکراوە.",
   "select_categories": "پۆلەکان هەڵبژێرە...",
-  "available_categories": "پۆلە بەردەستەکان"
+  "available_categories": "پۆلە بەردەستەکان",
+  "select_existing_report": "ڕاپۆرتێکی هەبوو هەڵبژێرە...",
+  "or_load_from_report": "یان بارکردن لە ڕاپۆرتی هەبوو"
 }

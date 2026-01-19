@@ -18,23 +18,28 @@ export function ReportWrapper({ title, date, logoSrc, themeColor, children }: Re
     <div className="bg-white text-black p-4 font-sans text-sm">
       <div className="border border-gray-400 p-2">
         <header
-          className="p-2 text-center text-white font-bold"
+          className="p-4 flex justify-between items-center"
           style={{ backgroundColor: themeColor }}
         >
-          <h1>{t(title.toLowerCase().replace(/ /g, '_')) || title}</h1>
+          <div className="w-20 h-20 relative">
+            {logoSrc ? (
+              <Image src={logoSrc} alt="logo" fill className="object-contain" />
+            ) : (
+              <div className="w-20 h-20 bg-white/20 rounded-md flex items-center justify-center text-white/50">
+                <span>{t('logo')}</span>
+              </div>
+            )}
+          </div>
+          <div className="text-center text-white">
+            <h1 className="text-xl font-bold">{t(title.toLowerCase().replace(/ /g, '_')) || title}</h1>
+            <p className="text-sm">{date}</p>
+          </div>
+          <div className="w-20" /> {/* Spacer */}
         </header>
-        <div className="flex justify-between items-center my-4 px-2">
-          <div className="w-24 h-12 relative">
-            {logoSrc ? <Image src={logoSrc} alt="logo" fill objectFit="contain" /> : <p className="text-gray-400">logo</p>}
-          </div>
-          <div className="text-right">
-            <p className="font-bold">{t('date')}: {date}</p>
-          </div>
-        </div>
 
-        <main>{children}</main>
+        <main className="py-4">{children}</main>
 
-        <footer className="mt-16">
+        <footer className="mt-8 pt-8">
           <div className="flex justify-end">
             <div className="w-48 text-center">
               <p className="font-bold">{t('warehouse_manager')}</p>

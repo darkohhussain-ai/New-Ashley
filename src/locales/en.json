@@ -521,7 +521,7 @@
   "create_all_users_desc": "This will create user accounts for all employees who do not already have one. Existing users will not be affected.",
   "create_users": "Create Users",
   "are_you_sure_remove_all_users": "Are you absolutely sure?",
-  "remove_all_users_desc": "This action will permanently delete all user accounts except for the main administrator. This cannot be undone.",
+  "remove_all_users_desc": "This action will permanently delete all user accounts except for the main administrator. This action cannot be undone.",
   "delete_all_users": "Delete All Users",
   "username": "Username",
   "edit_user": "Edit User",
@@ -582,5 +582,7 @@
   "add": "Add",
   "no_categories_yet": "No categories created yet.",
   "select_categories": "Select categories...",
-  "available_categories": "Available Categories"
+  "available_categories": "Available Categories",
+  "select_existing_report": "Select an existing report...",
+  "or_load_from_report": "Or Load from Existing Report"
 }

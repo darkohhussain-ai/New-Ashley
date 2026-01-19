@@ -256,6 +256,18 @@ export default function AddExpensePage() {
     }, 1000);
   }
 
+  const sortedExpenseReports = useMemo(() => {
+    if (!expenseReports) return [];
+    return [...expenseReports].sort((a, b) => parseISO(b.reportDate).getTime() - parseISO(a.reportDate).getTime());
+  }, [expenseReports]);
+
+  const handleReportSelect = (reportId: string) => {
+      const selectedReport = expenseReports.find(r => r.id === reportId);
+      if (selectedReport) {
+          setDate(parseISO(selectedReport.reportDate));
+      }
+  };
+
   if (isLoading) {
     return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
@@ -346,6 +358,21 @@ export default function AddExpensePage() {
                     <CardDescription>{editingExpense ? t('update_expense_details') : t('add_new_expense_for_date')}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
+                     <div className="space-y-2">
+                        <Label htmlFor="report-select">{t('or_load_from_report')}</Label>
+                        <Select onValueChange={handleReportSelect}>
+                            <SelectTrigger id="report-select">
+                                <SelectValue placeholder={t('select_existing_report')} />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {sortedExpenseReports.map(report => (
+                                    <SelectItem key={report.id} value={report.id}>
+                                        {report.reportName}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
                     <div className="space-y-2">
                         <Label htmlFor="employee">{t('employee')}</Label>
                         <Select value={selectedEmployee} onValueChange={setSelectedEmployee} disabled={isSaving}>
@@ -463,4 +490,3 @@ export default function AddExpensePage() {
     </>
   );
 }
-
