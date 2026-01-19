@@ -165,7 +165,7 @@ export default function MonthlyExpenseReportPage() {
       <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
           <div ref={reportContentRef} className="bg-white text-black" style={{width: '800px'}}>
              <ReportPdfHeader 
-                title="Monthly Expense Report" 
+                title={t('monthly_expense_report')} 
                 subtitle={selectedDate ? format(selectedDate, 'MMMM yyyy') : ''}
                 logoSrc={pdfSettings.report.logo ?? null} 
                 themeColor={pdfSettings.report.reportColors?.expense}
@@ -207,13 +207,11 @@ export default function MonthlyExpenseReportPage() {
                 ))}
                 <div className="flex justify-end font-bold text-xl mt-4 pr-4">
                     <span>{t('grand_total')}:</span>
-                    <span className="text-primary ml-2">{isReadOnly ? '***' : formatCurrency(monthlyData.grandTotal)}</span>
+                    <span className="ml-2" style={{color: pdfSettings.report.reportColors?.expense}}>{isReadOnly ? '***' : formatCurrency(monthlyData.grandTotal)}</span>
                 </div>
-                 <div className="pt-24">
-                    <div className="flex justify-end">
-                        <div className="w-64 text-center">
-                            <p className="border-t pt-2">{t('warehouse_manager_signature')}</p>
-                        </div>
+                 <div className="pt-24 text-right">
+                    <div className="inline-block text-center mt-8">
+                        <p className="border-t pt-2 w-48">{t('warehouse_manager_signature')}</p>
                     </div>
                 </div>
              </div>

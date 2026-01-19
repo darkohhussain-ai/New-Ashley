@@ -41,9 +41,8 @@ const taxiSubTypes = [
 export default function AddExpensePage() {
   const { t, language } = useTranslation();
   const { toast } = useToast();
-  const { employees, expenses, setExpenses, expenseReports, setExpenseReports } = useAppContext();
-  const [pdfSettings] = useLocalStorage<AllPdfSettings>('pdf-settings', { report: {}, invoice: {}, card: {} });
-  const [customFontBase64] = useLocalStorage<string | null>('custom-font-base64', null);
+  const { employees, expenses, setExpenses, expenseReports, setExpenseReports, settings } = useAppContext();
+  const { pdfSettings, customFont } = settings;
   const reportPdfRef = useRef<HTMLDivElement>(null);
 
 
@@ -223,9 +222,9 @@ export default function AddExpensePage() {
         scale: 2,
         useCORS: true,
          onclone: (document) => {
-            if (customFontBase64 && language === 'ku') {
+            if (customFont && language === 'ku') {
                 const style = document.createElement('style');
-                style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${customFontBase64}); } body { font-family: 'CustomPdfFont' !important; }`;
+                style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${customFont}); } body { font-family: 'CustomPdfFont' !important; }`;
                 document.head.appendChild(style);
             }
         }
@@ -310,7 +309,7 @@ export default function AddExpensePage() {
                     </Popover>
                     <Button variant="outline" onClick={handlePrint} disabled={isLoading || dailyExpenses.length === 0}><Printer className="mr-2"/>{t('print')}</Button>
                     <Button variant="outline" onClick={handleDownloadPdf} disabled={isLoading || dailyExpenses.length === 0}><FileDown className="mr-2"/>PDF</Button>
-                    <Button onClick={handleSaveAndRefresh}><RefreshCw className="mr-2 h-4 w-4" /> Save & Refresh</Button>
+                    <Button onClick={handleSaveAndRefresh}><RefreshCw className="mr-2 h-4 w-4" /> {t('save_and_refresh')}</Button>
                 </div>
             </header>
 
@@ -340,7 +339,7 @@ export default function AddExpensePage() {
                     </div>
                     {expenseType === 'Taxi Expenses' && (
                         <div className="space-y-2">
-                            <Label htmlFor="expense-sub-type">Taxi Sub-Type</Label>
+                            <Label htmlFor="expense-sub-type">{t('taxi_sub_type')}</Label>
                             <Select value={expenseSubType} onValueChange={setExpenseSubType} disabled={isSaving}>
                                 <SelectTrigger id="expense-sub-type"><SelectValue placeholder={t('select_taxi_sub_type')} /></SelectTrigger>
                                 <SelectContent>

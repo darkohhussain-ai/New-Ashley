@@ -102,9 +102,9 @@ export default function MonthlyBonusReportPage() {
       backgroundColor: 'white',
       onclone: (document) => {
         if (customFont && language === 'ku') {
-          const style = document.createElement('style');
-          style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
-          document.head.appendChild(style);
+            const style = document.createElement('style');
+            style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
+            document.head.appendChild(style);
         }
       }
     });
@@ -126,7 +126,7 @@ export default function MonthlyBonusReportPage() {
       <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
           <div ref={reportContentRef} className="bg-white" style={{width: '700px'}}>
              <ReportPdfHeader 
-                title="Monthly Bonus Report" 
+                title={t('monthly_bonus_report')} 
                 subtitle={selectedDate ? format(selectedDate, 'MMMM yyyy') : ''}
                 logoSrc={pdfSettings.report.logo ?? null} 
                 themeColor={pdfSettings.report.reportColors?.bonus}
@@ -134,10 +134,10 @@ export default function MonthlyBonusReportPage() {
              <div className="p-8">
                  <Table>
                     <TableHeader>
-                        <TableRow>
-                            <TableHead>{t('employee')}</TableHead>
-                            <TableHead className="text-right">{t('total_loads')}</TableHead>
-                            <TableHead className="text-right">{t('total_bonus')}</TableHead>
+                        <TableRow style={{ backgroundColor: pdfSettings.report.reportColors?.bonus, color: 'white' }}>
+                            <TableHead className="text-white">{t('employee')}</TableHead>
+                            <TableHead className="text-right text-white">{t('total_loads')}</TableHead>
+                            <TableHead className="text-right text-white">{t('total_bonus')}</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -157,11 +157,9 @@ export default function MonthlyBonusReportPage() {
                         </TableRow>
                     </TableFooter>
                 </Table>
-                 <div className="pt-24">
-                    <div className="flex justify-end">
-                        <div className="w-64 text-center">
-                            <p className="border-t pt-2">{t('warehouse_manager_signature')}</p>
-                        </div>
+                 <div className="pt-24 text-right">
+                    <div className="inline-block text-center mt-8">
+                        <p className="border-t pt-2 w-48">{t('warehouse_manager_signature')}</p>
                     </div>
                 </div>
              </div>

@@ -44,7 +44,7 @@ export function DailyExpenseReportPdf({ date, expensesByEmployee, grandTotal, se
                             <TableBody>
                                 {expenses.map(exp => (
                                     <TableRow key={exp.id}>
-                                        <TableCell>{exp.expenseType}{exp.expenseSubType ? ` (${exp.expenseSubType})` : ''}</TableCell>
+                                        <TableCell>{t(exp.expenseType.toLowerCase().replace(/[\s()]/g, '_'))}{exp.expenseSubType ? ` (${t(exp.expenseSubType.toLowerCase().replace(/\s/g, '_'))})` : ''}</TableCell>
                                         <TableCell>{exp.notes || t('na')}</TableCell>
                                         <TableCell className="text-right">{formatCurrency(exp.amount)}</TableCell>
                                     </TableRow>
@@ -61,7 +61,7 @@ export function DailyExpenseReportPdf({ date, expensesByEmployee, grandTotal, se
                 ))}
                  <div className="flex justify-end font-bold text-xl mt-6 pt-4 border-t">
                     <span>{t('grand_total')}:</span>
-                    <span className="ml-4 text-primary">{formatCurrency(grandTotal)}</span>
+                    <span className="ml-4" style={{color: settings.reportColors?.expense || '#3b82f6'}}>{formatCurrency(grandTotal)}</span>
                 </div>
              </div>
              <div className="pt-24 text-right">
