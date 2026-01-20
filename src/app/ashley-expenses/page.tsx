@@ -161,7 +161,7 @@ function AshleyExpensesDashboard() {
                     <div className="h-[250px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={monthlyTotals.chartData}>
-                                <XAxis dataKey="name" stroke="#888888" tick={{fontSize: 12}} tickLine={false} axisLine={false} />
+                                <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} angle={-45} textAnchor="end" interval={0} />
                                 <YAxis stroke="#888888" tick={{fontSize: 12}} tickLine={false} axisLine={false} tickFormatter={(value) => formatCurrency(value as number)} />
                                 <Tooltip formatter={(value) => formatCurrency(value as number)} cursor={{fill: 'hsl(var(--muted))'}} />
                                 <Legend />
