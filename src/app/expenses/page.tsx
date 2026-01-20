@@ -1,8 +1,7 @@
-
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, FilePlus, Archive, Calendar, BarChart2, PieChartIcon, Loader2, Calendar as CalendarIcon } from 'lucide-react';
+import { ArrowLeft, FilePlus, Archive, Calendar as CalendarIcon, BarChart2, PieChartIcon, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardTitle, CardHeader, CardDescription } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -10,7 +9,7 @@ import { useTranslation } from '@/hooks/use-translation';
 import { useAppContext } from '@/context/app-provider';
 import { useState, useMemo, useEffect } from 'react';
 import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, PieChart, Pie, Cell } from 'recharts';
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, Legend } from 'recharts';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 
@@ -49,7 +48,7 @@ export default function ExpensesDashboardPage() {
         taxiSubTypeMap[e.expenseSubType!] = (taxiSubTypeMap[e.expenseSubType!] || 0) + e.amount;
     });
     
-    const taxiSubTypeTotals = Object.entries(taxiSubTypeMap).map(([name, total]) => ({name, total})).sort((a,b) => b.total-a.total);
+    const taxiSubTypeTotals = Object.entries(taxiSubTypeMap).map(([name, total]) => ({name: t(name.toLowerCase().replace(/\s/g, '_')) || name, total})).sort((a,b) => b.total-a.total);
 
     const chartData = [
       { name: t('taxi_expenses'), total: taxiTotal, fill: 'hsl(var(--chart-1))' },
@@ -77,7 +76,7 @@ export default function ExpensesDashboardPage() {
     },
     {
       title: t('monthly_expense_report'),
-      icon: Calendar,
+      icon: CalendarIcon,
       href: "/expenses/monthly-report",
       color: "bg-orange-500",
     },
@@ -150,7 +149,7 @@ export default function ExpensesDashboardPage() {
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={monthlyTotals.taxiSubTypeTotals} layout="vertical">
                                     <XAxis type="number" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => formatCurrency(value as number)} />
-                                    <YAxis type="category" dataKey="name" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} width={150} />
+                                    <YAxis type="category" dataKey="name" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
                                     <Tooltip formatter={(value) => formatCurrency(value as number)} cursor={{fill: 'hsl(var(--muted))'}} />
                                     <Bar dataKey="total" fill="hsl(var(--chart-3))" radius={[0, 4, 4, 0]} />
                                 </BarChart>

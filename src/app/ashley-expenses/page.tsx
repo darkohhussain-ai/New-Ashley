@@ -13,7 +13,6 @@ import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'da
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { Button } from '@/components/ui/button';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {

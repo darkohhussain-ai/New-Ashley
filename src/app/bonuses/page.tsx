@@ -1,8 +1,7 @@
-
 'use client';
 
 import Link from 'next/link';
-import { Plus, Calendar, Archive, Loader2, BarChart2, Calendar as CalendarIcon } from 'lucide-react';
+import { ArrowLeft, Plus, Calendar, Archive, Loader2, BarChart2, Calendar as CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardTitle, CardHeader, CardDescription } from '@/components/ui/card';
 import { cn } from '@/lib/utils';

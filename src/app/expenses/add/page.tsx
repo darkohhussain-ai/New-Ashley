@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
@@ -93,7 +91,7 @@ export default function AddExpensePage() {
 
   const flattenedExpenses = useMemo(() => {
     return dailyExpenses.map(exp => ({...exp, employeeName: getEmployeeName(exp.employeeId, language === 'ku')}));
-  }, [dailyExpenses, employees, language]);
+  }, [dailyExpenses, employees, language, getEmployeeName]);
 
 
   const grandTotal = useMemo(() => dailyExpenses.reduce((sum, exp) => sum + exp.amount, 0), [dailyExpenses]);
