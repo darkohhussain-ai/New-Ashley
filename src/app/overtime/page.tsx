@@ -10,7 +10,7 @@ import { useTranslation } from '@/hooks/use-translation';
 import withAuth from '@/hooks/withAuth';
 
 
-export default function OvertimeDashboardPage() {
+function OvertimeDashboardPage() {
   const { t } = useTranslation();
   
   const menuItems = [
