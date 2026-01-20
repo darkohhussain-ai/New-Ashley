@@ -3,77 +3,21 @@
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ChartConfig, ChartContainer } from "@/components/ui/chart";
 import { User, Calendar, Building } from "lucide-react";
 import { format, parseISO } from 'date-fns';
 import Image from 'next/image';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import type { Employee, ExcelFile } from "@/lib/types";
 import { useEffect, useState } from "react";
 
-
-type ChartData = { name: string, value: number, fill: string }[];
 
 type FilePdfCardProps = {
   file: ExcelFile;
   employee: Employee;
   logoSrc: string | null;
-  statusData: ChartData;
-  conditionData: ChartData;
 };
 
-const statusChartConfig = {
-  'Not Checked': { label: 'Not Checked', color: '#64748b' }, // slate-500
-  Correct: { label: 'Correct', color: '#22c55e' }, // green-500
-  Less: { label: 'Less', color: '#f97316' }, // orange-500
-  More: { label: 'More', color: '#3b82f6' }, // blue-500
-} satisfies ChartConfig;
 
-const conditionChartConfig = {
-  'Not Damaged': { label: 'Not Damaged', color: '#22c55e' }, // green-500
-  Wrapped: { label: 'Wrapped', color: '#f59e0b' }, // amber-500
-  Damaged: { label: 'Damaged', color: '#ef4444' }, // red-500
-} satisfies ChartConfig;
-
-
-const ChartWithSummary = ({ title, data, config }: { title: string, data: ChartData, config: ChartConfig }) => {
-    const total = data.reduce((acc, item) => acc + item.value, 0);
-
-    return (
-        <div className="flex flex-col items-center">
-            <h3 className="font-semibold text-gray-700 text-sm mb-2">{title}</h3>
-            <div className="w-[150px] h-[100px]">
-                <ResponsiveContainer>
-                    <PieChart>
-                        <Tooltip
-                            contentStyle={{
-                                background: 'white',
-                                border: '1px solid #e2e8f0',
-                                borderRadius: '0.5rem',
-                                fontSize: '12px'
-                            }}
-                            formatter={(value: number, name: string) => [`${value} (${(value / total * 100).toFixed(0)}%)`, name]}
-                        />
-                        <Pie data={data} dataKey="value" nameKey="name" innerRadius={20} outerRadius={35} strokeWidth={2}>
-                           {data.map((entry) => <Cell key={`cell-${entry.name}`} fill={entry.fill} />)}
-                        </Pie>
-                    </PieChart>
-                </ResponsiveContainer>
-            </div>
-            <div className="text-xs text-gray-600 mt-2 space-y-1 w-full text-center">
-                {data.map(item => (
-                     <div key={item.name} className="flex justify-center items-center gap-1.5">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: config[item.name]?.color }}></div>
-                        <span>{item.name}:</span>
-                        <span className="font-medium">{item.value}</span>
-                     </div>
-                ))}
-            </div>
-        </div>
-    )
-}
-
-export function FilePdfCard({ file, employee, logoSrc, statusData, conditionData }: FilePdfCardProps) {
+export function FilePdfCard({ file, employee, logoSrc }: FilePdfCardProps) {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -115,14 +59,6 @@ export function FilePdfCard({ file, employee, logoSrc, statusData, conditionData
           </div>
         </div>
       </div>
-
-      {/* Charts Section */}
-      {(statusData.length > 0 || conditionData.length > 0) && (
-        <div className="grid grid-cols-2 gap-4 py-4 border-t-2 border-gray-100">
-            {statusData.length > 0 && <ChartWithSummary title="Inventory Status" data={statusData} config={statusChartConfig} />}
-            {conditionData.length > 0 && <ChartWithSummary title="Condition Status" data={conditionData} config={conditionChartConfig} />}
-        </div>
-      )}
     </div>
   );
 };

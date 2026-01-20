@@ -18,10 +18,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { cn } from '@/lib/utils';
 import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
-import { ChartConfig, ChartContainer } from '@/components/ui/chart';
 import html2canvas from 'html2canvas';
 import { FilePdfCard } from '@/components/archive/file-pdf-card';
-import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
 import { useAppContext } from '@/context/app-provider';
 import type { ExcelFile, Item, Employee, StorageLocation } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
@@ -86,19 +84,6 @@ const PaginationControls = ({ currentPage, totalPages, onPageChange }: { current
   );
 };
 
-const statusChartConfig = {
-  'Not Checked': { label: 'Not Checked', color: 'hsl(var(--muted-foreground))' },
-  Correct: { label: 'Correct', color: 'hsl(var(--chart-2))' },
-  Less: { label: 'Less', color: 'hsl(var(--chart-4))' },
-  More: { label: 'More', color: 'hsl(var(--chart-5))' },
-} satisfies ChartConfig;
-
-const conditionChartConfig = {
-  'Not Damaged': { label: 'Not Damaged', color: 'hsl(var(--chart-2))' },
-  Wrapped: { label: 'Wrapped', color: 'hsl(var(--chart-4))' },
-  Damaged: { label: 'Damaged', color: 'hsl(var(--chart-1))' },
-} satisfies ChartConfig;
-
 
 export default function FileDetailPage() {
   const params = useParams();
@@ -161,44 +146,6 @@ export default function FileDetailPage() {
         if(file) setEditableFile(JSON.parse(JSON.stringify(file))); // Reset on cancel
     }
   }, [isEditing, fileItems, file]);
-
-  const { statusChartData, conditionChartData } = useMemo(() => {
-    if (!fileItems) return { statusChartData: [], conditionChartData: [] };
-
-    const totalItems = fileItems.length;
-    if (totalItems === 0) return { statusChartData: [], conditionChartData: [] };
-    
-    const statusCounts: Record<string, number> = { 'Not Checked': 0, Correct: 0, Less: 0, More: 0 };
-    fileItems.forEach(item => {
-        const status = item.storageStatus || 'Not Checked';
-        statusCounts[status] = (statusCounts[status] || 0) + 1;
-    });
-
-    const statusChartData = Object.entries(statusCounts).map(([name, value]) => ({
-      name,
-      value,
-      fill: statusChartConfig[name as keyof typeof statusChartConfig]?.color || '#ccc'
-    })).filter(d => d.value > 0);
-    
-    const conditionCounts: Record<string, number> = { 'Not Damaged': 0, Wrapped: 0, Damaged: 0 };
-    fileItems.forEach(item => {
-      if (item.modelCondition === 'Damaged') {
-        conditionCounts.Damaged++;
-      } else if (item.modelCondition === 'Wrapped') {
-        conditionCounts.Wrapped++;
-      } else {
-        conditionCounts['Not Damaged']++;
-      }
-    });
-
-    const conditionChartData = Object.entries(conditionCounts).map(([name, value]) => ({
-      name,
-      value,
-      fill: conditionChartConfig[name as keyof typeof conditionChartConfig]?.color || '#ccc'
-    })).filter(d => d.value > 0);
-
-    return { statusChartData, conditionChartData };
-  }, [fileItems]);
 
   const sortedItems = useMemo(() => {
     let itemsToProcess = isEditing ? editableItems : (fileItems || []);
@@ -564,8 +511,6 @@ export default function FileDetailPage() {
                     file={{...(file || {}), ...editableFile} as ExcelFile}
                     employee={employeeForFile}
                     logoSrc={logoSrc}
-                    statusData={statusChartData}
-                    conditionData={conditionChartData}
                 />
                 <div className="p-4">
                   <Table>
@@ -737,68 +682,6 @@ export default function FileDetailPage() {
                     </CardContent>
                 </Card>
               )}
-               <div className='flex gap-4 items-center justify-center flex-wrap'>
-                    {statusChartData.length > 0 && (
-                      <ChartContainer config={statusChartConfig} className="min-h-[120px] w-full max-w-[300px]">
-                        <ResponsiveContainer>
-                          <PieChart>
-                            <Tooltip
-                              content={({ active, payload }) => {
-                                if (active && payload && payload.length) {
-                                  const { name, value } = payload[0].payload;
-                                  const total = statusChartData.reduce((acc, curr) => acc + curr.value, 0);
-                                  return (
-                                    <div className="p-2 text-sm bg-background/80 backdrop-blur-sm rounded-lg border shadow-sm">
-                                      <p>{`${name}: ${((value / total) * 100).toFixed(0)}% (${value})`}</p>
-                                    </div>
-                                  );
-                                }
-                                return null;
-                              }}
-                            />
-                            <Pie data={statusChartData} dataKey="value" nameKey="name" innerRadius={25} outerRadius={40} strokeWidth={2}>
-                              {statusChartData.map((entry) => (
-                                <Cell key={`cell-${entry.name}`} fill={entry.fill} />
-                              ))}
-                            </Pie>
-                            <Legend content={() => (
-                                <div className="text-center text-xs text-muted-foreground -mt-2">{t('inventory_status')}</div>
-                            )} />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </ChartContainer>
-                    )}
-                    {conditionChartData.length > 0 && (
-                      <ChartContainer config={conditionChartConfig} className="min-h-[120px] w-full max-w-[300px]">
-                        <ResponsiveContainer>
-                          <PieChart>
-                            <Tooltip
-                              content={({ active, payload }) => {
-                                if (active && payload && payload.length) {
-                                  const { name, value } = payload[0].payload;
-                                  const total = conditionChartData.reduce((acc, curr) => acc + curr.value, 0);
-                                  return (
-                                    <div className="p-2 text-sm bg-background/80 backdrop-blur-sm rounded-lg border shadow-sm">
-                                      <p>{`${name}: ${((value / total) * 100).toFixed(0)}% (${value})`}</p>
-                                    </div>
-                                  );
-                                }
-                                return null;
-                              }}
-                            />
-                            <Pie data={conditionChartData} dataKey="value" nameKey="name" innerRadius={25} outerRadius={40} strokeWidth={2}>
-                              {conditionChartData.map((entry) => (
-                                <Cell key={`cell-${entry.name}`} fill={entry.fill} />
-                              ))}
-                            </Pie>
-                            <Legend content={() => (
-                                <div className="text-center text-xs text-muted-foreground -mt-2">{t('condition_status')}</div>
-                            )} />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </ChartContainer>
-                    )}
-                  </div>
           </div>
         
           <Card className="lg:col-span-2">

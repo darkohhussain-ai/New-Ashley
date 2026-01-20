@@ -3,7 +3,6 @@
 
 import { format } from 'date-fns';
 import Image from 'next/image';
-import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useTranslation } from '@/hooks/use-translation';
 
 type EvaluationSummary = {
@@ -46,21 +45,6 @@ export function MarketingFeedbackPdfCard({ logoSrc, totalEvaluations, evaluation
       {evaluationSummary.length > 0 && (
         <div className="pt-4 border-t-2 border-gray-100" dir={useKurdish ? 'rtl' : 'ltr'}>
             <h2 className="text-center font-bold text-gray-700 mb-2">{t('employee_performance')}</h2>
-            <div style={{width: '100%', height: '300px'}}>
-              <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={evaluationSummary} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" reversed={useKurdish} />
-                      <YAxis dataKey="name" type="category" width={80} tick={{ fontSize: 10, direction: useKurdish ? 'rtl' : 'ltr', textAnchor: useKurdish ? 'end' : 'start' }} orientation={useKurdish ? 'right' : 'left'} />
-                      <Tooltip
-                          wrapperStyle={{ fontSize: '12px' }}
-                          labelStyle={{ fontWeight: 'bold' }}
-                      />
-                      <Legend wrapperStyle={{fontSize: '12px'}}/>
-                      <Bar dataKey="score" name={t('total_score')} fill="#8884d8" />
-                  </BarChart>
-              </ResponsiveContainer>
-            </div>
         </div>
       )}
     </div>

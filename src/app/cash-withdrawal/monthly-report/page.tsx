@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -12,7 +13,6 @@ import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { useAppContext } from '@/context/app-provider';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Bar, BarChart as RechartsBarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { useTranslation } from '@/hooks/use-translation';
 import { useAuth } from '@/hooks/use-auth';
 import { ReportWrapper } from '@/components/reports/ReportWrapper';
@@ -78,12 +78,7 @@ export default function MonthlyWithdrawalReportPage() {
     
     const totalAmount = summary.reduce((sum, item) => sum + item.totalAmount, 0);
 
-    const chartData = summary.map(item => ({
-        name: item.employeeName,
-        [t('total_withdrawn')]: item.totalAmount,
-    }));
-
-    return { records: filteredRecords, summary, totalAmount, chartData };
+    return { records: filteredRecords, summary, totalAmount };
   }, [isLoading, withdrawals, employees, selectedDate, getEmployeeName, language, isReadOnly, user, t]);
 
   const handlePrint = () => {
@@ -199,21 +194,6 @@ export default function MonthlyWithdrawalReportPage() {
             <div className="space-y-6"><Skeleton className="h-64 w-full" /></div>
             ) : monthlyData.records.length > 0 ? (
             <div className="space-y-8">
-                <Card className="print:shadow-none print:border-none">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><BarChart/> {t('employee_breakdown')}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <RechartsBarChart data={monthlyData.chartData}>
-                                <XAxis dataKey="name" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} angle={-45} textAnchor="end" interval={0} />
-                                <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => formatCurrency(value as number)} />
-                                <Tooltip formatter={(value) => formatCurrency(value as number)} cursor={{fill: 'hsl(var(--muted))'}} />
-                                <Bar dataKey={t('total_withdrawn')} fill="hsl(var(--chart-4))" radius={[4, 4, 0, 0]} />
-                            </RechartsBarChart>
-                        </ResponsiveContainer>
-                    </CardContent>
-                </Card>
                 <Card className="print:shadow-none print:border-none">
                     <CardHeader>
                         <div className="hidden print:block text-center">
