@@ -22,7 +22,7 @@ export default function ViewTransferPage() {
   const { id: transferId } = useParams();
   const { t, language } = useTranslation();
   const { transfers, transferItems, settings } = useAppContext();
-  const { pdfSettings, appLogo } = settings;
+  const { pdfSettings } = settings;
 
   const pdfRef = useRef<HTMLDivElement>(null);
   
@@ -34,32 +34,27 @@ export default function ViewTransferPage() {
   const handleDownloadPdf = async () => {
     if (!pdfRef.current || !transfer || !items) return;
     
+    const pdfContentEl = pdfRef.current;
+    const scale = pdfSettings.invoice?.scale ?? 2;
+    const contentWidth = pdfSettings.invoice?.width ?? 800;
+
+    const originalWidth = pdfContentEl.style.width;
+    pdfContentEl.style.width = `${contentWidth}px`;
+
     const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
     
-    const canvas = await html2canvas(pdfRef.current, { 
-      scale: 2, 
+    const canvas = await html2canvas(pdfContentEl, { 
+      scale, 
       useCORS: true, 
       backgroundColor: 'white'
     });
 
+    pdfContentEl.style.width = originalWidth;
+
     const imgData = canvas.toDataURL('image/png');
     const pdfWidth = doc.internal.pageSize.getWidth();
-    const pdfHeight = doc.internal.pageSize.getHeight();
-    const imgWidth = canvas.width;
-    const imgHeight = canvas.height;
-    const ratio = imgWidth / imgHeight;
     
-    let finalImgWidth = pdfWidth;
-    let finalImgHeight = pdfWidth / ratio;
-
-    if (finalImgHeight > pdfHeight) {
-      finalImgHeight = pdfHeight;
-      finalImgWidth = finalImgHeight * ratio;
-    }
-
-    const x = (pdfWidth - finalImgWidth) / 2;
-
-    doc.addImage(imgData, 'PNG', x, 0, finalImgWidth, finalImgHeight);
+    doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfWidth / (canvas.width / canvas.height));
     doc.save(`${transfer.cargoName}.pdf`);
   };
 
@@ -71,11 +66,11 @@ export default function ViewTransferPage() {
     <>
     {transfer && (
        <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-          <div ref={pdfRef} style={{ width: '700px' }}>
+          <div ref={pdfRef}>
               <TransmitReportPdf
-                title={`${transfer.destinationCity} Transmit`}
+                transfer={transfer}
                 items={items}
-                logoSrc={appLogo}
+                logoSrc={pdfSettings.invoice?.logo ?? null}
                 themeColor={pdfSettings.invoice?.themeColor || '#f97316'}
               />
           </div>

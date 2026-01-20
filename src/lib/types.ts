@@ -191,6 +191,8 @@ export type PdfSettings = {
     footerText?: string;
     loginCardColor?: string;
     hideLoginBg?: boolean;
+    scale?: number;
+    width?: number;
 }
 
 export type AllPdfSettings = {

@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -56,7 +57,6 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useTranslation } from '@/hooks/use-translation';
 import { ReportWrapper } from '@/components/reports/ReportWrapper';
-import { TransferPdfCard } from '@/components/transmit/transfer-pdf-card';
 import { EmployeePdfCard } from '@/components/employees/employee-pdf-card';
 import type {
   PdfSettings,
@@ -94,6 +94,7 @@ import {
   uploadString,
   getDownloadURL,
 } from 'firebase/storage';
+import { TransmitReportPdf } from '@/components/transmit/TransmitReportPdf';
 
 const reportTypes = [
   { value: 'general', label: 'General' },
@@ -1271,6 +1272,28 @@ function SettingsPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-6">
+                    <div className="space-y-2">
+                        <Label htmlFor="pdf-scale">PDF Content Scale: {currentPdfSettings.scale ?? 2}</Label>
+                        <Slider
+                            id="pdf-scale"
+                            min={1}
+                            max={4}
+                            step={0.1}
+                            value={[currentPdfSettings.scale ?? 2]}
+                            onValueChange={(value) => handlePdfSettingChange('scale', value[0])}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="pdf-width">PDF Content Width: {currentPdfSettings.width ?? 800}px</Label>
+                        <Slider
+                            id="pdf-width"
+                            min={500}
+                            max={1200}
+                            step={10}
+                            value={[currentPdfSettings.width ?? 800]}
+                            onValueChange={(value) => handlePdfSettingChange('width', value[0])}
+                        />
+                    </div>
                     {activePdfTab === 'report' ? (
                       <div className="space-y-4">
                         <CardDescription>
@@ -1397,59 +1420,12 @@ function SettingsPage() {
                         </ReportWrapper>
                       )}
                       {activePdfTab === 'invoice' && (
-                        <div className="flex flex-col h-full text-black">
-                          <div className="p-1">
-                            <TransferPdfCard
-                              transfer={mockTransfer}
-                              logoSrc={currentPdfSettings.logo}
-                              totalItems={mockTransfer.itemIds.length}
-                            />
-                          </div>
-                          <div
-                            className="p-6 flex-grow"
-                            style={{ fontFamily: 'CustomPdfFont' }}
-                          >
-                            <Table
-                              className={cn(
-                                currentPdfSettings.tableTheme === 'grid' && 'border'
-                              )}
-                            >
-                              <TableHeader>
-                                <TableRow
-                                  style={{
-                                    backgroundColor: currentPdfSettings.themeColor,
-                                  }}
-                                  className="hover:bg-primary/90"
-                                >
-                                  <TableHead className="text-white">
-                                    {t('model')}
-                                  </TableHead>
-                                  <TableHead className="text-white">
-                                    {t('quantity')}
-                                  </TableHead>
-                                  <TableHead className="text-white">
-                                    {t('notes')}
-                                  </TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {mockTransferItems.map((item, index) => (
-                                  <TableRow
-                                    key={index}
-                                    className={cn(
-                                      currentPdfSettings.tableTheme ===
-                                        'striped' && 'odd:bg-muted/50'
-                                    )}
-                                  >
-                                    <TableCell>{item.model}</TableCell>
-                                    <TableCell>{item.quantity}</TableCell>
-                                    <TableCell>{item.notes}</TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          </div>
-                        </div>
+                        <TransmitReportPdf 
+                           transfer={mockTransfer}
+                           items={mockTransferItems}
+                           logoSrc={currentPdfSettings.logo}
+                           themeColor={currentPdfSettings.themeColor || '#f97316'}
+                        />
                       )}
                       {activePdfTab === 'card' && (
                         <div className="flex justify-center items-center h-full">

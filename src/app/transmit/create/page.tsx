@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { TransferPdfCard } from '@/components/transmit/transfer-pdf-card';
+import { TransmitReportPdf } from '@/components/transmit/TransmitReportPdf';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -129,11 +129,18 @@ export default function CreateTransferPage() {
 
   const handleDownloadPdf = async () => {
     if (!pdfCardRef.current || !lastTransfer || !lastTransferItems) return;
+
+    const pdfContentEl = pdfCardRef.current;
+    const scale = pdfSettings.invoice?.scale ?? 2;
+    const contentWidth = pdfSettings.invoice?.width ?? 800;
+
+    const originalWidth = pdfContentEl.style.width;
+    pdfContentEl.style.width = `${contentWidth}px`;
     
     const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
     
-    const canvas = await html2canvas(pdfCardRef.current, { 
-      scale: 2, 
+    const canvas = await html2canvas(pdfContentEl, { 
+      scale,
       useCORS: true, 
       backgroundColor: 'white',
       onclone: (document) => {
@@ -145,24 +152,12 @@ export default function CreateTransferPage() {
       }
     });
 
+    pdfContentEl.style.width = originalWidth;
+
     const imgData = canvas.toDataURL('image/png');
     const pdfWidth = doc.internal.pageSize.getWidth();
-    const pdfHeight = doc.internal.pageSize.getHeight();
-    const imgWidth = canvas.width;
-    const imgHeight = canvas.height;
-    const ratio = imgWidth / imgHeight;
     
-    let finalImgWidth = pdfWidth;
-    let finalImgHeight = pdfWidth / ratio;
-
-    if (finalImgHeight > pdfHeight) {
-      finalImgHeight = pdfHeight;
-      finalImgWidth = finalImgHeight * ratio;
-    }
-
-    const x = (pdfWidth - finalImgWidth) / 2;
-
-    doc.addImage(imgData, 'PNG', x, 0, finalImgWidth, finalImgHeight);
+    doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfWidth / (canvas.width / canvas.height));
     doc.save(`${lastTransfer.cargoName}.pdf`);
   };
 
@@ -170,41 +165,13 @@ export default function CreateTransferPage() {
     <>
     {lastTransfer && (
        <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-          <div ref={pdfCardRef} className="bg-white text-black" style={{ width: '800px' }}>
-              <TransferPdfCard
-                  transfer={lastTransfer}
-                  logoSrc={pdfSettings.invoice?.logo ?? null}
-                  totalItems={lastTransfer.itemIds.length}
+          <div ref={pdfCardRef}>
+              <TransmitReportPdf
+                transfer={lastTransfer}
+                items={lastTransferItems}
+                logoSrc={pdfSettings.invoice?.logo ?? null}
+                themeColor={pdfSettings.invoice?.themeColor || '#f97316'}
               />
-               <div className="p-8">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>{t('model')}</TableHead>
-                            <TableHead>{t('quantity')}</TableHead>
-                            <TableHead>{t('notes')}</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {lastTransferItems.map(item => (
-                            <TableRow key={item.id}>
-                                <TableCell>{item.model}</TableCell>
-                                <TableCell>{item.quantity}</TableCell>
-                                <TableCell>{item.notes || ''}</TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-                <div className="mt-8 grid grid-cols-2 gap-4 text-sm">
-                    <p><strong>{t('driver')}:</strong> {lastTransfer.driverName}</p>
-                    <p><strong>{t('warehouse_manager')}:</strong> {lastTransfer.warehouseManagerName}</p>
-                </div>
-                <div className="pt-24 text-right">
-                    <div className="inline-block text-center mt-8">
-                        <p className="border-t pt-2 w-48">{t('warehouse_manager_signature')}</p>
-                    </div>
-                </div>
-              </div>
           </div>
        </div>
     )}
@@ -343,10 +310,10 @@ export default function CreateTransferPage() {
                 <div className="max-h-[60vh] overflow-y-auto p-1">
                    <h3 className="text-lg font-semibold mb-2">{t('transfer_summary')}</h3>
                    <div className="grid grid-cols-2 gap-4 text-sm mb-4">
-                        <p className="flex gap-2"><Truck className="w-4 h-4 text-primary"/> <strong>{t('destination')}:</strong> {lastTransfer.destinationCity}</p>
-                        <p className="flex gap-2"><Calendar className="w-4 h-4 text-primary"/> <strong>{t('date')}:</strong> {format(parseISO(lastTransfer.transferDate), 'PPP')}</p>
-                        <p className="flex gap-2"><User className="w-4 h-4 text-primary"/> <strong>{t('driver')}:</strong> {lastTransfer.driverName}</p>
-                        <p className="flex gap-2"><Warehouse className="w-4 h-4 text-primary"/> <strong>{t('manager')}:</strong> {lastTransfer.warehouseManagerName}</p>
+                        <p className="flex gap-2 items-center"><Truck className="w-4 h-4 text-primary"/> <strong>{t('destination')}:</strong> {lastTransfer.destinationCity}</p>
+                        <p className="flex gap-2 items-center"><CalendarIcon className="w-4 h-4 text-primary"/> <strong>{t('date')}:</strong> {format(parseISO(lastTransfer.transferDate), 'PPP')}</p>
+                        <p className="flex gap-2 items-center"><User className="w-4 h-4 text-primary"/> <strong>{t('driver')}:</strong> {lastTransfer.driverName}</p>
+                        <p className="flex gap-2 items-center"><Warehouse className="w-4 h-4 text-primary"/> <strong>{t('manager')}:</strong> {lastTransfer.warehouseManagerName}</p>
                    </div>
                    <h3 className="text-lg font-semibold mb-2">{t('transferred_items')} ({lastTransfer.itemIds.length})</h3>
                    <div className="border rounded-md">
