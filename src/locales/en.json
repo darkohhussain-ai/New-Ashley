@@ -589,5 +589,11 @@
   "storage": "Storage",
   "transmit": "Transmit",
   "warehouse_manager_signature": "Warehouse Manager",
-  "transmit_report_title": "{city} Transmit"
+  "transmit_report_title": "{city} Transmit",
+  "monthly_overview": "Monthly Overview",
+  "monthly_overview_desc": "A summary of all financial activities for {month}.",
+  "expense_breakdown": "Expense Breakdown",
+  "overtime_summary": "Overtime Summary",
+  "bonus_summary": "Bonus Summary",
+  "withdrawal_summary": "Withdrawal Summary"
 }

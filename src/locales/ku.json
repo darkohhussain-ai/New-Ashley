@@ -589,5 +589,11 @@
   "storage": "کۆگا",
   "transmit": "گواستنەوە",
   "warehouse_manager_signature": "واژۆی بەڕێوەبەری کۆگا",
-  "transmit_report_title": "گواستنەوەی {city}"
+  "transmit_report_title": "گواستنەوەی {city}",
+  "monthly_overview": "پوختەی مانگانە",
+  "monthly_overview_desc": "پوختەی هەموو چالاکییە داراییەکان بۆ مانگی {month}.",
+  "expense_breakdown": "شیکردنەوەی خەرجی",
+  "overtime_summary": "پوختەی کاتی زیادە",
+  "bonus_summary": "پوختەی پاداشت",
+  "withdrawal_summary": "پوختەی ڕاکێشان"
 }
