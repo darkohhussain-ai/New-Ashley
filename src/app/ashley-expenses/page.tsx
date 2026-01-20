@@ -1,8 +1,7 @@
-
 'use client';
 
 import Link from 'next/link';
-import { CreditCard, Clock, Gift, Banknote, Settings, FileText, Calendar, Wallet, BarChart2, Loader2, Calendar as CalendarIcon } from 'lucide-react';
+import { CreditCard, Clock, Gift, Banknote, Settings, FileText, Calendar, Wallet, BarChart2, Loader2, Calendar as CalendarIcon, PieChartIcon } from 'lucide-react';
 import { Card, CardContent, CardTitle, CardHeader, CardDescription } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/hooks/use-translation';
@@ -11,7 +10,7 @@ import withAuth from '@/hooks/withAuth';
 import { useAppContext } from '@/context/app-provider';
 import { useState, useMemo, useEffect } from 'react';
 import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from 'recharts';
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, PieChart, Pie, Cell } from 'recharts';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
@@ -38,7 +37,7 @@ function AshleyExpensesDashboard() {
   const isLoading = !expenses || !overtime || !bonuses || !withdrawals || !selectedDate;
 
   const monthlyTotals = useMemo(() => {
-    if (isLoading) return { expenses: 0, overtime: 0, bonuses: 0, withdrawals: 0, chartData: [] };
+    if (isLoading) return { expenses: 0, overtime: 0, bonuses: 0, withdrawals: 0, chartData: [], taxiSubTypeTotals: [] };
 
     const start = startOfMonth(selectedDate!);
     const end = endOfMonth(selectedDate!);
@@ -50,16 +49,26 @@ function AshleyExpensesDashboard() {
         .reduce((sum, item) => sum + (item.totalAmount || item.amount || 0), 0);
     };
 
+    const monthExpenses = expenses.filter(d => d.date && isWithinInterval(parseISO(d.date), { start, end }));
+    const taxiTotal = monthExpenses.filter(e => e.expenseType === 'Taxi Expenses').reduce((sum, item) => sum + item.amount, 0);
+    const purchasesTotal = monthExpenses.filter(e => e.expenseType === 'Purchases (Buying Items)').reduce((sum, item) => sum + item.amount, 0);
+
+    const taxiSubTypeMap: Record<string, number> = {};
+    monthExpenses.filter(e => e.expenseType === 'Taxi Expenses' && e.expenseSubType).forEach(e => {
+        taxiSubTypeMap[e.expenseSubType!] = (taxiSubTypeMap[e.expenseSubType!] || 0) + e.amount;
+    });
+    
+    const taxiSubTypeTotals = Object.entries(taxiSubTypeMap).map(([name, total]) => ({name, total})).sort((a,b) => b.total-a.total);
+    
+
     const expensesTotal = filterAndSum(expenses);
     const overtimeTotal = filterAndSum(overtime);
     const bonusesTotal = filterAndSum(bonuses);
     const withdrawalsTotal = filterAndSum(withdrawals);
 
     const chartData = [
-      { name: t('expenses'), total: expensesTotal, fill: 'hsl(var(--chart-1))' },
-      { name: t('overtime'), total: overtimeTotal, fill: 'hsl(var(--chart-2))' },
-      { name: t('bonuses'), total: bonusesTotal, fill: 'hsl(var(--chart-3))' },
-      { name: t('cash_withdrawals'), total: withdrawalsTotal, fill: 'hsl(var(--chart-4))' },
+      { name: t('taxi_expenses'), total: taxiTotal, fill: 'hsl(var(--chart-1))' },
+      { name: t('purchases_buying_items'), total: purchasesTotal, fill: 'hsl(var(--chart-2))' },
     ].filter(d => d.total > 0);
 
     return { 
@@ -67,7 +76,8 @@ function AshleyExpensesDashboard() {
       overtime: overtimeTotal, 
       bonuses: bonusesTotal, 
       withdrawals: withdrawalsTotal,
-      chartData
+      chartData,
+      taxiSubTypeTotals
     };
   }, [isLoading, selectedDate, expenses, overtime, bonuses, withdrawals, t]);
 
@@ -144,31 +154,59 @@ function AshleyExpensesDashboard() {
             </Popover>
          </div>
 
-        <Card className="mb-8">
-            <CardHeader>
-                <CardTitle className='flex items-center gap-2'><BarChart2/> {t('monthly_overview')}</CardTitle>
-                <CardDescription>{t('monthly_overview_desc')}</CardDescription>
-            </CardHeader>
-            <CardContent>
-                {monthlyTotals.chartData.length > 0 ? (
-                    <div className="h-[250px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={monthlyTotals.chartData}>
-                                <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                                <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => formatCurrency(value as number)} />
-                                <Tooltip formatter={(value) => formatCurrency(value as number)} cursor={{fill: 'hsl(var(--muted))'}} />
-                                <Legend />
-                                <Bar dataKey="total" radius={[4, 4, 0, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-                ) : (
-                    <div className="h-[250px] flex items-center justify-center text-muted-foreground">
-                        <p>{t('no_data_for_selected_month')}</p>
-                    </div>
-                )}
-            </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <Card>
+                <CardHeader>
+                    <CardTitle className='flex items-center gap-2'><PieChartIcon className="text-primary"/> {t('expense_types')}</CardTitle>
+                    <CardDescription>{t('monthly_overview_desc')}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {monthlyTotals.chartData.length > 0 ? (
+                        <div className="h-[250px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie data={monthlyTotals.chartData} dataKey="total" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
+                                       {monthlyTotals.chartData.map((entry, index) => (
+                                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                                       ))}
+                                    </Pie>
+                                    <Tooltip formatter={(value) => formatCurrency(value as number)}/>
+                                    <Legend />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </div>
+                    ) : (
+                        <div className="h-[250px] flex items-center justify-center text-muted-foreground">
+                            <p>{t('no_data_for_selected_month')}</p>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle className='flex items-center gap-2'><BarChart2 className="text-primary"/> {t('taxi_expenses')}</CardTitle>
+                    <CardDescription>{t('taxi_expenses_breakdown_desc')}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {monthlyTotals.taxiSubTypeTotals.length > 0 ? (
+                        <div className="h-[250px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={monthlyTotals.taxiSubTypeTotals} layout="vertical">
+                                    <XAxis type="number" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => formatCurrency(value as number)} />
+                                    <YAxis type="category" dataKey="name" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} width={150} />
+                                    <Tooltip formatter={(value) => formatCurrency(value as number)} cursor={{fill: 'hsl(var(--muted))'}} />
+                                    <Bar dataKey="total" fill="hsl(var(--chart-3))" radius={[0, 4, 4, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    ) : (
+                         <div className="h-[250px] flex items-center justify-center text-muted-foreground">
+                            <p>{t('no_taxi_expenses_for_month')}</p>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {menuItems.filter(item => hasPermission(item.permission)).map((item) => (

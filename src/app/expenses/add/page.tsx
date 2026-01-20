@@ -97,6 +97,25 @@ export default function AddExpensePage() {
 
 
   const grandTotal = useMemo(() => dailyExpenses.reduce((sum, exp) => sum + exp.amount, 0), [dailyExpenses]);
+  
+  const groupedDailyExpenses = useMemo(() => {
+    if (!dailyExpenses) return [];
+    const groups: Record<string, { employeeName: string; expenses: Expense[], total: number }> = {};
+
+    dailyExpenses.forEach(exp => {
+        if (!groups[exp.employeeId]) {
+            groups[exp.employeeId] = {
+                employeeName: getEmployeeName(exp.employeeId, language === 'ku'),
+                expenses: [],
+                total: 0
+            };
+        }
+        groups[exp.employeeId].expenses.push(exp);
+        groups[exp.employeeId].total += exp.amount;
+    });
+
+    return Object.values(groups).sort((a,b) => a.employeeName.localeCompare(b.employeeName));
+  }, [dailyExpenses, employees, language, getEmployeeName]);
 
   const resetForm = () => {
     setSelectedEmployee('');
@@ -424,56 +443,53 @@ export default function AddExpensePage() {
                             <CardTitle>{t('expenses_for_date', { date: date ? format(date, 'PPP') : '...' })}</CardTitle>
                         </CardHeader>
                         <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>{t('employee')}</TableHead>
-                                    <TableHead>{t('expense_type')}</TableHead>
-                                    <TableHead>{t('notes')}</TableHead>
-                                    <TableHead className="text-right">{t('amount')}</TableHead>
-                                    <TableHead className="w-24 print:hidden"></TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {dailyExpenses.length > 0 ? dailyExpenses.map(exp => (
-                                    <TableRow key={exp.id}>
-                                        <TableCell>{getEmployeeName(exp.employeeId, language==='ku')}</TableCell>
-                                        <TableCell>
-                                             <p className="font-medium">{t(exp.expenseType.toLowerCase().replace(/[\s()]/g, '_'))}</p>
-                                             {exp.expenseSubType && <p className="text-xs text-muted-foreground">{t(exp.expenseSubType.toLowerCase().replace(/\s/g, '_'))}</p>}
-                                        </TableCell>
-                                        <TableCell>{exp.notes || t('na')}</TableCell>
-                                        <TableCell className="text-right">{formatCurrency(exp.amount)}</TableCell>
-                                        <TableCell>
-                                             <div className="flex gap-1 mt-1 print:hidden">
-                                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEditing(exp)}><Edit className="h-4 w-4"/></Button>
-                                                <AlertDialog>
-                                                    <AlertDialogTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"><Trash2 className="h-4 w-4"/></Button>
-                                                    </AlertDialogTrigger>
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader>
-                                                            <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
-                                                            <AlertDialogDescription>{t('confirm_delete_expense')}</AlertDialogDescription>
-                                                        </AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-                                                            <AlertDialogAction onClick={() => handleDelete(exp.id)}>{t('delete')}</AlertDialogAction>
-                                                        </AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
+                            <div className="space-y-4">
+                                {groupedDailyExpenses.length > 0 ? groupedDailyExpenses.map(group => (
+                                    <div key={group.employeeName} className="border rounded-lg overflow-hidden">
+                                        <h3 className="font-semibold p-3 bg-muted/50 border-b" dir={language === 'ku' ? 'rtl' : 'ltr'}>{group.employeeName}</h3>
+                                        <div className="divide-y">
+                                            {group.expenses.map(exp => (
+                                                <div key={exp.id} className="p-3 flex justify-between items-start gap-2">
+                                                    <div>
+                                                        <p className="font-medium">{t(exp.expenseType.toLowerCase().replace(/[\s()]/g, '_'))}</p>
+                                                        {exp.expenseSubType && <p className="text-xs text-muted-foreground">{t(exp.expenseSubType.toLowerCase().replace(/\s/g, '_'))}</p>}
+                                                        {exp.notes && <p className="text-sm mt-1">{exp.notes}</p>}
+                                                    </div>
+                                                    <div className="text-right flex-shrink-0">
+                                                        <p className="font-semibold text-primary">{formatCurrency(exp.amount)}</p>
+                                                        <div className="flex gap-1 mt-1 print:hidden">
+                                                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEditing(exp)}><Edit className="h-4 w-4"/></Button>
+                                                            <AlertDialog>
+                                                                <AlertDialogTrigger asChild>
+                                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"><Trash2 className="h-4 w-4"/></Button>
+                                                                </AlertDialogTrigger>
+                                                                <AlertDialogContent>
+                                                                    <AlertDialogHeader>
+                                                                        <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
+                                                                        <AlertDialogDescription>{t('confirm_delete_expense')}</AlertDialogDescription>
+                                                                    </AlertDialogHeader>
+                                                                    <AlertDialogFooter>
+                                                                        <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                                                                        <AlertDialogAction onClick={() => handleDelete(exp.id)}>{t('delete')}</AlertDialogAction>
+                                                                    </AlertDialogFooter>
+                                                                </AlertDialogContent>
+                                                            </AlertDialog>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                         <div className="p-2 text-right bg-muted/50 border-t">
+                                            <span className="text-sm text-muted-foreground">{t('total_for_employee', {employeeName: group.employeeName})}: </span>
+                                            <span className="font-semibold">{formatCurrency(group.total)}</span>
+                                        </div>
+                                    </div>
                                 )) : (
-                                    <TableRow>
-                                        <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
-                                            {t('no_expenses_for_date')}
-                                        </TableCell>
-                                    </TableRow>
+                                    <div className="text-center h-24 text-muted-foreground flex items-center justify-center">
+                                        {t('no_expenses_for_date')}
+                                    </div>
                                 )}
-                            </TableBody>
-                        </Table>
+                            </div>
                         </CardContent>
                         {grandTotal > 0 && (
                         <CardFooter className="bg-muted/80 py-4 justify-end">
@@ -484,51 +500,6 @@ export default function AddExpensePage() {
                         </CardFooter>
                         )}
                     </Card>
-
-                    {dailyExpenses.length > 0 && (
-                         <Card className="mt-8">
-                            <CardHeader><CardTitle>Report Preview</CardTitle></CardHeader>
-                            <CardContent className="bg-muted/30 p-4 flex justify-center">
-                                <div className="w-full max-w-3xl scale-[0.9] origin-top bg-white text-black">
-                                     <ReportWrapper
-                                        title={t('daily_expense_report')}
-                                        date={format(date, 'yyyy-MM-dd')}
-                                        logoSrc={pdfSettings.report.logo}
-                                        themeColor={pdfSettings.report.reportColors?.expense || '#3b82f6'}
-                                    >
-                                        <Table>
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableHead>{t('name')}</TableHead>
-                                                    <TableHead>{t('date')}</TableHead>
-                                                    <TableHead>{t('total_value')}</TableHead>
-                                                    <TableHead>{t('expense_type')}</TableHead>
-                                                    <TableHead>{t('notes')}</TableHead>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {flattenedExpenses.map((exp, index) => (
-                                                    <TableRow key={exp.id} className={index % 2 === 0 ? 'bg-gray-100' : ''}>
-                                                        <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{exp.employeeName}</TableCell>
-                                                        <TableCell>{format(new Date(exp.date), 'PP')}</TableCell>
-                                                        <TableCell>{formatCurrency(exp.amount)}</TableCell>
-                                                        <TableCell>{t(exp.expenseType.toLowerCase().replace(/[\s()]/g, '_'))}{exp.expenseSubType ? ` (${t(exp.expenseSubType.toLowerCase().replace(/\s/g, '_'))})` : ''}</TableCell>
-                                                        <TableCell>{exp.notes || t('na')}</TableCell>
-                                                    </TableRow>
-                                                ))}
-                                            </TableBody>
-                                            <TableFooter>
-                                                <TableRow>
-                                                    <TableCell colSpan={4} className="text-right font-bold">{t('grand_total')}:</TableCell>
-                                                    <TableCell className="font-bold">{formatCurrency(grandTotal)}</TableCell>
-                                                </TableRow>
-                                            </TableFooter>
-                                        </Table>
-                                    </ReportWrapper>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
 
                 </div>
             </div>
