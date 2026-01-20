@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
@@ -95,25 +96,6 @@ export default function AddExpensePage() {
 
 
   const grandTotal = useMemo(() => dailyExpenses.reduce((sum, exp) => sum + exp.amount, 0), [dailyExpenses]);
-  
-  const groupedDailyExpenses = useMemo(() => {
-    if (!dailyExpenses) return [];
-    const groups: Record<string, { employeeName: string; expenses: Expense[], total: number }> = {};
-
-    dailyExpenses.forEach(exp => {
-        if (!groups[exp.employeeId]) {
-            groups[exp.employeeId] = {
-                employeeName: getEmployeeName(exp.employeeId, language === 'ku'),
-                expenses: [],
-                total: 0
-            };
-        }
-        groups[exp.employeeId].expenses.push(exp);
-        groups[exp.employeeId].total += exp.amount;
-    });
-
-    return Object.values(groups).sort((a,b) => a.employeeName.localeCompare(b.employeeName));
-  }, [dailyExpenses, employees, language, getEmployeeName]);
 
   const resetForm = () => {
     setSelectedEmployee('');
@@ -441,48 +423,41 @@ export default function AddExpensePage() {
                             <CardTitle>{t('expenses_for_date', { date: date ? format(date, 'PPP') : '...' })}</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="space-y-4">
-                                {groupedDailyExpenses.length > 0 ? groupedDailyExpenses.map(group => (
-                                    <div key={group.employeeName} className="border rounded-lg overflow-hidden">
-                                        <h3 className="font-semibold p-3 bg-muted/50 border-b" dir={language === 'ku' ? 'rtl' : 'ltr'}>{group.employeeName}</h3>
-                                        <div className="divide-y">
-                                            {group.expenses.map(exp => (
-                                                <div key={exp.id} className="p-3 flex justify-between items-start gap-2">
-                                                    <div>
-                                                        <p className="font-medium">{t(exp.expenseType.toLowerCase().replace(/[\s()]/g, '_'))}</p>
-                                                        {exp.expenseSubType && <p className="text-xs text-muted-foreground">{t(exp.expenseSubType.toLowerCase().replace(/\s/g, '_'))}</p>}
-                                                        {exp.notes && <p className="text-sm mt-1">{exp.notes}</p>}
-                                                    </div>
-                                                    <div className="text-right flex-shrink-0">
-                                                        <p className="font-semibold text-primary">{formatCurrency(exp.amount)}</p>
-                                                        <div className="flex gap-1 mt-1 print:hidden">
-                                                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEditing(exp)}><Edit className="h-4 w-4"/></Button>
-                                                            <AlertDialog>
-                                                                <AlertDialogTrigger asChild>
-                                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"><Trash2 className="h-4 w-4"/></Button>
-                                                                </AlertDialogTrigger>
-                                                                <AlertDialogContent>
-                                                                    <AlertDialogHeader>
-                                                                        <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
-                                                                        <AlertDialogDescription>{t('confirm_delete_expense')}</AlertDialogDescription>
-                                                                    </AlertDialogHeader>
-                                                                    <AlertDialogFooter>
-                                                                        <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-                                                                        <AlertDialogAction onClick={() => handleDelete(exp.id)}>{t('delete')}</AlertDialogAction>
-                                                                    </AlertDialogFooter>
-                                                                </AlertDialogContent>
-                                                            </AlertDialog>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))}
+                            <div className="divide-y">
+                                {isLoading ? (
+                                    <div className="p-8 text-center text-muted-foreground">{t('loading_records')}...</div>
+                                ) : dailyExpenses && dailyExpenses.length > 0 ? (
+                                    dailyExpenses.map(exp => (
+                                    <div key={exp.id} className="py-3 flex justify-between items-start gap-4">
+                                        <div className="flex-1">
+                                            <p className="flex items-center gap-2" dir={language === 'ku' ? 'rtl' : 'ltr'}><User className="h-4 w-4 text-primary" /> {getEmployeeName(exp.employeeId, language === 'ku')}</p>
+                                            <p className="text-sm text-muted-foreground mt-1">{t(exp.expenseType.toLowerCase().replace(/[\s()]/g, '_'))}{exp.expenseSubType ? ` (${t(exp.expenseSubType.toLowerCase().replace(/\s/g, '_'))})` : ''}</p>
+                                            {exp.notes && <p className="text-sm mt-1">{exp.notes}</p>}
                                         </div>
-                                         <div className="p-2 text-right bg-muted/50 border-t">
-                                            <span className="text-sm text-muted-foreground">{t('total_for_employee', {employeeName: group.employeeName})}: </span>
-                                            <span className="font-semibold">{formatCurrency(group.total)}</span>
+                                        <div className='flex flex-col items-end'>
+                                            <p className="font-semibold text-primary">{formatCurrency(exp.amount)}</p>
+                                            <div className="flex gap-1 mt-1 print:hidden">
+                                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEditing(exp)}><Edit className="h-4 w-4"/></Button>
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"><Trash2 className="h-4 w-4"/></Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
+                                                            <AlertDialogDescription>{t('confirm_delete_expense')}</AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => handleDelete(exp.id)}>{t('delete')}</AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            </div>
                                         </div>
                                     </div>
-                                )) : (
+                                    ))
+                                ) : (
                                     <div className="text-center h-24 text-muted-foreground flex items-center justify-center">
                                         {t('no_expenses_for_date')}
                                     </div>
