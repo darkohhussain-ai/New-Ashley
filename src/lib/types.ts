@@ -193,6 +193,7 @@ export type PdfSettings = {
     hideLoginBg?: boolean;
     scale?: number;
     width?: number;
+    fontSize?: number;
 }
 
 export type AllPdfSettings = {

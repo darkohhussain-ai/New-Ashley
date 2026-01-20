@@ -22,7 +22,7 @@ export default function ViewTransferPage() {
   const { id: transferId } = useParams();
   const { t, language } = useTranslation();
   const { transfers, transferItems, settings } = useAppContext();
-  const { pdfSettings } = settings;
+  const { pdfSettings, customFont } = settings;
 
   const pdfRef = useRef<HTMLDivElement>(null);
   
@@ -46,7 +46,14 @@ export default function ViewTransferPage() {
     const canvas = await html2canvas(pdfContentEl, { 
       scale, 
       useCORS: true, 
-      backgroundColor: 'white'
+      backgroundColor: 'white',
+      onclone: (document) => {
+        if (customFont && language === 'ku') {
+            const style = document.createElement('style');
+            style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
+            document.head.appendChild(style);
+        }
+      }
     });
 
     pdfContentEl.style.width = originalWidth;
@@ -70,8 +77,7 @@ export default function ViewTransferPage() {
               <TransmitReportPdf
                 transfer={transfer}
                 items={items}
-                logoSrc={pdfSettings.invoice?.logo ?? null}
-                themeColor={pdfSettings.invoice?.themeColor || '#f97316'}
+                settings={pdfSettings.invoice}
               />
           </div>
        </div>

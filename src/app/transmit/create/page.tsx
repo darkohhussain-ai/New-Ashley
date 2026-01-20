@@ -169,8 +169,7 @@ export default function CreateTransferPage() {
               <TransmitReportPdf
                 transfer={lastTransfer}
                 items={lastTransferItems}
-                logoSrc={pdfSettings.invoice?.logo ?? null}
-                themeColor={pdfSettings.invoice?.themeColor || '#f97316'}
+                settings={pdfSettings.invoice}
               />
           </div>
        </div>
@@ -222,7 +221,7 @@ export default function CreateTransferPage() {
                                 mode="single"
                                 selected={transferDate}
                                 onSelect={(date) => {
-                                  setTransferDate(date);
+                                  if (date) setTransferDate(date);
                                   setIsCalendarOpen(false);
                                 }}
                                 initialFocus

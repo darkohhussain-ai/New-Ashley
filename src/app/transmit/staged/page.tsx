@@ -19,7 +19,7 @@ const destinations = ["Erbil", "Baghdad", "Diwan", "Dohuk"];
 export default function StagedItemsPage() {
   const { t, language } = useTranslation();
   const { transferItems, settings } = useAppContext();
-  const { pdfSettings, appLogo } = settings;
+  const { pdfSettings, customFont } = settings;
   const [selectedDestination, setSelectedDestination] = useState<string | null>(null);
 
   const pdfRef = useRef<HTMLDivElement>(null);
@@ -50,7 +50,14 @@ export default function StagedItemsPage() {
     const canvas = await html2canvas(pdfContentEl, { 
       scale,
       useCORS: true, 
-      backgroundColor: 'white'
+      backgroundColor: 'white',
+      onclone: (document) => {
+        if (customFont && language === 'ku') {
+            const style = document.createElement('style');
+            style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
+            document.head.appendChild(style);
+        }
+      }
     });
 
     pdfContentEl.style.width = originalWidth;
@@ -84,8 +91,7 @@ export default function StagedItemsPage() {
                     <TransmitReportPdf
                         transfer={{ destinationCity: selectedDestination, transferDate: new Date().toISOString() }}
                         items={itemsForSelectedDestination}
-                        logoSrc={appLogo}
-                        themeColor={pdfSettings.invoice?.themeColor || '#f97316'}
+                        settings={pdfSettings.invoice}
                     />
                 </div>
             </div>

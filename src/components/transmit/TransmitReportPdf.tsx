@@ -5,19 +5,23 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useTranslation } from '@/hooks/use-translation';
 import Image from 'next/image';
 import { format, parseISO } from 'date-fns';
+import type { PdfSettings } from '@/lib/types';
 
-export const TransmitReportPdf = ({ transfer, items, logoSrc, themeColor }: { transfer: Partial<Transfer>; items: ItemForTransfer[]; logoSrc: string | null; themeColor: string }) => {
+
+export const TransmitReportPdf = ({ transfer, items, settings }: { transfer: Partial<Transfer>; items: ItemForTransfer[]; settings: PdfSettings }) => {
     const { t, language } = useTranslation();
     const useKurdish = language === 'ku';
 
     const reportTitle = transfer.destinationCity ? t('transmit_report_title', { city: transfer.destinationCity }) : t('transmit_cargo');
     const formattedDate = transfer.transferDate ? format(parseISO(transfer.transferDate), 'PPP') : 'N/A';
+    
+    const { logo, themeColor, fontSize } = settings;
 
     return (
-        <div className="bg-white text-black p-4 font-sans text-sm" dir={useKurdish ? 'rtl' : 'ltr'}>
+        <div className="bg-white text-black p-4 font-sans" style={{ fontSize: `${fontSize}px` }} dir={useKurdish ? 'rtl' : 'ltr'}>
             <header className="flex justify-between items-center mb-4 p-2" style={{ backgroundColor: themeColor, color: 'white' }}>
-                <div className="w-24 h-12 relative">
-                    {logoSrc && <Image src={logoSrc} alt="logo" fill className="object-contain" />}
+                 <div className="w-24 h-12 relative">
+                    {logo && <Image src={logo} alt="logo" fill className="object-contain" />}
                 </div>
                 <h1 className="text-2xl font-bold">{reportTitle}</h1>
                 <div className="w-24 text-right text-xs">
@@ -43,7 +47,7 @@ export const TransmitReportPdf = ({ transfer, items, logoSrc, themeColor }: { tr
                             <TableHead className="text-white border-black border w-24">{t('invoice_no')}</TableHead>
                             <TableHead className="text-white border-black border w-24">{t('storage')}</TableHead>
                             <TableHead className="text-white border-black border w-16">{t('transmit')}</TableHead>
-                            <TableHead className="text-white border-black border w-[30%]">{t('notes')}</TableHead>
+                            <TableHead className="text-white border-black border w-[40%]">{t('notes')}</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
