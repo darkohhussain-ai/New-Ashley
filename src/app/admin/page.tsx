@@ -62,7 +62,7 @@ function UserManagement() {
   };
   
   const handleDeleteAllUsers = () => {
-    const adminUser = users.find(u => u.username === 'Darko01');
+    const adminUser = users.find(u => u.username === 'Darko097');
     const usersToKeep = adminUser ? [adminUser] : [];
     const deletedCount = users.length - usersToKeep.length;
 
@@ -172,7 +172,7 @@ function UserManagement() {
                     <Button variant="ghost" size="icon" onClick={() => { setEditingUser(user); setIsDialogOpen(true); }}>
                         <Edit className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDeleteUser(user.id)} disabled={user.username === 'Darko01'}>
+                    <Button variant="ghost" size="icon" onClick={() => handleDeleteUser(user.id)} disabled={user.username === 'Darko097'}>
                         <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                     </TableCell>
@@ -299,7 +299,7 @@ function UserDialog({ open, onOpenChange, user, onSave, roles, employees, existi
                 </SelectTrigger>
                 <SelectContent>
                   {roles.map(role => (
-                    <SelectItem key={role.id} value={role.id} disabled={user?.username === 'Darko01' && role.name !== 'Admin'}>
+                    <SelectItem key={role.id} value={role.id} disabled={user?.username === 'Darko097' && role.name !== 'Admin'}>
                       {role.name}
                     </SelectItem>
                   ))}

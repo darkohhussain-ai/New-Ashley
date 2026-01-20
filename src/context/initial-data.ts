@@ -27,7 +27,7 @@ const parseAndFormatDate = (dateString: string): string => {
 };
 
 const initialEmployees: Employee[] = [
-    { id: 'emp-01', name: 'Darko01', employeeId: '01', role: 'Super Manager', createdAt: '2023-01-01T10:00:00Z', password: 'darko0123', isActive: true },
+    { id: 'emp-01', name: 'Darko097', employeeId: '01', role: 'Super Manager', createdAt: '2023-01-01T10:00:00Z', password: 'darko0123', isActive: true },
     {
         id: 'emp-101',
         name: 'کامه ران عمر روؤف',
@@ -214,7 +214,7 @@ const initialEmployees: Employee[] = [
 const initialUsers: User[] = [
     {
         id: `user-emp-01`,
-        username: 'Darko01',
+        username: 'Darko097',
         password: 'darko0123',
         roleId: 'role-admin'
     },
