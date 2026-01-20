@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -39,7 +40,16 @@ export default function ExpensesDashboardPage() {
     const start = startOfMonth(selectedDate!);
     const end = endOfMonth(selectedDate!);
 
-    const monthExpenses = expenses.filter(d => d.date && isWithinInterval(parseISO(d.date), { start, end }));
+    const monthExpenses = expenses.filter(d => {
+        if (!d.date) return false;
+        try {
+            const recordDate = parseISO(d.date);
+            return isWithinInterval(recordDate, { start, end });
+        } catch {
+            return false;
+        }
+    });
+    
     const taxiTotal = monthExpenses.filter(e => e.expenseType === 'Taxi Expenses').reduce((sum, item) => sum + item.amount, 0);
     const purchasesTotal = monthExpenses.filter(e => e.expenseType === 'Purchases (Buying Items)').reduce((sum, item) => sum + item.amount, 0);
 
@@ -149,7 +159,7 @@ export default function ExpensesDashboardPage() {
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={monthlyTotals.taxiSubTypeTotals} layout="vertical">
                                     <XAxis type="number" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => formatCurrency(value as number)} />
-                                    <YAxis type="category" dataKey="name" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
+                                    <YAxis type="category" dataKey="name" stroke="#888888" tick={{fontSize: 10}} tickLine={false} axisLine={false} width={150} />
                                     <Tooltip formatter={(value) => formatCurrency(value as number)} cursor={{fill: 'hsl(var(--muted))'}} />
                                     <Bar dataKey="total" fill="hsl(var(--chart-3))" radius={[0, 4, 4, 0]} />
                                 </BarChart>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -44,7 +45,15 @@ function AshleyExpensesDashboard() {
     const filterAndSum = (data: any[]) => {
       if (!data) return 0;
       return data
-        .filter(d => d.date && isWithinInterval(parseISO(d.date), { start, end }))
+        .filter(d => {
+            if (!d.date) return false;
+            try {
+                const recordDate = parseISO(d.date);
+                return isWithinInterval(recordDate, { start, end });
+            } catch {
+                return false;
+            }
+        })
         .reduce((sum, item) => sum + (item.totalAmount || item.amount || 0), 0);
     };
     
@@ -152,8 +161,8 @@ function AshleyExpensesDashboard() {
                     <div className="h-[250px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={monthlyTotals.chartData}>
-                                <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                                <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => formatCurrency(value as number)} />
+                                <XAxis dataKey="name" stroke="#888888" tick={{fontSize: 12}} tickLine={false} axisLine={false} />
+                                <YAxis stroke="#888888" tick={{fontSize: 12}} tickLine={false} axisLine={false} tickFormatter={(value) => formatCurrency(value as number)} />
                                 <Tooltip formatter={(value) => formatCurrency(value as number)} cursor={{fill: 'hsl(var(--muted))'}} />
                                 <Legend />
                                 <Bar dataKey="total" name="Total Amount" radius={[4, 4, 0, 0]} />
