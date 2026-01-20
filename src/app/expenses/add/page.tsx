@@ -484,6 +484,52 @@ export default function AddExpensePage() {
                         </CardFooter>
                         )}
                     </Card>
+
+                    {dailyExpenses.length > 0 && (
+                         <Card className="mt-8">
+                            <CardHeader><CardTitle>Report Preview</CardTitle></CardHeader>
+                            <CardContent className="bg-muted/30 p-4 flex justify-center">
+                                <div className="w-full max-w-3xl scale-[0.9] origin-top bg-white text-black">
+                                     <ReportWrapper
+                                        title={t('daily_expense_report')}
+                                        date={format(date, 'yyyy-MM-dd')}
+                                        logoSrc={pdfSettings.report.logo}
+                                        themeColor={pdfSettings.report.reportColors?.expense || '#3b82f6'}
+                                    >
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>{t('name')}</TableHead>
+                                                    <TableHead>{t('date')}</TableHead>
+                                                    <TableHead>{t('total_value')}</TableHead>
+                                                    <TableHead>{t('expense_type')}</TableHead>
+                                                    <TableHead>{t('notes')}</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {flattenedExpenses.map((exp, index) => (
+                                                    <TableRow key={exp.id} className={index % 2 === 0 ? 'bg-gray-100' : ''}>
+                                                        <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{exp.employeeName}</TableCell>
+                                                        <TableCell>{format(new Date(exp.date), 'PP')}</TableCell>
+                                                        <TableCell>{formatCurrency(exp.amount)}</TableCell>
+                                                        <TableCell>{t(exp.expenseType.toLowerCase().replace(/[\s()]/g, '_'))}{exp.expenseSubType ? ` (${t(exp.expenseSubType.toLowerCase().replace(/\s/g, '_'))})` : ''}</TableCell>
+                                                        <TableCell>{exp.notes || t('na')}</TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                            <TableFooter>
+                                                <TableRow>
+                                                    <TableCell colSpan={4} className="text-right font-bold">{t('grand_total')}:</TableCell>
+                                                    <TableCell className="font-bold">{formatCurrency(grandTotal)}</TableCell>
+                                                </TableRow>
+                                            </TableFooter>
+                                        </Table>
+                                    </ReportWrapper>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
                 </div>
             </div>
         </div>

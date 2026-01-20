@@ -312,13 +312,46 @@ export default function MonthlyExpenseReportPage() {
                        </div>
                     </CardContent>
                 </Card>
-                <div className="hidden print:block pt-24">
-                    <div className="flex justify-end">
-                        <div className="w-64 text-center">
-                            <p className="border-t pt-2">{t('warehouse_manager_signature')}</p>
-                        </div>
+                <Card>
+                  <CardHeader><CardTitle>Report Preview</CardTitle></CardHeader>
+                  <CardContent className="bg-muted/30 p-4 flex justify-center">
+                    <div className="w-full max-w-3xl scale-[0.9] origin-top bg-white text-black">
+                       <ReportWrapper
+                            title={t('monthly_expense_report')}
+                            date={selectedDate ? format(selectedDate, 'MMMM yyyy') : ''}
+                            logoSrc={pdfSettings.report.logo}
+                            themeColor={pdfSettings.report.reportColors?.expense || '#3b82f6'}
+                        >
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>{t('employee')}</TableHead>
+                                        <TableHead className="text-right">{t('taxi_expenses')}</TableHead>
+                                        <TableHead className="text-right">{t('purchases_buying_items')}</TableHead>
+                                        <TableHead className="text-right font-bold">{t('total_amount')}</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                {monthlyData.summary.map((item, index) => (
+                                    <TableRow key={item.employeeId} className={index % 2 === 0 ? 'bg-gray-100' : ''}>
+                                        <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{item.employeeName}</TableCell>
+                                        <TableCell className="text-right">{isReadOnly ? '***' : formatCurrency(item.taxiTotal)}</TableCell>
+                                        <TableCell className="text-right">{isReadOnly ? '***' : formatCurrency(item.purchasesTotal)}</TableCell>
+                                        <TableCell className="text-right font-bold">{isReadOnly ? '***' : formatCurrency(item.totalAmount)}</TableCell>
+                                    </TableRow>
+                                ))}
+                                </TableBody>
+                                <TableFooter>
+                                    <TableRow>
+                                        <TableCell colSpan={3} className="text-right font-bold">{t('grand_total')}:</TableCell>
+                                        <TableCell className="text-right font-bold">{isReadOnly ? '***' : formatCurrency(monthlyData.grandTotal)}</TableCell>
+                                    </TableRow>
+                                </TableFooter>
+                            </Table>
+                        </ReportWrapper>
                     </div>
-                </div>
+                  </CardContent>
+                </Card>
             </div>
             ) : (
             <div className="text-center py-16 border-2 border-dashed rounded-lg print:hidden">

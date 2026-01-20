@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -1391,8 +1392,7 @@ function SettingsPage() {
                   </CardHeader>
                   <CardContent className="bg-muted/50 p-6 rounded-b-lg flex justify-center items-start overflow-auto">
                     <div
-                      className="w-full max-w-2xl bg-white shadow-lg transform origin-top overflow-hidden flex flex-col scale-[0.8]"
-                      style={{ aspectRatio: '1 / 1.4142' }}
+                      className="w-full max-w-3xl bg-white shadow-lg transform origin-top overflow-hidden flex flex-col"
                     >
                       {activePdfTab === 'report' && (
                         <ReportWrapper
@@ -1428,7 +1428,7 @@ function SettingsPage() {
                         />
                       )}
                       {activePdfTab === 'card' && (
-                        <div className="flex justify-center items-center h-full">
+                        <div className="flex justify-center items-center h-full p-4">
                           <EmployeePdfCard
                             employee={mockEmployee}
                             settings={currentPdfSettings}
