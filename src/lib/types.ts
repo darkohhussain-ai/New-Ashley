@@ -144,6 +144,8 @@ export type ItemForTransfer = {
   notes?: string;
   transferId?: string | null;
   createdAt: string;
+  invoiceNo?: string;
+  storage?: string;
 };
 
 export type NewItem = Omit<Item, 'id' | 'fileId' | 'storageStatus' | 'modelCondition' | 'quantityPerCondition' | 'updateStatus'> & {

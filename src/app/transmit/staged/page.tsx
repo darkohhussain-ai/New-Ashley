@@ -11,7 +11,7 @@ import jsPDF from 'jspdf';
 import { format } from 'date-fns';
 import { useAppContext } from '@/context/app-provider';
 import { useTranslation } from '@/hooks/use-translation';
-import { StagedItemsPdf } from '@/components/transmit/StagedItemsPdf';
+import { TransmitReportPdf } from '@/components/transmit/TransmitReportPdf';
 import html2canvas from 'html2canvas';
 
 const destinations = ["Erbil", "Baghdad", "Diwan", "Dohuk"];
@@ -19,7 +19,7 @@ const destinations = ["Erbil", "Baghdad", "Diwan", "Dohuk"];
 export default function StagedItemsPage() {
   const { t, language } = useTranslation();
   const { transferItems, settings } = useAppContext();
-  const { customFont, appLogo } = settings;
+  const { pdfSettings, appLogo } = settings;
   const [selectedDestination, setSelectedDestination] = useState<string | null>(null);
 
   const pdfRef = useRef<HTMLDivElement>(null);
@@ -43,14 +43,7 @@ export default function StagedItemsPage() {
     const canvas = await html2canvas(pdfRef.current, { 
         scale: 2, 
         useCORS: true, 
-        backgroundColor: 'white',
-        onclone: (document) => {
-            if (customFont && language === 'ku') {
-                const style = document.createElement('style');
-                style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
-                document.head.appendChild(style);
-            }
-        }
+        backgroundColor: 'white'
     });
 
     const imgData = canvas.toDataURL('image/png');
@@ -93,10 +86,11 @@ export default function StagedItemsPage() {
         <>
             <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
                 <div ref={pdfRef} style={{ width: '700px' }}>
-                    <StagedItemsPdf
-                        destination={selectedDestination}
+                    <TransmitReportPdf
+                        title={`${selectedDestination} Transmit`}
                         items={itemsForSelectedDestination}
                         logoSrc={appLogo}
+                        themeColor={pdfSettings.invoice?.themeColor || '#f97316'}
                     />
                 </div>
             </div>
@@ -120,7 +114,9 @@ export default function StagedItemsPage() {
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>{t('model')}</TableHead>
-                                        <TableHead className="w-24">{t('quantity')}</TableHead>
+                                        <TableHead>{t('quantity')}</TableHead>
+                                        <TableHead>{t('invoice_no')}</TableHead>
+                                        <TableHead>{t('storage')}</TableHead>
                                         <TableHead>{t('notes')}</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -129,6 +125,8 @@ export default function StagedItemsPage() {
                                         <TableRow key={item.id}>
                                             <TableCell className="font-medium">{item.model}</TableCell>
                                             <TableCell>{item.quantity}</TableCell>
+                                            <TableCell>{item.invoiceNo || 'N/A'}</TableCell>
+                                            <TableCell>{item.storage || 'N/A'}</TableCell>
                                             <TableCell className="text-muted-foreground">{item.notes || t('na')}</TableCell>
                                         </TableRow>
                                     ))}

@@ -46,13 +46,13 @@
   "items_count": "Items ({count})",
   "search_by_model": "Search by model...",
   "model": "Model",
-  "quantity": "Qty",
+  "quantity": "QTY",
   "update_status": "Update Status",
   "storage_status": "Storage Status",
   "condition": "Condition",
   "qty_per_condition": "Qty / Cond.",
   "location": "Location",
-  "notes": "Notes",
+  "notes": "Note",
   "select": "Select...",
   "none": "None",
   "correct": "Correct",
@@ -584,5 +584,10 @@
   "select_categories": "Select categories...",
   "available_categories": "Available Categories",
   "select_existing_report": "Select an existing report...",
-  "or_load_from_report": "Or Load from Existing Report"
+  "or_load_from_report": "Or Load from Existing Report",
+  "invoice_no": "Invoice No.",
+  "storage": "Storage",
+  "transmit": "Transmit",
+  "warehouse_manager_signature": "Warehouse Manager",
+  "transmit_report_title": "{city} Transmit"
 }

@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { format, parseISO } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { TransferPdfCard } from '@/components/transmit/transfer-pdf-card';
+import { TransmitReportPdf } from '@/components/transmit/TransmitReportPdf';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -22,9 +22,9 @@ export default function ViewTransferPage() {
   const { id: transferId } = useParams();
   const { t, language } = useTranslation();
   const { transfers, transferItems, settings } = useAppContext();
-  const { pdfSettings, customFont } = settings;
+  const { pdfSettings, appLogo } = settings;
 
-  const pdfCardRef = useRef<HTMLDivElement>(null);
+  const pdfRef = useRef<HTMLDivElement>(null);
   
   const transfer = useMemo(() => transfers.find(t => t.id === transferId), [transfers, transferId]);
   const items = useMemo(() => transferItems.filter(i => i.transferId === transferId), [transferItems, transferId]);
@@ -32,21 +32,14 @@ export default function ViewTransferPage() {
   const isLoading = !transfer || !items;
 
   const handleDownloadPdf = async () => {
-    if (!pdfCardRef.current || !transfer || !items) return;
+    if (!pdfRef.current || !transfer || !items) return;
     
     const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
     
-    const canvas = await html2canvas(pdfCardRef.current, { 
+    const canvas = await html2canvas(pdfRef.current, { 
       scale: 2, 
       useCORS: true, 
-      backgroundColor: 'white',
-      onclone: (document) => {
-        if (customFont && language === 'ku') {
-            const style = document.createElement('style');
-            style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
-            document.head.appendChild(style);
-        }
-      }
+      backgroundColor: 'white'
     });
 
     const imgData = canvas.toDataURL('image/png');
@@ -57,7 +50,7 @@ export default function ViewTransferPage() {
     const ratio = imgWidth / imgHeight;
     
     let finalImgWidth = pdfWidth;
-    let finalImgHeight = finalImgWidth / ratio;
+    let finalImgHeight = pdfWidth / ratio;
 
     if (finalImgHeight > pdfHeight) {
       finalImgHeight = pdfHeight;
@@ -78,41 +71,13 @@ export default function ViewTransferPage() {
     <>
     {transfer && (
        <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-          <div ref={pdfCardRef} className="bg-white text-black" style={{ width: '800px' }}>
-              <TransferPdfCard
-                  transfer={transfer}
-                  logoSrc={pdfSettings.invoice?.logo ?? null}
-                  totalItems={transfer.itemIds.length}
+          <div ref={pdfRef} style={{ width: '700px' }}>
+              <TransmitReportPdf
+                title={`${transfer.destinationCity} Transmit`}
+                items={items}
+                logoSrc={appLogo}
+                themeColor={pdfSettings.invoice?.themeColor || '#f97316'}
               />
-              <div className="p-8">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>{t('model')}</TableHead>
-                            <TableHead>{t('quantity')}</TableHead>
-                            <TableHead>{t('notes')}</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {items.map((item) => (
-                            <TableRow key={item.id}>
-                                <TableCell className="font-medium">{item.model}</TableCell>
-                                <TableCell>{item.quantity}</TableCell>
-                                <TableCell className="text-muted-foreground">{item.notes || t('na')}</TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-                <div className="mt-8 grid grid-cols-2 gap-4 text-sm">
-                    <p><strong>{t('driver')}:</strong> {transfer.driverName}</p>
-                    <p><strong>{t('warehouse_manager')}:</strong> {transfer.warehouseManagerName}</p>
-                </div>
-                 <div className="pt-24 text-right">
-                    <div className="inline-block text-center mt-8">
-                        <p className="border-t pt-2 w-48">{t('warehouse_manager_signature')}</p>
-                    </div>
-                </div>
-              </div>
           </div>
        </div>
     )}
@@ -163,6 +128,8 @@ export default function ViewTransferPage() {
                                 <TableRow>
                                     <TableHead>{t('model')}</TableHead>
                                     <TableHead>{t('quantity')}</TableHead>
+                                    <TableHead>{t('invoice_no')}</TableHead>
+                                    <TableHead>{t('storage')}</TableHead>
                                     <TableHead>{t('notes')}</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -171,6 +138,8 @@ export default function ViewTransferPage() {
                                     <TableRow key={item.id}>
                                         <TableCell className="font-medium">{item.model}</TableCell>
                                         <TableCell>{item.quantity}</TableCell>
+                                        <TableCell>{item.invoiceNo || 'N/A'}</TableCell>
+                                        <TableCell>{item.storage || 'N/A'}</TableCell>
                                         <TableCell className="text-muted-foreground">{item.notes || t('na')}</TableCell>
                                     </TableRow>
                                 ))}

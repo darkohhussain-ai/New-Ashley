@@ -31,6 +31,8 @@ export default function AddItemsPage() {
   const [model, setModel] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [destination, setDestination] = useState('');
+  const [invoiceNo, setInvoiceNo] = useState('');
+  const [storage, setStorage] = useState('');
   const [notes, setNotes] = useState('');
 
   // Editing state
@@ -51,6 +53,8 @@ export default function AddItemsPage() {
       setModel('');
       setQuantity(1);
       setDestination('');
+      setInvoiceNo('');
+      setStorage('');
       setNotes('');
   }
 
@@ -66,6 +70,8 @@ export default function AddItemsPage() {
         model: model.trim(),
         quantity,
         destination,
+        invoiceNo,
+        storage,
         notes,
         transferId: null,
         createdAt: formatISO(new Date())
@@ -133,6 +139,16 @@ export default function AddItemsPage() {
                             </Select>
                         </div>
                     </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="invoiceNo">{t('invoice_no')}</Label>
+                            <Input id="invoiceNo" value={editingItem ? editingItem.invoiceNo : invoiceNo} onChange={(e) => editingItem ? setEditingItem({...editingItem, invoiceNo: e.target.value}) : setInvoiceNo(e.target.value)} placeholder="e.g., INV-001" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="storage">{t('storage')}</Label>
+                            <Input id="storage" value={editingItem ? editingItem.storage : storage} onChange={(e) => editingItem ? setEditingItem({...editingItem, storage: e.target.value}) : setStorage(e.target.value)} placeholder="e.g., A1-03" />
+                        </div>
+                    </div>
                      <div className="space-y-2">
                         <Label htmlFor="notes">{t('notes')}</Label>
                         <Textarea id="notes" value={editingItem ? editingItem.notes || '' : notes} onChange={(e) => editingItem ? setEditingItem({...editingItem, notes: e.target.value}) : setNotes(e.target.value)} placeholder={t('optional_notes_about_item')} />
@@ -170,19 +186,21 @@ export default function AddItemsPage() {
                                     <TableHead>{t('model')}</TableHead>
                                     <TableHead>{t('quantity')}</TableHead>
                                     <TableHead>{t('destination')}</TableHead>
-                                    <TableHead>{t('notes')}</TableHead>
+                                    <TableHead>{t('invoice_no')}</TableHead>
+                                    <TableHead>{t('storage')}</TableHead>
                                     <TableHead className="text-right">{t('actions')}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {isLoadingItems ? (
-                                    <TableRow><TableCell colSpan={5} className="text-center h-24"><Loader2 className="mx-auto animate-spin"/></TableCell></TableRow>
+                                    <TableRow><TableCell colSpan={6} className="text-center h-24"><Loader2 className="mx-auto animate-spin"/></TableCell></TableRow>
                                 ) : sortedItems.length > 0 ? sortedItems.map((item) => (
                                     <TableRow key={item.id} className={cn(editingItem?.id === item.id && "bg-muted")}>
                                         <TableCell className="font-medium">{item.model}</TableCell>
                                         <TableCell>{item.quantity}</TableCell>
                                         <TableCell>{item.destination}</TableCell>
-                                        <TableCell className="text-muted-foreground">{item.notes || t('na')}</TableCell>
+                                        <TableCell>{item.invoiceNo || 'N/A'}</TableCell>
+                                        <TableCell>{item.storage || 'N/A'}</TableCell>
                                         <TableCell className="text-right">
                                             <Button variant="ghost" size="icon" onClick={() => startEditing(item)}><Edit className="w-4 h-4"/></Button>
                                             <Button variant="ghost" size="icon" onClick={() => handleDeleteItem(item)}><Trash2 className="w-4 h-4 text-destructive"/></Button>
@@ -190,7 +208,7 @@ export default function AddItemsPage() {
                                     </TableRow>
                                 )) : (
                                     <TableRow>
-                                        <TableCell colSpan={5} className="text-center h-24">
+                                        <TableCell colSpan={6} className="text-center h-24">
                                             <ListPlus className="mx-auto h-12 w-12 text-muted-foreground mb-2"/>
                                             {t('no_items_staged_yet')}
                                         </TableCell>
