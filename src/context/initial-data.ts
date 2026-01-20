@@ -198,6 +198,17 @@ const initialEmployees: Employee[] = [
         createdAt: new Date().toISOString(),
         isActive: true,
     },
+    {
+        id: 'emp-118',
+        name: 'Kalar',
+        kurdishName: 'کلار',
+        employeeId: '118',
+        role: 'Super Manager',
+        employmentStartDate: parseAndFormatDate('1/1/2024'),
+        createdAt: new Date().toISOString(),
+        isActive: true,
+        password: '123'
+    }
 ];
 
 const initialUsers: User[] = [
@@ -205,6 +216,12 @@ const initialUsers: User[] = [
         id: `user-emp-01`,
         username: 'Darko01',
         password: 'darko0123',
+        roleId: 'role-admin'
+    },
+    {
+        id: 'user-emp-118',
+        username: 'Kalar',
+        password: '123',
         roleId: 'role-admin'
     }
 ];
