@@ -3,13 +3,13 @@
 
 import { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Calendar, Truck, FileDown, User, Warehouse, Loader2 } from 'lucide-react';
+import { ArrowLeft, Calendar as CalendarIcon, Truck, FileDown, User, Warehouse, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { format, formatISO } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -40,6 +40,7 @@ export default function CreateTransferPage() {
   const [driverName, setDriverName] = useState('');
   const [warehouseManagerName, setWarehouseManagerName] = useState('');
   const [transferDate, setTransferDate] = useState<Date | undefined>(undefined);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [selectedItems, setSelectedItems] = useState<Record<string, boolean>>({});
   
   useEffect(() => {
@@ -152,7 +153,7 @@ export default function CreateTransferPage() {
     const ratio = imgWidth / imgHeight;
     
     let finalImgWidth = pdfWidth;
-    let finalImgHeight = finalImgWidth / ratio;
+    let finalImgHeight = pdfWidth / ratio;
 
     if (finalImgHeight > pdfHeight) {
       finalImgHeight = pdfHeight;
@@ -242,14 +243,24 @@ export default function CreateTransferPage() {
                     </div>
                     <div className="space-y-2">
                         <Label>{t('transfer_date')}</Label>
-                        <Popover>
+                        <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                             <PopoverTrigger asChild>
                                 <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !transferDate && "text-muted-foreground")}>
-                                    <CalendarComponent className="mr-2 h-4 w-4" />
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
                                     {transferDate ? format(transferDate, 'PPP') : <span>{t('pick_a_date')}</span>}
                                 </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0"><CalendarComponent mode="single" selected={transferDate} onSelect={setTransferDate} initialFocus /></PopoverContent>
+                            <PopoverContent className="w-auto p-0">
+                              <Calendar
+                                mode="single"
+                                selected={transferDate}
+                                onSelect={(date) => {
+                                  setTransferDate(date);
+                                  setIsCalendarOpen(false);
+                                }}
+                                initialFocus
+                              />
+                            </PopoverContent>
                         </Popover>
                     </div>
                 </CardContent>

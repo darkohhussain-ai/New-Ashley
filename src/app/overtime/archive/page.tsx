@@ -27,6 +27,7 @@ export default function OvertimeArchivePage() {
   const { t } = useTranslation();
   const { overtime: allOvertimeRecords } = useAppContext();
   const [selectedMonth, setSelectedMonth] = useState<Date | undefined>(undefined);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   useEffect(() => {
     setSelectedMonth(new Date());
@@ -72,7 +73,7 @@ export default function OvertimeArchivePage() {
           <h1 className="text-xl">{t('overtime_archive')}</h1>
         </div>
         <div className="flex items-center gap-2">
-            <Popover>
+            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
               <PopoverTrigger asChild>
                 <Button variant={"outline"} className={cn("w-48 justify-start text-left", !selectedMonth && "text-muted-foreground")}>
                   <CalendarIcon className="mr-2 h-4 w-4" />
@@ -80,7 +81,15 @@ export default function OvertimeArchivePage() {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="end">
-                <Calendar mode="single" selected={selectedMonth} onSelect={setSelectedMonth} captionLayout="dropdown-nav" fromYear={2020} toYear={2040} />
+                <Calendar
+                  mode="single"
+                  selected={selectedMonth}
+                  onSelect={(date) => {
+                    setSelectedMonth(date);
+                    setIsCalendarOpen(false);
+                  }}
+                  captionLayout="dropdown-nav" fromYear={2020} toYear={2040}
+                />
               </PopoverContent>
             </Popover>
             <Button onClick={handlePrint} variant="outline" disabled={isLoading || monthlyReports.length === 0}><Printer className="mr-2"/>{t('print')}</Button>

@@ -87,6 +87,7 @@ function AccountPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [employeeDetails, setEmployeeDetails] = useState<Employee | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   
   useEffect(() => {
     setSelectedDate(new Date());
@@ -390,7 +391,7 @@ function AccountPage() {
                 <div className='space-y-4'>
                     <div className="flex justify-between items-center">
                         <h2 className="text-xl font-semibold">{t('this_month_activity_summary', {month: format(selectedDate, 'MMMM yyyy')})}</h2>
-                         <Popover>
+                         <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                             <PopoverTrigger asChild>
                                 <Button
                                 variant={"outline"}
@@ -407,7 +408,12 @@ function AccountPage() {
                                 <Calendar
                                 mode="single"
                                 selected={selectedDate}
-                                onSelect={(date) => date && setSelectedDate(date)}
+                                onSelect={(date) => {
+                                  if (date) {
+                                    setSelectedDate(date);
+                                    setIsCalendarOpen(false);
+                                  }
+                                }}
                                 initialFocus
                                 captionLayout="dropdown-nav" fromYear={2020} toYear={new Date().getFullYear()}
                                 />

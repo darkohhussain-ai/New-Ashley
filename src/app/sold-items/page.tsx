@@ -92,6 +92,7 @@ export default function SoldItemsCheckPage() {
 
     const [receiptNumberDigits, setReceiptNumberDigits] = useState('');
     const [receiptDate, setReceiptDate] = useState<Date | undefined>(undefined);
+    const [isCalendarOpen, setIsCalendarOpen] = useState(false);
     const [customerName, setCustomerName] = useState('');
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [isSaving, setIsSaving] = useState(false);
@@ -204,14 +205,23 @@ export default function SoldItemsCheckPage() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label>{t('receipt_date_optional')}</Label>
-                                    <Popover>
+                                    <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                                         <PopoverTrigger asChild>
                                             <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !receiptDate && "text-muted-foreground")}>
                                                 <CalendarIcon className="mr-2 h-4 w-4" />
                                                 {receiptDate ? format(receiptDate, 'PPP') : <span>{t('pick_a_date')}</span>}
                                             </Button>
                                         </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={receiptDate} onSelect={setReceiptDate} /></PopoverContent>
+                                        <PopoverContent className="w-auto p-0">
+                                          <Calendar
+                                            mode="single"
+                                            selected={receiptDate}
+                                            onSelect={(date) => {
+                                              setReceiptDate(date);
+                                              setIsCalendarOpen(false);
+                                            }}
+                                          />
+                                        </PopoverContent>
                                     </Popover>
                                 </div>
                                 <div className="space-y-2">

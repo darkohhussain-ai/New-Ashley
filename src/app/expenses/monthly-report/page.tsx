@@ -45,6 +45,8 @@ export default function MonthlyExpenseReportPage() {
 
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  
   useEffect(() => {
     // Only set date on client-side
     setSelectedDate(new Date());
@@ -212,7 +214,7 @@ export default function MonthlyExpenseReportPage() {
             <h1 className="text-2xl">{t('monthly_expense_report')}</h1>
           </div>
           <div className="flex items-center gap-2">
-            <Popover>
+            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
               <PopoverTrigger asChild>
                 <Button variant="outline" className={cn("w-[280px] justify-start text-left", !selectedDate && "text-muted-foreground")}>
                   <CalendarIcon className="mr-2 h-4 w-4" />
@@ -220,7 +222,15 @@ export default function MonthlyExpenseReportPage() {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="end">
-                <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} captionLayout="dropdown-nav" fromYear={2020} toYear={2040} />
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => {
+                    setSelectedDate(date);
+                    setIsCalendarOpen(false);
+                  }}
+                  captionLayout="dropdown-nav" fromYear={2020} toYear={2040}
+                />
               </PopoverContent>
             </Popover>
             <Button variant="outline" onClick={handlePrint} disabled={isLoading || monthlyData.summary.length === 0}><Printer className="mr-2"/>{t('print')}</Button>
