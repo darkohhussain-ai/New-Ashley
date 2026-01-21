@@ -64,7 +64,10 @@ function TransmitDashboardPage() {
 
     const recentTransfers = useMemo(() => {
         if (!transfers) return [];
-        return transfers.sort((a,b) => parseISO(b.transferDate).getTime() - parseISO(a.transferDate).getTime()).slice(0, 5);
+        return transfers
+            .filter(t => t.transferDate && !isNaN(parseISO(t.transferDate).getTime()))
+            .sort((a,b) => parseISO(b.transferDate).getTime() - parseISO(a.transferDate).getTime())
+            .slice(0, 5);
     }, [transfers]);
 
 

@@ -39,7 +39,7 @@ export default function StagedItemsPage() {
     return destinations.map(dest => {
         const itemsForDest = stagedItems.filter(item => item.destination === dest);
         const lastTransfer = transfers
-            .filter(t => t.destinationCity === dest)
+            .filter(t => t.destinationCity === dest && t.transferDate && !isNaN(parseISO(t.transferDate).getTime()))
             .sort((a,b) => parseISO(b.transferDate).getTime() - parseISO(a.transferDate).getTime())[0];
         
         return {

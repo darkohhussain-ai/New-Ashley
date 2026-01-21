@@ -19,7 +19,11 @@ export default function TransferArchivePage() {
 
   const sortedTransfers = useMemo(() => {
     if (!transfers) return [];
-    return [...transfers].sort((a, b) => new Date(b.transferDate).getTime() - new Date(a.transferDate).getTime());
+    return [...transfers].sort((a, b) => {
+      const dateA = a.transferDate ? parseISO(a.transferDate).getTime() : 0;
+      const dateB = b.transferDate ? parseISO(b.transferDate).getTime() : 0;
+      return dateB - dateA;
+    });
   }, [transfers]);
 
   return (
@@ -58,7 +62,7 @@ export default function TransferArchivePage() {
                     <CardDescription>{t('to_destination')}: {transfer.destinationCity}</CardDescription>
                     </CardHeader>
                     <CardContent className="flex-grow space-y-3 text-sm text-muted-foreground">
-                    <p className="flex items-center gap-2"><CalendarIcon className="w-4 h-4 text-primary" /> {format(parseISO(transfer.transferDate), 'PPP')}</p>
+                    <p className="flex items-center gap-2"><CalendarIcon className="w-4 h-4 text-primary" /> {transfer.transferDate ? format(parseISO(transfer.transferDate), 'PPP') : 'N/A'}</p>
                     <p className="flex items-center gap-2"><Truck className="w-4 h-4 text-primary" /> {t('driver')}: {transfer.driverName}</p>
                     <p className="flex items-center gap-2"><User className="w-4 h-4 text-primary" /> {t('manager')}: {transfer.warehouseManagerName}</p>
                     </CardContent>
