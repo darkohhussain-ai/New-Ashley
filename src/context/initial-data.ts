@@ -257,6 +257,12 @@ const defaultInvoiceSettings: PdfSettings = {
     scale: 2,
     width: 800,
     fontSize: 10,
+    branchColors: {
+        Erbil: '#f97316',
+        Baghdad: '#3b82f6',
+        Dohuk: '#8b5cf6',
+        Diwan: '#10b981',
+    }
 };
 
 const defaultCardSettings: PdfSettings = {

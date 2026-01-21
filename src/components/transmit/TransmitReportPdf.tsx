@@ -15,11 +15,14 @@ export const TransmitReportPdf = ({ transfer, items, settings }: { transfer: Par
     const reportTitle = transfer.destinationCity ? t('transmit_report_title', { city: transfer.destinationCity }) : t('transmit_cargo');
     const formattedDate = transfer.transferDate ? format(parseISO(transfer.transferDate), 'PPP') : 'N/A';
     
-    const { logo, themeColor, fontSize } = settings;
+    const { logo, fontSize, branchColors, themeColor: defaultThemeColor } = settings;
+
+    const finalThemeColor = (transfer.destinationCity && branchColors?.[transfer.destinationCity as keyof typeof branchColors]) || defaultThemeColor || '#f97316';
+
 
     return (
         <div className="bg-white text-black p-4 font-sans" style={{ fontSize: `${fontSize}px` }} dir={useKurdish ? 'rtl' : 'ltr'}>
-            <header className="flex justify-between items-center mb-4 p-2" style={{ backgroundColor: themeColor, color: 'white' }}>
+            <header className="flex justify-between items-center mb-4 p-2" style={{ backgroundColor: finalThemeColor, color: 'white' }}>
                  <div className="w-24 h-12 relative">
                     {logo && <Image src={logo} alt="logo" fill className="object-contain" />}
                 </div>
@@ -40,7 +43,7 @@ export const TransmitReportPdf = ({ transfer, items, settings }: { transfer: Par
             <div className="border border-black mt-4">
                 <Table>
                     <TableHeader>
-                        <TableRow style={{ backgroundColor: themeColor, color: 'white' }}>
+                        <TableRow style={{ backgroundColor: finalThemeColor, color: 'white' }}>
                             <TableHead className="text-white border-black border w-8">No.</TableHead>
                             <TableHead className="text-white border-black border">{t('request_date')}</TableHead>
                             <TableHead className="text-white border-black border">{t('model')}</TableHead>

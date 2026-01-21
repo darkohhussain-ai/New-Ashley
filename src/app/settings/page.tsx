@@ -66,6 +66,7 @@ import type {
   Transfer,
   ThemeColors,
   AppSettings,
+  BranchColors,
 } from '@/lib/types';
 import { format, formatISO } from 'date-fns';
 import {
@@ -104,6 +105,8 @@ const reportTypes = [
   { value: 'bonus', label: 'Bonus' },
   { value: 'withdrawal', label: 'Withdrawal' },
 ];
+
+const destinations = ["Erbil", "Baghdad", "Dohuk", "Diwan"];
 
 // Mock data for previews
 const mockEmployee: Employee = {
@@ -609,6 +612,23 @@ function SettingsPage() {
       },
     }));
   };
+
+   const handleBranchColorChange = (branch: keyof BranchColors, color: string) => {
+    setDraftSettings(prev => ({
+      ...prev,
+      pdfSettings: {
+        ...prev.pdfSettings,
+        invoice: {
+          ...prev.pdfSettings.invoice,
+          branchColors: {
+            ...prev.pdfSettings.invoice.branchColors,
+            [branch]: color,
+          },
+        },
+      },
+    }));
+  };
+
 
   const handleFileUpload = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -1216,7 +1236,7 @@ function SettingsPage() {
                     </Tabs>
                   </CardContent>
                 </Card>
-                <Card>
+                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-lg">
                       <FileText /> {t('content')}
@@ -1266,6 +1286,29 @@ function SettingsPage() {
                     </div>
                   </CardContent>
                 </Card>
+
+                {activePdfTab === 'invoice' && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Branch Colors</CardTitle>
+                      <CardDescription>Set a unique color for each destination branch report.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {destinations.map(dest => (
+                        <div key={dest} className="flex items-center justify-between">
+                          <Label>{dest}</Label>
+                          <Input
+                            type="color"
+                            value={(draftSettings.pdfSettings.invoice.branchColors as any)?.[dest] ?? '#000000'}
+                            onChange={e => handleBranchColorChange(dest as any, e.target.value)}
+                            className="w-10 h-10 p-1"
+                          />
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
+
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-lg">
@@ -1344,7 +1387,7 @@ function SettingsPage() {
                           />
                         </div>
                       </div>
-                    ) : (
+                    ) : activePdfTab !== 'invoice' ? ( // only show for non-invoice types now
                       <div className="flex items-center justify-between">
                         <Label htmlFor="theme-color">{t('theme_color')}</Label>
                         <Input
@@ -1357,7 +1400,7 @@ function SettingsPage() {
                           className="w-10 h-10 p-1"
                         />
                       </div>
-                    )}
+                    ) : null}
                     {(activePdfTab === 'report' || activePdfTab === 'invoice') && (
                       <div className="flex items-center justify-between">
                         <Label htmlFor="table-theme-select">
@@ -1421,10 +1464,9 @@ function SettingsPage() {
                       )}
                       {activePdfTab === 'invoice' && (
                         <TransmitReportPdf 
-                           transfer={mockTransfer}
+                           transfer={{...mockTransfer, destinationCity: 'Erbil'}}
                            items={mockTransferItems}
-                           logoSrc={currentPdfSettings.logo}
-                           themeColor={currentPdfSettings.themeColor || '#f97316'}
+                           settings={currentPdfSettings}
                         />
                       )}
                       {activePdfTab === 'card' && (

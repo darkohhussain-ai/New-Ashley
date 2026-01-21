@@ -181,12 +181,20 @@ export type ReportColors = {
   withdrawal: string;
 }
 
+export type BranchColors = {
+  Erbil?: string;
+  Baghdad?: string;
+  Dohuk?: string;
+  Diwan?: string;
+}
+
 export type PdfSettings = {
     logo?: string | null;
     font?: string;
     customFont?: string | null;
     themeColor?: string;
     reportColors?: ReportColors;
+    branchColors?: BranchColors;
     tableTheme?: 'striped' | 'grid';
     headerText?: string;
     footerText?: string;
