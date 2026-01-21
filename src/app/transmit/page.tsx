@@ -1,7 +1,7 @@
-
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ArrowLeft, PackagePlus, ListPlus, Eye, ClipboardList, Truck, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardTitle, CardHeader, CardDescription } from '@/components/ui/card';
@@ -18,6 +18,7 @@ function TransmitDashboardPage() {
     const { t } = useTranslation();
     const { hasPermission } = useAuth();
     const { transferItems, transfers } = useAppContext();
+    const router = useRouter();
 
     const menuItems = [
       {
@@ -117,14 +118,10 @@ function TransmitDashboardPage() {
                             </TableHeader>
                             <TableBody>
                                 {stagedItemsByDestination.map(item => (
-                                    <TableRow key={item.destination}>
+                                    <TableRow key={item.destination} onClick={() => router.push(`/transmit/staged?destination=${encodeURIComponent(item.destination)}`)} className="cursor-pointer hover:bg-muted/50">
                                         <TableCell className="font-medium">{item.destination}</TableCell>
                                         <TableCell className="text-right">
-                                            <Button variant="link" asChild className="p-0 h-auto">
-                                                <Link href={`/transmit/staged?destination=${encodeURIComponent(item.destination)}`}>
-                                                    {item.count}
-                                                </Link>
-                                            </Button>
+                                            {item.count}
                                         </TableCell>
                                     </TableRow>
                                 ))}
@@ -153,7 +150,7 @@ function TransmitDashboardPage() {
                             </TableHeader>
                             <TableBody>
                                 {recentTransfers.map(transfer => (
-                                    <TableRow key={transfer.id}>
+                                    <TableRow key={transfer.id} onClick={() => router.push(`/transmit/archive/${transfer.id}`)} className="cursor-pointer hover:bg-muted/50">
                                         <TableCell>{format(parseISO(transfer.transferDate), 'PP')}</TableCell>
                                         <TableCell>{transfer.destinationCity}</TableCell>
                                         <TableCell className="text-right">{transfer.itemIds.length}</TableCell>
