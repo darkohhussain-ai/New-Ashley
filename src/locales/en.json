@@ -595,5 +595,14 @@
   "expense_breakdown": "Expense Breakdown",
   "overtime_summary": "Overtime Summary",
   "bonus_summary": "Bonus Summary",
-  "withdrawal_summary": "Withdrawal Summary"
+  "withdrawal_summary": "Withdrawal Summary",
+  "request_date": "Request Date",
+  "items_staged": "Items Staged",
+  "last_transfer": "Last Transfer",
+  "staged_items_summary": "Staged Items Summary",
+  "staged_items_summary_desc": "A quick look at items waiting for transfer to each destination.",
+  "no_items_currently_staged": "No items are currently staged for transfer.",
+  "recent_transfers": "Recent Transfers",
+  "recent_transfers_desc": "A list of the most recently created transfer slips.",
+  "no_recent_transfers": "There have been no recent transfers."
 }

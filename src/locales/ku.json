@@ -595,5 +595,14 @@
   "expense_breakdown": "شیکردنەوەی خەرجی",
   "overtime_summary": "پوختەی کاتی زیادە",
   "bonus_summary": "پوختەی پاداشت",
-  "withdrawal_summary": "پوختەی ڕاکێشان"
+  "withdrawal_summary": "پوختەی ڕاکێشان",
+  "request_date": "بەرواری داواکردن",
+  "items_staged": "کاڵا ئامادەکراوەکان",
+  "last_transfer": "دوایین گواستنەوە",
+  "staged_items_summary": "پوختەی کاڵا ئامادەکراوەکان",
+  "staged_items_summary_desc": "پوختەیەکی خێرای کاڵاکانی چاوەڕوانکراو بۆ گواستنەوە بۆ هەر مەبەستێک.",
+  "no_items_currently_staged": "هیچ کاڵایەک لە ئێستادا بۆ گواستنەوە ئامادە نەکراوە.",
+  "recent_transfers": "گواستنەوە نوێیەکان",
+  "recent_transfers_desc": "لیستی پسوولە گواستنەوە تازە دروستکراوەکان.",
+  "no_recent_transfers": "هیچ گواستنەوەیەکی نوێ نییە."
 }

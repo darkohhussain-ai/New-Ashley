@@ -42,29 +42,28 @@ export const TransmitReportPdf = ({ transfer, items, settings }: { transfer: Par
                     <TableHeader>
                         <TableRow style={{ backgroundColor: themeColor, color: 'white' }}>
                             <TableHead className="text-white border-black border w-8">No.</TableHead>
+                            <TableHead className="text-white border-black border">{t('request_date')}</TableHead>
                             <TableHead className="text-white border-black border">{t('model')}</TableHead>
                             <TableHead className="text-white border-black border w-16">{t('quantity')}</TableHead>
-                            <TableHead className="text-white border-black border w-24">{t('invoice_no')}</TableHead>
-                            <TableHead className="text-white border-black border w-24">{t('storage')}</TableHead>
+                            <TableHead className="text-white border-black border">{t('invoice_no')}</TableHead>
+                            <TableHead className="text-white border-black border">{t('storage')}</TableHead>
                             <TableHead className="text-white border-black border w-16">{t('transmit')}</TableHead>
-                            <TableHead className="text-white border-black border w-[40%]">{t('notes')}</TableHead>
+                            <TableHead className="text-white border-black border w-1/3">{t('notes')}</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {Array.from({ length: 23 }).map((_, index) => {
-                            const item = items[index];
-                            return (
-                                <TableRow key={index} className="h-10">
-                                    <TableCell className="border border-black text-center">{index + 1}</TableCell>
-                                    <TableCell className="border border-black p-1">{item?.model || ''}</TableCell>
-                                    <TableCell className="border border-black p-1 text-center">{item?.quantity || ''}</TableCell>
-                                    <TableCell className="border border-black p-1">{item?.invoiceNo || ''}</TableCell>
-                                    <TableCell className="border border-black p-1">{item?.storage || ''}</TableCell>
-                                    <TableCell className="border border-black p-1 text-center"><div className="w-4 h-4 border border-black mx-auto" /></TableCell>
-                                    <TableCell className="border border-black p-1">{item?.notes || ''}</TableCell>
-                                </TableRow>
-                            );
-                        })}
+                        {items.map((item, index) => (
+                            <TableRow key={item.id} className="h-10">
+                                <TableCell className="border border-black text-center p-1">{index + 1}</TableCell>
+                                <TableCell className="border border-black p-1">{item.requestDate ? format(parseISO(item.requestDate), 'yyyy-MM-dd') : ''}</TableCell>
+                                <TableCell className="border border-black p-1">{item.model}</TableCell>
+                                <TableCell className="border border-black p-1 text-center">{item.quantity}</TableCell>
+                                <TableCell className="border border-black p-1">{item.invoiceNo || ''}</TableCell>
+                                <TableCell className="border border-black p-1">{item.storage || ''}</TableCell>
+                                <TableCell className="border border-black p-1 text-center"><div className="w-4 h-4 border border-black mx-auto" /></TableCell>
+                                <TableCell className="border border-black p-1">{item.notes || ''}</TableCell>
+                            </TableRow>
+                        ))}
                     </TableBody>
                 </Table>
             </div>

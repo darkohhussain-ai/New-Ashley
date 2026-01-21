@@ -3,12 +3,12 @@
 
 import { useState, useMemo, useRef } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, ListPlus, FileDown, Building } from 'lucide-react';
+import { ArrowLeft, Loader2, ListPlus, FileDown, Building, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import jsPDF from 'jspdf';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { useAppContext } from '@/context/app-provider';
 import { useTranslation } from '@/hooks/use-translation';
 import { TransmitReportPdf } from '@/components/transmit/TransmitReportPdf';
@@ -18,13 +18,13 @@ const destinations = ["Erbil", "Baghdad", "Diwan", "Dohuk"];
 
 export default function StagedItemsPage() {
   const { t, language } = useTranslation();
-  const { transferItems, settings } = useAppContext();
+  const { transferItems, transfers, settings } = useAppContext();
   const { pdfSettings, customFont } = settings;
   const [selectedDestination, setSelectedDestination] = useState<string | null>(null);
 
   const pdfRef = useRef<HTMLDivElement>(null);
 
-  const isLoadingItems = !transferItems;
+  const isLoadingItems = !transferItems || !transfers;
   const stagedItems = useMemo(() => transferItems.filter(item => !item.transferId), [transferItems]);
 
 
@@ -34,6 +34,21 @@ export default function StagedItemsPage() {
       .filter(item => item.destination === selectedDestination)
       .sort((a,b) => a.model.localeCompare(b.model));
   }, [stagedItems, selectedDestination]);
+
+  const destinationStats = useMemo(() => {
+    return destinations.map(dest => {
+        const itemsForDest = stagedItems.filter(item => item.destination === dest);
+        const lastTransfer = transfers
+            .filter(t => t.destinationCity === dest)
+            .sort((a,b) => parseISO(b.transferDate).getTime() - parseISO(a.transferDate).getTime())[0];
+        
+        return {
+            destination: dest,
+            stagedItemCount: itemsForDest.length,
+            lastTransferDate: lastTransfer ? lastTransfer.transferDate : null
+        };
+    });
+}, [stagedItems, transfers]);
   
   const handleDownloadPdf = async () => {
     if (!pdfRef.current || !selectedDestination) return;
@@ -166,16 +181,19 @@ export default function StagedItemsPage() {
                 <CardDescription>{t('select_destination_to_view_staged')}</CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {destinations.map(destination => (
-                    <Button 
-                        key={destination} 
-                        variant="outline" 
-                        className="h-24 text-lg flex-col gap-2"
-                        onClick={() => setSelectedDestination(destination)}
-                    >
-                        <Building className="w-6 h-6 text-primary"/>
-                        {destination}
-                    </Button>
+                {destinationStats.map(stat => (
+                    <Card key={stat.destination} className="p-4 hover:bg-muted/50 cursor-pointer" onClick={() => setSelectedDestination(stat.destination)}>
+                        <CardHeader className="p-2 pt-0">
+                            <CardTitle className="flex items-center gap-2"><Building className="w-5 h-5 text-primary"/>{stat.destination}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-2 space-y-1 text-sm">
+                            <p><strong>{stat.stagedItemCount}</strong> {t('items_staged')}</p>
+                            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                <Calendar className="w-3 h-3" />
+                                {t('last_transfer')}: {stat.lastTransferDate ? format(parseISO(stat.lastTransferDate), 'PP') : t('na')}
+                            </p>
+                        </CardContent>
+                    </Card>
                 ))}
             </CardContent>
         </Card>

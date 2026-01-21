@@ -1,11 +1,11 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Plus, Trash2, Edit, Save, X, Loader2, ListPlus } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Edit, Save, X, Loader2, ListPlus, Calendar as CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -15,10 +15,13 @@ import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAppContext } from '@/context/app-provider';
 import type { ItemForTransfer } from '@/lib/types';
-import { formatISO } from 'date-fns';
+import { format, formatISO } from 'date-fns';
 import { useTranslation } from '@/hooks/use-translation';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 
 const destinations = ["Erbil", "Baghdad", "Diwan", "Dohuk"];
+const storageOptions = ["Ashley", "Huana", "Showroom"];
 
 export default function AddItemsPage() {
   const { toast } = useToast();
@@ -34,6 +37,7 @@ export default function AddItemsPage() {
   const [invoiceNo, setInvoiceNo] = useState('');
   const [storage, setStorage] = useState('');
   const [notes, setNotes] = useState('');
+  const [requestDate, setRequestDate] = useState<Date | undefined>(new Date());
 
   // Editing state
   const [editingItem, setEditingItem] = useState<ItemForTransfer | null>(null);
@@ -56,6 +60,7 @@ export default function AddItemsPage() {
       setInvoiceNo('');
       setStorage('');
       setNotes('');
+      setRequestDate(new Date());
   }
 
   const handleAddItem = () => {
@@ -73,6 +78,7 @@ export default function AddItemsPage() {
         invoiceNo,
         storage,
         notes,
+        requestDate: requestDate ? formatISO(requestDate) : undefined,
         transferId: null,
         createdAt: formatISO(new Date())
     };
@@ -124,6 +130,20 @@ export default function AddItemsPage() {
                         <Label htmlFor="model">{t('model_name')}</Label>
                         <Input id="model" value={editingItem ? editingItem.model : model} onChange={(e) => editingItem ? setEditingItem({...editingItem, model: e.target.value}) : setModel(e.target.value)} placeholder="e.g., Sofa 123" />
                     </div>
+                    <div className="space-y-2">
+                        <Label>{t('request_date')}</Label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !requestDate && "text-muted-foreground")}>
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {requestDate ? format(requestDate, 'PPP') : <span>{t('pick_a_date')}</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                                <Calendar mode="single" selected={editingItem ? (editingItem.requestDate ? new Date(editingItem.requestDate) : new Date()) : requestDate} onSelect={(date) => editingItem ? setEditingItem({...editingItem, requestDate: date ? formatISO(date) : undefined}) : setRequestDate(date)} initialFocus />
+                            </PopoverContent>
+                        </Popover>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="quantity">{t('quantity')}</Label>
@@ -146,7 +166,12 @@ export default function AddItemsPage() {
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="storage">{t('storage')}</Label>
-                            <Input id="storage" value={editingItem ? editingItem.storage : storage} onChange={(e) => editingItem ? setEditingItem({...editingItem, storage: e.target.value}) : setStorage(e.target.value)} placeholder="e.g., A1-03" />
+                             <Select value={editingItem ? editingItem.storage : storage} onValueChange={(val) => editingItem ? setEditingItem({...editingItem, storage: val}) : setStorage(val)}>
+                                <SelectTrigger id="storage"><SelectValue placeholder={t('select_a_source')} /></SelectTrigger>
+                                <SelectContent>
+                                    {storageOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
                         </div>
                     </div>
                      <div className="space-y-2">
