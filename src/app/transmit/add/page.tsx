@@ -1,11 +1,10 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Plus, Trash2, Edit, Save, X, Loader2, ListPlus, Calendar as CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -72,6 +71,10 @@ export default function AddItemsPage() {
       toast({ variant: 'destructive', title: t('missing_information'), description: t('provide_model_destination') });
       return;
     }
+    if (quantity <= 0) {
+      toast({ variant: 'destructive', title: t('invalid_quantity'), description: t('quantity_must_be_positive') });
+      return;
+    }
     
     setIsSaving(true);
     const newItemData: ItemForTransfer = {
@@ -95,6 +98,10 @@ export default function AddItemsPage() {
   
   const handleUpdateItem = () => {
     if (!editingItem || !editingItem.model.trim()) return;
+    if (editingItem.quantity <= 0) {
+      toast({ variant: 'destructive', title: t('invalid_quantity'), description: t('quantity_must_be_positive') });
+      return;
+    }
 
     setIsSaving(true);
     setTransferItems(transferItems.map(item => item.id === editingItem.id ? editingItem : item));
