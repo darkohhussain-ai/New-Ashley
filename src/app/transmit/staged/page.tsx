@@ -48,7 +48,7 @@ export default function StagedItemsPage() {
             lastTransferDate: lastTransfer ? lastTransfer.transferDate : null
         };
     });
-}, [stagedItems, transfers]);
+  }, [stagedItems, transfers]);
   
   const handleDownloadPdf = async () => {
     if (!pdfRef.current || !selectedDestination) return;

@@ -19,11 +19,9 @@ export default function TransferArchivePage() {
 
   const sortedTransfers = useMemo(() => {
     if (!transfers) return [];
-    return [...transfers].sort((a, b) => {
-      const dateA = a.transferDate ? parseISO(a.transferDate).getTime() : 0;
-      const dateB = b.transferDate ? parseISO(b.transferDate).getTime() : 0;
-      return dateB - dateA;
-    });
+    return transfers
+      .filter(t => t.transferDate && !isNaN(parseISO(t.transferDate).getTime()))
+      .sort((a, b) => parseISO(b.transferDate).getTime() - parseISO(a.transferDate).getTime());
   }, [transfers]);
 
   return (
