@@ -1,4 +1,3 @@
-
 'use client';
 import { ItemForTransfer, Transfer } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -44,19 +43,19 @@ export const TransmitReportPdf = ({ transfer, items, settings }: { transfer: Par
                 <Table>
                     <TableHeader>
                         <TableRow style={{ backgroundColor: finalThemeColor, color: 'white' }}>
-                            <TableHead className="text-white border-black border w-8">No.</TableHead>
+                            <TableHead className="text-white border-black border">No.</TableHead>
                             <TableHead className="text-white border-black border">{t('request_date')}</TableHead>
                             <TableHead className="text-white border-black border">{t('model')}</TableHead>
-                            <TableHead className="text-white border-black border w-16">{t('quantity')}</TableHead>
+                            <TableHead className="text-white border-black border">{t('quantity')}</TableHead>
                             <TableHead className="text-white border-black border">{t('invoice_no')}</TableHead>
                             <TableHead className="text-white border-black border">{t('storage')}</TableHead>
-                            <TableHead className="text-white border-black border w-16">{t('transmit')}</TableHead>
-                            <TableHead className="text-white border-black border w-1/3">{t('notes')}</TableHead>
+                            <TableHead className="text-white border-black border">{t('transmit')}</TableHead>
+                            <TableHead className="text-white border-black border">{t('notes')}</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {items.map((item, index) => (
-                            <TableRow key={item.id} className="h-10">
+                            <TableRow key={item.id}>
                                 <TableCell className="border border-black text-center p-1">{index + 1}</TableCell>
                                 <TableCell className="border border-black p-1">{item.requestDate ? format(parseISO(item.requestDate), 'yyyy-MM-dd') : ''}</TableCell>
                                 <TableCell className="border border-black p-1">{item.model}</TableCell>
