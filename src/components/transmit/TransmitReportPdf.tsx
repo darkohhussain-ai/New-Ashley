@@ -1,4 +1,3 @@
-
 'use client';
 import { ItemForTransfer, Transfer } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -43,29 +42,39 @@ export const TransmitReportPdf = ({ transfer, items, settings }: { transfer: Par
 
             <div className="border border-black mt-4">
                 <Table>
+                    <colgroup>
+                        <col style={{ width: '5%' }} />
+                        <col style={{ width: '25%' }} />
+                        <col style={{ width: '5%' }} />
+                        <col style={{ width: '10%' }} />
+                        <col style={{ width: '10%' }} />
+                        <col style={{ width: '5%' }} />
+                        <col style={{ width: '25%' }} />
+                        <col style={{ width: '15%' }} />
+                    </colgroup>
                     <TableHeader>
                         <TableRow style={{ backgroundColor: finalThemeColor, color: 'white' }}>
                             <TableHead className="text-white border-black border">No.</TableHead>
-                            <TableHead className="text-white border-black border">{t('request_date')}</TableHead>
                             <TableHead className="text-white border-black border">{t('model')}</TableHead>
                             <TableHead className="text-white border-black border">{t('quantity')}</TableHead>
                             <TableHead className="text-white border-black border">{t('invoice_no')}</TableHead>
                             <TableHead className="text-white border-black border">{t('storage')}</TableHead>
                             <TableHead className="text-white border-black border">{t('transmit')}</TableHead>
                             <TableHead className="text-white border-black border">{t('notes')}</TableHead>
+                            <TableHead className="text-white border-black border">{t('request_date')}</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {items.map((item, index) => (
                             <TableRow key={item.id}>
                                 <TableCell className="border border-black text-center p-1">{index + 1}</TableCell>
-                                <TableCell className="border border-black p-1">{item.requestDate ? format(parseISO(item.requestDate), 'yyyy-MM-dd') : ''}</TableCell>
                                 <TableCell className="border border-black p-1">{item.model}</TableCell>
                                 <TableCell className="border border-black p-1 text-center">{item.quantity}</TableCell>
                                 <TableCell className="border border-black p-1">{item.invoiceNo || ''}</TableCell>
                                 <TableCell className="border border-black p-1">{item.storage || ''}</TableCell>
                                 <TableCell className="border border-black p-1 text-center"><div className="w-4 h-4 border border-black mx-auto" /></TableCell>
                                 <TableCell className="border border-black p-1">{item.notes || ''}</TableCell>
+                                <TableCell className="border border-black p-1">{item.requestDate ? format(parseISO(item.requestDate), 'yyyy-MM-dd') : ''}</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
