@@ -34,6 +34,11 @@
     /* Custom Added Colors */
     --tab-active-background: hsl(var(--background));
     --tab-active-foreground: hsl(var(--foreground));
+    --table-row-primary: 0 0% 100%;
+    --table-row-secondary: 220 13% 91%;
+    --huana-highlight: 210 100% 96%;
+    --location-occupied-border: 210 100% 70%;
+    --location-occupied-bg: 210 100% 96%;
 
     /* Custom Status Colors */
     --status-correct-bg: 142 90% 92%;
@@ -41,8 +46,6 @@
     --status-more-bg: 221 83% 92%; /* Darker Blue */
     --status-wrapped-bg: 54 100% 92%;
     --status-damaged-bg: 0 100% 94%;
-    --location-occupied-border: 210 100% 70%;
-    --location-occupied-bg: 210 100% 96%;
     
     --status-new-bg: 48 96% 89%; /* Strong Yellow */
     --status-updated-bg: 142 80% 92%; 
@@ -76,6 +79,11 @@
     /* Custom Added Colors */
     --tab-active-background: hsl(var(--background));
     --tab-active-foreground: hsl(var(--foreground));
+    --table-row-primary: 222.2 84% 4.9%;
+    --table-row-secondary: 217.2 32.6% 17.5%;
+    --huana-highlight: 217.2 91.2% 15%;
+    --location-occupied-border: 217.2 91.2% 50%;
+    --location-occupied-bg: 217.2 91.2% 15%;
 
     /* Custom Status Colors */
     --status-correct-bg: 142 76% 15%; 
@@ -83,8 +91,6 @@
     --status-more-bg: 210 100% 20%;
     --status-wrapped-bg: 54 92% 15%;
     --status-damaged-bg: 0 84% 15%;
-    --location-occupied-border: 217.2 91.2% 50%;
-    --location-occupied-bg: 217.2 91.2% 15%;
     
     --status-new-bg: 48 96% 25%; /* Strong Yellow */
     --status-updated-bg: 142 76% 20%; 
@@ -117,6 +123,13 @@
   /* Update Statuses */
   .bg-status-new { @apply bg-[hsl(var(--status-new-bg))]; }
   .bg-status-updated { @apply bg-[hsl(var(--status-updated-bg))]; }
+
+  /* Custom row/item colors */
+  .bg-table-row-primary { @apply bg-[hsl(var(--table-row-primary))]; }
+  .bg-table-row-secondary { @apply bg-[hsl(var(--table-row-secondary))]; }
+  .bg-huana-highlight { @apply bg-[hsl(var(--huana-highlight))]; }
+  .border-location-occupied-border { @apply border-[hsl(var(--location-occupied-border))]; }
+  .bg-location-occupied-bg { @apply bg-[hsl(var(--location-occupied-bg))]; }
 }
 
 @media print {

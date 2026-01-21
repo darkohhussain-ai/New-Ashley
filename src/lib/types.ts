@@ -198,6 +198,7 @@ export type PdfSettings = {
     tableTheme?: 'striped' | 'grid';
     headerText?: string;
     footerText?: string;
+    titleTemplate?: string;
     loginCardColor?: string;
     hideLoginBg?: boolean;
     scale?: number;
@@ -219,6 +220,11 @@ export type ThemeColors = {
   card: string;
   tabActiveBackground: string;
   tabActiveForeground: string;
+  tableRowPrimary: string;
+  tableRowSecondary: string;
+  huanaHighlight: string;
+  locationOccupiedBorder: string;
+  locationOccupiedBg: string;
 }
 
 export type SalarySettings = {

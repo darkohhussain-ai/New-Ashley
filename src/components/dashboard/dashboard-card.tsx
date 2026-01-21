@@ -18,7 +18,7 @@ export function DashboardCard({ title, icon: Icon, href, color }: DashboardCardP
     <Link href={href} className="group block">
       <Card 
         className={cn(
-          "bg-card transition-all duration-300 transform hover:-translate-y-1 shadow-lg hover:shadow-2xl text-white h-48",
+          "bg-card transition-all duration-300 transform hover:-translate-y-1 shadow-lg hover:shadow-2xl text-white h-48 animate-color-morph",
           color
         )}
       >

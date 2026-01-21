@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -71,7 +72,7 @@ export default function AddItemsPage() {
       toast({ variant: 'destructive', title: t('missing_information'), description: t('provide_model_destination') });
       return;
     }
-    if (quantity <= 0) {
+    if (!quantity || quantity <= 0) {
       toast({ variant: 'destructive', title: t('invalid_quantity'), description: t('quantity_must_be_positive') });
       return;
     }
@@ -98,7 +99,7 @@ export default function AddItemsPage() {
   
   const handleUpdateItem = () => {
     if (!editingItem || !editingItem.model.trim()) return;
-    if (editingItem.quantity <= 0) {
+    if (!editingItem.quantity || editingItem.quantity <= 0) {
       toast({ variant: 'destructive', title: t('invalid_quantity'), description: t('quantity_must_be_positive') });
       return;
     }
@@ -158,7 +159,7 @@ export default function AddItemsPage() {
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="quantity">{t('quantity')}</Label>
-                            <Input id="quantity" type="number" value={editingItem ? editingItem.quantity : quantity} onChange={(e) => editingItem ? setEditingItem({...editingItem, quantity: e.target.valueAsNumber}) : setQuantity(e.target.valueAsNumber)} min="1" />
+                            <Input id="quantity" type="number" value={editingItem ? editingItem.quantity : quantity} onChange={(e) => editingItem ? setEditingItem({...editingItem, quantity: parseInt(e.target.value) || 0}) : setQuantity(parseInt(e.target.value) || 0)} min="1" />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="destination">{t('destination')}</Label>
@@ -230,8 +231,11 @@ export default function AddItemsPage() {
                             <TableBody>
                                 {isLoadingItems ? (
                                     <TableRow><TableCell colSpan={6} className="text-center h-24"><Loader2 className="mx-auto animate-spin"/></TableCell></TableRow>
-                                ) : sortedItems.length > 0 ? sortedItems.map((item) => (
-                                    <TableRow key={item.id} className={cn(editingItem?.id === item.id && "bg-muted")}>
+                                ) : sortedItems.length > 0 ? sortedItems.map((item, index) => (
+                                    <TableRow key={item.id} className={cn(
+                                        editingItem?.id === item.id ? "bg-muted" : (index % 2 === 0 ? 'bg-table-row-primary' : 'bg-table-row-secondary'),
+                                        item.storage === 'Huana' && 'bg-huana-highlight'
+                                    )}>
                                         <TableCell className="font-medium">{item.model}</TableCell>
                                         <TableCell>{item.quantity}</TableCell>
                                         <TableCell>{item.destination}</TableCell>

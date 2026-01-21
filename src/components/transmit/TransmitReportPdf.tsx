@@ -1,3 +1,4 @@
+
 'use client';
 import { ItemForTransfer, Transfer } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -10,8 +11,9 @@ import type { PdfSettings } from '@/lib/types';
 export const TransmitReportPdf = ({ transfer, items, settings }: { transfer: Partial<Transfer>; items: ItemForTransfer[]; settings: PdfSettings }) => {
     const { t, language } = useTranslation();
     const useKurdish = language === 'ku';
-
-    const reportTitle = transfer.destinationCity ? t('transmit_report_title', { city: transfer.destinationCity }) : t('transmit_cargo');
+    
+    const reportTitleTemplate = settings.titleTemplate || t('transmit_report_title', { city: '{city}' });
+    const reportTitle = reportTitleTemplate.replace('{city}', transfer.destinationCity || 'N/A');
     const formattedDate = transfer.transferDate ? format(parseISO(transfer.transferDate), 'PPP') : 'N/A';
     
     const { logo, fontSize, branchColors, themeColor: defaultThemeColor } = settings;

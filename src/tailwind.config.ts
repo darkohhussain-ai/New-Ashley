@@ -105,6 +105,10 @@ export default {
             transform: 'translateY(0)'
           },
         },
+        'color-morph': {
+          '0%, 100%': { filter: 'hue-rotate(0deg) brightness(100%)' },
+          '50%': { filter: 'hue-rotate(10deg) brightness(105%)' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
@@ -112,6 +116,7 @@ export default {
         'marquee': 'marquee 25s linear infinite',
         'marquee2': 'marquee2 25s linear infinite',
         'fade-in-down': 'fade-in-down 0.5s ease-out',
+        'color-morph': 'color-morph 8s ease-in-out infinite',
       },
     },
   },
