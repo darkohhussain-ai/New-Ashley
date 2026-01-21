@@ -8,8 +8,7 @@ import {
   FirestoreError,
   DocumentSnapshot,
 } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
+import { toast } from '@/hooks/use-toast';
 
 /** Utility type to add an 'id' field to a given type T. */
 type WithId<T> = T & { id: string };
@@ -69,18 +68,16 @@ export function useDoc<T = any>(
         setError(null);
         setIsLoading(false);
       },
-      (error: FirestoreError) => {
-        const contextualError = new FirestorePermissionError({
-          operation: 'get',
-          path: memoizedDocRef.path,
-        })
-
-        setError(contextualError)
-        setData(null)
-        setIsLoading(false)
-
-        // trigger global error propagation
-        errorEmitter.emit('permission-error', contextualError);
+      (e: FirestoreError) => {
+        console.error("Firestore Error (useDoc):", e);
+        toast({
+          variant: "destructive",
+          title: "Error Reading Document",
+          description: `Could not read document. Please check connection and permissions.`,
+        });
+        setError(e);
+        setData(null);
+        setIsLoading(false);
       }
     );
     

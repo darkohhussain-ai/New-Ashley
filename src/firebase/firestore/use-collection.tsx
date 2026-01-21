@@ -9,8 +9,7 @@ import {
   QuerySnapshot,
   CollectionReference,
 } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
+import { toast } from '@/hooks/use-toast';
 
 /** Utility type to add an 'id' field to a given type T. */
 export type WithId<T> = T & { id: string };
@@ -82,22 +81,15 @@ export function useCollection<T = any>(
         setIsLoading(false);
       },
       (e: FirestoreError) => {
-        const path: string =
-            memoizedTargetRefOrQuery.type === 'collection'
-            ? (memoizedTargetRefOrQuery as CollectionReference).path
-            : (memoizedTargetRefOrQuery as unknown as InternalQuery)._query.path.canonicalString()
-
-        const contextualError = new FirestorePermissionError({
-            operation: 'list',
-            path,
-        })
-
-        setError(contextualError)
-        setData(null)
-        setIsLoading(false)
-
-        // trigger global error propagation
-        errorEmitter.emit('permission-error', contextualError);
+        console.error("Firestore Error (useCollection):", e);
+        toast({
+          variant: "destructive",
+          title: "Error Reading Data",
+          description: `Could not read collection. Please check your connection and permissions.`,
+        });
+        setError(e);
+        setData(null);
+        setIsLoading(false);
       });
       
       return () => unsubscribe();
