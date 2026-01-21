@@ -1,5 +1,5 @@
 
-"use client";
+'use client';
 
 import Link from 'next/link';
 import { ArrowLeft, PackagePlus, ListPlus, Eye, ClipboardList, Truck, History } from 'lucide-react';
@@ -119,7 +119,13 @@ function TransmitDashboardPage() {
                                 {stagedItemsByDestination.map(item => (
                                     <TableRow key={item.destination}>
                                         <TableCell className="font-medium">{item.destination}</TableCell>
-                                        <TableCell className="text-right">{item.count}</TableCell>
+                                        <TableCell className="text-right">
+                                            <Button variant="link" asChild className="p-0 h-auto">
+                                                <Link href={`/transmit/staged?destination=${encodeURIComponent(item.destination)}`}>
+                                                    {item.count}
+                                                </Link>
+                                            </Button>
+                                        </TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>

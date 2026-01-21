@@ -1,8 +1,9 @@
 
 'use client';
 
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { ArrowLeft, Loader2, ListPlus, FileDown, Building, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -20,11 +21,20 @@ export default function StagedItemsPage() {
   const { t, language } = useTranslation();
   const { transferItems, transfers, settings } = useAppContext();
   const { pdfSettings, customFont } = settings;
+  const searchParams = useSearchParams();
   const [selectedDestination, setSelectedDestination] = useState<string | null>(null);
 
   const pdfRef = useRef<HTMLDivElement>(null);
 
   const isLoadingItems = !transferItems || !transfers;
+
+  useEffect(() => {
+    const destinationParam = searchParams.get('destination');
+    if (destinationParam) {
+      setSelectedDestination(decodeURIComponent(destinationParam));
+    }
+  }, [searchParams]);
+
   const stagedItems = useMemo(() => transferItems.filter(item => !item.transferId), [transferItems]);
 
 
