@@ -1,19 +1,21 @@
-
 'use client';
 
 import { useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Calendar as CalendarIcon, DollarSign, User, FileDown, Trash2 } from 'lucide-react';
+import { ArrowLeft, Calendar as CalendarIcon, DollarSign, User, FileDown, Trash2, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { format, parseISO } from 'date-fns';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { useAppContext } from '@/context/app-provider';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from '@/hooks/use-translation';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import { ExpenseReportPdf } from '@/components/expenses/ExpenseReportPdf';
+import type { Expense } from '@/lib/types';
 
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'IQD', maximumFractionDigits: 0 }).format(amount);
@@ -23,7 +25,9 @@ export default function ViewExpenseReportPage() {
   const { id: reportId } = useParams();
   const router = useRouter();
   const { toast } = useToast();
-  const { expenseReports, setExpenseReports, expenses, setExpenses, employees } = useAppContext();
+  const { expenseReports, setExpenseReports, expenses, setExpenses, employees, settings } = useAppContext();
+  
+  const reportPdfRef = useRef<HTMLDivElement>(null);
 
   const report = useMemo(() => expenseReports.find(r => r.id === reportId), [expenseReports, reportId]);
   const reportItems = useMemo(() => expenses.filter(i => i.expenseReportId === reportId), [expenses, reportId]);
@@ -36,6 +40,26 @@ export default function ViewExpenseReportPage() {
     return useKurdish && employee.kurdishName ? employee.kurdishName : employee.name;
   };
 
+  const groupedExpenses = useMemo(() => {
+    if (!reportItems || !employees) return [];
+    
+    const groups: Record<string, { employeeName: string; expenses: Expense[]; total: number }> = {};
+    
+    reportItems.forEach(exp => {
+      if (!groups[exp.employeeId]) {
+        groups[exp.employeeId] = {
+          employeeName: getEmployeeName(exp.employeeId, language === 'ku'),
+          expenses: [],
+          total: 0
+        };
+      }
+      groups[exp.employeeId].expenses.push(exp);
+      groups[exp.employeeId].total += exp.amount;
+    });
+
+    return Object.values(groups).sort((a,b) => a.employeeName.localeCompare(b.employeeName));
+  }, [reportItems, employees, language, getEmployeeName]);
+
   const handleDeleteReport = () => {
     if (!reportId || !report) return;
     setExpenseReports(prev => prev.filter(r => r.id !== reportId));
@@ -43,6 +67,48 @@ export default function ViewExpenseReportPage() {
     toast({ title: t('report_deleted'), description: t('report_deleted_desc') });
     router.push('/expenses/archive');
   };
+  
+  const handlePrint = () => {
+    window.print();
+  };
+  
+  const handleDownloadPdf = async () => {
+    if (!reportPdfRef.current) return;
+        
+    const canvas = await html2canvas(reportPdfRef.current, { 
+        scale: 2,
+        useCORS: true,
+         onclone: (document) => {
+            if (settings.customFont && language === 'ku') {
+                const style = document.createElement('style');
+                style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${settings.customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
+                document.head.appendChild(style);
+            }
+        }
+    });
+
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF('p', 'px', 'a4');
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+    const imgWidth = canvas.width;
+    const imgHeight = canvas.height;
+    const ratio = imgWidth / imgHeight;
+
+    let finalImgWidth = pdfWidth;
+    let finalImgHeight = pdfWidth / ratio;
+    
+    if (finalImgHeight > pdfHeight) {
+        finalImgHeight = pdfHeight;
+        finalImgWidth = finalImgHeight * ratio;
+    }
+    
+    const x = (pdfWidth - finalImgWidth) / 2;
+
+    pdf.addImage(imgData, 'PNG', x, 0, finalImgWidth, finalImgHeight);
+    pdf.save(`expenses-report-${report?.reportName}.pdf`);
+  };
+
 
   if (isLoading) {
     return (
@@ -68,8 +134,20 @@ export default function ViewExpenseReportPage() {
 
   return (
     <>
-      <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
-        <header className="flex items-center justify-between gap-4 mb-8">
+      <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+          <div ref={reportPdfRef} style={{ width: '700px' }}>
+              {report && employees && (
+                  <ExpenseReportPdf
+                    report={report}
+                    items={reportItems}
+                    employees={employees}
+                    settings={settings.pdfSettings}
+                  />
+              )}
+          </div>
+      </div>
+      <div className="min-h-screen bg-background text-foreground p-4 md:p-8 print:p-0">
+        <header className="flex items-center justify-between gap-4 mb-8 print:hidden">
           <div className="flex items-center gap-4">
             <Button variant="outline" size="icon" asChild>
               <Link href="/expenses/archive"><ArrowLeft /></Link>
@@ -77,6 +155,8 @@ export default function ViewExpenseReportPage() {
             <h1 className="text-2xl md:text-3xl">{t('expense_report_details')}</h1>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handlePrint}><Printer className="mr-2 h-4 w-4" /> {t('print')}</Button>
+            <Button onClick={handleDownloadPdf}><FileDown className="mr-2 h-4 w-4" /> {t('download_pdf')}</Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive"><Trash2 className="mr-2"/>{t('delete_report')}</Button>
@@ -112,36 +192,43 @@ export default function ViewExpenseReportPage() {
               <CardTitle>{t('items_in_report_count', {count: reportItems.length})}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{t('employee')}</TableHead>
-                      <TableHead>{t('notes')}</TableHead>
-                      <TableHead className="text-right">{t('amount')}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {reportItems.map(item => (
-                      <TableRow key={item.id}>
-                        <TableCell className="flex items-center gap-2" dir={language === 'ku' ? 'rtl' : 'ltr'}>
-                          <User className="w-4 h-4 text-muted-foreground" />
-                          {getEmployeeName(item.employeeId, language === 'ku')}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">{item.notes || t('na')}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(item.amount)}</TableCell>
-                      </TableRow>
+              <div className="divide-y">
+                {groupedExpenses.length > 0 ? groupedExpenses.map(group => (
+                  <div key={group.employeeName} className="py-3 first:pt-0 last:pb-0">
+                    {group.expenses.map(item => (
+                      <div key={item.id} className="flex justify-between items-start gap-4 py-2">
+                        <div className="flex-1">
+                          <p className="font-medium flex items-center gap-2" dir={language === 'ku' ? 'rtl' : 'ltr'}>
+                            <User className="h-4 w-4 text-muted-foreground" /> 
+                            {getEmployeeName(item.employeeId, language === 'ku')}
+                          </p>
+                          <p className="text-sm text-muted-foreground mt-1 pl-6">{t(item.expenseType.toLowerCase().replace(/[\s()]/g, '_'))}{item.expenseSubType ? ` (${t(item.expenseSubType.toLowerCase().replace(/\s/g, '_'))})` : ''}</p>
+                          {item.notes && <p className="text-sm mt-1 pl-6">{item.notes}</p>}
+                        </div>
+                        <p className="font-semibold text-primary">{formatCurrency(item.amount)}</p>
+                      </div>
                     ))}
-                  </TableBody>
-                  <TableFooter>
-                    <TableRow>
-                      <TableCell colSpan={2} className="text-lg font-bold">{t('total')}</TableCell>
-                      <TableCell className="text-right text-lg font-bold text-primary">{formatCurrency(report.totalAmount)}</TableCell>
-                    </TableRow>
-                  </TableFooter>
-                </Table>
+                    {group.expenses.length > 1 && (
+                      <div className="flex justify-end items-center mt-2 pt-2 border-t border-dashed">
+                        <p className="text-sm font-semibold text-muted-foreground">
+                          {group.employeeName} {t('total')}: {formatCurrency(group.total)}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )) : (
+                  <p className="text-center py-8 text-muted-foreground">{t('no_expense_items_found')}</p>
+                )}
               </div>
             </CardContent>
+            {report.totalAmount > 0 && (
+            <CardFooter className="bg-muted/80 py-4 justify-end">
+                <div className="text-lg font-bold flex items-center gap-4">
+                    <span>{t('grand_total')}:</span>
+                    <span className="text-primary">{formatCurrency(report.totalAmount)}</span>
+                </div>
+            </CardFooter>
+            )}
           </Card>
         </div>
       </div>

@@ -22,8 +22,7 @@ import { useTranslation } from '@/hooks/use-translation';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { ReportWrapper } from '@/components/reports/ReportWrapper';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
+import { ExpenseReportPdf } from '@/components/expenses/ExpenseReportPdf';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'IQD', maximumFractionDigits: 0 }).format(amount);
 
@@ -41,7 +40,6 @@ export default function AddExpensePage() {
   const { t, language } = useTranslation();
   const { toast } = useToast();
   const { employees, expenses, setExpenses, expenseReports, setExpenseReports, settings } = useAppContext();
-  const { pdfSettings, customFont } = settings;
   const reportPdfRef = useRef<HTMLDivElement>(null);
 
 
@@ -90,10 +88,25 @@ export default function AddExpensePage() {
     return useKurdish && employee.kurdishName ? employee.kurdishName : employee.name;
   };
 
-  const flattenedExpenses = useMemo(() => {
-    return dailyExpenses.map(exp => ({...exp, employeeName: getEmployeeName(exp.employeeId, language === 'ku')}));
-  }, [dailyExpenses, employees, language, getEmployeeName]);
+  const groupedDailyExpenses = useMemo(() => {
+    if (!dailyExpenses || !employees) return [];
+    
+    const groups: Record<string, { employeeName: string; expenses: Expense[]; total: number }> = {};
+    
+    dailyExpenses.forEach(exp => {
+      if (!groups[exp.employeeId]) {
+        groups[exp.employeeId] = {
+          employeeName: getEmployeeName(exp.employeeId, language === 'ku'),
+          expenses: [],
+          total: 0
+        };
+      }
+      groups[exp.employeeId].expenses.push(exp);
+      groups[exp.employeeId].total += exp.amount;
+    });
 
+    return Object.values(groups);
+  }, [dailyExpenses, employees, language, getEmployeeName]);
 
   const grandTotal = useMemo(() => dailyExpenses.reduce((sum, exp) => sum + exp.amount, 0), [dailyExpenses]);
 
@@ -114,7 +127,6 @@ export default function AddExpensePage() {
 
     setIsSaving(true);
     
-    // Find or create the report for the day
     const reportDateStr = format(date, 'yyyy-MM-dd');
     let report = expenseReports.find(r => format(parseISO(r.reportDate), 'yyyy-MM-dd') === reportDateStr);
     let newReportCreated = false;
@@ -138,11 +150,13 @@ export default function AddExpensePage() {
     };
 
     if (editingExpense) {
-      const updatedExpense: Expense = {
-        ...editingExpense,
-        ...expensePayload
-      };
-      setExpenses(expenses.map(e => e.id === editingExpense.id ? updatedExpense : e));
+      const updatedExpense: Expense = { ...editingExpense, ...expensePayload };
+      const updatedExpenses = expenses.map(e => e.id === editingExpense.id ? updatedExpense : e);
+      setExpenses(updatedExpenses);
+      
+      const newTotalForReport = updatedExpenses.filter(e => e.expenseReportId === report!.id).reduce((sum, e) => sum + e.amount, 0);
+      setExpenseReports(expenseReports.map(r => r.id === report!.id ? {...r, totalAmount: newTotalForReport } : r));
+
       toast({ title: "Expense Updated", description: "The expense record has been successfully updated."});
       setEditingExpense(null);
     } else {
@@ -151,34 +165,18 @@ export default function AddExpensePage() {
         ...expensePayload,
         expenseReportId: report.id
       };
-      setExpenses([...expenses, newExpense]);
+      const updatedExpenses = [...expenses, newExpense];
+      setExpenses(updatedExpenses);
+      
+      const newTotalForReport = updatedExpenses.filter(e => e.expenseReportId === report!.id).reduce((sum, e) => sum + e.amount, 0);
+      if(newReportCreated){
+        setExpenseReports([...expenseReports, {...report, totalAmount: newTotalForReport}]);
+      } else {
+        setExpenseReports(expenseReports.map(r => r.id === report!.id ? {...r, totalAmount: newTotalForReport } : r));
+      }
+
       toast({ title: "Expense Added", description: `An expense of ${formatCurrency(newExpense.amount)} has been added.`});
     }
-
-    // This logic is complex because it has to recalculate totals after an update/add.
-    // This is a placeholder for that logic, which should ideally be a more robust state management pattern.
-    const allReports = newReportCreated ? [...expenseReports, report] : [...expenseReports];
-    const finalReports = allReports.map(rep => {
-        const relevantExpenses = expenses
-            .filter(ex => ex.expenseReportId === rep.id)
-            .filter(ex => !(editingExpense && ex.id === editingExpense.id)); // exclude old version if editing
-
-        if(editingExpense && rep.id === report?.id) {
-            relevantExpenses.push({ ...editingExpense, ...expensePayload });
-        }
-        if(!editingExpense && rep.id === report?.id) {
-             relevantExpenses.push({
-                id: crypto.randomUUID(), // temp id
-                ...expensePayload,
-                expenseReportId: report.id,
-            });
-        }
-        
-        const newTotal = relevantExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
-        return { ...rep, totalAmount: newTotal };
-    });
-
-    setExpenseReports(finalReports.filter(r => r.totalAmount > 0));
 
     resetForm();
     setIsSaving(false);
@@ -199,8 +197,19 @@ export default function AddExpensePage() {
     resetForm();
   };
 
-  const handleDelete = (expenseId: string) => {
-    setExpenses(expenses.filter(e => e.id !== expenseId));
+  const handleDelete = (expenseToDelete: Expense) => {
+    const updatedExpenses = expenses.filter(e => e.id !== expenseToDelete.id);
+    setExpenses(updatedExpenses);
+
+    const reportToUpdate = expenseReports.find(r => r.id === expenseToDelete.expenseReportId);
+    if (reportToUpdate) {
+        const newTotal = updatedExpenses.filter(e => e.expenseReportId === reportToUpdate.id).reduce((sum, e) => sum + e.amount, 0);
+        if (newTotal > 0) {
+            setExpenseReports(expenseReports.map(r => r.id === reportToUpdate.id ? {...r, totalAmount: newTotal} : r));
+        } else {
+            setExpenseReports(expenseReports.filter(r => r.id !== reportToUpdate.id));
+        }
+    }
     toast({ title: "Expense Deleted", description: "The expense record has been removed." });
   };
   
@@ -215,9 +224,9 @@ export default function AddExpensePage() {
         scale: 2,
         useCORS: true,
          onclone: (document) => {
-            if (customFont && language === 'ku') {
+            if (settings.customFont && language === 'ku') {
                 const style = document.createElement('style');
-                style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
+                style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${settings.customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
                 document.head.appendChild(style);
             }
         }
@@ -275,42 +284,13 @@ export default function AddExpensePage() {
     <>
         <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
              <div ref={reportPdfRef} style={{ width: '700px' }}>
-                {date && (
-                    <ReportWrapper
-                        title={t('daily_expense_report')}
-                        date={format(date, 'yyyy-MM-dd')}
-                        logoSrc={pdfSettings.report.logo}
-                        themeColor={pdfSettings.report.reportColors?.expense || '#3b82f6'}
-                    >
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>{t('name')}</TableHead>
-                                    <TableHead>{t('date')}</TableHead>
-                                    <TableHead>{t('total_value')}</TableHead>
-                                    <TableHead>{t('expense_type')}</TableHead>
-                                    <TableHead>{t('notes')}</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {flattenedExpenses.map((exp, index) => (
-                                    <TableRow key={exp.id} className={index % 2 === 0 ? 'bg-gray-100' : ''}>
-                                        <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{exp.employeeName}</TableCell>
-                                        <TableCell>{format(new Date(exp.date), 'PP')}</TableCell>
-                                        <TableCell>{formatCurrency(exp.amount)}</TableCell>
-                                        <TableCell>{t(exp.expenseType.toLowerCase().replace(/[\s()]/g, '_'))}{exp.expenseSubType ? ` (${t(exp.expenseSubType.toLowerCase().replace(/\s/g, '_'))})` : ''}</TableCell>
-                                        <TableCell>{exp.notes || t('na')}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                            <TableFooter>
-                                <TableRow>
-                                    <TableCell colSpan={4} className="text-right font-bold">{t('grand_total')}:</TableCell>
-                                    <TableCell className="font-bold">{formatCurrency(grandTotal)}</TableCell>
-                                </TableRow>
-                            </TableFooter>
-                        </Table>
-                    </ReportWrapper>
+                {dailyReport && employees && (
+                    <ExpenseReportPdf
+                        report={dailyReport}
+                        items={dailyExpenses}
+                        employees={employees}
+                        settings={settings.pdfSettings}
+                    />
                 )}
             </div>
         </div>
@@ -426,35 +406,46 @@ export default function AddExpensePage() {
                             <div className="divide-y">
                                 {isLoading ? (
                                     <div className="p-8 text-center text-muted-foreground">{t('loading_records')}...</div>
-                                ) : dailyExpenses && dailyExpenses.length > 0 ? (
-                                    dailyExpenses.map(exp => (
-                                    <div key={exp.id} className="py-3 flex justify-between items-start gap-4">
-                                        <div className="flex-1">
-                                            <p className="flex items-center gap-2" dir={language === 'ku' ? 'rtl' : 'ltr'}><User className="h-4 w-4 text-primary" /> {getEmployeeName(exp.employeeId, language === 'ku')}</p>
-                                            <p className="text-sm text-muted-foreground mt-1">{t(exp.expenseType.toLowerCase().replace(/[\s()]/g, '_'))}{exp.expenseSubType ? ` (${t(exp.expenseSubType.toLowerCase().replace(/\s/g, '_'))})` : ''}</p>
-                                            {exp.notes && <p className="text-sm mt-1">{exp.notes}</p>}
-                                        </div>
-                                        <div className='flex flex-col items-end'>
-                                            <p className="font-semibold text-primary">{formatCurrency(exp.amount)}</p>
-                                            <div className="flex gap-1 mt-1 print:hidden">
-                                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEditing(exp)}><Edit className="h-4 w-4"/></Button>
-                                                <AlertDialog>
-                                                    <AlertDialogTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"><Trash2 className="h-4 w-4"/></Button>
-                                                    </AlertDialogTrigger>
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader>
-                                                            <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
-                                                            <AlertDialogDescription>{t('confirm_delete_expense')}</AlertDialogDescription>
-                                                        </AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-                                                            <AlertDialogAction onClick={() => handleDelete(exp.id)}>{t('delete')}</AlertDialogAction>
-                                                        </AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
+                                ) : groupedDailyExpenses && groupedDailyExpenses.length > 0 ? (
+                                    groupedDailyExpenses.map(group => (
+                                    <div key={group.employeeName} className="py-3 first:pt-0 last:pb-0">
+                                        {group.expenses.map(exp => (
+                                        <div key={exp.id} className="py-3 flex justify-between items-start gap-4">
+                                            <div className="flex-1">
+                                                <p className="flex items-center gap-2" dir={language === 'ku' ? 'rtl' : 'ltr'}><User className="h-4 w-4 text-primary" /> {getEmployeeName(exp.employeeId, language === 'ku')}</p>
+                                                <p className="text-sm text-muted-foreground mt-1">{t(exp.expenseType.toLowerCase().replace(/[\s()]/g, '_'))}{exp.expenseSubType ? ` (${t(exp.expenseSubType.toLowerCase().replace(/\s/g, '_'))})` : ''}</p>
+                                                {exp.notes && <p className="text-sm mt-1">{exp.notes}</p>}
+                                            </div>
+                                            <div className='flex flex-col items-end'>
+                                                <p className="font-semibold text-primary">{formatCurrency(exp.amount)}</p>
+                                                <div className="flex gap-1 mt-1 print:hidden">
+                                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEditing(exp)}><Edit className="h-4 w-4"/></Button>
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"><Trash2 className="h-4 w-4"/></Button>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
+                                                                <AlertDialogDescription>{t('confirm_delete_expense')}</AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                                                                <AlertDialogAction onClick={() => handleDelete(exp)}>{t('delete')}</AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                </div>
                                             </div>
                                         </div>
+                                        ))}
+                                        {group.expenses.length > 1 && (
+                                            <div className="flex justify-end items-center mt-2 pt-2 border-t border-dashed">
+                                                <p className="text-sm font-semibold text-muted-foreground">
+                                                {group.employeeName} {t('total')}: {formatCurrency(group.total)}
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
                                     ))
                                 ) : (
@@ -480,3 +471,4 @@ export default function AddExpensePage() {
     </>
   );
 }
+
