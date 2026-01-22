@@ -1,6 +1,6 @@
 
 'use client';
-import { Employee, Expense, Overtime, Bonus, CashWithdrawal, AllPdfSettings } from '@/lib/types';
+import { Employee, Expense, Overtime, Bonus, CashWithdrawal, AppSettings } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { format, parseISO } from 'date-fns';
 import { useTranslation } from '@/hooks/use-translation';
@@ -57,7 +57,7 @@ const FinancialSection = ({ title, items, columns, bodyMapper, total, themeColor
 
 type EmployeeReportPdfProps = {
     employee: Employee;
-    settings: AllPdfSettings;
+    settings: AppSettings['pdfSettings'];
     expenses: { items: Expense[], total: number };
     overtime: { items: Overtime[], total: number };
     bonuses: { items: Bonus[], total: number };

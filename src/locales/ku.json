@@ -438,7 +438,7 @@
   "total_loads": "کۆی گشتی بارەکان",
   "this_month_activity_summary": "چالاکی ئەم مانگە ({month})",
   "last_month_activity_summary": "پوختەی چالاکی مانگی ڕابردوو.",
-  "login_title": "کارمەندی ئاشلی",
+  "login_title": "ستافی ئاشلی",
   "login_description": "زانیارییەکانت بنووسە بۆ چوونەژوورەوە بۆ داشبۆرد.",
   "edit_expense": "دەستکاریکردنی خەرجی",
   "update_expense_details": "وردەکارییەکانی ئەم خەرجییە نوێبکەرەوە",
@@ -607,5 +607,9 @@
   "no_recent_transfers": "هیچ گواستنەوەیەکی نوێ نییە.",
   "ashley_mega_homestore_iraq": "ئاشلی مێگا هۆمستۆر / عێراق",
   "ashley_sulaimanyah_branch": "لقی سلێمانی ئاشلی",
-  "diwan_group_company": "کۆمپانیای گروپی دیوان"
+  "diwan_group_company": "کۆمپانیای گروپی دیوان",
+  "for": "بۆ",
+  "toggle_theme": "گۆڕینی تێما",
+  "refresh_page": "نوێکردنەوەی پەڕە",
+  "logout": "چوونەدەرەوە"
 }

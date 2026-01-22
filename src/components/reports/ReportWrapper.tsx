@@ -17,34 +17,34 @@ export function ReportWrapper({ title, date, logoSrc, themeColor, children }: Re
   const { t } = useTranslation();
 
   return (
-    <div className="bg-white text-black p-6 font-sans text-xs">
-      <div className="border border-gray-200 p-6">
-        <header className="flex justify-between items-start pb-4 border-b border-gray-200">
-            <div className="w-24 h-16 relative">
+    <div className="bg-white text-black p-4 font-sans text-xs">
+      <div className="border border-gray-300 p-4">
+        <header className="flex justify-between items-start pb-3 border-b border-gray-300">
+            <div className="text-left">
+                <h1 className="font-bold text-lg" style={{ color: themeColor }}>{t(title.toLowerCase().replace(/ /g, '_')) || title}</h1>
+                <p className="text-[10px] text-gray-500 mt-1">{date}</p>
+            </div>
+            <div className="w-20 h-14 relative">
                 {logoSrc ? (
                 <Image src={logoSrc} alt="logo" fill className="object-contain" />
                 ) : (
-                <div className="w-full h-full bg-gray-100 rounded-sm flex items-center justify-center text-gray-400 text-xs">
+                <div className="w-full h-full bg-gray-100 rounded-sm flex items-center justify-center text-gray-400 text-[10px]">
                     <span>{t('logo')}</span>
                 </div>
                 )}
             </div>
-            <div className="text-right">
-                <h1 className="font-bold text-xl" style={{ color: themeColor }}>{t(title.toLowerCase().replace(/ /g, '_')) || title}</h1>
-                <p className="text-xs text-gray-500">{date}</p>
-            </div>
         </header>
 
-        <main className="pt-6">
+        <main className="pt-4">
             {children}
         </main>
 
-        <footer className="mt-12 pt-4 border-t border-gray-200">
+        <footer className="mt-8 pt-3 border-t border-gray-300">
           <div className="flex justify-between items-end">
-            <p className="text-[10px] text-gray-400">Generated on {format(new Date(), 'PPp')}</p>
-            <div className="w-48 text-center">
+            <p className="text-[9px] text-gray-400">Generated on {format(new Date(), 'PPp')}</p>
+            <div className="w-40 text-center">
               <div className="border-b border-gray-400 mb-1"></div>
-              <p className="text-xs font-semibold">{t('warehouse_manager_signature')}</p>
+              <p className="text-[10px] font-semibold">{t('warehouse_manager_signature')}</p>
             </div>
           </div>
         </footer>
