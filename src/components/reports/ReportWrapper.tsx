@@ -26,7 +26,7 @@ export function ReportWrapper({ title, date, logoSrc, themeColor, children }: Re
             </div>
             <div className="w-20 h-14 relative">
                 {logoSrc ? (
-                <Image src={logoSrc} alt="logo" fill className="object-contain" />
+                <Image src={logoSrc} alt="logo" fill className="object-contain" unoptimized />
                 ) : (
                 <div className="w-full h-full bg-gray-100 rounded-sm flex items-center justify-center text-gray-400 text-[10px]">
                     <span>{t('logo')}</span>

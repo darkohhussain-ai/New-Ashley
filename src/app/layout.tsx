@@ -86,6 +86,7 @@ function SystemCornerLogo() {
                     alt="System Logo"
                     fill
                     className="object-contain"
+                    unoptimized
                 />
             </div>
         </div>

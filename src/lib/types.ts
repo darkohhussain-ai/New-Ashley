@@ -24,17 +24,17 @@ export type Permission = {
 export type Employee = {
   id: string;
   name: string;
-  kurdishName?: string;
-  employeeId?: string; // New field for unique ID
-  role?: 'Super Manager' | 'Manager' | 'IT' | 'Employee Supervisor' | 'Transport Supervisor' | 'Employee' | 'Marketing'; // New field for role
-  employmentStartDate?: string;
-  dateOfBirth?: string;
-  email?: string;
-  phone?: string;
-  photoUrl?: string;
-  notes?: string;
+  kurdishName?: string | null;
+  employeeId?: string | null;
+  role?: 'Super Manager' | 'Manager' | 'IT' | 'Employee Supervisor' | 'Transport Supervisor' | 'Employee' | 'Marketing' | null;
+  employmentStartDate?: string | null;
+  dateOfBirth?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  photoUrl?: string | null;
+  notes?: string | null;
   createdAt?: string;
-  password?: string; // Added to store password for login purposes
+  password?: string;
   isActive?: boolean;
 };
 

@@ -19,31 +19,33 @@ export const TransmitReportPdf = ({ transfer, items, settings, invoiceNumber, to
     
     const formattedDate = transfer.transferDate ? format(parseISO(transfer.transferDate), 'PPP') : 'N/A';
     
-    const { logo, branchColors, themeColor: defaultThemeColor, headerText, secondaryColor } = settings;
+    const { logo, branchColors, themeColor: defaultThemeColor, headerText, secondaryColor, titleTemplate } = settings;
     const finalThemeColor = (transfer.destinationCity && branchColors?.[transfer.destinationCity as keyof BranchColors]) || defaultThemeColor || '#ef4444';
     const finalSecondaryColor = secondaryColor || '#0f172a';
+    const finalTitle = titleTemplate ? titleTemplate.replace('{city}', transfer.destinationCity || '') : transfer.cargoName;
+
 
     return (
         <div className="bg-white text-black p-8 font-sans text-xs" style={{fontFamily: settings.customFont && useKurdish ? 'CustomPdfFont' : 'sans-serif'}}>
             {/* Header */}
             <header className="flex justify-between items-start pb-4">
-                <div>
-                    <h1 className="font-bold text-base">{t('ashley_mega_homestore_iraq')}</h1>
-                    <p className="text-gray-600 text-sm">{t('ashley_sulaimanyah_branch')}</p>
-                    <p className="text-gray-600 text-sm">{t('diwan_group_company')}</p>
+                <div className="text-left">
+                     <h1 className="text-lg font-bold text-gray-800">{t('ashley_mega_homestore_iraq')}</h1>
+                    <p className="text-gray-600 text-xs">{t('ashley_sulaimanyah_branch')}</p>
+                    <p className="text-gray-600 text-xs">{t('diwan_group_company')}</p>
                 </div>
-                {logo && <div className="relative w-24 h-12"><Image src={logo} alt="Company Logo" fill className="object-contain" /></div>}
+                {logo && <div className="relative w-24 h-12"><Image src={logo} alt="Company Logo" fill className="object-contain" unoptimized /></div>}
             </header>
 
             {/* Invoice Info Bar */}
             <section className="flex my-6 rounded-lg overflow-hidden shadow">
-                <div className="w-2/3 p-4" style={{ backgroundColor: finalThemeColor }}>
-                    <h2 className="text-xl font-bold text-white">INVOICE #{invoiceNumber ? String(invoiceNumber).padStart(6, '0') : 'N/A'}</h2>
+                 <div className="w-2/3 p-4" style={{ backgroundColor: finalThemeColor }}>
+                    <h2 className="text-xl font-bold text-white">{t('INVOICE')} #{invoiceNumber ? String(invoiceNumber).padStart(6, '0') : 'N/A'}</h2>
                 </div>
                 <div className="w-1/3 p-4 text-right text-white" style={{ backgroundColor: finalSecondaryColor }}>
-                    <p className="text-[10px] uppercase tracking-wider">Slip No</p>
+                    <p className="text-[10px] uppercase tracking-wider">{t('slip_no')}</p>
                     <p className="font-bold">{totalYearlyInvoices}</p>
-                    <p className="text-[10px] mt-1 uppercase tracking-wider">Date</p>
+                    <p className="text-[10px] mt-1 uppercase tracking-wider">{t('date')}</p>
                     <p className="font-bold">{formattedDate}</p>
                 </div>
             </section>
@@ -52,11 +54,11 @@ export const TransmitReportPdf = ({ transfer, items, settings, invoiceNumber, to
             {/* Details Section */}
             <section className="grid grid-cols-2 gap-8 my-6 text-xs">
                  <div>
-                    <h3 className="font-semibold text-gray-500 mb-1">Transmit To</h3>
+                    <h3 className="font-semibold text-gray-500 mb-1">{t('transmit_to')}</h3>
                     <p className="font-bold text-base">{transfer.destinationCity}</p>
                 </div>
                  <div className="text-right">
-                    <h3 className="font-semibold text-gray-500 mb-1">Details</h3>
+                    <h3 className="font-semibold text-gray-500 mb-1">{t('details')}</h3>
                     <p><strong>{t('driver')}:</strong> {transfer.driverName}</p>
                     <p><strong>{t('manager')}:</strong> {transfer.warehouseManagerName}</p>
                 </div>
@@ -100,7 +102,7 @@ export const TransmitReportPdf = ({ transfer, items, settings, invoiceNumber, to
                 </div>
                 {transfer.id && (
                      <div className="w-16 h-16 relative">
-                        <Image src={`https://api.qrserver.com/v1/create-qr-code/?size=64x64&data=${typeof window !== 'undefined' ? window.location.origin : ''}/transmit/archive/${transfer.id}`} alt="QR Code" layout="fill" />
+                        <Image src={`https://api.qrserver.com/v1/create-qr-code/?size=64x64&data=${typeof window !== 'undefined' ? window.location.origin : ''}/transmit/archive/${transfer.id}`} alt="QR Code" layout="fill" unoptimized/>
                     </div>
                 )}
             </footer>

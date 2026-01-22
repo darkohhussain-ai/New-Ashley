@@ -607,5 +607,9 @@
   "no_recent_transfers": "There have been no recent transfers.",
   "ashley_mega_homestore_iraq": "Ashley Mega homestore / Iraq",
   "ashley_sulaimanyah_branch": "Ashley Sulaimanyah Branch",
-  "diwan_group_company": "Diwan Group Company"
+  "diwan_group_company": "Diwan Group Company",
+  "INVOICE": "INVOICE",
+  "slip_no": "Slip No",
+  "transmit_to": "Transmit To",
+  "details": "Details"
 }

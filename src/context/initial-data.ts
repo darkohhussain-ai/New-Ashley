@@ -139,7 +139,9 @@ export const initialData: {
     users: User[],
     roles: Role[],
 } = {
-    employees: [],
+    employees: [
+      { id: 'emp-01', name: 'Darko', employeeId: '01', role: 'Super Manager', createdAt: '2023-01-01T00:00:00.000Z', isActive: true },
+    ],
     excelFiles: [],
     items: [],
     locations: [],
