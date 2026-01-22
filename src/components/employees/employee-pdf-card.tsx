@@ -26,11 +26,10 @@ export function EmployeePdfCard({ employee, settings }: EmployeePdfCardProps) {
   const formattedDob = isMounted && employee.dateOfBirth ? format(parseISO(employee.dateOfBirth), 'dd/MM/yyyy') : t('na');
   const formattedJoinedDate = isMounted && employee.employmentStartDate ? format(parseISO(employee.employmentStartDate), 'dd/MM/yyyy') : t('na');
   const displayName = useKurdish && employee.kurdishName ? employee.kurdishName : employee.name;
-  const qrCodeData = (typeof window !== 'undefined' && employee.id) ? `${window.location.origin}/employees?selected=${employee.id}` : '';
 
 
   return (
-    <div className="bg-white text-gray-800 w-[600px] h-[360px] font-sans rounded-lg shadow-lg overflow-hidden border border-gray-200 flex" style={{ fontFamily: (settings.customFont && useKurdish) ? 'CustomPdfFont' : (settings.font || 'sans-serif') }}>
+    <div className="bg-white text-gray-800 w-[600px] h-[360px] font-sans rounded-lg shadow-lg overflow-hidden border border-gray-200 flex" style={{ fontFamily: (settings.customFont && useKurdish) ? 'CustomAppFont' : 'Arial, sans-serif' }}>
       
       {/* Left Side: Gradient Background */}
       <div 
@@ -56,8 +55,7 @@ export function EmployeePdfCard({ employee, settings }: EmployeePdfCardProps) {
         </div>
         
          <div className="text-center w-full">
-            <Image src={`https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${qrCodeData}&bgcolor=FFFFFF&color=000000&qzone=1`} alt="QR Code" width={80} height={80} className="mx-auto bg-white p-1 rounded-sm" unoptimized />
-        </div>
+         </div>
       </div>
       
       {/* Right Side: White Background */}

@@ -130,8 +130,16 @@ export default function RootLayout({
   
   return (
     <html suppressHydrationWarning>
-      <head />
-      <body className={cn('font-sans antialiased', 'min-h-screen')} suppressHydrationWarning>
+      <head>
+        <style>
+          {`
+            :root {
+              --font-body: Arial, sans-serif;
+            }
+          `}
+        </style>
+      </head>
+      <body className={cn('antialiased', 'min-h-screen')} suppressHydrationWarning>
         <FirebaseClientProvider>
           <AppProvider>
             <AuthProvider>

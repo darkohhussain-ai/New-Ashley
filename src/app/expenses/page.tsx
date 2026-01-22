@@ -9,7 +9,6 @@ import { Card, CardContent, CardTitle, CardHeader, CardDescription } from '@/com
 import { useTranslation } from '@/hooks/use-translation';
 import withAuth from '@/hooks/withAuth';
 import { useAppContext } from '@/context/app-provider';
-import { ResponsiveContainer } from 'recharts';
 import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -49,7 +48,7 @@ function ExpensesDashboardPage() {
             if (type === 'Taxi Expenses' && expense.expenseSubType) {
                 type = expense.expenseSubType;
             } else if (type === 'Taxi Expenses') {
-                type = 'Other Taxi';
+                type = 'other_taxi';
             }
             acc[type] = (acc[type] || 0) + expense.amount;
             return acc;

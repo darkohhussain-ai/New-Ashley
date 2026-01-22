@@ -182,14 +182,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }, [firestoreSettings]);
 
     const setSettings = useCallback((value: React.SetStateAction<AppSettings>) => {
-        const newSettings = value instanceof Function ? value(settings) : value;
-        // Optimistic update for immediate UI feedback
-        setLocalSettings(newSettings); 
-        // Persist to Firestore
-        if (settingsDocRef) {
-            setDocumentNonBlocking(settingsDocRef, newSettings, { merge: true });
-        }
-    }, [settingsDocRef, settings]);
+        setLocalSettings(prevSettings => {
+            const newSettings = value instanceof Function ? value(prevSettings) : value;
+            if (settingsDocRef) {
+                setDocumentNonBlocking(settingsDocRef, newSettings, { merge: true });
+            }
+            return newSettings;
+        });
+    }, [settingsDocRef]);
     
     const isLoading = isUserLoading || isSettingsLoading || isEmployeesLoading || isExcelFilesLoading || isItemsLoading || isLocationsLoading || isExpensesLoading || isExpenseReportsLoading || isOvertimeLoading || isBonusesLoading || isWithdrawalsLoading || isReceiptsLoading || isItemCategoriesLoading || isTransfersLoading || isTransferItemsLoading || isMarketingFeedbacksLoading || isEvaluationQuestionsLoading || isUsersLoading || isRolesLoading;
 
