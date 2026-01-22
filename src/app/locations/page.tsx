@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft, Plus, Trash2, Warehouse, MapPin, Loader2, Wand2, Map, Search, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -322,6 +322,9 @@ export default function LocationsPage() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>{t('add_new_location')}</DialogTitle>
+            <DialogDescription>
+                Select the warehouse and fill in the details to generate a unique location code.
+            </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4 pt-4">
             <div className="space-y-2">

@@ -23,6 +23,7 @@ import { FilePdfCard } from '@/components/archive/file-pdf-card';
 import { useAppContext } from '@/context/app-provider';
 import type { ExcelFile, Item, Employee, StorageLocation } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 
 type SortableKeys = keyof Item;
@@ -762,7 +763,7 @@ export default function FileDetailPage() {
                                 <TableCell>{isEditing ? (
                                     <Select value={item.locationId || ''} onValueChange={v => handleItemChange(item.id, 'locationId', v === 'none' ? '' : v)} disabled={!warehouseType}>
                                         <SelectTrigger>
-                                            <SelectValue placeholder={warehouseType ? t('select') : t('na')} />
+                                            <SelectValue placeholder={warehouseType ? t('select') : "Set source"} />
                                         </SelectTrigger>
                                         <SelectContent>
                                           <SelectItem value="none">{t('none')}</SelectItem>

@@ -7,7 +7,7 @@ import withAuth from "@/hooks/withAuth";
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose, DialogDescription } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
@@ -621,7 +621,12 @@ function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean,
     return (
         <Dialog open={open} onOpenChange={(isOpen) => { onOpenChange(isOpen); if (!isOpen) resetForm(); }}>
             <DialogContent className="sm:max-w-lg">
-                <DialogHeader><DialogTitle>{t('add_new_employee')}</DialogTitle></DialogHeader>
+                <DialogHeader>
+                    <DialogTitle>{t('add_new_employee')}</DialogTitle>
+                    <DialogDescription>
+                        Fill in the details below to add a new employee to the system.
+                    </DialogDescription>
+                </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 pt-4 max-h-[80vh] overflow-y-auto p-1 pr-4">
                     <div className="flex flex-col items-center gap-4">
                         <Avatar className="w-24 h-24"><AvatarImage src={photoUrl} /><AvatarFallback><User className="w-12 h-12" /></AvatarFallback></Avatar>
@@ -661,8 +666,7 @@ function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean,
 
 function EmployeesPage() {
   const { t, language } = useTranslation();
-  const { employees, setEmployees } = useAppContext();
-  const [isLoading, setIsLoading] = useState(true);
+  const { employees, setEmployees, isLoading } = useAppContext();
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
   const [isAddDialogOpen, setAddDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -675,13 +679,6 @@ function EmployeesPage() {
     };
     setEmployees([...employees, newEmployee]);
   };
-
-  useEffect(() => {
-    if (employees) {
-      setIsLoading(false);
-    }
-  }, [employees]);
-
 
   const { warehouseEmployees, marketingEmployees } = useMemo(() => {
     if (!employees) return { warehouseEmployees: [], marketingEmployees: [] };

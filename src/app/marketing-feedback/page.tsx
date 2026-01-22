@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
@@ -14,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useAppContext } from '@/context/app-provider';
 import type { Employee, MarketingFeedback, EvaluationQuestion, AnswerOption } from '@/lib/types';
 import { format, formatISO, parseISO, isToday } from 'date-fns';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -69,7 +68,10 @@ function AddMarketingEmployeeDialog({ open, onOpenChange, addEmployee }: { open:
     return (
         <Dialog open={open} onOpenChange={(isOpen) => { onOpenChange(isOpen); if (!isOpen) resetForm(); }}>
             <DialogContent className="sm:max-w-md">
-                <DialogHeader><DialogTitle>{t('add_employee')}</DialogTitle></DialogHeader>
+                <DialogHeader>
+                  <DialogTitle>{t('add_employee')}</DialogTitle>
+                  <DialogDescription>Add a new employee to the marketing team.</DialogDescription>
+                </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 pt-4">
                     <div className="space-y-2">
                         <Label htmlFor="name">{t('employee_name')}</Label>
@@ -132,7 +134,7 @@ function ManageQuestionsDialog({ open, onOpenChange }: { open: boolean, onOpenCh
             <DialogContent className="max-w-3xl">
                 <DialogHeader>
                     <DialogTitle>{t('manage_questions_answers')}</DialogTitle>
-                    <CardDescription>{t('manage_questions_answers_desc')}</CardDescription>
+                    <DialogDescription>{t('manage_questions_answers_desc')}</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-6 max-h-[70vh] overflow-y-auto p-1 pr-4">
                     {localQuestions.map((q, index) => (
@@ -207,9 +209,9 @@ function EditSubmissionDialog({ feedback, onOpenChange, open }: { feedback: Mark
             <DialogContent className="max-w-2xl">
                 <DialogHeader>
                     <DialogTitle>{t('edit_feedback_submission')}</DialogTitle>
-                    <CardDescription>
+                    <DialogDescription>
                         {t('editing_submission_from', { date: format(parseISO(feedback.date), 'PPP') })}
-                    </CardDescription>
+                    </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-4 pt-4">
                     {evaluationQuestions.map((q, index) => (

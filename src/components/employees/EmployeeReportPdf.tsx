@@ -1,6 +1,6 @@
 
 'use client';
-import { Employee, Expense, Overtime, Bonus, CashWithdrawal, AppSettings } from '@/lib/types';
+import { Employee, Expense, Overtime, Bonus, CashWithdrawal, PdfSettings } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { format, parseISO } from 'date-fns';
 import { useTranslation } from '@/hooks/use-translation';
@@ -57,7 +57,7 @@ const FinancialSection = ({ title, items, columns, bodyMapper, total, themeColor
 
 type EmployeeReportPdfProps = {
     employee: Employee;
-    settings: AppSettings['pdfSettings'];
+    settings: PdfSettings;
     expenses: { items: Expense[], total: number };
     overtime: { items: Overtime[], total: number };
     bonuses: { items: Bonus[], total: number };
@@ -72,8 +72,8 @@ export function EmployeeReportPdf({ employee, settings, expenses, overtime, bonu
         <ReportWrapper
             title={t('employee_report')}
             date={`${t('for')} ${displayName}`}
-            logoSrc={settings.report.logo ?? null}
-            themeColor={settings.report.reportColors?.general || '#22c55e'}
+            logoSrc={settings.logo ?? null}
+            themeColor={settings.reportColors?.general || '#22c55e'}
         >
             <div dir={language === 'ku' ? 'rtl' : 'ltr'}>
                 <div className="flex items-start gap-4 p-2 rounded-lg bg-gray-50 border">
@@ -116,7 +116,7 @@ export function EmployeeReportPdf({ employee, settings, expenses, overtime, bonu
                         columns={[t('date'), t('notes'), t('amount')]}
                         bodyMapper={(e: Expense) => [format(parseISO(e.date), 'PP'), e.notes || '', formatCurrency(e.amount)]}
                         total={expenses.total}
-                        themeColor={settings.report.reportColors?.expense}
+                        themeColor={settings.reportColors?.expense}
                     />
                      <FinancialSection 
                         title={t('overtime')}
@@ -124,7 +124,7 @@ export function EmployeeReportPdf({ employee, settings, expenses, overtime, bonu
                         columns={[t('date'), 'Hours', t('amount')]}
                         bodyMapper={(o: Overtime) => [format(parseISO(o.date), 'PP'), o.hours.toFixed(2), formatCurrency(o.totalAmount)]}
                         total={overtime.total}
-                        themeColor={settings.report.reportColors?.overtime}
+                        themeColor={settings.reportColors?.overtime}
                     />
                     <FinancialSection 
                         title={t('bonuses')}
@@ -132,7 +132,7 @@ export function EmployeeReportPdf({ employee, settings, expenses, overtime, bonu
                         columns={[t('date'), 'Reason', t('amount')]}
                         bodyMapper={(b: Bonus) => [format(parseISO(b.date), 'PP'), b.notes || '', formatCurrency(b.totalAmount)]}
                         total={bonuses.total}
-                        themeColor={settings.report.reportColors?.bonus}
+                        themeColor={settings.reportColors?.bonus}
                     />
                     <FinancialSection 
                         title={t('cash_withdrawals')}
@@ -140,7 +140,7 @@ export function EmployeeReportPdf({ employee, settings, expenses, overtime, bonu
                         columns={[t('date'), t('notes'), t('amount')]}
                         bodyMapper={(w: CashWithdrawal) => [format(parseISO(w.date), 'PP'), w.notes || '', formatCurrency(w.amount)]}
                         total={withdrawals.total}
-                        themeColor={settings.report.reportColors?.withdrawal}
+                        themeColor={settings.reportColors?.withdrawal}
                     />
                 </div>
             </div>
