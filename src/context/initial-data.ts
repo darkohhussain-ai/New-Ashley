@@ -1,5 +1,5 @@
 
-import { Employee, ExcelFile, Item, StorageLocation, Expense, ExpenseReport, Overtime, Bonus, CashWithdrawal, SoldItemReceipt, Transfer, ItemForTransfer, MarketingFeedback, EvaluationQuestion, AnswerOption, User, Role, AppSettings, AllPdfSettings, PdfSettings, ThemeColors, ItemCategory } from '@/lib/types';
+import { Employee, ExcelFile, Item, StorageLocation, Expense, ExpenseReport, Overtime, Bonus, CashWithdrawal, SoldItemReceipt, Transfer, ItemForTransfer, MarketingFeedback, EvaluationQuestion, AnswerOption, User, Role, AppSettings, AllPdfSettings, PdfSettings, ThemeColors, ItemCategory, BranchColors } from '@/lib/types';
 import { adminPermissions, adminAssistantPermissions, viewerPermissions, employeePermissions } from '@/lib/permissions';
 import en from '@/locales/en.json';
 import ku from '@/locales/ku.json';
@@ -234,6 +234,13 @@ const defaultReportColors = {
   withdrawal: '#ef4444'
 };
 
+const defaultBranchColors: BranchColors = {
+    Erbil: '#f97316',
+    Baghdad: '#3b82f6',
+    Dohuk: '#8b5cf6',
+    Diwan: '#10b981',
+};
+
 const defaultReportSettings: PdfSettings = {
     logo: null,
     customFont: null,
@@ -258,12 +265,7 @@ const defaultInvoiceSettings: PdfSettings = {
     scale: 2,
     width: 800,
     fontSize: 10,
-    branchColors: {
-        Erbil: '#f97316',
-        Baghdad: '#3b82f6',
-        Dohuk: '#8b5cf6',
-        Diwan: '#10b981',
-    }
+    branchColors: defaultBranchColors,
 };
 
 const defaultCardSettings: PdfSettings = {
@@ -324,13 +326,13 @@ export const initialData: {
     receipts: SoldItemReceipt[],
     itemCategories: ItemCategory[],
     transfers: Transfer[],
-    itemForTransfer: ItemForTransfer[],
+    transferItems: ItemForTransfer[],
     marketingFeedbacks: MarketingFeedback[],
     evaluationQuestions: EvaluationQuestion[],
     users: User[],
     roles: Role[],
 } = {
-    employees: initialEmployees,
+    employees: [],
     excelFiles: [],
     items: [],
     locations: [],

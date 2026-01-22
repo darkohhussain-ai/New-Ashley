@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Employee, Expense, ExpenseReport, AllPdfSettings } from '@/lib/types';
@@ -54,19 +55,19 @@ export function ExpenseReportPdf({ report, items, employees, settings }: Expense
     >
       <div className="space-y-6">
         <div>
-          <h2 className="text-xl font-bold mb-2">{t('summary_by_employee')}</h2>
+          <h2 className="text-base font-bold mb-2">{t('summary_by_employee')}</h2>
           <Table>
             <TableHeader><TableRow><TableHead>{t('employee')}</TableHead><TableHead className="text-right">{t('total_amount')}</TableHead></TableRow></TableHeader>
             <TableBody>
-              {groupedExpenses.map(group => (
-                <TableRow key={group.employeeName}>
-                  <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{group.employeeName}</TableCell>
-                  <TableCell className="text-right">{formatCurrency(group.total)}</TableCell>
+              {groupedExpenses.map((group, index) => (
+                <TableRow key={group.employeeName} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
+                  <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'} className="py-1">{group.employeeName}</TableCell>
+                  <TableCell className="text-right py-1">{formatCurrency(group.total)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
              <TableFooter>
-                <TableRow>
+                <TableRow className="bg-gray-100">
                     <TableCell className="text-right font-bold">{t('grand_total')}</TableCell>
                     <TableCell className="text-right font-bold">{formatCurrency(report.totalAmount)}</TableCell>
                 </TableRow>
@@ -75,16 +76,16 @@ export function ExpenseReportPdf({ report, items, employees, settings }: Expense
         </div>
         {items.length > 0 && (
           <div>
-            <h2 className="text-xl font-bold mb-2">{t('all_transactions')}</h2>
+            <h2 className="text-base font-bold mb-2">{t('all_transactions')}</h2>
             <Table>
               <TableHeader><TableRow><TableHead>{t('employee')}</TableHead><TableHead>{t('expense_type')}</TableHead><TableHead>{t('notes')}</TableHead><TableHead className="text-right">{t('amount')}</TableHead></TableRow></TableHeader>
               <TableBody>
-                {items.sort((a,b) => getEmployeeName(a.employeeId).localeCompare(getEmployeeName(b.employeeId))).map(item => (
-                  <TableRow key={item.id}>
-                    <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{getEmployeeName(item.employeeId, language === 'ku')}</TableCell>
-                    <TableCell>{t(item.expenseType.toLowerCase().replace(/[\s()]/g, '_'))}{item.expenseSubType ? ` (${t(item.expenseSubType.toLowerCase().replace(/\s/g, '_'))})` : ''}</TableCell>
-                    <TableCell>{item.notes || t('na')}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(item.amount)}</TableCell>
+                {items.sort((a,b) => getEmployeeName(a.employeeId).localeCompare(getEmployeeName(b.employeeId))).map((item, index) => (
+                  <TableRow key={item.id} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
+                    <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'} className="py-1">{getEmployeeName(item.employeeId, language === 'ku')}</TableCell>
+                    <TableCell className="py-1 text-xs">{t(item.expenseType.toLowerCase().replace(/[\s()]/g, '_'))}{item.expenseSubType ? ` (${t(item.expenseSubType.toLowerCase().replace(/\s/g, '_'))})` : ''}</TableCell>
+                    <TableCell className="text-gray-600 py-1 text-xs">{item.notes || t('na')}</TableCell>
+                    <TableCell className="text-right py-1">{formatCurrency(item.amount)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

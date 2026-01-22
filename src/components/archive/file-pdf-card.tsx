@@ -1,67 +1,71 @@
 
 'use client';
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Calendar, Building } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format, parseISO } from 'date-fns';
-import Image from 'next/image';
-import type { Employee, ExcelFile } from "@/lib/types";
-import { useEffect, useState } from "react";
+import type { Employee, ExcelFile, Item, StorageLocation } from "@/lib/types";
+import { ReportWrapper } from "../reports/ReportWrapper";
+import { useTranslation } from "@/hooks/use-translation";
 
-
-type FilePdfCardProps = {
+type FileReportPdfProps = {
   file: ExcelFile;
+  items: Item[];
   employee: Employee;
+  locations: StorageLocation[];
   logoSrc: string | null;
+  themeColor: string;
 };
 
+export function FilePdfCard({ file, items, employee, locations, logoSrc, themeColor }: FileReportPdfProps) {
+    const { t } = useTranslation();
 
-export function FilePdfCard({ file, employee, logoSrc }: FilePdfCardProps) {
-  const [isMounted, setIsMounted] = useState(false);
+    const getLocationName = (id?: string) => locations?.find(l => l.id === id)?.name || 'N/A';
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
+    return (
+        <ReportWrapper
+            title={file.storageName}
+            date={file.date ? format(parseISO(file.date), 'PPP') : 'N/A'}
+            logoSrc={logoSrc}
+            themeColor={themeColor}
+        >
+            <div className="grid grid-cols-2 gap-4 mb-6 text-xs">
+                <div><p className="text-gray-500">{t('employee')}</p><p className="font-semibold">{employee.name}</p></div>
+                <div><p className="text-gray-500">{t('source_location')}</p><p className="font-semibold">{file.source}</p></div>
+                <div><p className="text-gray-500">{t('category_name')}</p><p className="font-semibold">{file.categoryName}</p></div>
+                <div><p className="text-gray-500">{t('file_type')}</p><p className="font-semibold">{file.type}</p></div>
+            </div>
 
-  const formattedDate = isMounted && file.date ? format(parseISO(file.date), 'MMMM d, yyyy') : 'N/A';
-
-  return (
-    <div className="bg-white text-black w-full p-4 font-sans rounded-lg border-2 border-gray-200 shadow-md">
-      {/* Header */}
-      <header className="flex justify-between items-center pb-4 border-b">
-          <div className="w-20 h-12 relative">
-            {logoSrc ? <Image src={logoSrc} alt="logo" fill className="object-contain" /> : <p className="text-gray-400 text-xs">logo</p>}
-          </div>
-          <div className="text-right">
-            <h1 className="font-bold text-lg">{file.storageName}</h1>
-            <p className="text-xs text-gray-500">{file.categoryName}</p>
-          </div>
-      </header>
-      
-      {/* Details Section */}
-      <div className="grid grid-cols-2 gap-4 pt-4 text-sm">
-        <div className="flex items-center gap-2 text-gray-700">
-          <User className="w-4 h-4 text-gray-500" />
-          <div>
-            <p className="text-xs text-gray-500">Employee</p>
-            <p className="font-semibold">{employee.name}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 text-gray-700">
-          <Building className="w-4 h-4 text-gray-500" />
-          <div>
-            <p className="text-xs text-gray-500">Source</p>
-            <p className="font-semibold">{file.source}</p>
-          </div>
-        </div>
-         <div className="flex items-center gap-2 text-gray-700 col-span-2">
-          <Calendar className="w-4 h-4 text-gray-500" />
-          <div>
-            <p className="text-xs text-gray-500">Date</p>
-            <p className="font-semibold">{formattedDate}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+             <div className="overflow-x-auto">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Model</TableHead>
+                            <TableHead>Qty</TableHead>
+                            <TableHead>Storage Status</TableHead>
+                            <TableHead>Condition</TableHead>
+                            <TableHead>Qty / Cond.</TableHead>
+                            <TableHead>Location</TableHead>
+                            <TableHead>Notes</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {items?.map((item, index) => (
+                            <TableRow key={item.id} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
+                                <TableCell className="font-medium py-1">{item.model}</TableCell>
+                                <TableCell className="py-1">{item.quantity}</TableCell>
+                                <TableCell className="py-1">{item.storageStatus || 'N/A'}</TableCell>
+                                <TableCell className="py-1">{item.modelCondition || 'N/A'}</TableCell>
+                                <TableCell className="py-1">{item.quantityPerCondition ?? 'N/A'}</TableCell>
+                                <TableCell className="py-1">{getLocationName(item.locationId)}</TableCell>
+                                <TableCell className="text-gray-600 py-1 text-xs">{item.notes || 'N/A'}</TableCell>
+                            </TableRow>
+                        ))}
+                        {(!items || items.length === 0) && (
+                            <TableRow><TableCell colSpan={7} className="text-center h-24">No items found.</TableCell></TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+              </div>
+        </ReportWrapper>
+    );
 };
