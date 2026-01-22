@@ -616,5 +616,8 @@
   "slip_no": "Slip No",
   "transmit_to": "Transmit To",
   "details": "Details",
-  "report": "Report"
+  "report": "Report",
+  "notes_optional_overtime": "Optional notes, e.g., reason for overtime",
+  "contact_information": "Contact Information",
+  "employment_details": "Employment Details"
 }

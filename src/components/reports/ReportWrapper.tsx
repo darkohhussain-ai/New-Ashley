@@ -56,8 +56,8 @@ export function ReportWrapper({ title, date, logoSrc, themeColor = '#22c55e', se
                 <p>Generated on {format(new Date(), 'PPp')}</p>
             </div>
             {qrCodeData && (
-                <div className="w-16 h-16 relative">
-                    <Image src={`https://api.qrserver.com/v1/create-qr-code/?size=64x64&data=${qrCodeData}`} alt="QR Code" layout="fill" unoptimized/>
+                <div className="w-20 h-20 relative">
+                    <Image src={`https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${qrCodeData}`} alt="QR Code" layout="fill" unoptimized/>
                 </div>
             )}
             <div className="w-48 text-center">

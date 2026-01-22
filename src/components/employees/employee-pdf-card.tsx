@@ -26,6 +26,8 @@ export function EmployeePdfCard({ employee, settings }: EmployeePdfCardProps) {
   const formattedDob = isMounted && employee.dateOfBirth ? format(parseISO(employee.dateOfBirth), 'dd/MM/yyyy') : t('na');
   const formattedJoinedDate = isMounted && employee.employmentStartDate ? format(parseISO(employee.employmentStartDate), 'dd/MM/yyyy') : t('na');
   const displayName = useKurdish && employee.kurdishName ? employee.kurdishName : employee.name;
+  const qrCodeData = (typeof window !== 'undefined' && employee.id) ? `${window.location.origin}/employees?selected=${employee.id}` : '';
+
 
   return (
     <div className="bg-white text-gray-800 w-[600px] h-[360px] font-sans rounded-lg shadow-lg overflow-hidden border border-gray-200 flex" style={{ fontFamily: (settings.customFont && useKurdish) ? 'CustomPdfFont' : (settings.font || 'sans-serif') }}>
@@ -38,7 +40,7 @@ export function EmployeePdfCard({ employee, settings }: EmployeePdfCardProps) {
         <div className="w-full">
             {settings.logo && (
               <div className="relative w-16 h-8 mb-4">
-                  <Image src={settings.logo} alt="Company Logo" fill className="object-contain" />
+                  <Image src={settings.logo} alt="Company Logo" fill className="object-contain" unoptimized />
               </div>
             )}
             <p className="text-xs opacity-80">{settings.headerText || "Employee ID Card"}</p>
@@ -54,7 +56,7 @@ export function EmployeePdfCard({ employee, settings }: EmployeePdfCardProps) {
         </div>
         
          <div className="text-center w-full">
-            <Image src={`https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=${employee.id}&bgcolor=FFFFFF&color=000000&qzone=1`} alt="QR Code" width={60} height={60} className="mx-auto bg-white p-1 rounded-sm"/>
+            <Image src={`https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${qrCodeData}&bgcolor=FFFFFF&color=000000&qzone=1`} alt="QR Code" width={80} height={80} className="mx-auto bg-white p-1 rounded-sm" unoptimized />
         </div>
       </div>
       

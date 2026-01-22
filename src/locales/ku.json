@@ -616,5 +616,8 @@
   "slip_no": "ژ. پسوولە",
   "transmit_to": "گواستنەوە بۆ",
   "details": "وردەکارییەکان",
-  "report": "ڕاپۆرت"
+  "report": "ڕاپۆرت",
+  "notes_optional_overtime": "تێبینی ئارەزوومەندانە، بۆ نموونە هۆکاری کاتی زیادە",
+  "contact_information": "زانیاری پەیوەندی",
+  "employment_details": "وردەکاری دامەزراندن"
 }

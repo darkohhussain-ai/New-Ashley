@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -18,9 +19,10 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useAppContext } from '@/context/app-provider';
 import type { Overtime, AllPdfSettings } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { ReportWrapper } from '@/components/reports/ReportWrapper';
 
 
 const formatCurrency = (amount: number) => {
@@ -38,7 +40,7 @@ export default function AddOvertimePage() {
   const router = useRouter();
 
   const { employees, overtime: allOvertimeRecords, setOvertime: setAllOvertimeRecords, settings } = useAppContext();
-  const { salarySettings, pdfSettings, customFont } = settings;
+  const { salarySettings, pdfSettings, customFont, appLogo } = settings;
 
 
   const dateParam = searchParams.get('date');
@@ -209,29 +211,45 @@ export default function AddOvertimePage() {
   return (
     <>
     <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-      <div ref={pdfRef} className="bg-white p-8" style={{width: '700px'}}>
-        <h1 className="text-2xl font-bold text-center">{t('daily_overtime_report')}</h1>
-        <p className="text-center text-muted-foreground mb-4">{selectedDate ? format(selectedDate, 'PPP') : '...'}</p>
-        <Table>
-          <TableHeader><TableRow><TableHead>{t('employee')}</TableHead><TableHead>{t('overtime_hours')}</TableHead><TableHead>{t('salary')}</TableHead><TableHead>{t('notes')}</TableHead></TableRow></TableHeader>
-          <TableBody>
-            {overtimeRecords.map(record => (
-              <TableRow key={record.id}>
-                <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{getEmployeeName(record.employeeId, language === 'ku')}</TableCell>
-                <TableCell>{record.hours.toFixed(2)}</TableCell>
-                <TableCell>{formatCurrency(record.totalAmount)}</TableCell>
-                <TableCell>{record.notes || t('na')}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-          <CardFooter className="justify-between bg-muted/50 py-4 rounded-b-lg mt-4">
-              <span className="font-semibold">{t('total')}</span>
-              <div className='text-right'>
-                  <p>{totalHours.toFixed(2)} {t('hours_short')}</p>
-                  <p className="font-semibold text-primary">{formatCurrency(totalAmount)}</p>
-              </div>
-          </CardFooter>
-        </Table>
+      <div ref={pdfRef}>
+        {selectedDate && (
+          <ReportWrapper
+              title={t('daily_overtime_report')}
+              date={format(selectedDate, 'PPP')}
+              logoSrc={pdfSettings.report.logo ?? appLogo}
+              themeColor={pdfSettings.report.reportColors?.overtime}
+              qrCodeData={typeof window !== 'undefined' ? `${window.location.origin}/overtime/add?date=${formatISO(selectedDate)}` : ''}
+          >
+              <Table>
+                  <TableHeader>
+                      <TableRow>
+                          <TableHead>{t('employee')}</TableHead>
+                          <TableHead className="text-center">{t('overtime_hours')}</TableHead>
+                          <TableHead className="text-center">{t('salary')}</TableHead>
+                          <TableHead>{t('notes')}</TableHead>
+                      </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                      {overtimeRecords.map(record => (
+                          <TableRow key={record.id}>
+                              <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{getEmployeeName(record.employeeId, language === 'ku')}</TableCell>
+                              <TableCell className="text-center">{record.hours.toFixed(2)}</TableCell>
+                              <TableCell className="text-center">{formatCurrency(record.totalAmount)}</TableCell>
+                              <TableCell>{record.notes || t('na')}</TableCell>
+                          </TableRow>
+                      ))}
+                  </TableBody>
+                  <TableFooter>
+                      <TableRow>
+                          <TableCell colSpan={1} className="font-semibold text-right">{t('total')}</TableCell>
+                          <TableCell className="text-center font-semibold">{totalHours.toFixed(2)} {t('hours_short')}</TableCell>
+                          <TableCell className="text-center font-semibold text-primary">{formatCurrency(totalAmount)}</TableCell>
+                          <TableCell></TableCell>
+                      </TableRow>
+                  </TableFooter>
+              </Table>
+          </ReportWrapper>
+        )}
       </div>
     </div>
     <div className="h-[calc(100vh-80px)] flex flex-col">

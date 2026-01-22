@@ -36,7 +36,7 @@
     --tab-active-foreground: hsl(var(--foreground));
     --table-row-primary: 0 0% 100%;
     --table-row-secondary: 220 13% 91%;
-    --huana-highlight: 210 100% 96%;
+    --huana-highlight: 54 90% 92%;
     --location-occupied-border: 210 100% 70%;
     --location-occupied-bg: 210 100% 96%;
 
@@ -81,7 +81,7 @@
     --tab-active-foreground: hsl(var(--foreground));
     --table-row-primary: 222.2 84% 4.9%;
     --table-row-secondary: 217.2 32.6% 17.5%;
-    --huana-highlight: 217.2 91.2% 15%;
+    --huana-highlight: 54 92% 15%;
     --location-occupied-border: 217.2 91.2% 50%;
     --location-occupied-bg: 217.2 91.2% 15%;
 
