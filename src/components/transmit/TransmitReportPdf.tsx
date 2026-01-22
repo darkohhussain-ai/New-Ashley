@@ -26,7 +26,7 @@ export const TransmitReportPdf = ({ transfer, items, settings }: { transfer: Par
         >
             <div className="p-2" dir={useKurdish ? 'rtl' : 'ltr'}>
                 {transfer.driverName && (
-                    <div className="grid grid-cols-3 gap-x-4 gap-y-2 py-4 text-sm border-b">
+                    <div className="grid grid-cols-3 gap-x-4 gap-y-2 py-4 mb-4 text-sm border-y">
                         <p><strong>{t('destination')}:</strong> {transfer.destinationCity}</p>
                         <p><strong>{t('driver')}:</strong> {transfer.driverName}</p>
                         <p><strong>{t('manager')}:</strong> {transfer.warehouseManagerName}</p>
@@ -36,28 +36,26 @@ export const TransmitReportPdf = ({ transfer, items, settings }: { transfer: Par
                 <div className="mt-4">
                     <Table>
                         <TableHeader>
-                            <TableRow style={{ backgroundColor: finalThemeColor, color: 'white' }}>
-                                <TableHead className="text-white w-[5%]">No.</TableHead>
-                                <TableHead className="text-white w-[25%]">{t('model')}</TableHead>
-                                <TableHead className="text-white w-[5%]">{t('quantity')}</TableHead>
-                                <TableHead className="text-white w-[10%]">{t('invoice_no')}</TableHead>
-                                <TableHead className="text-white w-[10%]">{t('storage')}</TableHead>
-                                <TableHead className="text-white w-[5%]">{t('transmit')}</TableHead>
-                                <TableHead className="text-white w-[25%]">{t('notes')}</TableHead>
-                                <TableHead className="text-white w-[15%]">{t('request_date')}</TableHead>
+                            <TableRow>
+                                <TableHead className="w-[5%]">No.</TableHead>
+                                <TableHead className="w-[25%]">{t('model')}</TableHead>
+                                <TableHead className="w-[5%] text-center">{t('quantity')}</TableHead>
+                                <TableHead className="w-[10%]">{t('invoice_no')}</TableHead>
+                                <TableHead className="w-[10%]">{t('storage')}</TableHead>
+                                <TableHead className="w-[30%]">{t('notes')}</TableHead>
+                                <TableHead className="w-[15%] text-right">{t('request_date')}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {items.map((item, index) => (
-                                <TableRow key={item.id} className={settings.tableTheme === 'striped' ? 'odd:bg-muted/30' : ''}>
-                                    <TableCell className="text-center p-1">{index + 1}</TableCell>
-                                    <TableCell className="p-1">{item.model}</TableCell>
-                                    <TableCell className="p-1 text-center">{item.quantity}</TableCell>
-                                    <TableCell className="p-1">{item.invoiceNo || ''}</TableCell>
-                                    <TableCell className="p-1">{item.storage || ''}</TableCell>
-                                    <TableCell className="p-1 text-center"><div className="w-4 h-4 border border-black mx-auto" /></TableCell>
-                                    <TableCell className="p-1">{item.notes || ''}</TableCell>
-                                    <TableCell className="p-1">{item.requestDate ? format(parseISO(item.requestDate), 'yyyy-MM-dd') : ''}</TableCell>
+                                <TableRow key={item.id} className={settings.tableTheme === 'striped' ? 'odd:bg-gray-50' : ''}>
+                                    <TableCell className="text-center p-2">{index + 1}</TableCell>
+                                    <TableCell className="p-2 font-semibold">{item.model}</TableCell>
+                                    <TableCell className="p-2 text-center">{item.quantity}</TableCell>
+                                    <TableCell className="p-2">{item.invoiceNo || ''}</TableCell>
+                                    <TableCell className="p-2">{item.storage || ''}</TableCell>
+                                    <TableCell className="p-2 text-gray-600 text-xs">{item.notes || ''}</TableCell>
+                                    <TableCell className="p-2 text-right text-xs">{item.requestDate ? format(parseISO(item.requestDate), 'yyyy-MM-dd') : ''}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>

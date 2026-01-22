@@ -1,7 +1,9 @@
+
 'use client';
 
 import Image from 'next/image';
 import { useTranslation } from '@/hooks/use-translation';
+import { format } from 'date-fns';
 
 type ReportWrapperProps = {
   title: string;
@@ -16,37 +18,40 @@ export function ReportWrapper({ title, date, logoSrc, themeColor, children }: Re
 
   return (
     <div className="bg-white text-black p-4 font-sans text-sm">
-      <div className="border border-gray-400 p-2">
-        <header
-          className="p-4 flex justify-between items-center"
-          style={{ backgroundColor: themeColor }}
-        >
-          <div className="w-20 h-20 relative">
-            {logoSrc ? (
-              <Image src={logoSrc} alt="logo" fill className="object-contain" />
-            ) : (
-              <div className="w-20 h-20 bg-white/20 rounded-md flex items-center justify-center text-white/50">
-                <span>{t('logo')}</span>
-              </div>
-            )}
-          </div>
-          <div className="text-center text-white">
-            <h1 className="text-xl font-bold">{t(title.toLowerCase().replace(/ /g, '_')) || title}</h1>
-            <p className="text-sm">{date}</p>
-          </div>
-          <div className="w-20" /> {/* Spacer */}
-        </header>
+      <div className="border border-gray-300 shadow-lg">
+        {/* Header */}
+        <div className="p-6 border-b-2 border-gray-200">
+            <div className="flex justify-between items-center">
+                <div className="w-24 h-24 relative">
+                    {logoSrc ? (
+                    <Image src={logoSrc} alt="logo" fill className="object-contain" />
+                    ) : (
+                    <div className="w-24 h-24 bg-gray-100 rounded-md flex items-center justify-center text-gray-400">
+                        <span>{t('logo')}</span>
+                    </div>
+                    )}
+                </div>
+                <div className="text-right">
+                    <h1 className="text-3xl font-bold" style={{ color: themeColor }}>{t(title.toLowerCase().replace(/ /g, '_')) || title}</h1>
+                    <p className="text-gray-500">{date}</p>
+                </div>
+            </div>
+        </div>
 
-        <main className="py-4">{children}</main>
+        {/* Main Content */}
+        <main className="p-6">
+            {children}
+        </main>
 
-        <footer className="mt-8 pt-8">
-          <div className="flex justify-end">
+        {/* Footer */}
+        <footer className="mt-8 pt-4 px-6 pb-6">
+          <div className="flex justify-between items-end">
+            <p className="text-xs text-gray-400">Generated on {format(new Date(), 'PPp')}</p>
             <div className="w-48 text-center">
-              <p className="font-bold">{t('warehouse_manager')}</p>
-              <div className="border-b-2 border-gray-700 mt-16"></div>
+              <div className="border-b-2 border-gray-400 mb-2"></div>
+              <p className="text-sm font-bold">{t('warehouse_manager')}</p>
             </div>
           </div>
-          <div className="mt-2 h-2" style={{ backgroundColor: themeColor }}></div>
         </footer>
       </div>
     </div>

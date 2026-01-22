@@ -80,7 +80,7 @@ interface AppState {
 const AppContext = createContext<AppState | undefined>(undefined);
 
 // Helper to manage a single collection from the root of Firestore
-function useFirestoreCollection<T extends {id: string}>(collectionName: string) {
+function useFirestoreCollection<T extends {id: string}>(collectionName: string, initialFallback: T[]) {
     const db = useFirestore();
     
     const collectionRef = useMemoFirebase(() => {
@@ -89,17 +89,26 @@ function useFirestoreCollection<T extends {id: string}>(collectionName: string) 
     }, [db, collectionName]);
     
     const { data, isLoading, error } = useCollection<T>(collectionRef);
-    
-    const dataRef = React.useRef(data);
-    useEffect(() => {
-      dataRef.current = data;
+
+    const [localData, setLocalData] = useState<T[]>(data ?? initialFallback);
+
+     useEffect(() => {
+        if (data) {
+            setLocalData(data);
+        }
     }, [data]);
+    
+    const setter = useCallback((newDataOrFn: React.SetStateAction<T[]>) => {
+         if (!collectionRef) {
+            // Update local state if offline
+            setLocalData(newDataOrFn);
+            return;
+        }
 
-    const setter = useCallback((newDataOrFn: T[] | ((current: T[]) => T[])) => {
-        if (!collectionRef) return;
+        const currentData = localData || [];
+        const newData = typeof newDataOrFn === 'function' ? (newDataOrFn as (prevState: T[]) => T[])(currentData) : newDataOrFn;
 
-        const currentData = dataRef.current || [];
-        const newData = typeof newDataOrFn === 'function' ? newDataOrFn(currentData) : newDataOrFn;
+        setLocalData(newData);
 
         const currentDataMap = new Map(currentData.map(item => [item.id, item]));
         const newDataMap = new Map(newData.map(item => [item.id, item]));
@@ -120,10 +129,11 @@ function useFirestoreCollection<T extends {id: string}>(collectionName: string) 
                 updateDocumentNonBlocking(doc(collectionRef, id), item);
             }
         }
-    }, [collectionRef]);
+    }, [collectionRef, localData]);
     
-    return [data || [], setter, isLoading, error] as const;
+    return [localData || [], setter, isLoading, error] as const;
 }
+
 
 // The provider component
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -131,23 +141,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const db = useFirestore();
 
     // App Data Collections
-    const [employees, setEmployees, isEmployeesLoading] = useFirestoreCollection<Employee>('employees');
-    const [excelFiles, setExcelFiles, isExcelFilesLoading] = useFirestoreCollection<ExcelFile>('excelFiles');
-    const [items, setItems, isItemsLoading] = useFirestoreCollection<Item>('items');
-    const [locations, setLocations, isLocationsLoading] = useFirestoreCollection<StorageLocation>('locations');
-    const [expenses, setExpenses, isExpensesLoading] = useFirestoreCollection<Expense>('expenses');
-    const [expenseReports, setExpenseReports, isExpenseReportsLoading] = useFirestoreCollection<ExpenseReport>('expenseReports');
-    const [overtime, setOvertime, isOvertimeLoading] = useFirestoreCollection<Overtime>('overtime');
-    const [bonuses, setBonuses, isBonusesLoading] = useFirestoreCollection<Bonus>('bonuses');
-    const [withdrawals, setWithdrawals, isWithdrawalsLoading] = useFirestoreCollection<CashWithdrawal>('withdrawals');
-    const [receipts, setReceipts, isReceiptsLoading] = useFirestoreCollection<SoldItemReceipt>('receipts');
-    const [itemCategories, setItemCategories, isItemCategoriesLoading] = useFirestoreCollection<ItemCategory>('itemCategories');
-    const [transfers, setTransfers, isTransfersLoading] = useFirestoreCollection<Transfer>('transfers');
-    const [transferItems, setTransferItems, isTransferItemsLoading] = useFirestoreCollection<ItemForTransfer>('transferItems');
-    const [marketingFeedbacks, setMarketingFeedbacks, isMarketingFeedbacksLoading] = useFirestoreCollection<MarketingFeedback>('marketingFeedbacks');
-    const [evaluationQuestions, setEvaluationQuestions, isEvaluationQuestionsLoading] = useFirestoreCollection<EvaluationQuestion>('evaluationQuestions');
-    const [users, setUsers, isUsersLoading] = useFirestoreCollection<User>('users');
-    const [roles, setRoles, isRolesLoading] = useFirestoreCollection<Role>('roles');
+    const [employees, setEmployees, isEmployeesLoading] = useFirestoreCollection<Employee>('employees', initialData.employees);
+    const [excelFiles, setExcelFiles, isExcelFilesLoading] = useFirestoreCollection<ExcelFile>('excelFiles', initialData.excelFiles);
+    const [items, setItems, isItemsLoading] = useFirestoreCollection<Item>('items', initialData.items);
+    const [locations, setLocations, isLocationsLoading] = useFirestoreCollection<StorageLocation>('locations', initialData.locations);
+    const [expenses, setExpenses, isExpensesLoading] = useFirestoreCollection<Expense>('expenses', initialData.expenses);
+    const [expenseReports, setExpenseReports, isExpenseReportsLoading] = useFirestoreCollection<ExpenseReport>('expenseReports', initialData.expenseReports);
+    const [overtime, setOvertime, isOvertimeLoading] = useFirestoreCollection<Overtime>('overtime', initialData.overtime);
+    const [bonuses, setBonuses, isBonusesLoading] = useFirestoreCollection<Bonus>('bonuses', initialData.bonuses);
+    const [withdrawals, setWithdrawals, isWithdrawalsLoading] = useFirestoreCollection<CashWithdrawal>('withdrawals', initialData.withdrawals);
+    const [receipts, setReceipts, isReceiptsLoading] = useFirestoreCollection<SoldItemReceipt>('receipts', initialData.receipts);
+    const [itemCategories, setItemCategories, isItemCategoriesLoading] = useFirestoreCollection<ItemCategory>('itemCategories', initialData.itemCategories);
+    const [transfers, setTransfers, isTransfersLoading] = useFirestoreCollection<Transfer>('transfers', initialData.transfers);
+    const [transferItems, setTransferItems, isTransferItemsLoading] = useFirestoreCollection<ItemForTransfer>('transferItems', initialData.transferItems);
+    const [marketingFeedbacks, setMarketingFeedbacks, isMarketingFeedbacksLoading] = useFirestoreCollection<MarketingFeedback>('marketingFeedbacks', initialData.marketingFeedbacks);
+    const [evaluationQuestions, setEvaluationQuestions, isEvaluationQuestionsLoading] = useFirestoreCollection<EvaluationQuestion>('evaluationQuestions', initialData.evaluationQuestions);
+    const [users, setUsers, isUsersLoading] = useFirestoreCollection<User>('users', initialData.users);
+    const [roles, setRoles, isRolesLoading] = useFirestoreCollection<Role>('roles', initialData.roles);
     
     // Settings Singleton Document
     const settingsDocRef = useMemoFirebase(() => db ? doc(db, 'settings', 'main') : null, [db]);
