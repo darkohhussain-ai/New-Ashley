@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -39,7 +40,11 @@ function ExpensesDashboardPage() {
         const filteredExpenses = expenses.filter(e => e.date && isWithinInterval(parseISO(e.date), { start, end }));
 
         const expenseTypeSummary = filteredExpenses.reduce((acc, expense) => {
-            const type = expense.expenseType || 'Uncategorized';
+            let type = expense.expenseType || 'Uncategorized';
+            // If it's a taxi expense with a subtype, use the subtype as the key
+            if (type === 'Taxi Expenses' && expense.expenseSubType) {
+                type = expense.expenseSubType;
+            }
             acc[type] = (acc[type] || 0) + expense.amount;
             return acc;
         }, {} as Record<string, number>);

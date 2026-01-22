@@ -608,8 +608,13 @@
   "ashley_mega_homestore_iraq": "Ashley Mega homestore / Iraq",
   "ashley_sulaimanyah_branch": "Ashley Sulaimanyah Branch",
   "diwan_group_company": "Diwan Group Company",
+  "for": "For",
+  "toggle_theme": "Toggle theme",
+  "refresh_page": "Refresh page",
+  "logout": "Logout",
   "INVOICE": "INVOICE",
   "slip_no": "Slip No",
   "transmit_to": "Transmit To",
-  "details": "Details"
+  "details": "Details",
+  "report": "Report"
 }

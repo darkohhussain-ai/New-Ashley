@@ -19,14 +19,14 @@ export const TransmitReportPdf = ({ transfer, items, settings, invoiceNumber, to
     
     const formattedDate = transfer.transferDate ? format(parseISO(transfer.transferDate), 'PPP') : 'N/A';
     
-    const { logo, branchColors, themeColor: defaultThemeColor, headerText, secondaryColor, titleTemplate } = settings;
+    const { logo, branchColors, themeColor: defaultThemeColor, headerText, secondaryColor, titleTemplate, customFont } = settings;
     const finalThemeColor = (transfer.destinationCity && branchColors?.[transfer.destinationCity as keyof BranchColors]) || defaultThemeColor || '#ef4444';
     const finalSecondaryColor = secondaryColor || '#0f172a';
     const finalTitle = titleTemplate ? titleTemplate.replace('{city}', transfer.destinationCity || '') : transfer.cargoName;
-
+    const qrCodeData = (typeof window !== 'undefined' && transfer.id) ? `${window.location.origin}/transmit/archive/${transfer.id}` : '';
 
     return (
-        <div className="bg-white text-black p-8 font-sans text-xs" style={{fontFamily: settings.customFont && useKurdish ? 'CustomPdfFont' : 'sans-serif'}}>
+        <div className="bg-white text-black p-8 font-sans text-xs" style={{fontFamily: customFont && useKurdish ? 'CustomPdfFont' : 'sans-serif'}}>
             {/* Header */}
             <header className="flex justify-between items-start pb-4">
                 <div className="text-left">
@@ -97,14 +97,16 @@ export const TransmitReportPdf = ({ transfer, items, settings, invoiceNumber, to
             {/* Footer */}
             <footer className="mt-12 pt-8 flex justify-between items-end text-center">
                  <div className="text-left w-48">
-                    <div className="border-b border-gray-400 mb-1"></div>
-                    <p className="text-xs font-semibold">{t('warehouse_manager')}</p>
-                </div>
-                {transfer.id && (
+                 </div>
+                {qrCodeData && (
                      <div className="w-16 h-16 relative">
-                        <Image src={`https://api.qrserver.com/v1/create-qr-code/?size=64x64&data=${typeof window !== 'undefined' ? window.location.origin : ''}/transmit/archive/${transfer.id}`} alt="QR Code" layout="fill" unoptimized/>
+                        <Image src={`https://api.qrserver.com/v1/create-qr-code/?size=64x64&data=${qrCodeData}`} alt="QR Code" layout="fill" unoptimized/>
                     </div>
                 )}
+                <div className="w-48 text-center">
+                    <div className="border-b border-gray-400 mb-1"></div>
+                    <p className="text-xs font-semibold">{t('warehouse_manager_signature')}</p>
+                </div>
             </footer>
         </div>
     );
