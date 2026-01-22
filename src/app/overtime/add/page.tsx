@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { format, startOfDay, endOfDay, isWithinInterval, parseISO } from 'date-fns';
+import { format, startOfDay, endOfDay, isWithinInterval, parseISO, formatISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -276,7 +276,7 @@ export default function AddOvertimePage() {
                     mode="single" 
                     selected={selectedDate} 
                     onSelect={(date) => {
-                        setSelectedDate(date);
+                        if(date) setSelectedDate(date);
                         setIsCalendarOpen(false);
                     }}
                     initialFocus 
