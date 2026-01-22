@@ -258,6 +258,7 @@ const defaultInvoiceSettings: PdfSettings = {
     logo: null,
     customFont: null,
     themeColor: '#f97316', // Orange for invoices
+    secondaryColor: '#0F172A',
     titleTemplate: 'Transmit to {city}',
     tableTheme: 'grid',
     headerText: 'Ashley DRP',

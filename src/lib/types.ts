@@ -194,6 +194,7 @@ export type PdfSettings = {
     font?: string;
     customFont?: string | null;
     themeColor?: string;
+    secondaryColor?: string;
     reportColors?: ReportColors;
     branchColors?: BranchColors;
     tableTheme?: 'striped' | 'grid';

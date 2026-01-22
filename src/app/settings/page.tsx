@@ -1301,29 +1301,6 @@ function SettingsPage() {
                     </div>
                   </CardContent>
                 </Card>
-
-                {activePdfTab === 'invoice' && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Branch Colors</CardTitle>
-                      <CardDescription>Set a unique color for each destination branch report.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {destinations.map(dest => (
-                        <div key={dest} className="flex items-center justify-between">
-                          <Label>{dest}</Label>
-                          <Input
-                            type="color"
-                            value={(draftSettings.pdfSettings.invoice.branchColors as any)?.[dest] ?? '#000000'}
-                            onChange={e => handleBranchColorChange(dest as any, e.target.value)}
-                            className="w-10 h-10 p-1"
-                          />
-                        </div>
-                      ))}
-                    </CardContent>
-                  </Card>
-                )}
-
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-lg">
@@ -1402,7 +1379,20 @@ function SettingsPage() {
                           />
                         </div>
                       </div>
-                    ) : activePdfTab !== 'invoice' ? ( // only show for non-invoice types now
+                    ) : activePdfTab === 'invoice' ? (
+                        <div className="space-y-4">
+                           <div className="flex items-center justify-between">
+                                <Label htmlFor="secondary-color">Header/Table Color</Label>
+                                <Input
+                                id="secondary-color"
+                                type="color"
+                                value={currentPdfSettings.secondaryColor ?? '#0F172A'}
+                                onChange={e => handlePdfSettingChange('secondaryColor', e.target.value)}
+                                className="w-10 h-10 p-1"
+                                />
+                            </div>
+                        </div>
+                    ) : (
                       <div className="flex items-center justify-between">
                         <Label htmlFor="theme-color">{t('theme_color')}</Label>
                         <Input
@@ -1415,7 +1405,7 @@ function SettingsPage() {
                           className="w-10 h-10 p-1"
                         />
                       </div>
-                    ) : null}
+                    )}
                     {(activePdfTab === 'report' || activePdfTab === 'invoice') && (
                       <div className="flex items-center justify-between">
                         <Label htmlFor="table-theme-select">
@@ -1439,6 +1429,27 @@ function SettingsPage() {
                     )}
                   </CardContent>
                 </Card>
+                {activePdfTab === 'invoice' && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Branch Colors</CardTitle>
+                      <CardDescription>Set a unique color for each destination branch report.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {destinations.map(dest => (
+                        <div key={dest} className="flex items-center justify-between">
+                          <Label>{dest}</Label>
+                          <Input
+                            type="color"
+                            value={(draftSettings.pdfSettings.invoice.branchColors as any)?.[dest] ?? '#000000'}
+                            onChange={e => handleBranchColorChange(dest as any, e.target.value)}
+                            className="w-10 h-10 p-1"
+                          />
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
               </div>
               <div className="lg:col-span-2">
                 <Card>
@@ -1482,8 +1493,8 @@ function SettingsPage() {
                            transfer={{...mockTransfer, destinationCity: 'Erbil'}}
                            items={mockTransferItems}
                            settings={currentPdfSettings}
-                           totalYearlyInvoices={123}
                            invoiceNumber={124}
+                           totalYearlyInvoices={123}
                         />
                       )}
                       {activePdfTab === 'card' && (
