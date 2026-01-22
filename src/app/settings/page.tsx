@@ -636,35 +636,49 @@ function SettingsPage() {
   const handleFileUpload = (
     e: React.ChangeEvent<HTMLInputElement>,
     filePath: string,
-    settingKey: keyof AppSettings
+    settingKeyPath: string
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // 1. Instant preview with local Data URL
     const reader = new FileReader();
     reader.onload = event => {
       const localUrl = event.target?.result as string;
       if (localUrl) {
-        setDraftSettings(prev => ({ ...prev, [settingKey]: localUrl }));
+        // Set state for instant preview
+        setDraftSettings(prev => {
+          const newSettings = JSON.parse(JSON.stringify(prev)); // Deep copy to avoid mutation
+          const keys = settingKeyPath.split('.');
+          let current: any = newSettings;
+          for (let i = 0; i < keys.length - 1; i++) {
+            current = current[keys[i]];
+          }
+          current[keys[keys.length - 1]] = localUrl;
+          return newSettings;
+        });
 
-        // 2. Upload in the background
+        // Upload to storage
         const sRef = storageRef(storage, filePath);
         uploadString(sRef, localUrl, 'data_url')
           .then(() => {
             getDownloadURL(sRef)
               .then(downloadURL => {
-                // 3. Silently update the draft with the permanent URL
+                // Silently update draft with permanent URL
                 setDraftSettings(prev => {
-                  if (prev[settingKey] === localUrl) {
-                    return { ...prev, [settingKey]: downloadURL };
-                  }
-                  return prev;
+                    const newSettings = JSON.parse(JSON.stringify(prev));
+                    const keys = settingKeyPath.split('.');
+                    let current: any = newSettings;
+                    for (let i = 0; i < keys.length - 1; i++) {
+                        current = current[keys[i]];
+                    }
+                    // Only update if the preview URL is still there
+                    if (current[keys[keys.length - 1]] === localUrl) {
+                      current[keys[keys.length - 1]] = downloadURL;
+                    }
+                    return newSettings;
                 });
               })
-              .catch(err => {
-                console.error('Error getting download URL', err);
-              });
+              .catch(err => console.error('Error getting download URL', err));
           })
           .catch(err => {
             console.error('Error uploading file', err);
@@ -673,10 +687,7 @@ function SettingsPage() {
               title: 'Upload Failed',
               description: 'Could not upload the image.',
             });
-            setDraftSettings(prev => ({
-              ...prev,
-              [settingKey]: settings[settingKey],
-            }));
+            // Revert on failure? The prompt version doesn't.
           });
       }
     };
@@ -1256,7 +1267,7 @@ function SettingsPage() {
                           handleFileUpload(
                             e,
                             `settings/pdf/${activePdfTab}_logo.png`,
-                            `pdfSettings.${activePdfTab}.logo` as any
+                            `pdfSettings.${activePdfTab}.logo`
                           )
                         }
                       />
