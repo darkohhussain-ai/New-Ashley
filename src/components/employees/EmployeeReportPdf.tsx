@@ -30,22 +30,22 @@ const FinancialSection = ({ title, items, columns, bodyMapper, total, themeColor
 
     return (
         <div className="mb-6">
-            <h3 className="text-base font-bold mb-2 pb-1 border-b-2" style={{ borderColor: themeColor || '#e5e7eb' }}>{title}</h3>
+            <h3 className="text-lg font-bold mb-2 pb-1 border-b-2" style={{ borderColor: themeColor || '#e5e7eb' }}>{title}</h3>
             <Table>
                 <TableHeader>
-                    <TableRow>
+                    <TableRow className="bg-gray-100">
                         {columns.map(col => <TableHead key={col} className="text-xs">{col}</TableHead>)}
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {items.map((item, index) => (
-                        <TableRow key={item.id} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
+                        <TableRow key={item.id} className={'odd:bg-gray-50'}>
                             {bodyMapper(item).map((cell, i) => <TableCell key={i} className="py-1 text-xs">{cell}</TableCell>)}
                         </TableRow>
                     ))}
                 </TableBody>
                 <TableFooter>
-                    <TableRow className="bg-gray-100">
+                    <TableRow className="bg-gray-200">
                         <TableCell colSpan={columns.length - 1} className="text-right font-bold text-xs">{t('total')}</TableCell>
                         <TableCell className="text-right font-bold text-xs">{formatCurrency(total)}</TableCell>
                     </TableRow>
@@ -67,6 +67,7 @@ type EmployeeReportPdfProps = {
 export function EmployeeReportPdf({ employee, settings, expenses, overtime, bonuses, withdrawals }: EmployeeReportPdfProps) {
     const { t, language } = useTranslation();
     const displayName = language === 'ku' && employee.kurdishName ? employee.kurdishName : employee.name;
+    const qrCodeData = (typeof window !== 'undefined' && employee.id) ? `${window.location.origin}/employees?selected=${employee.id}` : '';
 
     return (
         <ReportWrapper
@@ -74,11 +75,12 @@ export function EmployeeReportPdf({ employee, settings, expenses, overtime, bonu
             date={`${t('for')} ${displayName}`}
             logoSrc={settings.report.logo ?? null}
             themeColor={settings.report.reportColors?.general || '#22c55e'}
+            qrCodeData={qrCodeData}
         >
             <div dir={language === 'ku' ? 'rtl' : 'ltr'}>
                 <div className="flex items-start gap-4 p-4 rounded-lg bg-gray-50 border">
                     <Avatar className="w-24 h-24 border-2 border-white shadow-md">
-                        <AvatarImage src={employee.photoUrl} alt={employee.name} />
+                        <AvatarImage src={employee.photoUrl || undefined} alt={employee.name} />
                         <AvatarFallback>{employee.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs flex-1">

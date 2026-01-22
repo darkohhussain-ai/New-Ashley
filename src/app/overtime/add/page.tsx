@@ -222,7 +222,7 @@ export default function AddOvertimePage() {
           >
               <Table>
                   <TableHeader>
-                      <TableRow>
+                      <TableRow className="bg-gray-100">
                           <TableHead>{t('employee')}</TableHead>
                           <TableHead className="text-center">{t('overtime_hours')}</TableHead>
                           <TableHead className="text-center">{t('salary')}</TableHead>
@@ -230,8 +230,8 @@ export default function AddOvertimePage() {
                       </TableRow>
                   </TableHeader>
                   <TableBody>
-                      {overtimeRecords.map(record => (
-                          <TableRow key={record.id}>
+                      {overtimeRecords.map((record, index) => (
+                          <TableRow key={record.id} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
                               <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{getEmployeeName(record.employeeId, language === 'ku')}</TableCell>
                               <TableCell className="text-center">{record.hours.toFixed(2)}</TableCell>
                               <TableCell className="text-center">{formatCurrency(record.totalAmount)}</TableCell>
@@ -240,7 +240,7 @@ export default function AddOvertimePage() {
                       ))}
                   </TableBody>
                   <TableFooter>
-                      <TableRow>
+                      <TableRow className="bg-gray-200">
                           <TableCell colSpan={1} className="font-semibold text-right">{t('total')}</TableCell>
                           <TableCell className="text-center font-semibold">{totalHours.toFixed(2)} {t('hours_short')}</TableCell>
                           <TableCell className="text-center font-semibold text-primary">{formatCurrency(totalAmount)}</TableCell>
