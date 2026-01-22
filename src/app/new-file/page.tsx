@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -28,7 +29,7 @@ export default function NewFilePage() {
   const { t } = useTranslation();
   const router = useRouter();
   const { toast } = useToast();
-  const { employees, locations, setExcelFiles, setItems: setAllItems } = useAppContext();
+  const { employees, locations, setExcelFiles, setItems: setAllItems, isLoading: isAppLoading } = useAppContext();
 
   const [isSaving, setIsSaving] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -43,8 +44,10 @@ export default function NewFilePage() {
 
   useEffect(() => {
     // Only set the date on the client-side
-    setDate(new Date());
-  }, []);
+    if (!isAppLoading) {
+      setDate(new Date());
+    }
+  }, [isAppLoading]);
   
   // Filter states
   const [filterHuanaWarehouse, setFilterHuanaWarehouse] = useState('All');
@@ -136,7 +139,7 @@ export default function NewFilePage() {
 
   }, [locations, warehouseType, filterHuanaWarehouse, filterHuanaFloor, filterAshleyFloor, filterAshleyArea]);
 
-  if (!date) {
+  if (isAppLoading || !date) {
     return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 

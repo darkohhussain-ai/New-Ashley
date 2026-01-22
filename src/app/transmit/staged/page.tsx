@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -19,14 +20,12 @@ const destinations = ["Erbil", "Baghdad", "Diwan", "Dohuk"];
 
 export default function StagedItemsPage() {
   const { t, language } = useTranslation();
-  const { transferItems, transfers, settings } = useAppContext();
-  const { pdfSettings, customFont } = settings;
+  const { transferItems, transfers, settings, isLoading: isAppLoading } = useAppContext();
+  const { pdfSettings, customFont } = settings || {};
   const searchParams = useSearchParams();
   const [selectedDestination, setSelectedDestination] = useState<string | null>(null);
 
   const pdfRef = useRef<HTMLDivElement>(null);
-
-  const isLoadingItems = !transferItems || !transfers;
 
   useEffect(() => {
     const destinationParam = searchParams.get('destination');
@@ -61,7 +60,7 @@ export default function StagedItemsPage() {
   }, [stagedItems, transfers]);
   
   const handleDownloadPdf = async () => {
-    if (!pdfRef.current || !selectedDestination) return;
+    if (!pdfRef.current || !selectedDestination || !pdfSettings) return;
 
     const pdfContentEl = pdfRef.current;
     const scale = pdfSettings.invoice?.scale ?? 2;
@@ -77,9 +76,9 @@ export default function StagedItemsPage() {
       useCORS: true, 
       backgroundColor: 'white',
       onclone: (document) => {
-        if (customFont && language === 'ku') {
+        if (customFont) {
             const style = document.createElement('style');
-            style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
+            style.innerHTML = `@font-face { font-family: 'CustomAppFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3, span { font-family: 'CustomAppFont' !important; }`;
             document.head.appendChild(style);
         }
       }
@@ -94,7 +93,7 @@ export default function StagedItemsPage() {
     doc.save(`staged-items-${selectedDestination}-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
   };
 
-  if (isLoadingItems) {
+  if (isAppLoading) {
       return (
         <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
             <header className="flex items-center gap-4 mb-8">
@@ -112,13 +111,13 @@ export default function StagedItemsPage() {
     return (
         <>
             <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-                <div ref={pdfRef}>
+                {pdfSettings && <div ref={pdfRef}>
                     <TransmitReportPdf
                         transfer={{ destinationCity: selectedDestination, transferDate: new Date().toISOString() }}
                         items={itemsForSelectedDestination}
                         settings={pdfSettings.invoice}
                     />
-                </div>
+                </div>}
             </div>
             <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
                 <header className="flex items-center justify-between gap-4 mb-8">

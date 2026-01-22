@@ -258,9 +258,9 @@ function AccountPage() {
       useCORS: true, 
       backgroundColor: 'white',
       onclone: (document) => {
-        if (settings?.customFont && language === 'ku') {
+        if (settings?.customFont) {
             const style = document.createElement('style');
-            style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${settings.customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
+            style.innerHTML = `@font-face { font-family: 'CustomAppFont'; src: url(${settings.customFont}); } body, table, div, p, h1, h2, h3, span { font-family: 'CustomAppFont' !important; }`;
             document.head.appendChild(style);
         }
       }

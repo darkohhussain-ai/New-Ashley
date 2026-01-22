@@ -35,13 +35,13 @@ const FinancialSection = ({ title, items, columns, bodyMapper, total, themeColor
             <Table>
                 <TableHeader>
                     <TableRow className="bg-gray-100">
-                        {columns.map(col => <TableHead key={col} className="text-[10px] py-1 h-auto">{col}</TableHead>)}
+                        {columns.map(col => <TableHead key={col} className="text-[10px] py-1 h-auto text-center">{col}</TableHead>)}
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {items.map((item, index) => (
                         <TableRow key={item.id} className={'odd:bg-gray-50'}>
-                            {bodyMapper(item).map((cell, i) => <TableCell key={i} className="py-1 text-[10px] leading-snug">{cell}</TableCell>)}
+                            {bodyMapper(item).map((cell, i) => <TableCell key={i} className="py-1 text-[10px] leading-snug text-center">{cell}</TableCell>)}
                         </TableRow>
                     ))}
                 </TableBody>

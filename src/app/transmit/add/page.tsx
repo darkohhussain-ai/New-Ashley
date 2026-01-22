@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -26,7 +27,7 @@ const storageOptions = ["Ashley", "Huana", "Showroom"];
 export default function AddItemsPage() {
   const { toast } = useToast();
   const { t } = useTranslation();
-  const { transferItems, setTransferItems } = useAppContext();
+  const { transferItems, setTransferItems, isLoading: isAppLoading } = useAppContext();
 
   const [isSaving, setIsSaving] = useState(false);
   
@@ -37,12 +38,16 @@ export default function AddItemsPage() {
   const [invoiceNo, setInvoiceNo] = useState('');
   const [storage, setStorage] = useState('');
   const [notes, setNotes] = useState('');
-  const [requestDate, setRequestDate] = useState<Date | undefined>(new Date());
+  const [requestDate, setRequestDate] = useState<Date | undefined>(undefined);
 
   // Editing state
   const [editingItem, setEditingItem] = useState<ItemForTransfer | null>(null);
   
-  const isLoadingItems = !transferItems;
+  useEffect(() => {
+      if (!isAppLoading) {
+          setRequestDate(new Date());
+      }
+  }, [isAppLoading]);
 
   const stagedItems = useMemo(() => {
       return transferItems.filter(item => !item.transferId);
@@ -118,6 +123,10 @@ export default function AddItemsPage() {
   
   const startEditing = (item: ItemForTransfer) => {
     setEditingItem(JSON.parse(JSON.stringify(item))); // Deep copy
+  }
+  
+  if (isAppLoading) {
+      return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
   return (
@@ -229,7 +238,7 @@ export default function AddItemsPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {isLoadingItems ? (
+                                {isAppLoading ? (
                                     <TableRow><TableCell colSpan={6} className="text-center h-24"><Loader2 className="mx-auto animate-spin"/></TableCell></TableRow>
                                 ) : sortedItems.length > 0 ? sortedItems.map((item, index) => (
                                     <TableRow key={item.id} className={cn(

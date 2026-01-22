@@ -1,4 +1,5 @@
 
+
       
 'use client';
 
@@ -31,8 +32,8 @@ const destinations = ["Erbil", "Baghdad", "Diwan", "Dohuk"];
 export default function CreateTransferPage() {
   const { toast } = useToast();
   const { t, language } = useTranslation();
-  const { transferItems, setTransferItems, transfers, setTransfers, settings } = useAppContext();
-  const { pdfSettings, customFont, appLogo } = settings;
+  const { transferItems, setTransferItems, transfers, setTransfers, settings, isLoading: isAppLoading } = useAppContext();
+  const { pdfSettings, customFont, appLogo } = settings || {};
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -46,8 +47,10 @@ export default function CreateTransferPage() {
   
   useEffect(() => {
     // Only set the date on the client-side
-    setTransferDate(new Date());
-  }, []);
+    if (!isAppLoading) {
+        setTransferDate(new Date());
+    }
+  }, [isAppLoading]);
 
   const [lastTransfer, setLastTransfer] = useState<Transfer | null>(null);
   const [lastTransferItems, setLastTransferItems] = useState<ItemForTransfer[]>([]);
@@ -56,7 +59,6 @@ export default function CreateTransferPage() {
   const pdfCardRef = useRef<HTMLDivElement>(null);
   
   const stagedItems = useMemo(() => transferItems.filter(item => !item.transferId), [transferItems]);
-  const isLoadingItems = !transferItems;
 
   const filteredItems = useMemo(() => {
     if (!stagedItems) return [];
@@ -134,7 +136,7 @@ export default function CreateTransferPage() {
   };
 
   const handleDownloadPdf = async () => {
-    if (!pdfCardRef.current || !lastTransfer || !lastTransferItems) return;
+    if (!pdfCardRef.current || !lastTransfer || !lastTransferItems || !pdfSettings) return;
 
     const pdfContentEl = pdfCardRef.current;
     const scale = pdfSettings.invoice?.scale ?? 2;
@@ -144,9 +146,9 @@ export default function CreateTransferPage() {
       useCORS: true, 
       backgroundColor: 'white',
       onclone: (document) => {
-        if (customFont && language === 'ku') {
+        if (customFont) {
             const style = document.createElement('style');
-            style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
+            style.innerHTML = `@font-face { font-family: 'CustomAppFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3, span { font-family: 'CustomAppFont' !important; }`;
             document.head.appendChild(style);
         }
       }
@@ -178,9 +180,13 @@ export default function CreateTransferPage() {
     pdf.save(`${lastTransfer.cargoName}.pdf`);
   };
 
+  if (isAppLoading) {
+      return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
+
   return (
     <>
-    {lastTransfer && (
+    {lastTransfer && pdfSettings && (
        <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
           <div ref={pdfCardRef}>
               <TransmitReportPdf
@@ -282,7 +288,7 @@ export default function CreateTransferPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {isLoadingItems ? (
+                                {isAppLoading ? (
                                   [...Array(5)].map((_, i) => (
                                     <TableRow key={i}><TableCell colSpan={4} className="h-12 text-center"><Loader2 className="mx-auto animate-spin" /></TableCell></TableRow>
                                   ))
