@@ -134,6 +134,7 @@ export type Transfer = {
   driverName: string;
   warehouseManagerName: string;
   itemIds: string[];
+  invoiceNumber: number;
 };
 
 export type ItemForTransfer = {

@@ -67,6 +67,7 @@ import type {
   ThemeColors,
   AppSettings,
   BranchColors,
+  ItemForTransfer,
 } from '@/lib/types';
 import { format, formatISO } from 'date-fns';
 import {
@@ -119,6 +120,7 @@ const mockEmployee: Employee = {
   phone: '555-1234',
   employmentStartDate: '2022-01-15T00:00:00.000Z',
   dateOfBirth: '1985-05-20T00:00:00.000Z',
+  isActive: true
 };
 
 const mockTransfer: Transfer = {
@@ -129,12 +131,13 @@ const mockTransfer: Transfer = {
   driverName: 'Driver Name',
   warehouseManagerName: 'Manager Name',
   itemIds: ['item1', 'item2', 'item3'],
+  invoiceNumber: 1,
 };
 
-const mockTransferItems = [
-  { model: 'Sofa Model X', quantity: 1, notes: 'Handle with care' },
-  { model: 'Dining Table', quantity: 1, notes: '' },
-  { model: 'Chair Model Y', quantity: 4, notes: 'Packed separately' },
+const mockTransferItems: ItemForTransfer[] = [
+  { id: '1', model: 'Sofa Model X', quantity: 1, notes: 'Handle with care', destination: 'Erbil', createdAt: new Date().toISOString() },
+  { id: '2', model: 'Dining Table', quantity: 1, notes: '', destination: 'Erbil', createdAt: new Date().toISOString() },
+  { id: '3', model: 'Chair Model Y', quantity: 4, notes: 'Packed separately', destination: 'Erbil', createdAt: new Date().toISOString(), storage: 'Huana' },
 ];
 
 function parseHsl(hsl: string): { h: string; s: string; l: string } {
@@ -1258,6 +1261,18 @@ function SettingsPage() {
                         }
                       />
                     </div>
+                     {activePdfTab === 'invoice' && (
+                        <div className="space-y-2">
+                            <Label htmlFor="title-template">Title Template</Label>
+                            <Input
+                                id="title-template"
+                                value={draftSettings.pdfSettings.invoice.titleTemplate || ''}
+                                onChange={(e) => handlePdfSettingChange('titleTemplate', e.target.value)}
+                                placeholder="e.g. Transmit to {city}"
+                            />
+                            <p className="text-xs text-muted-foreground">Use {'{city}'} as a placeholder for the destination.</p>
+                        </div>
+                    )}
                     <div className="space-y-2">
                       <Label htmlFor="header-text">
                         {t('header_text_optional')}
@@ -1467,6 +1482,8 @@ function SettingsPage() {
                            transfer={{...mockTransfer, destinationCity: 'Erbil'}}
                            items={mockTransferItems}
                            settings={currentPdfSettings}
+                           totalYearlyInvoices={123}
+                           invoiceNumber={124}
                         />
                       )}
                       {activePdfTab === 'card' && (

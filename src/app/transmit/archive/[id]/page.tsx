@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { ArrowLeft, Calendar, Truck, FileText, User, Warehouse, Printer } from 'lucide-react';
@@ -28,6 +28,13 @@ export default function ViewTransferPage() {
   
   const transfer = useMemo(() => transfers.find(t => t.id === transferId), [transfers, transferId]);
   const items = useMemo(() => transferItems.filter(i => i.transferId === transferId), [transferItems, transferId]);
+  
+  const totalYearlyInvoices = useMemo(() => {
+      if (!transfer) return 0;
+      const currentYear = new Date(transfer.transferDate).getFullYear();
+      return transfers.filter(t => t.transferDate && new Date(t.transferDate).getFullYear() === currentYear).length;
+  }, [transfers, transfer]);
+
 
   const isLoading = !transfer || !items;
 
@@ -36,15 +43,9 @@ export default function ViewTransferPage() {
     
     const pdfContentEl = pdfRef.current;
     const scale = pdfSettings.invoice?.scale ?? 2;
-    const contentWidth = pdfSettings.invoice?.width ?? 800;
 
-    const originalWidth = pdfContentEl.style.width;
-    pdfContentEl.style.width = `${contentWidth}px`;
-
-    const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
-    
     const canvas = await html2canvas(pdfContentEl, { 
-      scale, 
+      scale,
       useCORS: true, 
       backgroundColor: 'white',
       onclone: (document) => {
@@ -56,13 +57,30 @@ export default function ViewTransferPage() {
       }
     });
 
-    pdfContentEl.style.width = originalWidth;
+    const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
 
-    const imgData = canvas.toDataURL('image/png');
-    const pdfWidth = doc.internal.pageSize.getWidth();
+    const imgWidth = canvas.width;
+    const imgHeight = canvas.height;
     
-    doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfWidth / (canvas.width / canvas.height));
-    doc.save(`${transfer.cargoName}.pdf`);
+    const ratio = imgWidth / pdfWidth;
+    const scaledImgHeight = imgHeight / ratio;
+
+    let position = 0;
+    let heightLeft = scaledImgHeight;
+
+    pdf.addImage(canvas, 'PNG', 0, position, pdfWidth, scaledImgHeight);
+    heightLeft -= pdfHeight;
+
+    while (heightLeft > 0) {
+      position -= pdfHeight;
+      pdf.addPage();
+      pdf.addImage(canvas, 'PNG', 0, position, pdfWidth, scaledImgHeight);
+      heightLeft -= pdfHeight;
+    }
+
+    pdf.save(`${transfer.cargoName}.pdf`);
   };
 
   const handlePrint = () => {
@@ -78,6 +96,8 @@ export default function ViewTransferPage() {
                 transfer={transfer}
                 items={items}
                 settings={pdfSettings.invoice}
+                invoiceNumber={transfer.invoiceNumber}
+                totalYearlyInvoices={totalYearlyInvoices}
               />
           </div>
        </div>

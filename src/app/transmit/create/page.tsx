@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
-import { format, formatISO } from 'date-fns';
+import { format, formatISO, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -93,6 +93,10 @@ export default function CreateTransferPage() {
         const transferId = crypto.randomUUID();
         const cargoName = `Transfer to ${destinationCity} - ${format(transferDate, 'yyyy-MM-dd')}`;
         
+        const currentYear = new Date().getFullYear();
+        const yearlyTransfers = transfers.filter(t => t.transferDate && new Date(t.transferDate).getFullYear() === currentYear);
+        const invoiceNumber = yearlyTransfers.length + 1;
+        
         const transferData: Transfer = {
             id: transferId,
             transferDate: formatISO(transferDate),
@@ -100,7 +104,8 @@ export default function CreateTransferPage() {
             destinationCity,
             driverName,
             warehouseManagerName,
-            itemIds: selectedItemIds
+            itemIds: selectedItemIds,
+            invoiceNumber
         };
         
         const itemsForThisTransfer = stagedItems?.filter(item => selectedItemIds.includes(item.id)) || [];
@@ -132,12 +137,6 @@ export default function CreateTransferPage() {
 
     const pdfContentEl = pdfCardRef.current;
     const scale = pdfSettings.invoice?.scale ?? 2;
-    const contentWidth = pdfSettings.invoice?.width ?? 800;
-
-    const originalWidth = pdfContentEl.style.width;
-    pdfContentEl.style.width = `${contentWidth}px`;
-    
-    const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
     
     const canvas = await html2canvas(pdfContentEl, { 
       scale,
@@ -152,13 +151,30 @@ export default function CreateTransferPage() {
       }
     });
 
-    pdfContentEl.style.width = originalWidth;
-
-    const imgData = canvas.toDataURL('image/png');
-    const pdfWidth = doc.internal.pageSize.getWidth();
+    const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
     
-    doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfWidth / (canvas.width / canvas.height));
-    doc.save(`${lastTransfer.cargoName}.pdf`);
+    const imgWidth = canvas.width;
+    const imgHeight = canvas.height;
+    
+    const ratio = imgWidth / pdfWidth;
+    const scaledImgHeight = imgHeight / ratio;
+
+    let position = 0;
+    let heightLeft = scaledImgHeight;
+
+    pdf.addImage(canvas, 'PNG', 0, position, pdfWidth, scaledImgHeight);
+    heightLeft -= pdfHeight;
+
+    while (heightLeft > 0) {
+      position -= pdfHeight;
+      pdf.addPage();
+      pdf.addImage(canvas, 'PNG', 0, position, pdfWidth, scaledImgHeight);
+      heightLeft -= pdfHeight;
+    }
+    
+    pdf.save(`${lastTransfer.cargoName}.pdf`);
   };
 
   return (
@@ -170,6 +186,8 @@ export default function CreateTransferPage() {
                 transfer={lastTransfer}
                 items={lastTransferItems}
                 settings={pdfSettings.invoice}
+                invoiceNumber={lastTransfer.invoiceNumber}
+                totalYearlyInvoices={transfers.length}
               />
           </div>
        </div>
