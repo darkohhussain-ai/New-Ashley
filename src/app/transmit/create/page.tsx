@@ -1,4 +1,5 @@
 
+      
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -31,7 +32,7 @@ export default function CreateTransferPage() {
   const { toast } = useToast();
   const { t, language } = useTranslation();
   const { transferItems, setTransferItems, transfers, setTransfers, settings } = useAppContext();
-  const { pdfSettings, customFont } = settings;
+  const { pdfSettings, customFont, appLogo } = settings;
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -185,7 +186,7 @@ export default function CreateTransferPage() {
               <TransmitReportPdf
                 transfer={lastTransfer}
                 items={lastTransferItems}
-                settings={pdfSettings.invoice}
+                settings={{...pdfSettings.invoice, logo: pdfSettings.invoice.logo ?? appLogo}}
                 invoiceNumber={lastTransfer.invoiceNumber}
                 totalYearlyInvoices={transfers.length}
               />
@@ -363,3 +364,5 @@ export default function CreateTransferPage() {
     </>
   );
 }
+
+    

@@ -1,4 +1,5 @@
 
+      
 'use client';
 
 import { useMemo, useRef, useEffect } from 'react';
@@ -22,7 +23,7 @@ export default function ViewTransferPage() {
   const { id: transferId } = useParams();
   const { t, language } = useTranslation();
   const { transfers, transferItems, settings } = useAppContext();
-  const { pdfSettings, customFont } = settings;
+  const { pdfSettings, customFont, appLogo } = settings;
 
   const pdfRef = useRef<HTMLDivElement>(null);
   
@@ -95,7 +96,7 @@ export default function ViewTransferPage() {
               <TransmitReportPdf
                 transfer={transfer}
                 items={items}
-                settings={pdfSettings.invoice}
+                settings={{...pdfSettings.invoice, logo: pdfSettings.invoice.logo ?? appLogo}}
                 invoiceNumber={transfer.invoiceNumber}
                 totalYearlyInvoices={totalYearlyInvoices}
               />
@@ -180,3 +181,5 @@ export default function ViewTransferPage() {
     </>
   );
 }
+
+    

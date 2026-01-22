@@ -1,4 +1,5 @@
 
+      
 
 'use client';
 
@@ -1478,7 +1479,7 @@ function SettingsPage() {
                         <ReportWrapper
                             title="Example Report Title"
                             date="This is an example subtitle"
-                            logoSrc={currentPdfSettings.logo ?? null}
+                            logoSrc={currentPdfSettings.logo ?? draftSettings.appLogo}
                             themeColor={draftSettings.pdfSettings.report.reportColors?.[selectedReportType] || '#22c55e'}
                         >
                             <div className="p-6 flex-grow" style={{fontFamily: 'CustomPdfFont'}}>
@@ -1503,7 +1504,7 @@ function SettingsPage() {
                         <TransmitReportPdf 
                            transfer={{...mockTransfer, destinationCity: 'Erbil'}}
                            items={mockTransferItems}
-                           settings={currentPdfSettings}
+                           settings={{...currentPdfSettings, logo: currentPdfSettings.logo ?? draftSettings.appLogo}}
                            invoiceNumber={124}
                            totalYearlyInvoices={123}
                         />
@@ -1512,7 +1513,7 @@ function SettingsPage() {
                         <div className="flex justify-center items-center h-full p-4">
                           <EmployeePdfCard
                             employee={mockEmployee}
-                            settings={currentPdfSettings}
+                            settings={{...currentPdfSettings, logo: currentPdfSettings.logo ?? draftSettings.appLogo}}
                           />
                         </div>
                       )}
@@ -1566,3 +1567,5 @@ function SettingsPage() {
 }
 
 export default withAuth(SettingsPage);
+
+    
