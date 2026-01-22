@@ -1,6 +1,6 @@
 
 'use client';
-import { ItemForTransfer, Transfer, PdfSettings } from '@/lib/types';
+import { ItemForTransfer, Transfer, PdfSettings, BranchColors } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useTranslation } from '@/hooks/use-translation';
 import { format, parseISO } from 'date-fns';
@@ -19,45 +19,51 @@ export const TransmitReportPdf = ({ transfer, items, settings, invoiceNumber, to
     
     const formattedDate = transfer.transferDate ? format(parseISO(transfer.transferDate), 'PPP') : 'N/A';
     const qrCodeData = (typeof window !== 'undefined' && transfer.id) ? `${window.location.origin}/transmit/archive/${transfer.id}` : '';
-    const finalTitle = `${t('INVOICE')} #${invoiceNumber ? String(invoiceNumber).padStart(6, '0') : 'N/A'}`;
+    
+    const titleTemplate = settings.titleTemplate || t('INVOICE') + ' #{invoiceNumber}';
+    const finalTitle = titleTemplate
+        .replace('{city}', transfer.destinationCity || '')
+        .replace('{invoiceNumber}', invoiceNumber ? String(invoiceNumber).padStart(6, '0') : 'N/A');
+
+    const themeColor = (transfer.destinationCity && (settings.branchColors as BranchColors)?.[transfer.destinationCity as keyof BranchColors]) || settings.themeColor;
 
     return (
         <ReportWrapper
             title={finalTitle}
             date={formattedDate}
             logoSrc={settings.logo}
-            themeColor={(transfer.destinationCity && settings.branchColors?.[transfer.destinationCity as keyof typeof settings.branchColors]) || settings.themeColor}
+            themeColor={themeColor}
             qrCodeData={qrCodeData}
         >
-            <section className="grid grid-cols-2 gap-8 my-6 text-sm">
+            <section className="grid grid-cols-2 gap-4 my-4 text-[10px] leading-snug">
                  <div>
                     <h3 className="font-semibold text-gray-500 mb-1">{t('transmit_to')}</h3>
-                    <p className="font-bold text-lg">{transfer.destinationCity}</p>
+                    <p className="font-bold text-base">{transfer.destinationCity}</p>
                 </div>
                  <div className={cn("text-right", useKurdish && "text-left")}>
                     <h3 className="font-semibold text-gray-500 mb-1">{t('details')}</h3>
                     <p><strong>{t('driver')}:</strong> {transfer.driverName}</p>
                     <p><strong>{t('manager')}:</strong> {transfer.warehouseManagerName}</p>
-                    <p><strong>{t('slip_no')}:</strong> {totalYearlyInvoices}</p>
+                    {totalYearlyInvoices && <p><strong>{t('slip_no')}:</strong> {totalYearlyInvoices}</p>}
                 </div>
             </section>
 
             <main>
                 <Table>
                     <TableHeader>
-                        <TableRow className="bg-gray-100">
-                            <TableHead className="w-[40px]">No.</TableHead>
-                            <TableHead>{t('model')}</TableHead>
-                            <TableHead className="w-[60px] text-center">{t('quantity')}</TableHead>
-                            <TableHead>{t('invoice_no')}</TableHead>
-                            <TableHead>{t('storage')}</TableHead>
-                            <TableHead>{t('notes')}</TableHead>
-                            <TableHead className="w-[100px] text-right">{t('request_date')}</TableHead>
+                        <TableRow style={{ backgroundColor: settings.secondaryColor || '#0F172A', color: 'white'}} className="hover:bg-gray-800">
+                            <TableHead className="w-[30px] text-white text-[10px] py-1 h-auto">No.</TableHead>
+                            <TableHead className="text-white text-[10px] py-1 h-auto">{t('model')}</TableHead>
+                            <TableHead className="w-[50px] text-center text-white text-[10px] py-1 h-auto">{t('quantity')}</TableHead>
+                            <TableHead className="text-white text-[10px] py-1 h-auto">{t('invoice_no')}</TableHead>
+                            <TableHead className="text-white text-[10px] py-1 h-auto">{t('storage')}</TableHead>
+                            <TableHead className="text-white text-[10px] py-1 h-auto">{t('notes')}</TableHead>
+                            <TableHead className="w-[80px] text-right text-white text-[10px] py-1 h-auto">{t('request_date')}</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {items.map((item, index) => (
-                            <TableRow key={item.id} className={cn('text-xs', settings.tableTheme === 'striped' && 'odd:bg-gray-50', item.storage === 'Huana' && 'bg-yellow-100')}>
+                            <TableRow key={item.id} className={cn('text-[10px] leading-snug', settings.tableTheme === 'striped' && 'odd:bg-gray-50', item.storage === 'Huana' && 'bg-yellow-100/70')}>
                                 <TableCell className="text-center py-1">{index + 1}</TableCell>
                                 <TableCell className="font-semibold py-1">{item.model}</TableCell>
                                 <TableCell className="text-center py-1">{item.quantity}</TableCell>

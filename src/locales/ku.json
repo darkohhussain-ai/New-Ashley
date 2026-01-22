@@ -619,5 +619,16 @@
   "report": "ڕاپۆرت",
   "notes_optional_overtime": "تێبینی ئارەزوومەندانە، بۆ نموونە هۆکاری کاتی زیادە",
   "contact_information": "زانیاری پەیوەندی",
-  "employment_details": "وردەکاری دامەزراندن"
+  "employment_details": "وردەکاری دامەزراندن",
+  "images": "وێنەکان",
+  "app_logo": "لۆگۆی بەرنامە",
+  "app_logo_desc": "لۆگۆی سەرەکی بۆ سەروتار، پەڕەی چوونەژوورەوە، و پیشاندانی گۆشە.",
+  "login_background": "پاشبنەمای چوونەژوورەوە",
+  "login_background_desc": "وێنەی پاشبنەما بۆ شاشەی چوونەژوورەوەی سەرەکی.",
+  "main_dashboard_background": "پاشبنەمای داشبۆردی سەرەکی",
+  "main_dashboard_background_desc": "پاشبنەما بۆ ناوچەی داشبۆردی سەرەکی، لە پشت کارتەکانەوە.",
+  "dashboard_banner": "بانەری داشبۆرد",
+  "dashboard_banner_desc": "وێنەیەکی بانەر کە لەسەری داشبۆرد پیشان دەدرێت.",
+  "report_section": "بەشی ڕاپۆرت",
+  "view": "بینین"
 }

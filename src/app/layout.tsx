@@ -20,19 +20,14 @@ import { cn } from '@/lib/utils';
 
 const notoSansArabic = Noto_Sans_Arabic({ 
   subsets: ['arabic'],
-  variable: '--font-body',
+  variable: '--font-noto-arabic', // Use a different variable name
   display: 'swap',
 });
 
 function CustomFontInjector() {
     const { settings } = useAppContext();
-    const [isMounted, setIsMounted] = useState(false);
 
-    useEffect(() => {
-        setIsMounted(true);
-    }, []);
-
-    if (!isMounted || !settings.customFont) {
+    if (!settings.customFont) {
         return null;
     }
 
@@ -43,7 +38,7 @@ function CustomFontInjector() {
                 src: url(${settings.customFont}); 
             }
             :root {
-                --font-body: 'CustomAppFont', ${notoSansArabic.style.fontFamily};
+                --font-body: 'CustomAppFont', var(--font-noto-arabic), Arial, sans-serif;
             }
         `}</style>
     );
