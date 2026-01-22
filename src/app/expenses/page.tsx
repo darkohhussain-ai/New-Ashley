@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
@@ -8,13 +9,15 @@ import { Card, CardContent, CardTitle, CardHeader, CardDescription } from '@/com
 import { useTranslation } from '@/hooks/use-translation';
 import withAuth from '@/hooks/withAuth';
 import { useAppContext } from '@/context/app-provider';
-import { Pie, PieChart, ResponsiveContainer, Tooltip, Legend, Cell } from 'recharts';
+import { ResponsiveContainer } from 'recharts';
 import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Progress } from '@/components/ui/progress';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'IQD', maximumFractionDigits: 0 }).format(amount);
 
@@ -43,7 +46,6 @@ function ExpensesDashboardPage() {
 
         const expenseTypeSummary = filteredExpenses.reduce((acc, expense) => {
             let type = expense.expenseType || 'Uncategorized';
-            // If it's a taxi expense with a subtype, use the subtype
             if (type === 'Taxi Expenses' && expense.expenseSubType) {
                 type = expense.expenseSubType;
             } else if (type === 'Taxi Expenses') {
@@ -60,6 +62,8 @@ function ExpensesDashboardPage() {
         
         return { expenseTypeData };
     }, [expenses, selectedDate, t]);
+    
+    const grandTotal = useMemo(() => monthlyExpenseData.expenseTypeData.reduce((sum, item) => sum + item.value, 0), [monthlyExpenseData.expenseTypeData]);
     
     const handlePrint = () => window.print();
 
@@ -108,17 +112,32 @@ function ExpensesDashboardPage() {
                     </CardHeader>
                     <CardContent>
                         {monthlyExpenseData.expenseTypeData.length > 0 ? (
-                            <ResponsiveContainer width="100%" height={300}>
-                                <PieChart>
-                                    <Pie data={monthlyExpenseData.expenseTypeData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
-                                        {monthlyExpenseData.expenseTypeData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip formatter={(value: number) => formatCurrency(value)} />
-                                    <Legend />
-                                </PieChart>
-                            </ResponsiveContainer>
+                             <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Category</TableHead>
+                                        <TableHead>Total Amount</TableHead>
+                                        <TableHead className="w-[40%]">Visualization</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {monthlyExpenseData.expenseTypeData.map((item, index) => {
+                                        const percentage = grandTotal > 0 ? (item.value / grandTotal) * 100 : 0;
+                                        return (
+                                            <TableRow key={item.name}>
+                                                <TableCell className="font-medium">{item.name}</TableCell>
+                                                <TableCell>{formatCurrency(item.value)}</TableCell>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-2">
+                                                        <Progress value={percentage} className="h-2" style={{'--chart-1': COLORS[index % COLORS.length]} as React.CSSProperties} />
+                                                        <span className="text-xs text-muted-foreground">{percentage.toFixed(0)}%</span>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })}
+                                </TableBody>
+                            </Table>
                         ) : (
                              <div className="text-center py-16">
                                 <p className="text-muted-foreground">{t('no_expenses_found_for_month', { month: selectedDate ? format(selectedDate, 'MMMM yyyy') : '' })}</p>

@@ -629,5 +629,6 @@
   "main_dashboard_background_desc": "Background for the main dashboard area, behind the cards.",
   "dashboard_banner_desc": "A banner image displayed at the top of the dashboard.",
   "header_table_color": "Header/Table Color",
-  "no_dot": "No."
+  "no_dot": "No.",
+  "other_taxi": "Other Taxi"
 }

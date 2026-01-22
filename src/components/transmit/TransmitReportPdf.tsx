@@ -18,7 +18,6 @@ export const TransmitReportPdf = ({ transfer, items, settings, invoiceNumber, to
     const useKurdish = language === 'ku';
     
     const formattedDate = transfer.transferDate ? format(parseISO(transfer.transferDate), 'PPP') : 'N/A';
-    const qrCodeData = (typeof window !== 'undefined' && transfer.id) ? `${window.location.origin}/transmit/archive/${transfer.id}` : '';
     
     const titleTemplate = settings.titleTemplate || t('INVOICE') + ' #{invoiceNumber}';
     const finalTitle = titleTemplate
@@ -33,7 +32,6 @@ export const TransmitReportPdf = ({ transfer, items, settings, invoiceNumber, to
             date={formattedDate}
             logoSrc={settings.logo}
             themeColor={themeColor}
-            qrCodeData={qrCodeData}
         >
             <section className="grid grid-cols-2 gap-4 my-4 text-[10px] leading-snug">
                  <div>
@@ -65,11 +63,11 @@ export const TransmitReportPdf = ({ transfer, items, settings, invoiceNumber, to
                         {items.map((item, index) => (
                             <TableRow key={item.id} className={cn('text-[10px] leading-snug', settings.tableTheme === 'striped' && 'odd:bg-gray-50', item.storage === 'Huana' && 'bg-yellow-100/70')}>
                                 <TableCell className="text-center py-1">{index + 1}</TableCell>
-                                <TableCell className="font-semibold py-1 text-center">{item.model}</TableCell>
+                                <TableCell className="font-semibold py-1 text-left">{item.model}</TableCell>
                                 <TableCell className="text-center py-1">{item.quantity}</TableCell>
                                 <TableCell className="text-center py-1">{item.invoiceNo || 'N/A'}</TableCell>
                                 <TableCell className="text-center py-1">{item.storage || 'N/A'}</TableCell>
-                                <TableCell className="text-gray-600 py-1 text-center">{item.notes || 'N/A'}</TableCell>
+                                <TableCell className="text-gray-600 py-1 text-left">{item.notes || 'N/A'}</TableCell>
                                 <TableCell className="text-center py-1">{item.requestDate ? format(parseISO(item.requestDate), 'yyyy-MM-dd') : 'N/A'}</TableCell>
                             </TableRow>
                         ))}

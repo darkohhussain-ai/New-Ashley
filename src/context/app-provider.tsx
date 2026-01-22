@@ -162,10 +162,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Settings Singleton Document
     const settingsDocRef = useMemoFirebase(() => db ? doc(db, 'settings', 'main') : null, [db]);
     const { data: firestoreSettings, isLoading: isSettingsLoading } = useDoc<AppSettings>(settingsDocRef);
-    
-    const settings = useMemo(() => {
+    const [settings, setLocalSettings] = useState<AppSettings>(initialSettings);
+
+    useEffect(() => {
         if (firestoreSettings) {
-            return {
+            const mergedSettings = {
                 ...initialSettings,
                 ...firestoreSettings,
                 pdfSettings: {
@@ -176,16 +177,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
                     card: { ...initialSettings.pdfSettings.card, ...(firestoreSettings.pdfSettings?.card || {})},
                 }
             };
+            setLocalSettings(mergedSettings);
         }
-        return initialSettings;
     }, [firestoreSettings]);
 
     const setSettings = useCallback((value: React.SetStateAction<AppSettings>) => {
+        const newSettings = value instanceof Function ? value(settings) : value;
+        // Optimistic update for immediate UI feedback
+        setLocalSettings(newSettings); 
+        // Persist to Firestore
         if (settingsDocRef) {
-            const newSettings = value instanceof Function ? value(settings) : value;
-            if (JSON.stringify(newSettings) !== JSON.stringify(settings)) {
-                setDocumentNonBlocking(settingsDocRef, newSettings, { merge: true });
-            }
+            setDocumentNonBlocking(settingsDocRef, newSettings, { merge: true });
         }
     }, [settingsDocRef, settings]);
     

@@ -67,15 +67,13 @@ type EmployeeReportPdfProps = {
 export function EmployeeReportPdf({ employee, settings, expenses, overtime, bonuses, withdrawals }: EmployeeReportPdfProps) {
     const { t, language } = useTranslation();
     const displayName = language === 'ku' && employee.kurdishName ? employee.kurdishName : employee.name;
-    const qrCodeData = (typeof window !== 'undefined' && employee.id) ? `${window.location.origin}/employees?selected=${employee.id}` : '';
-
+    
     return (
         <ReportWrapper
             title={t('employee_report')}
             date={`${t('for')} ${displayName}`}
             logoSrc={settings.report.logo ?? null}
             themeColor={settings.report.reportColors?.general || '#22c55e'}
-            qrCodeData={qrCodeData}
         >
             <div dir={language === 'ku' ? 'rtl' : 'ltr'}>
                 <div className="flex items-start gap-4 p-2 rounded-lg bg-gray-50 border">
