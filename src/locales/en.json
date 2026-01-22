@@ -432,9 +432,9 @@
   "run_import": "Run Import",
   "print": "Print",
   "salary": "Salary",
+  "monthly_reports": "Monthly Reports",
   "no_records_found": "No records found",
   "no_records_found_for_month": "No records for {month} were found.",
-  "monthly_reports": "Monthly Reports",
   "total_loads": "Total Loads",
   "this_month_activity_summary": "This Month's Activity ({month})",
   "last_month_activity_summary": "Last month's activity summary.",
@@ -521,7 +521,7 @@
   "create_all_users_desc": "This will create user accounts for all employees who do not already have one. Existing users will not be affected.",
   "create_users": "Create Users",
   "are_you_sure_remove_all_users": "Are you absolutely sure?",
-  "remove_all_users_desc": "This action will permanently delete all user accounts except for the main administrator. This action cannot be undone.",
+  "remove_all_users_desc": "This will permanently delete all user accounts except for the main administrator. This action cannot be undone.",
   "delete_all_users": "Delete All Users",
   "username": "Username",
   "edit_user": "Edit User",
@@ -604,5 +604,8 @@
   "no_items_currently_staged": "No items are currently staged for transfer.",
   "recent_transfers": "Recent Transfers",
   "recent_transfers_desc": "A list of the most recently created transfer slips.",
-  "no_recent_transfers": "There have been no recent transfers."
+  "no_recent_transfers": "There have been no recent transfers.",
+  "ashley_mega_homestore_iraq": "Ashley Mega homestore / Iraq",
+  "ashley_sulaimanyah_branch": "Ashley Sulaimanyah Branch",
+  "diwan_group_company": "Diwan Group Company"
 }
