@@ -1,6 +1,6 @@
 
 'use client';
-import { ItemForTransfer, Transfer, PdfSettings } from '@/lib/types';
+import { ItemForTransfer, Transfer, PdfSettings, BranchColors } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useTranslation } from '@/hooks/use-translation';
 import { format, parseISO } from 'date-fns';
@@ -20,23 +20,21 @@ export const TransmitReportPdf = ({ transfer, items, settings, invoiceNumber, to
     const formattedDate = transfer.transferDate ? format(parseISO(transfer.transferDate), 'PPP') : 'N/A';
     
     const { logo, branchColors, themeColor: defaultThemeColor, headerText } = settings;
-    const finalThemeColor = (transfer.destinationCity && branchColors?.[transfer.destinationCity as keyof typeof branchColors]) || defaultThemeColor || '#f97316';
+    const finalThemeColor = (transfer.destinationCity && branchColors?.[transfer.destinationCity as keyof BranchColors]) || defaultThemeColor || '#f97316';
 
     return (
         <div className="bg-white text-black p-8 font-sans" style={{fontFamily: settings.customFont && useKurdish ? 'CustomPdfFont' : 'sans-serif'}}>
             {/* Header */}
             <header className="flex justify-between items-center pb-4 border-b">
-                <div className="flex items-center gap-4">
-                    {logo && <div className="relative w-20 h-20"><Image src={logo} alt="Company Logo" fill className="object-contain" /></div>}
-                    <div>
-                        <h1 className="font-bold text-lg">{headerText || 'Ashley Sulimanyah – Diwan Group Company'}</h1>
-                        {/* <p className="text-xs text-gray-500">Address Line 1, City, Country</p>
-                        <p className="text-xs text-gray-500">contact@company.com</p> */}
-                    </div>
-                </div>
-                <div className="text-right">
+                 <div className="text-left">
                     <h2 className="text-2xl font-bold" style={{color: finalThemeColor}}>INVOICE</h2>
                     <p className="font-mono text-sm">#{String(invoiceNumber).padStart(8, '0')}</p>
+                </div>
+                <div className="flex items-center gap-4">
+                    <div className="text-right">
+                        <h1 className="font-bold text-lg">{headerText || 'Ashley Sulimanyah – Diwan Group Company'}</h1>
+                    </div>
+                    {logo && <div className="relative w-20 h-20"><Image src={logo} alt="Company Logo" fill className="object-contain" /></div>}
                 </div>
             </header>
 
@@ -75,13 +73,13 @@ export const TransmitReportPdf = ({ transfer, items, settings, invoiceNumber, to
                     <TableBody>
                         {items.map((item, index) => (
                             <TableRow key={item.id} className={cn(settings.tableTheme === 'striped' && 'odd:bg-gray-50', item.storage === 'Huana' && 'bg-huana-highlight')}>
-                                <TableCell className="text-center">{index + 1}</TableCell>
-                                <TableCell className="font-semibold">{item.model}</TableCell>
-                                <TableCell className="text-center">{item.quantity}</TableCell>
-                                <TableCell>{item.invoiceNo || 'N/A'}</TableCell>
-                                <TableCell>{item.storage || 'N/A'}</TableCell>
-                                <TableCell className="text-xs text-gray-600">{item.notes || 'N/A'}</TableCell>
-                                <TableCell className="text-right text-xs">{item.requestDate ? format(parseISO(item.requestDate), 'yyyy-MM-dd') : 'N/A'}</TableCell>
+                                <TableCell className="text-center py-1 text-xs">{index + 1}</TableCell>
+                                <TableCell className="font-semibold py-1 text-xs">{item.model}</TableCell>
+                                <TableCell className="text-center py-1 text-xs">{item.quantity}</TableCell>
+                                <TableCell className="py-1 text-xs">{item.invoiceNo || 'N/A'}</TableCell>
+                                <TableCell className="py-1 text-xs">{item.storage || 'N/A'}</TableCell>
+                                <TableCell className="text-xs text-gray-600 py-1">{item.notes || 'N/A'}</TableCell>
+                                <TableCell className="text-right text-xs py-1">{item.requestDate ? format(parseISO(item.requestDate), 'yyyy-MM-dd') : 'N/A'}</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
