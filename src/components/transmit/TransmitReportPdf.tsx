@@ -1,4 +1,5 @@
 
+
 'use client';
 import { ItemForTransfer, Transfer, PdfSettings, BranchColors } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -62,13 +63,13 @@ export const TransmitReportPdf = ({ transfer, items, settings, invoiceNumber, to
                     <TableBody>
                         {items.map((item, index) => (
                             <TableRow key={item.id} className={cn('text-[10px] leading-snug', settings.tableTheme === 'striped' && 'odd:bg-gray-50', item.storage === 'Huana' && 'bg-yellow-100/70')}>
-                                <TableCell className="text-center py-1">{index + 1}</TableCell>
-                                <TableCell className="py-1 text-left">{item.model}</TableCell>
-                                <TableCell className="text-center py-1">{item.quantity}</TableCell>
-                                <TableCell className="text-center py-1">{item.invoiceNo || 'N/A'}</TableCell>
-                                <TableCell className="text-center py-1">{item.storage || 'N/A'}</TableCell>
+                                <TableCell className="py-1">{index + 1}</TableCell>
+                                <TableCell className="py-1">{item.model}</TableCell>
+                                <TableCell className="py-1">{item.quantity}</TableCell>
+                                <TableCell className="py-1">{item.invoiceNo || 'N/A'}</TableCell>
+                                <TableCell className="py-1">{item.storage || 'N/A'}</TableCell>
                                 <TableCell className="text-gray-600 py-1 text-left">{item.notes || 'N/A'}</TableCell>
-                                <TableCell className="text-center py-1">{item.requestDate ? format(parseISO(item.requestDate), 'yyyy-MM-dd') : 'N/A'}</TableCell>
+                                <TableCell className="py-1">{item.requestDate ? format(parseISO(item.requestDate), 'yyyy-MM-dd') : 'N/A'}</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>

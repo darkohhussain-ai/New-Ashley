@@ -1,4 +1,5 @@
 
+
 'use client';
 import { Employee, Expense, Overtime, Bonus, CashWithdrawal, PdfSettings } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
@@ -20,7 +21,7 @@ const FinancialTablePdf = ({ title, data, total }: { title: string, data: any[],
                 <TableBody>
                     {data.map((item, index) => (
                         <TableRow key={item.id} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
-                            <TableCell className="py-2">{format(parseISO(item.date), 'PP')}</TableCell>
+                            <TableCell className="py-2">{item.date && !isNaN(parseISO(item.date).getTime()) ? format(parseISO(item.date), 'PP') : 'Invalid Date'}</TableCell>
                             <TableCell className="text-gray-600 py-2">{item.notes || 'N/A'}</TableCell>
                             <TableCell className="text-right py-2">{formatCurrency(item.amount || item.totalAmount)}</TableCell>
                         </TableRow>
@@ -47,13 +48,13 @@ export const AccountReportPdf = ({ employee, logoSrc, selectedDate, financials }
             <div dir={language === 'ku' ? 'rtl' : 'ltr'}>
                 <div className="flex items-start gap-6 p-4 rounded-lg bg-gray-50 border">
                     <Avatar className="w-28 h-28 border-4 border-white shadow-md">
-                        <AvatarImage src={employee.photoUrl} alt={employee.name} />
+                        <AvatarImage src={employee.photoUrl || undefined} alt={employee.name} />
                         <AvatarFallback>{employee.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                      <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm flex-1">
                         <div>
                             <p className="text-xs text-gray-500">{t('name')}</p>
-                            <p className="font-bold text-lg">{displayName}</p>
+                            <p className="text-lg">{displayName}</p>
                         </div>
                         <div>
                             <p className="text-xs text-gray-500">{t('role_optional')}</p>
@@ -65,7 +66,7 @@ export const AccountReportPdf = ({ employee, logoSrc, selectedDate, financials }
                         </div>
                          <div>
                             <p className="text-xs text-gray-500">{t('joined_date')}</p>
-                            <p className="font-semibold">{employee.employmentStartDate ? format(parseISO(employee.employmentStartDate), 'PPP') : 'N/A'}</p>
+                            <p className="font-semibold">{employee.employmentStartDate && !isNaN(parseISO(employee.employmentStartDate).getTime()) ? format(parseISO(employee.employmentStartDate), 'PPP') : 'N/A'}</p>
                         </div>
                         <div>
                             <p className="text-xs text-gray-500">{t('email_optional')}</p>

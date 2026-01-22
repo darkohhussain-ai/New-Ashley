@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import withAuth from "@/hooks/withAuth";
@@ -53,7 +54,7 @@ const FinancialDetailTable = ({ title, data, total }: { title: string, data: any
                 <TableBody>
                     {data.map((item) => (
                         <TableRow key={item.id}>
-                            <TableCell>{format(parseISO(item.date), 'PP')}</TableCell>
+                            <TableCell>{item.date && !isNaN(parseISO(item.date).getTime()) ? format(parseISO(item.date), 'PP') : 'Invalid Date'}</TableCell>
                             <TableCell className="text-muted-foreground">{item.notes || 'N/A'}</TableCell>
                             <TableCell className="text-right">{formatCurrency(item.amount || item.totalAmount)}</TableCell>
                         </TableRow>
@@ -81,7 +82,8 @@ function AccountPage() {
   const { 
     employees, setEmployees, 
     expenses, overtime, bonuses, withdrawals,
-    settings 
+    settings,
+    isLoading,
   } = useAppContext();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -95,7 +97,7 @@ function AccountPage() {
 
 
   const fullReportPdfRef = useRef<HTMLDivElement>(null);
-  const logoSrc = settings.appLogo;
+  const logoSrc = settings?.appLogo || null;
 
 
   // Form State
@@ -122,7 +124,7 @@ function AccountPage() {
 
   useEffect(() => {
     if (employeeDetails) {
-      setPhotoUrl(employeeDetails.photoUrl);
+      setPhotoUrl(employeeDetails.photoUrl || undefined);
       setEmail(employeeDetails.email || '');
       setPhone(employeeDetails.phone || '');
     }
@@ -163,7 +165,7 @@ function AccountPage() {
   const handleEditToggle = () => {
     if (isEditing && employeeDetails) {
       // Reset fields to original state on cancel
-      setPhotoUrl(employeeDetails.photoUrl);
+      setPhotoUrl(employeeDetails.photoUrl || undefined);
       setEmail(employeeDetails.email || '');
       setPhone(employeeDetails.phone || '');
       setCurrentPassword('');
@@ -190,7 +192,7 @@ function AccountPage() {
 
     const updatedEmployee: Employee = {
       ...employeeDetails,
-      photoUrl: photoUrl,
+      photoUrl: photoUrl || null,
       email: email,
       phone: phone,
     };
@@ -256,7 +258,7 @@ function AccountPage() {
       useCORS: true, 
       backgroundColor: 'white',
       onclone: (document) => {
-        if (settings.customFont && language === 'ku') {
+        if (settings?.customFont && language === 'ku') {
             const style = document.createElement('style');
             style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${settings.customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
             document.head.appendChild(style);
@@ -276,7 +278,7 @@ function AccountPage() {
     doc.save(`${employeeDetails.name}_report_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
   };
 
-  if (!employeeDetails || !monthlyFinancials || !selectedDate) {
+  if (isLoading || !employeeDetails || !monthlyFinancials || !selectedDate) {
     return (
       <div className="flex items-center justify-center h-full">
         <Loader2 className="h-8 w-8 animate-spin"/>
@@ -384,7 +386,7 @@ function AccountPage() {
                          </div>
                          <div className="space-y-2">
                             <Label htmlFor="kurdishName">Kurdish Name</Label>
-                             <Input id="kurdishName" value={employeeDetails.kurdishName} dir="rtl" disabled />
+                             <Input id="kurdishName" value={employeeDetails.kurdishName || ''} dir="rtl" disabled />
                          </div>
                     </CardContent>
                 </Card>

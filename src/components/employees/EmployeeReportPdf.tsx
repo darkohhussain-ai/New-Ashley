@@ -1,4 +1,5 @@
 
+
 'use client';
 import { Employee, Expense, Overtime, Bonus, CashWithdrawal, PdfSettings } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
@@ -30,17 +31,17 @@ const FinancialSection = ({ title, items, columns, bodyMapper, total, themeColor
 
     return (
         <div className="mb-4">
-            <h3 className="text-base mb-2 pb-1 border-b-2" style={{ borderColor: themeColor || '#e5e7eb' }}>{title}</h3>
+            <h3 className="text-base mb-2 pb-1 border-b-2">{title}</h3>
             <Table>
                 <TableHeader>
                     <TableRow className="bg-gray-100">
-                        {columns.map(col => <TableHead key={col} className="text-[10px] py-1 h-auto text-center">{col}</TableHead>)}
+                        {columns.map(col => <TableHead key={col} className="text-[10px] py-1 h-auto">{col}</TableHead>)}
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {items.map((item, index) => (
                         <TableRow key={item.id} className={'odd:bg-gray-50'}>
-                            {bodyMapper(item).map((cell, i) => <TableCell key={i} className="py-1 text-[10px] leading-snug text-center">{cell}</TableCell>)}
+                            {bodyMapper(item).map((cell, i) => <TableCell key={i} className="py-1 text-[10px] leading-snug">{cell}</TableCell>)}
                         </TableRow>
                     ))}
                 </TableBody>
@@ -96,7 +97,7 @@ export function EmployeeReportPdf({ employee, settings, expenses, overtime, bonu
                         </div>
                          <div>
                             <p className="text-[9px] text-gray-500">{t('joined_date')}</p>
-                            <p>{employee.employmentStartDate ? format(parseISO(employee.employmentStartDate), 'PPP') : 'N/A'}</p>
+                            <p>{employee.employmentStartDate && !isNaN(parseISO(employee.employmentStartDate).getTime()) ? format(parseISO(employee.employmentStartDate), 'PPP') : 'N/A'}</p>
                         </div>
                         <div>
                             <p className="text-[9px] text-gray-500">{t('email_optional')}</p>

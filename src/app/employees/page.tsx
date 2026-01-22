@@ -37,6 +37,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useStorage } from "@/firebase";
 import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
 import { EmployeeReportPdf } from "@/components/employees/EmployeeReportPdf";
+import { initialSettings } from "@/context/initial-data";
 
 
 const formatCurrency = (amount: number) => {
@@ -47,7 +48,7 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
-const safeDate = (dateValue: string | undefined): Date | null => {
+const safeDate = (dateValue: string | undefined | null): Date | null => {
   if (!dateValue) return null;
   try {
     const parsed = parseISO(dateValue);
@@ -70,9 +71,12 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
         overtime,
         bonuses,
         withdrawals,
-        settings
+        settings,
+        isLoading,
     } = useAppContext();
-    const { pdfSettings, appLogo } = settings;
+    
+    const { pdfSettings, appLogo } = settings || { pdfSettings: initialSettings.pdfSettings, appLogo: null };
+
     const storage = useStorage();
 
 
@@ -251,7 +255,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
     };
 
     const handleDownloadReport = async () => {
-        if (!fullReportPdfRef.current || !employee) return;
+        if (!fullReportPdfRef.current || !employee || !settings) return;
         
         const canvas = await html2canvas(fullReportPdfRef.current, { 
             scale: 2, 
@@ -289,6 +293,14 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
         pdf.save(`${employee.name}_report_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
     };
 
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-full">
+                <Loader2 className="h-8 w-8 animate-spin"/>
+            </div>
+        )
+    }
+
     if (!employee) {
         return (
             <div className="flex flex-col items-center justify-center h-full text-center p-8">
@@ -312,7 +324,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                     <style>{`
                         @font-face { 
                             font-family: 'CustomPdfFont'; 
-                            src: ${settings.customFont ? `url(${settings.customFont})` : 'none'}; 
+                            src: ${settings?.customFont ? `url(${settings.customFont})` : 'none'}; 
                         }
                     `}</style>
                     <EmployeeReportPdf 
@@ -400,7 +412,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
 
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <Input value={uniqueId} onChange={e => setUniqueId(e.target.value)} placeholder={t('employee_id_optional')} />
-                                            <Select value={role} onValueChange={(v: Employee['role']) => setRole(v)}>
+                                            <Select value={role || undefined} onValueChange={(v: Employee['role']) => setRole(v)}>
                                                 <SelectTrigger><SelectValue placeholder={t('select_a_role')} /></SelectTrigger>
                                                 <SelectContent>
                                                     {employeeRoles.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
@@ -466,7 +478,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                             <div className="space-y-2">
                                 <Label>{t('notes')}</Label>
                                 {isEditing ? (
-                                    <Textarea className="min-h-[120px]" value={notes} onChange={e => setNotes(e.target.value)} placeholder={t('notes_optional')} />
+                                    <Textarea className="min-h-[120px]" value={notes} onChange={e => setNotes(e.target.value)} placeholder={t('notes_optional_long')} />
                                 ) : (<p className="whitespace-pre-wrap text-muted-foreground">{employee.notes || t('no_notes')}</p>)}
                             </div>
                         </CardContent>
@@ -640,7 +652,7 @@ function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean,
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2"><Label htmlFor="employeeId">{t('employee_id_optional')}</Label><Input id="employeeId" value={uniqueId} onChange={e => setUniqueId(e.target.value)} placeholder="e.g. 10234" /></div>
                         <div className="space-y-2"><Label htmlFor="role">{t('role_optional')}</Label>
-                            <Select onValueChange={(v: Employee['role']) => setRole(v)} value={role}>
+                            <Select onValueChange={(v: Employee['role']) => setRole(v)} value={role || undefined}>
                                 <SelectTrigger id="role"><SelectValue placeholder={t('select_a_role')} /></SelectTrigger>
                                 <SelectContent>
                                     {employeeRoles.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}

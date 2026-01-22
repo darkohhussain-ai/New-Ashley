@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
@@ -59,7 +60,13 @@ export default function AddExpensePage() {
   const [isSaving, setIsSaving] = useState(false);
   
   useEffect(() => {
-    const initialDate = dateParam ? parseISO(dateParam) : new Date();
+    let initialDate = new Date();
+    if (dateParam) {
+      const parsed = parseISO(dateParam);
+      if (!isNaN(parsed.getTime())) {
+        initialDate = parsed;
+      }
+    }
     setDate(initialDate);
   }, [dateParam]);
   
@@ -306,7 +313,7 @@ export default function AddExpensePage() {
                     <Label className="hidden sm:block">{t('date')}:</Label>
                     <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                     <PopoverTrigger asChild>
-                        <Button variant="outline" className={cn("w-48 justify-start text-left font-normal", !date && "text-muted-foreground")}>
+                        <Button variant="outline" className={cn("w-48 justify-start text-left", !date && "text-muted-foreground")}>
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {date ? format(date, 'PPP') : <span>{t('pick_a_date')}</span>}
                         </Button>
@@ -471,4 +478,3 @@ export default function AddExpensePage() {
     </>
   );
 }
-
