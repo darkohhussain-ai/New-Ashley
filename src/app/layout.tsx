@@ -11,18 +11,10 @@ import { useTranslation } from '@/hooks/use-translation';
 import { useState, useEffect } from 'react';
 import { SplashScreen } from '@/components/shared/splash-screen';
 import { AppHeader } from '@/components/shared/app-header';
-import { Noto_Sans_Arabic } from 'next/font/google';
 import { usePathname } from 'next/navigation';
 import { FirebaseClientProvider } from '@/firebase';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
-
-
-const notoSansArabic = Noto_Sans_Arabic({ 
-  subsets: ['arabic'],
-  variable: '--font-noto-arabic', // Use a different variable name
-  display: 'swap',
-});
 
 function CustomFontInjector() {
     const { settings } = useAppContext();
@@ -32,8 +24,8 @@ function CustomFontInjector() {
         : '';
     
     const fontBody = settings.customFont 
-        ? `'CustomAppFont', var(--font-noto-arabic), Arial, sans-serif` 
-        : `Arial, var(--font-noto-arabic), sans-serif`;
+        ? `'CustomAppFont', Arial, sans-serif` 
+        : `Arial, sans-serif`;
 
     return (
         <style>{`
@@ -139,7 +131,7 @@ export default function RootLayout({
   return (
     <html suppressHydrationWarning>
       <head />
-      <body className={cn(`${notoSansArabic.variable} font-sans antialiased`, 'min-h-screen')} suppressHydrationWarning>
+      <body className={cn('font-sans antialiased', 'min-h-screen')} suppressHydrationWarning>
         <FirebaseClientProvider>
           <AppProvider>
             <AuthProvider>
