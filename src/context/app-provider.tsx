@@ -82,8 +82,7 @@ const AppContext = createContext<AppState | undefined>(undefined);
 // Helper to manage a single collection from the root of Firestore
 function useFirestoreCollection<T extends {id: string}>(collectionName: string) {
     const db = useFirestore();
-    const hasAttemptedInitialLoad = useRef(false);
-
+    
     const collectionRef = useMemoFirebase(() => {
         if (!db) return null;
         return collection(db, collectionName);
@@ -130,51 +129,6 @@ function useFirestoreCollection<T extends {id: string}>(collectionName: string) 
 export function AppProvider({ children }: { children: ReactNode }) {
     const { isUserLoading } = useUser();
     const db = useFirestore();
-
-    // Effect to merge initial data on startup.
-    useEffect(() => {
-        if (!db) return;
-
-        const mergeInitialData = async () => {
-            console.log("Checking and merging initial data...");
-
-            try {
-                // For each collection in our initial data...
-                for (const [collectionName, dataArray] of Object.entries(initialData)) {
-                    if (Array.isArray(dataArray)) {
-                        const collectionRef = collection(db, collectionName);
-                        // For each item in the initial data array...
-                        for (const item of dataArray) {
-                            if (item.id) {
-                                const docRef = doc(collectionRef, item.id);
-                                const docSnap = await getDoc(docRef);
-                                // If the document does not already exist in Firestore, add it.
-                                if (!docSnap.exists()) {
-                                    await setDoc(docRef, item);
-                                    console.log(`Added initial document ${item.id} to ${collectionName}`);
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                // Ensure initial settings exist
-                const settingsRef = doc(db, 'settings', 'main');
-                const settingsSnap = await getDoc(settingsRef);
-                if (!settingsSnap.exists()) {
-                    await setDoc(settingsRef, initialSettings);
-                    console.log("Initialized main settings document.");
-                }
-
-                console.log("Initial data merge check complete.");
-            } catch (error) {
-                console.error("Error merging initial data:", error);
-            }
-        };
-
-        mergeInitialData();
-    }, [db]);
-
 
     // App Data Collections
     const [employees, setEmployees, isEmployeesLoading] = useFirestoreCollection<Employee>('employees');

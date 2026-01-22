@@ -36,7 +36,7 @@ import { Loader2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useStorage } from "@/firebase";
 import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
-import { EmployeeFullReportPdf } from "@/components/employees/employee-full-report-pdf";
+import { EmployeeReportPdf } from "@/components/employees/EmployeeReportPdf";
 
 
 const formatCurrency = (amount: number) => {
@@ -72,7 +72,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
         withdrawals,
         settings
     } = useAppContext();
-    const { pdfSettings } = settings;
+    const { pdfSettings, appLogo } = settings;
     const storage = useStorage();
 
 
@@ -256,6 +256,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
         const canvas = await html2canvas(fullReportPdfRef.current, { 
             scale: 2, 
             useCORS: true,
+            backgroundColor: 'white',
             onclone: (document) => {
                 if (settings.customFont && language === 'ku') {
                     const style = document.createElement('style');
@@ -301,11 +302,12 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
     const safeEmploymentStartDate = safeDate(employee.employmentStartDate);
     const safeDateOfBirth = safeDate(employee.dateOfBirth);
     const displayName = language === 'ku' && employee.kurdishName ? employee.kurdishName : employee.name;
+    const reportSettings = {...pdfSettings.report, logo: pdfSettings.report.logo ?? appLogo};
 
     return (
         <>
              <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-                <div ref={cardPdfRef}><EmployeePdfCard employee={employee} settings={pdfSettings.card || {}} /></div>
+                <div ref={cardPdfRef}><EmployeePdfCard employee={employee} settings={pdfSettings.card} /></div>
                 <div ref={fullReportPdfRef} style={{ width: '800px', background: 'white', color: 'black' }}>
                     <style>{`
                         @font-face { 
@@ -313,9 +315,9 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                             src: ${settings.customFont ? `url(${settings.customFont})` : 'none'}; 
                         }
                     `}</style>
-                    <EmployeeFullReportPdf 
+                    <EmployeeReportPdf 
                         employee={employee}
-                        settings={pdfSettings.report || {}}
+                        settings={reportSettings}
                         expenses={{ items: sortedExpenses, total: totalExpenses }}
                         overtime={{ items: sortedOvertime, total: totalOvertimeAmount }}
                         bonuses={{ items: sortedBonuses, total: totalBonuses }}
