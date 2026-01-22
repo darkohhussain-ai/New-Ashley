@@ -1,15 +1,9 @@
 
 'use client';
 
-import React, { createContext, useContext, ReactNode, useMemo, useEffect, useState, useCallback, useRef } from 'react';
+import React, { createContext, useContext, ReactNode, useMemo, useEffect, useState, useCallback } from 'react';
 import { useCollection, useMemoFirebase } from '@/firebase';
-import {
-  collection,
-  doc,
-  DocumentData,
-  setDoc,
-  getDoc,
-} from 'firebase/firestore';
+import { collection, doc } from 'firebase/firestore';
 import { useFirestore, useUser, useDoc } from '@/firebase';
 import { 
     Employee, 
@@ -163,35 +157,43 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const settingsDocRef = useMemoFirebase(() => db ? doc(db, 'settings', 'main') : null, [db]);
     const { data: firestoreSettings, isLoading: isSettingsLoading } = useDoc<AppSettings>(settingsDocRef);
     const [settings, setLocalSettings] = useState<AppSettings>(initialSettings);
+    const [isInitialSettingsLoaded, setIsInitialSettingsLoaded] = useState(false);
 
     useEffect(() => {
-        if (firestoreSettings) {
-            const mergedSettings = {
-                ...initialSettings,
-                ...firestoreSettings,
-                pdfSettings: {
-                    ...initialSettings.pdfSettings,
-                    ...(firestoreSettings.pdfSettings || {}),
-                    report: { ...initialSettings.pdfSettings.report, ...(firestoreSettings.pdfSettings?.report || {})},
-                    invoice: { ...initialSettings.pdfSettings.invoice, ...(firestoreSettings.pdfSettings?.invoice || {})},
-                    card: { ...initialSettings.pdfSettings.card, ...(firestoreSettings.pdfSettings?.card || {})},
-                }
-            };
-            setLocalSettings(mergedSettings);
+        // This effect runs only once to populate initial settings from Firestore.
+        // It avoids overwriting optimistic local updates from user actions.
+        if (!isSettingsLoading && !isInitialSettingsLoaded) {
+            if (firestoreSettings) {
+                const mergedSettings = {
+                    ...initialSettings,
+                    ...firestoreSettings,
+                    pdfSettings: {
+                        ...initialSettings.pdfSettings,
+                        ...(firestoreSettings.pdfSettings || {}),
+                        report: { ...initialSettings.pdfSettings.report, ...(firestoreSettings.pdfSettings?.report || {}) },
+                        invoice: { ...initialSettings.pdfSettings.invoice, ...(firestoreSettings.pdfSettings?.invoice || {}) },
+                        card: { ...initialSettings.pdfSettings.card, ...(firestoreSettings.pdfSettings?.card || {}) },
+                    }
+                };
+                setLocalSettings(mergedSettings);
+            }
+            setIsInitialSettingsLoaded(true);
         }
-    }, [firestoreSettings]);
+    }, [firestoreSettings, isSettingsLoading, isInitialSettingsLoaded]);
 
     const setSettings = useCallback((value: React.SetStateAction<AppSettings>) => {
-        setLocalSettings(prevSettings => {
-            const newSettings = value instanceof Function ? value(prevSettings) : value;
-            if (settingsDocRef) {
-                setDocumentNonBlocking(settingsDocRef, newSettings, { merge: true });
-            }
-            return newSettings;
-        });
-    }, [settingsDocRef]);
+        // Optimistically update local state for immediate UI feedback.
+        const newSettings = value instanceof Function ? value(settings) : value;
+        setLocalSettings(newSettings);
+        
+        // Persist to Firestore non-blockingly.
+        if (settingsDocRef) {
+            // Using a deep copy of newSettings to avoid potential issues with object mutation
+            setDocumentNonBlocking(settingsDocRef, JSON.parse(JSON.stringify(newSettings)), { merge: true });
+        }
+    }, [settingsDocRef, settings]);
     
-    const isLoading = isUserLoading || isSettingsLoading || isEmployeesLoading || isExcelFilesLoading || isItemsLoading || isLocationsLoading || isExpensesLoading || isExpenseReportsLoading || isOvertimeLoading || isBonusesLoading || isWithdrawalsLoading || isReceiptsLoading || isItemCategoriesLoading || isTransfersLoading || isTransferItemsLoading || isMarketingFeedbacksLoading || isEvaluationQuestionsLoading || isUsersLoading || isRolesLoading;
+    const isLoading = isUserLoading || !isInitialSettingsLoaded || isEmployeesLoading || isExcelFilesLoading || isItemsLoading || isLocationsLoading || isExpensesLoading || isExpenseReportsLoading || isOvertimeLoading || isBonusesLoading || isWithdrawalsLoading || isReceiptsLoading || isItemCategoriesLoading || isTransfersLoading || isTransferItemsLoading || isMarketingFeedbacksLoading || isEvaluationQuestionsLoading || isUsersLoading || isRolesLoading;
 
     const value = useMemo<AppState>(() => ({
         employees, setEmployees,

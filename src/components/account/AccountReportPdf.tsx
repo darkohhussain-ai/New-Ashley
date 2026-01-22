@@ -15,19 +15,19 @@ const FinancialTablePdf = ({ title, data, total }: { title: string, data: any[],
     if (data.length === 0) return null;
     return (
         <div className="mb-6">
-            <h3 className="text-lg font-bold mb-2 pb-1 border-b-2">{title}</h3>
-            <Table>
+            <h3 className="text-lg font-medium mb-2 pb-1 border-b-2">{title}</h3>
+            <Table className="pdf-table">
                 <TableHeader><TableRow><TableHead>{t('date')}</TableHead><TableHead>{t('notes')}</TableHead><TableHead className="text-right">{t('amount')}</TableHead></TableRow></TableHeader>
                 <TableBody>
                     {data.map((item, index) => (
-                        <TableRow key={item.id} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
+                        <TableRow key={item.id}>
                             <TableCell className="py-2">{item.date && !isNaN(parseISO(item.date).getTime()) ? format(parseISO(item.date), 'PP') : 'Invalid Date'}</TableCell>
                             <TableCell className="text-gray-600 py-2">{item.notes || 'N/A'}</TableCell>
                             <TableCell className="text-right py-2">{formatCurrency(item.amount || item.totalAmount)}</TableCell>
                         </TableRow>
                     ))}
                 </TableBody>
-                <TableFooter><TableRow className="bg-gray-100"><TableCell colSpan={2} className="text-right font-bold">{t('total')}</TableCell><TableCell className="text-right font-bold">{formatCurrency(total)}</TableCell></TableRow></TableFooter>
+                <TableFooter><TableRow><TableCell colSpan={2} className="text-right font-medium">{t('total')}</TableCell><TableCell className="text-right font-medium">{formatCurrency(total)}</TableCell></TableRow></TableFooter>
             </Table>
         </div>
     );
@@ -58,23 +58,23 @@ export const AccountReportPdf = ({ employee, logoSrc, selectedDate, financials }
                         </div>
                         <div>
                             <p className="text-xs text-gray-500">{t('role_optional')}</p>
-                            <p className="font-semibold">{employee.role || 'Employee'}</p>
+                            <p>{employee.role || 'Employee'}</p>
                         </div>
                         <div>
                             <p className="text-xs text-gray-500">{t('id_colon')}</p>
-                            <p className="font-semibold">{employee.employeeId || 'N/A'}</p>
+                            <p>{employee.employeeId || 'N/A'}</p>
                         </div>
                          <div>
                             <p className="text-xs text-gray-500">{t('joined_date')}</p>
-                            <p className="font-semibold">{employee.employmentStartDate && !isNaN(parseISO(employee.employmentStartDate).getTime()) ? format(parseISO(employee.employmentStartDate), 'PPP') : 'N/A'}</p>
+                            <p>{employee.employmentStartDate && !isNaN(parseISO(employee.employmentStartDate).getTime()) ? format(parseISO(employee.employmentStartDate), 'PPP') : 'N/A'}</p>
                         </div>
                         <div>
                             <p className="text-xs text-gray-500">{t('email_optional')}</p>
-                            <p className="font-semibold">{employee.email || 'N/A'}</p>
+                            <p>{employee.email || 'N/A'}</p>
                         </div>
                         <div>
                             <p className="text-xs text-gray-500">{t('phone_optional')}</p>
-                            <p className="font-semibold">{employee.phone || 'N/A'}</p>
+                            <p>{employee.phone || 'N/A'}</p>
                         </div>
                     </div>
                 </div>

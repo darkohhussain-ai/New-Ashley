@@ -48,21 +48,21 @@ export const TransmitReportPdf = ({ transfer, items, settings, invoiceNumber, to
             </section>
 
             <main>
-                <Table>
+                <Table className="pdf-table">
                     <TableHeader>
-                        <TableRow style={{ backgroundColor: settings.secondaryColor || '#0F172A', color: 'white'}} className="hover:bg-gray-800">
-                            <TableHead className="w-[30px] text-white text-center text-[10px] py-1 h-auto">{t('no_dot')}</TableHead>
-                            <TableHead className="text-white text-center text-[10px] py-1 h-auto">{t('model')}</TableHead>
-                            <TableHead className="w-[50px] text-center text-white text-[10px] py-1 h-auto">{t('quantity')}</TableHead>
-                            <TableHead className="text-white text-center text-[10px] py-1 h-auto">{t('invoice_no')}</TableHead>
-                            <TableHead className="text-white text-center text-[10px] py-1 h-auto">{t('storage')}</TableHead>
-                            <TableHead className="text-white text-center text-[10px] py-1 h-auto">{t('notes')}</TableHead>
-                            <TableHead className="w-[80px] text-center text-white text-[10px] py-1 h-auto">{t('request_date')}</TableHead>
+                        <TableRow>
+                            <TableHead className="w-[30px]">{t('no_dot')}</TableHead>
+                            <TableHead>{t('model')}</TableHead>
+                            <TableHead className="w-[50px]">{t('quantity')}</TableHead>
+                            <TableHead>{t('invoice_no')}</TableHead>
+                            <TableHead>{t('storage')}</TableHead>
+                            <TableHead>{t('notes')}</TableHead>
+                            <TableHead className="w-[80px]">{t('request_date')}</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {items.map((item, index) => (
-                            <TableRow key={item.id} className={cn('text-[10px] leading-snug', settings.tableTheme === 'striped' && 'odd:bg-gray-50', item.storage === 'Huana' && 'bg-yellow-100/70')}>
+                            <TableRow key={item.id} className={cn(item.storage === 'Huana' && 'bg-yellow-100/70')}>
                                 <TableCell className="py-1">{index + 1}</TableCell>
                                 <TableCell className="py-1">{item.model}</TableCell>
                                 <TableCell className="py-1">{item.quantity}</TableCell>

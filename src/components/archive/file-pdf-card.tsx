@@ -29,14 +29,14 @@ export function FilePdfCard({ file, items, employee, locations, logoSrc, themeCo
             themeColor={themeColor}
         >
             <div className="grid grid-cols-2 gap-4 mb-6 text-xs">
-                <div><p className="text-gray-500">{t('employee')}</p><p className="font-semibold">{employee.name}</p></div>
-                <div><p className="text-gray-500">{t('source_location')}</p><p className="font-semibold">{file.source}</p></div>
-                <div><p className="text-gray-500">{t('category_name')}</p><p className="font-semibold">{file.categoryName}</p></div>
-                <div><p className="text-gray-500">{t('file_type')}</p><p className="font-semibold">{file.type}</p></div>
+                <div><p className="text-gray-500">{t('employee')}</p><p className="font-medium">{employee.name}</p></div>
+                <div><p className="text-gray-500">{t('source_location')}</p><p className="font-medium">{file.source}</p></div>
+                <div><p className="text-gray-500">{t('category_name')}</p><p className="font-medium">{file.categoryName}</p></div>
+                <div><p className="text-gray-500">{t('file_type')}</p><p className="font-medium">{file.type}</p></div>
             </div>
 
              <div className="overflow-x-auto">
-                <Table>
+                <Table className="pdf-table">
                     <TableHeader>
                         <TableRow>
                             <TableHead>Model</TableHead>
@@ -50,7 +50,7 @@ export function FilePdfCard({ file, items, employee, locations, logoSrc, themeCo
                     </TableHeader>
                     <TableBody>
                         {items?.map((item, index) => (
-                            <TableRow key={item.id} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
+                            <TableRow key={item.id}>
                                 <TableCell className="font-medium py-1">{item.model}</TableCell>
                                 <TableCell className="py-1">{item.quantity}</TableCell>
                                 <TableCell className="py-1">{item.storageStatus || 'N/A'}</TableCell>

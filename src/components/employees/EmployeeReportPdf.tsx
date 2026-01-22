@@ -31,24 +31,24 @@ const FinancialSection = ({ title, items, columns, bodyMapper, total, themeColor
 
     return (
         <div className="mb-4">
-            <h3 className="text-base mb-2 pb-1 border-b-2">{title}</h3>
-            <Table>
+            <h3 className="text-base font-medium mb-2 pb-1 border-b-2">{title}</h3>
+            <Table className="pdf-table">
                 <TableHeader>
-                    <TableRow className="bg-gray-100">
-                        {columns.map(col => <TableHead key={col} className="text-[10px] py-1 h-auto text-center">{col}</TableHead>)}
+                    <TableRow>
+                        {columns.map(col => <TableHead key={col} className="text-[10px] py-1 h-auto">{col}</TableHead>)}
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {items.map((item, index) => (
-                        <TableRow key={item.id} className={'odd:bg-gray-50'}>
-                            {bodyMapper(item).map((cell, i) => <TableCell key={i} className="py-1 text-[10px] leading-snug text-center">{cell}</TableCell>)}
+                        <TableRow key={item.id}>
+                            {bodyMapper(item).map((cell, i) => <TableCell key={i} className="py-1 text-[10px] leading-snug">{cell}</TableCell>)}
                         </TableRow>
                     ))}
                 </TableBody>
                 <TableFooter>
-                    <TableRow className="bg-gray-200">
-                        <TableCell colSpan={columns.length - 1} className="text-right text-[10px] py-1">{t('total')}</TableCell>
-                        <TableCell className="text-center text-[10px] py-1">{formatCurrency(total)}</TableCell>
+                    <TableRow>
+                        <TableCell colSpan={columns.length - 1} className="text-right text-[10px] py-1 font-medium">{t('total')}</TableCell>
+                        <TableCell className="text-center text-[10px] py-1 font-medium">{formatCurrency(total)}</TableCell>
                     </TableRow>
                 </TableFooter>
             </Table>

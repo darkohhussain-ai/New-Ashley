@@ -68,7 +68,7 @@ const FinancialDetailTable = ({ title, data, total }: { title: string, data: any
        {data.length > 0 && (
           <CardFooter className="justify-end gap-2 bg-muted/50 text-sm">
             <span className="text-muted-foreground">{t('total_colon')}</span>
-            <span className="text-primary">{formatCurrency(total)}</span>
+            <span className="font-medium text-primary">{formatCurrency(total)}</span>
           </CardFooter>
         )}
     </Card>
@@ -260,7 +260,7 @@ function AccountPage() {
       onclone: (document) => {
         if (settings?.customFont) {
             const style = document.createElement('style');
-            style.innerHTML = `@font-face { font-family: 'CustomAppFont'; src: url(${settings.customFont}); } body, table, div, p, h1, h2, h3, span { font-family: 'CustomAppFont' !important; }`;
+            style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${settings.customFont}); } body, table, div, p, h1, h2, h3, span { font-family: 'CustomPdfFont' !important; }`;
             document.head.appendChild(style);
         }
       }
