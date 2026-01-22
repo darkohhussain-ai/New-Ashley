@@ -75,7 +75,7 @@ export default function OvertimeArchivePage() {
         <div className="flex items-center gap-2">
             <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
               <PopoverTrigger asChild>
-                <Button variant={"outline"} className={cn("w-48 justify-start text-left", !selectedMonth && "text-muted-foreground")}>
+                <Button variant={"outline"} className={cn("w-48 justify-start text-left font-normal", !selectedMonth && "text-muted-foreground")}>
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {selectedMonth ? format(selectedMonth, "MMMM yyyy") : <span>{t('pick_a_month')}</span>}
                 </Button>

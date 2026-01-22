@@ -30,7 +30,7 @@ const SectionButton = ({ id, code, items, onClick, className, isHighlighted }: {
     >
       <span className="font-mono">{code}</span>
       {itemCount > 0 && (
-        <span className="font-bold text-primary flex items-center gap-1 mt-1">
+        <span className="text-primary flex items-center gap-1 mt-1">
           <Box className="w-3 h-3" />
           {itemCount}
         </span>
@@ -170,11 +170,11 @@ export default function AshleyMapPage() {
                 </CardHeader>
                 <CardContent className="space-y-8">
                   <div>
-                    <h3 className="font-semibold text-lg mb-4">{t('area_1')}</h3>
+                    <h3 className="mb-4">{t('area_1')}</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {floor3.area1.map(unit => (
                         <Card key={unit.name} className="p-3">
-                           <CardDescription className="text-center font-bold mb-2">{unit.name}</CardDescription>
+                           <CardDescription className="text-center mb-2">{unit.name}</CardDescription>
                            <div className="grid grid-cols-2 gap-2">
                               {unit.sections.map(loc => (
                                 <SectionButton 
@@ -192,7 +192,7 @@ export default function AshleyMapPage() {
                     </div>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-lg mb-4">{t('area_2_office')}</h3>
+                    <h3 className="mb-4">{t('area_2_office')}</h3>
                     <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
                        {floor3.office.map(loc => (
                         <SectionButton 
@@ -213,7 +213,7 @@ export default function AshleyMapPage() {
            {(!isLoading && floor4.length === 0 && floor3.area1.length === 0 && floor3.office.length === 0) && (
              <div className="text-center py-16 border-2 border-dashed rounded-lg">
                 <Box className="mx-auto h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-4 text-lg font-medium">{t('no_ashley_locations_found')}</h3>
+                <h3 className="mt-4 text-lg">{t('no_ashley_locations_found')}</h3>
                 <p className="mt-2 text-sm text-muted-foreground">{t('no_ashley_locations_found_desc')}</p>
                 <Button asChild className="mt-4"><Link href="/locations">{t('manage_locations')}</Link></Button>
             </div>

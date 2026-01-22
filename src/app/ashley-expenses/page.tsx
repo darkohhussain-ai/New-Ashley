@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
@@ -111,7 +112,7 @@ function AshleyExpensesDashboard() {
                 <Button onClick={handleDownloadPdf} variant="outline"><FileDown className="mr-2 h-4 w-4"/> {t('download_pdf')}</Button>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant={"outline"} className={cn("w-48 justify-start text-left", !selectedDate && "text-muted-foreground")}>
+                    <Button variant={"outline"} className={cn("w-48 justify-start text-left font-normal", !selectedDate && "text-muted-foreground")}>
                       <Calendar className="mr-2 h-4 w-4" />
                       {selectedDate ? format(selectedDate, "MMMM yyyy") : <span>{t('pick_a_month')}</span>}
                     </Button>
@@ -144,7 +145,7 @@ function AshleyExpensesDashboard() {
                                 const percentage = grandTotal > 0 ? (item.total / grandTotal) * 100 : 0;
                                 return (
                                     <TableRow key={item.name}>
-                                        <TableCell className="font-medium">{item.name}</TableCell>
+                                        <TableCell>{item.name}</TableCell>
                                         <TableCell>{formatCurrency(item.total)}</TableCell>
                                         <TableCell>
                                             <div className="flex items-center gap-2">

@@ -79,7 +79,7 @@ export default function PdfArchivePage() {
         ) : (
           <div className="text-center py-16 border-2 border-dashed rounded-lg">
             <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-medium">{t('no_archived_files')}</h3>
+            <h3 className="mt-4 text-lg">{t('no_archived_files')}</h3>
             <p className="mt-2 text-sm text-muted-foreground">{t('no_archived_files_desc')}</p>
           </div>
         )}

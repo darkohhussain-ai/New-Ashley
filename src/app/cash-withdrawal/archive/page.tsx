@@ -102,7 +102,7 @@ export default function WithdrawalArchivePage() {
         ) : (
           <div className="text-center py-16 border-2 border-dashed rounded-lg">
             <Archive className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-medium">{t('no_withdrawal_records')}</h3>
+            <h3 className="mt-4 text-lg">{t('no_withdrawal_records')}</h3>
             <p className="mt-2 text-sm text-muted-foreground">{t('no_withdrawal_records_desc')}</p>
              <Button asChild className="mt-4"><Link href="/cash-withdrawal/add">{t('add_withdrawal')}</Link></Button>
           </div>
@@ -111,4 +111,3 @@ export default function WithdrawalArchivePage() {
     </div>
   );
 }
-

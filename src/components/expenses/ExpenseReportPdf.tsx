@@ -55,7 +55,7 @@ export function ExpenseReportPdf({ report, items, employees, settings }: Expense
     >
       <div className="space-y-6">
         <div>
-          <h2 className="text-base font-bold mb-2">{t('summary_by_employee')}</h2>
+          <h2 className="text-base mb-2">{t('summary_by_employee')}</h2>
           <Table>
             <TableHeader><TableRow><TableHead>{t('employee')}</TableHead><TableHead className="text-right">{t('total_amount')}</TableHead></TableRow></TableHeader>
             <TableBody>
@@ -68,15 +68,15 @@ export function ExpenseReportPdf({ report, items, employees, settings }: Expense
             </TableBody>
              <TableFooter>
                 <TableRow className="bg-gray-100">
-                    <TableCell className="text-right font-bold">{t('grand_total')}</TableCell>
-                    <TableCell className="text-right font-bold">{formatCurrency(report.totalAmount)}</TableCell>
+                    <TableCell className="text-right">{t('grand_total')}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(report.totalAmount)}</TableCell>
                 </TableRow>
             </TableFooter>
           </Table>
         </div>
         {items.length > 0 && (
           <div>
-            <h2 className="text-base font-bold mb-2">{t('all_transactions')}</h2>
+            <h2 className="text-base mb-2">{t('all_transactions')}</h2>
             <Table>
               <TableHeader><TableRow><TableHead>{t('employee')}</TableHead><TableHead>{t('expense_type')}</TableHead><TableHead>{t('notes')}</TableHead><TableHead className="text-right">{t('amount')}</TableHead></TableRow></TableHeader>
               <TableBody>

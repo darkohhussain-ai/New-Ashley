@@ -67,7 +67,7 @@ const FinancialDetailTable = ({ title, data, total }: { title: string, data: any
        {data.length > 0 && (
           <CardFooter className="justify-end gap-2 bg-muted/50 text-sm">
             <span className="text-muted-foreground">{t('total_colon')}</span>
-            <span className="font-semibold text-primary">{formatCurrency(total)}</span>
+            <span className="text-primary">{formatCurrency(total)}</span>
           </CardFooter>
         )}
     </Card>
@@ -390,7 +390,7 @@ function AccountPage() {
                 </Card>
                 <div className='space-y-4'>
                     <div className="flex justify-between items-center">
-                        <h2 className="text-xl font-semibold">{t('this_month_activity_summary', {month: format(selectedDate, 'MMMM yyyy')})}</h2>
+                        <h2 className="text-xl">{t('this_month_activity_summary', {month: format(selectedDate, 'MMMM yyyy')})}</h2>
                          <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                             <PopoverTrigger asChild>
                                 <Button

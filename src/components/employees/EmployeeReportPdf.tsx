@@ -30,7 +30,7 @@ const FinancialSection = ({ title, items, columns, bodyMapper, total, themeColor
 
     return (
         <div className="mb-4">
-            <h3 className="text-base font-bold mb-2 pb-1 border-b-2" style={{ borderColor: themeColor || '#e5e7eb' }}>{title}</h3>
+            <h3 className="text-base mb-2 pb-1 border-b-2" style={{ borderColor: themeColor || '#e5e7eb' }}>{title}</h3>
             <Table>
                 <TableHeader>
                     <TableRow className="bg-gray-100">
@@ -46,8 +46,8 @@ const FinancialSection = ({ title, items, columns, bodyMapper, total, themeColor
                 </TableBody>
                 <TableFooter>
                     <TableRow className="bg-gray-200">
-                        <TableCell colSpan={columns.length - 1} className="text-right font-bold text-[10px] py-1">{t('total')}</TableCell>
-                        <TableCell className="text-center font-bold text-[10px] py-1">{formatCurrency(total)}</TableCell>
+                        <TableCell colSpan={columns.length - 1} className="text-right text-[10px] py-1">{t('total')}</TableCell>
+                        <TableCell className="text-center text-[10px] py-1">{formatCurrency(total)}</TableCell>
                     </TableRow>
                 </TableFooter>
             </Table>
@@ -84,27 +84,27 @@ export function EmployeeReportPdf({ employee, settings, expenses, overtime, bonu
                     <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[10px] leading-snug flex-1">
                         <div>
                             <p className="text-[9px] text-gray-500">{t('name')}</p>
-                            <p className="font-bold text-sm">{displayName}</p>
+                            <p className="text-sm">{displayName}</p>
                         </div>
                         <div>
                             <p className="text-[9px] text-gray-500">{t('role_optional')}</p>
-                            <p className="font-semibold">{employee.role || 'N/A'}</p>
+                            <p>{employee.role || 'N/A'}</p>
                         </div>
                         <div>
                             <p className="text-[9px] text-gray-500">{t('id_colon')}</p>
-                            <p className="font-semibold">{employee.employeeId || 'N/A'}</p>
+                            <p>{employee.employeeId || 'N/A'}</p>
                         </div>
                          <div>
                             <p className="text-[9px] text-gray-500">{t('joined_date')}</p>
-                            <p className="font-semibold">{employee.employmentStartDate ? format(parseISO(employee.employmentStartDate), 'PPP') : 'N/A'}</p>
+                            <p>{employee.employmentStartDate ? format(parseISO(employee.employmentStartDate), 'PPP') : 'N/A'}</p>
                         </div>
                         <div>
                             <p className="text-[9px] text-gray-500">{t('email_optional')}</p>
-                            <p className="font-semibold">{employee.email || 'N/A'}</p>
+                            <p>{employee.email || 'N/A'}</p>
                         </div>
                         <div>
                             <p className="text-[9px] text-gray-500">{t('phone_optional')}</p>
-                            <p className="font-semibold">{employee.phone || 'N/A'}</p>
+                            <p>{employee.phone || 'N/A'}</p>
                         </div>
                     </div>
                 </div>

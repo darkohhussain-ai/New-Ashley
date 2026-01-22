@@ -372,7 +372,7 @@ function RoleManagement() {
 
             {selectedRole && (
                 <div className="border p-4 rounded-lg">
-                    <h3 className="font-semibold mb-4">Permissions for {selectedRole.name}</h3>
+                    <h3 className="mb-4">Permissions for {selectedRole.name}</h3>
                     <div className="max-h-[40vh] overflow-y-auto space-y-2">
                         {allPermissions.map(permission => (
                             <div key={permission.id} className="flex items-center space-x-2">
@@ -382,7 +382,7 @@ function RoleManagement() {
                                     onCheckedChange={(checked) => handlePermissionChange(permission.id, !!checked)}
                                     disabled={selectedRole.name === 'Admin'}
                                 />
-                                <label htmlFor={`perm-${permission.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                <label htmlFor={`perm-${permission.id}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                                     {permission.description}
                                 </label>
                             </div>
@@ -415,7 +415,7 @@ function AdminPage() {
     <div className="h-[calc(100vh-80px)] flex flex-col">
         <main className="container mx-auto p-4 md:p-8 flex-1 overflow-y-auto">
         <div className="mb-8">
-            <h1 className="text-3xl font-bold flex items-center gap-2">
+            <h1 className="text-3xl flex items-center gap-2">
             <ShieldCheck className="h-8 w-8" />
             Admin Panel
             </h1>

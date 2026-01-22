@@ -84,7 +84,6 @@ function SystemCornerLogo() {
 function AppContent({ children }: { children: React.ReactNode }) {
     const { isLoading } = useAppContext();
     const { language } = useTranslation();
-    const [showSplash, setShowSplash] = useState(true);
     const pathname = usePathname();
     const isLoginPage = pathname === '/login';
 
@@ -93,15 +92,7 @@ function AppContent({ children }: { children: React.ReactNode }) {
         document.documentElement.dir = language === 'ku' ? 'rtl' : 'ltr';
     }, [language]);
 
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setShowSplash(false);
-        }, 2000);
-
-        return () => clearTimeout(timer);
-    }, []);
-
-    if (showSplash || isLoading) {
+    if (isLoading) {
         return <SplashScreen />;
     }
 

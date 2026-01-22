@@ -1,6 +1,4 @@
 
-      
-
 'use client';
 
 import * as React from 'react';
@@ -312,7 +310,7 @@ function LoginTextEditor() {
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-4">
-          <h3 className="font-semibold text-sm text-muted-foreground">
+          <h3 className="text-sm text-muted-foreground">
             English
           </h3>
           <div className="space-y-2">
@@ -333,7 +331,7 @@ function LoginTextEditor() {
           </div>
         </div>
         <div className="space-y-4">
-          <h3 className="font-semibold text-sm text-muted-foreground">
+          <h3 className="text-sm text-muted-foreground">
             Kurdish
           </h3>
           <div className="space-y-2">
@@ -473,9 +471,9 @@ function TranslationEditor({ onSave }: { onSave: () => void }) {
         </div>
         <div className="max-h-[60vh] overflow-y-auto border rounded-lg p-4">
           <div className="grid grid-cols-[1fr_2fr_2fr] gap-x-4 gap-y-2 sticky top-0 bg-background pb-2 border-b mb-2">
-            <Label className="font-semibold">Key</Label>
-            <Label className="font-semibold">English</Label>
-            <Label className="font-semibold">Kurdish</Label>
+            <Label>Key</Label>
+            <Label>English</Label>
+            <Label>Kurdish</Label>
           </div>
           <div className="space-y-3">
             {filteredKeys.map(key => (
@@ -793,7 +791,7 @@ function SettingsPage() {
               <ArrowLeft />{' '}
             </Link>
           </Button>
-          <h1 className="text-2xl md:text-3xl font-bold">{t('settings')}</h1>
+          <h1 className="text-2xl md:text-3xl">{t('settings')}</h1>
         </header>
         <div className="flex items-center justify-center flex-1">
           {t('loading')}
@@ -1477,7 +1475,7 @@ function SettingsPage() {
                             themeColor={draftSettings.pdfSettings.report.reportColors?.[selectedReportType] || '#22c55e'}
                         >
                             <div className="p-6 flex-grow" style={{fontFamily: 'CustomPdfFont'}}>
-                                <h3 className="font-bold text-gray-800 mb-2">{t('sample_section')}</h3>
+                                <h3 className="mb-2">{t('sample_section')}</h3>
                                 <p className="text-sm text-gray-600 mb-4">{t('sample_body_text')}</p>
                                 <Table className={cn(currentPdfSettings.tableTheme === 'grid' && 'border')}>
                                     <TableHeader>

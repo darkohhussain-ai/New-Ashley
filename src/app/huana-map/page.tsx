@@ -28,7 +28,7 @@ const Section = ({ id, code, items, onClick, isHighlighted }: { id: string, code
     >
       <span className="text-xs font-mono">{code.split('-').slice(1).join('-')}</span>
       {itemCount > 0 && (
-        <span className="text-xs font-bold text-primary flex items-center gap-1 mt-1">
+        <span className="text-xs text-primary flex items-center gap-1 mt-1">
           <Box className="w-3 h-3" />
           {itemCount}
         </span>
@@ -146,7 +146,7 @@ export default function HuanaMapPage() {
                 <CardContent className="space-y-6">
                   {warehouse.floors.map(floor => (
                     <div key={floor.name}>
-                      <h3 className="font-semibold mb-2">{floor.name}</h3>
+                      <h3 className="mb-2">{floor.name}</h3>
                       <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
                         {floor.sections.map(section => (
                           <Section
@@ -167,7 +167,7 @@ export default function HuanaMapPage() {
           ) : (
             <div className="text-center py-16 border-2 border-dashed rounded-lg">
                 <Box className="mx-auto h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-4 text-lg font-medium">{t('no_huana_locations_found')}</h3>
+                <h3 className="mt-4 text-lg">{t('no_huana_locations_found')}</h3>
                 <p className="mt-2 text-sm text-muted-foreground">{t('no_huana_locations_found_desc')}</p>
                 <Button asChild className="mt-4"><Link href="/locations">{t('manage_locations')}</Link></Button>
             </div>

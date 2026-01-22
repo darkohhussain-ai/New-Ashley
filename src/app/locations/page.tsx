@@ -669,7 +669,7 @@ export default function LocationsPage() {
             {sortedLocations.ashley.length === 0 && sortedLocations.huana.length === 0 && !isLoading && (
                  <div className="text-center py-16 border-2 border-dashed rounded-lg">
                     <MapPin className="mx-auto h-12 w-12 text-muted-foreground" />
-                    <h3 className="mt-4 text-lg font-medium">{t('no_locations_match_filters')}</h3>
+                    <h3 className="mt-4 text-lg">{t('no_locations_match_filters')}</h3>
                     <p className="mt-2 text-sm text-muted-foreground">{t('no_locations_match_filters_desc')}</p>
                 </div>
             )}
@@ -678,7 +678,7 @@ export default function LocationsPage() {
               <Dialog open={open} onOpenChange={setOpen}>
                   <div className="text-center py-16 border-2 border-dashed rounded-lg">
                     <Warehouse className="mx-auto h-12 w-12 text-muted-foreground" />
-                    <h3 className="mt-4 text-lg font-medium">{t('no_locations_found')}</h3>
+                    <h3 className="mt-4 text-lg">{t('no_locations_found')}</h3>
                     <p className="mt-2 text-sm text-muted-foreground">{t('no_locations_found_desc')}</p>
                     <div className="mt-6 flex justify-center gap-4">
                       <Button onClick={handleGenerateAll} variant="outline" disabled={isGenerating}>

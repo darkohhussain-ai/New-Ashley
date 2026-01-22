@@ -5,7 +5,7 @@ import { useMemo } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Archive, Calendar as CalendarIcon, DollarSign, Eye, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { format, parseISO } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAppContext } from '@/context/app-provider';
@@ -30,7 +30,7 @@ export default function ExpenseArchivePage() {
           <Button variant="outline" size="icon" asChild>
             <Link href="/expenses"><ArrowLeft /></Link>
           </Button>
-          <h1 className="text-2xl md:text-3xl font-bold">{t('expense_report_archive')}</h1>
+          <h1 className="text-2xl md:text-3xl">{t('expense_report_archive')}</h1>
         </div>
         <Button asChild>
           <Link href="/expenses/add"><Plus className="mr-2" /> {t('create_report')}</Link>
@@ -59,7 +59,7 @@ export default function ExpenseArchivePage() {
                   <CardDescription>{report.reportName}</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-grow">
-                  <p className="flex items-center gap-2 text-2xl font-bold text-primary">
+                  <p className="flex items-center gap-2 text-2xl text-primary">
                     <DollarSign className="w-6 h-6" />
                     {formatCurrency(report.totalAmount)}
                   </p>
@@ -75,7 +75,7 @@ export default function ExpenseArchivePage() {
         ) : (
           <div className="text-center py-16 border-2 border-dashed rounded-lg">
             <Archive className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-medium">{t('no_expense_reports_found')}</h3>
+            <h3 className="mt-4 text-lg">{t('no_expense_reports_found')}</h3>
             <p className="mt-2 text-sm text-muted-foreground">{t('no_expense_reports_found_desc')}</p>
             <Button asChild className="mt-4"><Link href="/expenses/add">{t('create_report')}</Link></Button>
           </div>
