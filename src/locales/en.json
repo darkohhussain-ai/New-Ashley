@@ -405,7 +405,6 @@
   "custom_app_font": "Custom Application Font",
   "upload_font_file": "Upload Font File (.ttf, .woff)",
   "apply_font": "Apply Font",
-  "save_font": "Save Font",
   "font_preview": "Font Preview",
   "app_text": "Application Text",
   "pdf_template": "PDF Template",
@@ -619,5 +618,16 @@
   "report": "Report",
   "notes_optional_overtime": "Optional notes, e.g., reason for overtime",
   "contact_information": "Contact Information",
-  "employment_details": "Employment Details"
+  "employment_details": "Employment Details",
+  "save_font": "Save Font",
+  "images": "Images",
+  "app_logo": "App Logo",
+  "app_logo_desc": "The main logo for the header, login page, and corner display.",
+  "login_background": "Login Page Background",
+  "login_background_desc": "Background image for the main login screen.",
+  "main_dashboard_background": "Main Dashboard Background",
+  "main_dashboard_background_desc": "Background for the main dashboard area, behind the cards.",
+  "dashboard_banner_desc": "A banner image displayed at the top of the dashboard.",
+  "header_table_color": "Header/Table Color",
+  "no_dot": "No."
 }

@@ -26,19 +26,20 @@ const notoSansArabic = Noto_Sans_Arabic({
 
 function CustomFontInjector() {
     const { settings } = useAppContext();
-
-    if (!settings.customFont) {
-        return null;
-    }
+    
+    const fontFace = settings.customFont 
+        ? `@font-face { font-family: 'CustomAppFont'; src: url(${settings.customFont}); }` 
+        : '';
+    
+    const fontBody = settings.customFont 
+        ? `'CustomAppFont', var(--font-noto-arabic), Arial, sans-serif` 
+        : `Arial, var(--font-noto-arabic), sans-serif`;
 
     return (
         <style>{`
-            @font-face { 
-                font-family: 'CustomAppFont'; 
-                src: url(${settings.customFont}); 
-            }
+            ${fontFace}
             :root {
-                --font-body: 'CustomAppFont', var(--font-noto-arabic), Arial, sans-serif;
+                --font-body: ${fontBody};
             }
         `}</style>
     );

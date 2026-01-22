@@ -1,19 +1,22 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { CreditCard, Clock, Gift, Banknote, Settings, FileText, Calendar, Wallet, BarChart, ArrowLeft } from 'lucide-react';
+import { CreditCard, Clock, Gift, Banknote, Settings, FileText, Calendar, Wallet, BarChart, ArrowLeft, Printer, FileDown } from 'lucide-react';
 import { Card, CardContent, CardTitle, CardHeader, CardDescription } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/hooks/use-translation';
 import { useAuth } from '@/hooks/use-auth';
 import withAuth from '@/hooks/withAuth';
 import { useAppContext } from '@/context/app-provider';
-import { Bar, BarChart as RechartsBarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from 'recharts';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Progress } from '@/components/ui/progress';
 import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -28,6 +31,7 @@ function AshleyExpensesDashboard() {
   const { t } = useTranslation();
   const { hasPermission } = useAuth();
   const { expenses, overtime, bonuses, withdrawals } = useAppContext();
+  const contentRef = useRef<HTMLDivElement>(null);
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   
@@ -65,10 +69,34 @@ function AshleyExpensesDashboard() {
       { name: t('bonuses'), total: monthlyTotals.bonuses, fill: 'hsl(var(--chart-3))' },
       { name: t('cash_withdrawals'), total: monthlyTotals.withdrawals, fill: 'hsl(var(--chart-4))' },
   ];
+  
+  const grandTotal = chartData.reduce((sum, item) => sum + item.total, 0);
+
+  const handlePrint = () => window.print();
+
+  const handleDownloadPdf = async () => {
+    if (!contentRef.current) return;
+    const canvas = await html2canvas(contentRef.current, { scale: 2 });
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF('p', 'px', 'a4');
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+    const imgWidth = canvas.width;
+    const imgHeight = canvas.height;
+    const ratio = imgWidth / imgHeight;
+    let finalImgWidth = pdfWidth;
+    let finalImgHeight = finalImgWidth / ratio;
+    if (finalImgHeight > pdfHeight) {
+      finalImgHeight = pdfHeight;
+      finalImgWidth = finalImgHeight * ratio;
+    }
+    pdf.addImage(imgData, 'PNG', 0, 0, finalImgWidth, finalImgHeight);
+    pdf.save(`ashley-expenses-summary-${format(selectedDate || new Date(), 'yyyy-MM')}.pdf`);
+  };
 
   return (
-    <div className="h-[calc(100vh-80px)] flex flex-col">
-       <header className="bg-card border-b p-4">
+    <div className="h-[calc(100vh-80px)] flex flex-col print:h-auto">
+       <header className="bg-card border-b p-4 print:hidden">
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button variant="outline" size="icon" asChild>
@@ -78,38 +106,63 @@ function AshleyExpensesDashboard() {
             </Button>
             <h1 className="text-xl">{t('ashley_employees_management')}</h1>
           </div>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant={"outline"} className={cn("w-48 justify-start text-left", !selectedDate && "text-muted-foreground")}>
-                  <Calendar className="mr-2 h-4 w-4" />
-                  {selectedDate ? format(selectedDate, "MMMM yyyy") : <span>{t('pick_a_month')}</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="end">
-                <CalendarComponent mode="single" selected={selectedDate} onSelect={setSelectedDate} captionLayout="dropdown-nav" fromYear={2020} toYear={2040} />
-              </PopoverContent>
-            </Popover>
+            <div className='flex items-center gap-2'>
+                <Button onClick={handlePrint} variant="outline"><Printer className="mr-2 h-4 w-4"/> {t('print')}</Button>
+                <Button onClick={handleDownloadPdf} variant="outline"><FileDown className="mr-2 h-4 w-4"/> {t('download_pdf')}</Button>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant={"outline"} className={cn("w-48 justify-start text-left", !selectedDate && "text-muted-foreground")}>
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {selectedDate ? format(selectedDate, "MMMM yyyy") : <span>{t('pick_a_month')}</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="end">
+                    <CalendarComponent mode="single" selected={selectedDate} onSelect={setSelectedDate} captionLayout="dropdown-nav" fromYear={2020} toYear={2040} />
+                  </PopoverContent>
+                </Popover>
+            </div>
         </div>
       </header>
-      <main className='container mx-auto p-4 md:p-8 flex-1 overflow-y-auto'>
+      <main ref={contentRef} className='container mx-auto p-4 md:p-8 flex-1 overflow-y-auto'>
          <Card className="mb-8">
             <CardHeader>
                 <CardTitle>{t('monthly_overview')}</CardTitle>
                 <CardDescription>{t('monthly_overview_desc', { month: selectedDate ? format(selectedDate, 'MMMM yyyy') : ''})}</CardDescription>
             </CardHeader>
             <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                    <RechartsBarChart data={chartData}>
-                        <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false}/>
-                        <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${formatCurrency(value)}`}/>
-                        <Tooltip formatter={(value: number) => formatCurrency(value)} cursor={{fill: 'hsl(var(--muted))'}}/>
-                        <Legend />
-                        <Bar dataKey="total" name="Total Amount" radius={[4, 4, 0, 0]} />
-                    </RechartsBarChart>
-                </ResponsiveContainer>
+                {grandTotal > 0 ? (
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Category</TableHead>
+                                <TableHead>Total Amount</TableHead>
+                                <TableHead className="w-[40%]">Visualization</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {chartData.map(item => {
+                                const percentage = grandTotal > 0 ? (item.total / grandTotal) * 100 : 0;
+                                return (
+                                    <TableRow key={item.name}>
+                                        <TableCell className="font-medium">{item.name}</TableCell>
+                                        <TableCell>{formatCurrency(item.total)}</TableCell>
+                                        <TableCell>
+                                            <div className="flex items-center gap-2">
+                                                <Progress value={percentage} className="h-2" style={{'--chart-1': item.fill} as React.CSSProperties} />
+                                                <span className="text-xs text-muted-foreground">{percentage.toFixed(0)}%</span>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            })}
+                        </TableBody>
+                    </Table>
+                ) : (
+                    <p className="text-center text-muted-foreground py-8">{t('no_records_found_for_month', {month: selectedDate ? format(selectedDate, 'MMMM yyyy') : t('the_selected_month')})}</p>
+                )}
             </CardContent>
          </Card>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 print:hidden">
           {menuItems.filter(item => hasPermission(item.permission)).map((item) => (
             <Link key={item.title} href={item.href} className="group block" passHref>
                 <Card className="h-48 flex flex-col justify-between p-6 transition-all hover:shadow-lg hover:-translate-y-1 border-2 border-transparent hover:border-primary/50">

@@ -360,7 +360,7 @@ function LoginTextEditor() {
   );
 }
 
-function TranslationEditor() {
+function TranslationEditor({ onSave }: { onSave: () => void }) {
   const { t } = useTranslation();
   const langContext = React.useContext(LanguageContext);
   const { settings, setSettings } = useAppContext();
@@ -456,6 +456,9 @@ function TranslationEditor() {
               </div>
             )}
           </CardContent>
+          <CardFooter>
+            <Button onClick={onSave}><Save className="mr-2 h-4 w-4" />{t('save_font')}</Button>
+          </CardFooter>
         </Card>
         <div className="flex gap-4">
           <div className="relative flex-grow">
@@ -865,7 +868,7 @@ function SettingsPage() {
             </TabsTrigger>
             <TabsTrigger value="images">
               <ImageIcon className="mr-2" />
-              Images
+              {t('images')}
             </TabsTrigger>
             <TabsTrigger value="language">
               <Languages className="mr-2" />
@@ -1060,12 +1063,9 @@ function SettingsPage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <ImageIconLucide /> App Logo
+                    <ImageIconLucide /> {t('app_logo')}
                   </CardTitle>
-                  <CardDescription>
-                    The main logo for the header, login page, and corner
-                    display.
-                  </CardDescription>
+                  <CardDescription>{t('app_logo_desc')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="relative w-full h-24 mt-2 border rounded-md p-2 flex justify-center items-center bg-muted/30">
@@ -1096,11 +1096,9 @@ function SettingsPage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <LogIn /> Login Page Background
+                    <LogIn /> {t('login_background')}
                   </CardTitle>
-                  <CardDescription>
-                    Background image for the main login screen.
-                  </CardDescription>
+                  <CardDescription>{t('login_background_desc')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="relative w-full h-24 mt-2 border rounded-md p-2 flex justify-center items-center bg-muted/30 overflow-hidden">
@@ -1135,11 +1133,9 @@ function SettingsPage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <LayoutDashboard /> Main Dashboard Background
+                    <LayoutDashboard /> {t('main_dashboard_background')}
                   </CardTitle>
-                  <CardDescription>
-                    Background for the main dashboard area, behind the cards.
-                  </CardDescription>
+                  <CardDescription>{t('main_dashboard_background_desc')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="relative w-full h-24 mt-2 border rounded-md p-2 flex justify-center items-center bg-muted/30 overflow-hidden">
@@ -1174,11 +1170,9 @@ function SettingsPage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <ImageIcon /> Dashboard Banner
+                    <ImageIcon /> {t('dashboard_banner')}
                   </CardTitle>
-                  <CardDescription>
-                    A banner image displayed at the top of the dashboard.
-                  </CardDescription>
+                  <CardDescription>{t('dashboard_banner_desc')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="relative w-full h-24 mt-2 border rounded-md p-2 flex justify-center items-center bg-muted/30 overflow-hidden">
@@ -1215,7 +1209,7 @@ function SettingsPage() {
 
           <TabsContent value="language" className="pt-6 space-y-6">
             <LoginTextEditor />
-            <TranslationEditor />
+            <TranslationEditor onSave={handleSave} />
           </TabsContent>
 
           <TabsContent value="pdf" className="pt-6">
@@ -1394,7 +1388,7 @@ function SettingsPage() {
                     ) : activePdfTab === 'invoice' ? (
                         <div className="space-y-4">
                            <div className="flex items-center justify-between">
-                                <Label htmlFor="secondary-color">Header/Table Color</Label>
+                                <Label htmlFor="secondary-color">{t('header_table_color')}</Label>
                                 <Input
                                 id="secondary-color"
                                 type="color"
@@ -1567,5 +1561,3 @@ function SettingsPage() {
 }
 
 export default withAuth(SettingsPage);
-
-    

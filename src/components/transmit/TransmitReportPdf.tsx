@@ -52,25 +52,25 @@ export const TransmitReportPdf = ({ transfer, items, settings, invoiceNumber, to
                 <Table>
                     <TableHeader>
                         <TableRow style={{ backgroundColor: settings.secondaryColor || '#0F172A', color: 'white'}} className="hover:bg-gray-800">
-                            <TableHead className="w-[30px] text-white text-[10px] py-1 h-auto">No.</TableHead>
-                            <TableHead className="text-white text-[10px] py-1 h-auto">{t('model')}</TableHead>
+                            <TableHead className="w-[30px] text-white text-center text-[10px] py-1 h-auto">{t('no_dot')}</TableHead>
+                            <TableHead className="text-white text-center text-[10px] py-1 h-auto">{t('model')}</TableHead>
                             <TableHead className="w-[50px] text-center text-white text-[10px] py-1 h-auto">{t('quantity')}</TableHead>
-                            <TableHead className="text-white text-[10px] py-1 h-auto">{t('invoice_no')}</TableHead>
-                            <TableHead className="text-white text-[10px] py-1 h-auto">{t('storage')}</TableHead>
-                            <TableHead className="text-white text-[10px] py-1 h-auto">{t('notes')}</TableHead>
-                            <TableHead className="w-[80px] text-right text-white text-[10px] py-1 h-auto">{t('request_date')}</TableHead>
+                            <TableHead className="text-white text-center text-[10px] py-1 h-auto">{t('invoice_no')}</TableHead>
+                            <TableHead className="text-white text-center text-[10px] py-1 h-auto">{t('storage')}</TableHead>
+                            <TableHead className="text-white text-center text-[10px] py-1 h-auto">{t('notes')}</TableHead>
+                            <TableHead className="w-[80px] text-center text-white text-[10px] py-1 h-auto">{t('request_date')}</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {items.map((item, index) => (
                             <TableRow key={item.id} className={cn('text-[10px] leading-snug', settings.tableTheme === 'striped' && 'odd:bg-gray-50', item.storage === 'Huana' && 'bg-yellow-100/70')}>
                                 <TableCell className="text-center py-1">{index + 1}</TableCell>
-                                <TableCell className="font-semibold py-1">{item.model}</TableCell>
+                                <TableCell className="font-semibold py-1 text-center">{item.model}</TableCell>
                                 <TableCell className="text-center py-1">{item.quantity}</TableCell>
-                                <TableCell className="py-1">{item.invoiceNo || 'N/A'}</TableCell>
-                                <TableCell className="py-1">{item.storage || 'N/A'}</TableCell>
-                                <TableCell className="text-gray-600 py-1">{item.notes || 'N/A'}</TableCell>
-                                <TableCell className="text-right py-1">{item.requestDate ? format(parseISO(item.requestDate), 'yyyy-MM-dd') : 'N/A'}</TableCell>
+                                <TableCell className="text-center py-1">{item.invoiceNo || 'N/A'}</TableCell>
+                                <TableCell className="text-center py-1">{item.storage || 'N/A'}</TableCell>
+                                <TableCell className="text-gray-600 py-1 text-center">{item.notes || 'N/A'}</TableCell>
+                                <TableCell className="text-center py-1">{item.requestDate ? format(parseISO(item.requestDate), 'yyyy-MM-dd') : 'N/A'}</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
