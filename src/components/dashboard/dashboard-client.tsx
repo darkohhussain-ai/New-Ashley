@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -17,6 +16,7 @@ import { useAppContext } from '@/context/app-provider';
 import { useTranslation } from '@/hooks/use-translation';
 import { DashboardCard } from './dashboard-card';
 import { useAuth } from '@/hooks/use-auth';
+import { Loader2 } from 'lucide-react';
 
 const allMenuItems = [
     {
@@ -101,17 +101,16 @@ const NewsTicker = () => {
 export function DashboardClient() {
   const { t } = useTranslation();
   const { hasPermission } = useAuth();
-  const { settings } = useAppContext();
-
-  const [isMounted, setIsMounted] = useState(false);
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
+  const { settings, isLoading } = useAppContext();
 
   const menuItems = allMenuItems.filter(item => hasPermission(item.permission));
   
-  if (!isMounted) {
-      return null;
+  if (isLoading) {
+      return (
+        <div className="flex h-[calc(100vh-80px)] w-full items-center justify-center bg-background">
+            <Loader2 className="h-16 w-16 animate-spin text-primary" />
+        </div>
+      );
   }
 
   return (

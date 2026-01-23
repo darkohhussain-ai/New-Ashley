@@ -143,6 +143,7 @@ export type ItemForTransfer = {
   notes?: string;
   transferId?: string | null;
   createdAt: string;
+  requestDate?: string;
   invoiceNo?: string;
   storage?: string;
 };

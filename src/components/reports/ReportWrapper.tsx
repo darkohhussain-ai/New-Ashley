@@ -20,8 +20,8 @@ export function ReportWrapper({ title, date, logoSrc, themeColor = '#333333', ch
   const useKurdish = language === 'ku';
 
   // Define font styles dynamically
-  const fontFace = settings.customFont ? `@font-face { font-family: 'CustomPdfFont'; src: url(${settings.customFont}); }` : '';
-  const fontFamily = settings.customFont ? 'CustomPdfFont, Arial, sans-serif' : 'Arial, sans-serif';
+  const fontFace = settings?.customFont ? `@font-face { font-family: 'CustomAppFont'; src: url(${settings.customFont}); }` : '';
+  const fontFamily = settings?.customFont ? 'CustomAppFont, Arial, sans-serif' : 'Arial, sans-serif';
 
   return (
     <div 
