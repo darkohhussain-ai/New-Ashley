@@ -99,7 +99,7 @@
   "loading": "Loading...",
   "number_of_loads": "Number of Loads",
   "notes_optional": "Optional notes...",
-  "bonus_rate": "Bonus rate: {rate} / load",
+  "bonus_rate": "Bonus rate: {rate} / for each load",
   "add_record": "Add Record",
   "bonus_records_for_date": "Bonus Records for {date}",
   "loading_records": "Loading records...",
@@ -630,5 +630,18 @@
   "dashboard_banner_desc": "A banner image displayed at the top of the dashboard.",
   "header_table_color": "Header/Table Color",
   "no_dot": "No.",
-  "other_taxi": "Other Taxi"
+  "other_taxi": "Other Taxi",
+  "reset_system": "Reset System",
+  "reset_system_desc": "This is an irreversible action that will reset all application data to its initial state.",
+  "reset_system_warning": "Warning: This will delete all employees, reports, items, and other data you have entered.",
+  "reset_confirmation_prompt": "To confirm, please type \"RESET\" in the box below.",
+  "type_reset_to_confirm": "Type RESET to confirm",
+  "reset_application": "Reset Application",
+  "data_exported_successfully": "Data exported successfully.",
+  "export_failed": "Export Failed",
+  "export_failed_desc": "Could not export data. Please try again.",
+  "data_imported_successfully": "Data imported successfully!",
+  "page_will_reload": "The page will now reload.",
+  "import_failed": "Import Failed",
+  "invalid_or_corrupted_file": "The selected file is invalid or corrupted."
 }

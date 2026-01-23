@@ -515,7 +515,7 @@ function SettingsPage() {
   const { toast } = useToast();
   const { theme } = useTheme();
   const { t } = useTranslation();
-  const { settings, setSettings } = useAppContext();
+  const { settings, setSettings, setEmployees, setItems, setExcelFiles, setLocations, setExpenses, setExpenseReports, setOvertime, setBonuses, setWithdrawals, setReceipts, setItemCategories, setTransfers, setTransferItems, setMarketingFeedbacks, setEvaluationQuestions, setUsers, setRoles } = useAppContext();
   const storage = useStorage();
 
   const [draftSettings, setDraftSettings] =
@@ -527,6 +527,7 @@ function SettingsPage() {
     useState<keyof NonNullable<AllPdfSettings['report']['reportColors']>>('general');
   const [importFile, setImportFile] = useState<File | null>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
+  const [resetConfirmText, setResetConfirmText] = useState("");
 
   useEffect(() => {
     if (settings) {
@@ -713,12 +714,31 @@ function SettingsPage() {
   };
 
   const handleResetToDefault = () => {
+    setEmployees(initialSettings.employees);
+    setItems(initialSettings.items);
+    setExcelFiles(initialSettings.excelFiles);
+    setLocations(initialSettings.locations);
+    setExpenses(initialSettings.expenses);
+    setExpenseReports(initialSettings.expenseReports);
+    setOvertime(initialSettings.overtime);
+    setBonuses(initialSettings.bonuses);
+    setWithdrawals(initialSettings.withdrawals);
+    setReceipts(initialSettings.receipts);
+    setItemCategories(initialSettings.itemCategories);
+    setTransfers(initialSettings.transfers);
+    setTransferItems(initialSettings.transferItems);
+    setMarketingFeedbacks(initialSettings.marketingFeedbacks);
+    setEvaluationQuestions(initialSettings.evaluationQuestions);
+    setUsers(initialSettings.users);
+    setRoles(initialSettings.roles);
     setSettings(initialSettings);
     setDraftSettings(initialSettings);
+
     toast({
       title: t('settings_reset'),
       description: t('settings_reset_desc'),
     });
+    setResetConfirmText("");
   };
 
   const handleExport = async () => {
@@ -826,28 +846,6 @@ function SettingsPage() {
             <h1 className="text-xl">{t('settings')}</h1>
           </div>
           <div className="ml-auto flex items-center gap-4">
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="outline">
-                  <RefreshCcw className="mr-2 h-4 w-4" />{' '}
-                  {t('reset_all_settings')}
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>{t('reset_all_settings_q')}</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    {t('reset_all_settings_desc')}
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleResetToDefault}>
-                    {t('reset_settings')}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
             <Button onClick={handleSave} disabled={!isDirty}>
               <Save className="mr-2 h-4 w-4" /> {t('save_all_changes')}
             </Button>
@@ -1516,7 +1514,7 @@ function SettingsPage() {
             </div>
           </TabsContent>
 
-          <TabsContent value="data" className="pt-6">
+          <TabsContent value="data" className="pt-6 space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
@@ -1550,6 +1548,46 @@ function SettingsPage() {
                   </div>
                 </div>
               </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle className="text-destructive flex items-center gap-2">{t('reset_system')}</CardTitle>
+                    <CardDescription>{t('reset_system_desc')}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-destructive font-bold">{t('reset_system_warning')}</p>
+                </CardContent>
+                <CardFooter>
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="destructive">
+                                <RefreshCcw className="mr-2 h-4 w-4" /> {t('reset_application')}
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
+                                <AlertDialogDescription>{t('reset_confirmation_prompt')}</AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <div className="py-2">
+                                <Input 
+                                    value={resetConfirmText}
+                                    onChange={(e) => setResetConfirmText(e.target.value)}
+                                    placeholder={t('type_reset_to_confirm')}
+                                />
+                            </div>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel onClick={() => setResetConfirmText("")}>{t('cancel')}</AlertDialogCancel>
+                                <AlertDialogAction
+                                    disabled={resetConfirmText !== "RESET"}
+                                    onClick={handleResetToDefault}
+                                >
+                                    {t('reset_application')}
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </CardFooter>
             </Card>
           </TabsContent>
         </Tabs>
