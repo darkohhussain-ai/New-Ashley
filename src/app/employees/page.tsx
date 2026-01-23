@@ -33,7 +33,6 @@ import { Separator } from "@/components/ui/separator"
 import { useTranslation } from "@/hooks/use-translation"
 import { translateNameToKurdish } from "@/ai/flows/translate-name-flow"
 import { Loader2 } from "lucide-react";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { useStorage } from "@/firebase";
 import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
 import { EmployeeReportPdf } from "@/components/employees/EmployeeReportPdf";
@@ -339,7 +338,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
             </div>
             <div className="w-full h-full flex flex-col">
                 <header className="flex items-center justify-between gap-2 p-4 border-b">
-                    <Button variant="outline" size="icon" className="lg:hidden" onClick={onDeselect}>
+                    <Button variant="outline" size="icon" className="md:hidden" onClick={onDeselect}>
                         <ArrowLeft />
                     </Button>
                     <div className="flex-1 flex items-center justify-end gap-2 flex-wrap">
@@ -682,7 +681,6 @@ function EmployeesPage() {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
   const [isAddDialogOpen, setAddDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const isMobile = useIsMobile();
 
   const addEmployee = (employeeData: Omit<Employee, 'id'>) => {
     const newEmployee: Employee = {
@@ -733,7 +731,7 @@ function EmployeesPage() {
   useEffect(() => {
     const allSorted = [...warehouseEmployees, ...marketingEmployees];
     // Only auto-select on desktop if no employee is currently selected.
-    if (!isMobile && !selectedEmployeeId && allSorted.length > 0) {
+    if (typeof window !== 'undefined' && window.innerWidth >= 768 && !selectedEmployeeId && allSorted.length > 0) {
       setSelectedEmployeeId(allSorted[0].id);
     }
     // This part handles when a selected employee is filtered out or deleted.
@@ -741,7 +739,7 @@ function EmployeesPage() {
         // Select the first available employee, or null if the list is now empty.
         setSelectedEmployeeId(allSorted[0]?.id || null);
     }
-  }, [warehouseEmployees, marketingEmployees, selectedEmployeeId, isMobile]);
+  }, [warehouseEmployees, marketingEmployees, selectedEmployeeId]);
   
   const renderEmployeeList = (list: Employee[], title: string) => (
     <>
@@ -786,10 +784,8 @@ function EmployeesPage() {
 
         <div className="flex flex-1 overflow-hidden">
             <aside className={cn(
-                "w-full flex-col border-r lg:w-full lg:max-w-xs",
-                selectedEmployeeId && isMobile ? "hidden" : "flex",
-                !selectedEmployeeId && !isMobile && "flex",
-                selectedEmployeeId && !isMobile && "hidden lg:flex"
+                "flex w-full flex-col border-r md:max-w-xs",
+                selectedEmployeeId ? "hidden md:flex" : "flex"
             )}>
                 <div className="p-4 space-y-4 border-b">
                     <div className="relative">
@@ -818,7 +814,7 @@ function EmployeesPage() {
             
             <main className={cn(
                 "flex-1 overflow-y-auto",
-                 selectedEmployeeId ? "block" : "hidden lg:flex lg:items-center lg:justify-center"
+                selectedEmployeeId ? "block" : "hidden md:flex md:items-center md:justify-center"
             )}>
                 {selectedEmployeeId ? (
                     <EmployeeDetailView employeeId={selectedEmployeeId} onDeselect={() => setSelectedEmployeeId(null)}/>
