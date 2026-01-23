@@ -240,16 +240,45 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
     const handlePrintCard = async () => {
         if (!cardPdfRef.current || !employee) return;
 
-        const pdf = new jsPDF({ 
+        const pdf = new jsPDF({
             orientation: 'landscape',
-            unit: 'px', 
-            format: [600, 360]
+            unit: 'px',
+            format: 'a4'
         });
 
-        const canvas = await html2canvas(cardPdfRef.current, { scale: 3, useCORS: true, backgroundColor: null });
+        const canvas = await html2canvas(cardPdfRef.current, {
+            scale: 3,
+            useCORS: true,
+            backgroundColor: null,
+            onclone: (document) => {
+                if (settings?.customFont) {
+                    const style = document.createElement('style');
+                    style.innerHTML = `@font-face { font-family: 'CustomAppFont'; src: url(${settings.customFont}); }`;
+                    document.head.appendChild(style);
+                }
+            }
+        });
+
         const imgData = canvas.toDataURL('image/png');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
         
-        pdf.addImage(imgData, 'PNG', 0, 0, 600, 360);
+        const cardWidth = 600;
+        const cardHeight = 360;
+        const ratio = cardWidth / cardHeight;
+
+        let finalWidth = pdfWidth;
+        let finalHeight = finalWidth / ratio;
+
+        if (finalHeight > pdfHeight) {
+            finalHeight = pdfHeight;
+            finalWidth = finalHeight * ratio;
+        }
+
+        const x = (pdfWidth - finalWidth) / 2;
+        const y = (pdfHeight - finalHeight) / 2;
+        
+        pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
         pdf.save(`${employee.name.replace(/ /g, '_')}_card.pdf`);
     };
 
@@ -283,7 +312,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
         
         if (finalImgHeight > pdfHeight) {
             finalImgHeight = pdfHeight;
-            finalImgWidth = finalImgHeight * ratio;
+            finalWidth = finalImgHeight * ratio;
         }
 
         const x = (pdfWidth - finalImgWidth) / 2;
@@ -730,14 +759,12 @@ function EmployeesPage() {
 
   useEffect(() => {
     const allSorted = [...warehouseEmployees, ...marketingEmployees];
-    // Only auto-select on desktop if no employee is currently selected.
-    if (typeof window !== 'undefined' && window.innerWidth >= 768 && !selectedEmployeeId && allSorted.length > 0) {
-      setSelectedEmployeeId(allSorted[0].id);
-    }
-    // This part handles when a selected employee is filtered out or deleted.
-    if (selectedEmployeeId && !allSorted.some(e => e.id === selectedEmployeeId)) {
-        // Select the first available employee, or null if the list is now empty.
+    if (typeof window !== 'undefined' && window.innerWidth >= 768) {
+      if (!selectedEmployeeId && allSorted.length > 0) {
+        setSelectedEmployeeId(allSorted[0].id);
+      } else if (selectedEmployeeId && !allSorted.some(e => e.id === selectedEmployeeId)) {
         setSelectedEmployeeId(allSorted[0]?.id || null);
+      }
     }
   }, [warehouseEmployees, marketingEmployees, selectedEmployeeId]);
   
@@ -784,7 +811,7 @@ function EmployeesPage() {
 
         <div className="flex flex-1 overflow-hidden">
             <aside className={cn(
-                "flex w-full flex-col border-r md:max-w-xs",
+                "w-full flex-col border-r md:w-auto md:max-w-xs",
                 selectedEmployeeId ? "hidden md:flex" : "flex"
             )}>
                 <div className="p-4 space-y-4 border-b">

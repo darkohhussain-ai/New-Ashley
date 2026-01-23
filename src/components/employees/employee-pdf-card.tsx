@@ -29,7 +29,7 @@ export function EmployeePdfCard({ employee, settings }: EmployeePdfCardProps) {
 
 
   return (
-    <div className="bg-white text-gray-800 w-[600px] h-[360px] font-sans rounded-lg shadow-lg overflow-hidden border border-gray-200 flex" style={{ fontFamily: (settings.customFont && useKurdish) ? 'CustomAppFont' : 'Arial, sans-serif' }}>
+    <div className="bg-white text-gray-800 w-[600px] h-[360px] font-sans rounded-lg shadow-lg overflow-hidden border border-gray-200 flex" style={{ fontFamily: settings.customFont ? 'CustomAppFont' : 'Arial, sans-serif' }}>
       
       {/* Left Side: Gradient Background */}
       <div 
