@@ -1,38 +1,63 @@
 
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Archive, Calendar as CalendarIcon, Truck, User, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isSameMonth } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAppContext } from '@/context/app-provider';
 import { useTranslation } from '@/hooks/use-translation';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
 
 
 export default function TransferArchivePage() {
   const { transfers } = useAppContext();
   const { t } = useTranslation();
+  const [selectedMonth, setSelectedMonth] = useState<Date | undefined>(new Date());
+  
   const isLoading = !transfers;
 
   const sortedTransfers = useMemo(() => {
-    if (!transfers) return [];
+    if (!transfers || !selectedMonth) return [];
     return transfers
-      .filter(t => t.transferDate && !isNaN(parseISO(t.transferDate).getTime()))
+      .filter(t => t.transferDate && !isNaN(parseISO(t.transferDate).getTime()) && isSameMonth(parseISO(t.transferDate), selectedMonth))
       .sort((a, b) => parseISO(b.transferDate).getTime() - parseISO(a.transferDate).getTime());
-  }, [transfers]);
+  }, [transfers, selectedMonth]);
 
   return (
     <div className="h-screen bg-background text-foreground flex flex-col">
-      <header className="p-4 md:p-8 flex items-center gap-4 border-b">
-        <Button variant="outline" size="icon" asChild>
-          <Link href="/transmit">
-            <ArrowLeft />
-          </Link>
-        </Button>
-        <h1 className="text-2xl md:text-3xl font-bold">{t('view_transfers')}</h1>
+      <header className="p-4 md:p-8 flex items-center justify-between gap-4 border-b">
+        <div className="flex items-center gap-4">
+          <Button variant="outline" size="icon" asChild>
+            <Link href="/transmit">
+              <ArrowLeft />
+            </Link>
+          </Button>
+          <h1 className="text-2xl md:text-3xl font-bold">{t('view_transfers')}</h1>
+        </div>
+         <div className="flex items-center gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant={"outline"} className={cn("w-48 justify-start text-left font-normal", !selectedMonth && "text-muted-foreground")}>
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {selectedMonth ? format(selectedMonth, "MMMM yyyy") : <span>{t('pick_a_month')}</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  mode="single"
+                  selected={selectedMonth}
+                  onSelect={setSelectedMonth}
+                  captionLayout="dropdown-nav" fromYear={2020} toYear={2040}
+                />
+              </PopoverContent>
+            </Popover>
+        </div>
       </header>
       <main className="flex-1 overflow-y-auto p-4 md:p-8">
         {isLoading ? (
@@ -56,8 +81,13 @@ export default function TransferArchivePage() {
             {sortedTransfers.map(transfer => (
                 <Card key={transfer.id} className="hover:border-primary/50 hover:shadow-lg transition-all h-full flex flex-col">
                     <CardHeader>
-                    <CardTitle className="text-lg leading-tight">{transfer.cargoName}</CardTitle>
-                    <CardDescription>{t('to_destination')}: {transfer.destinationCity}</CardDescription>
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <CardTitle className="text-lg leading-tight">{transfer.cargoName}</CardTitle>
+                                <CardDescription>{t('to_destination')}: {transfer.destinationCity}</CardDescription>
+                            </div>
+                             <span className="text-xs font-mono text-muted-foreground mt-1">#{transfer.invoiceNumber.toString().padStart(6, '0')}</span>
+                        </div>
                     </CardHeader>
                     <CardContent className="flex-grow space-y-3 text-sm text-muted-foreground">
                     <p className="flex items-center gap-2"><CalendarIcon className="w-4 h-4 text-primary" /> {transfer.transferDate ? format(parseISO(transfer.transferDate), 'PPP') : 'N/A'}</p>
