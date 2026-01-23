@@ -4,7 +4,7 @@
 import { useMemo, useRef, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Calendar, Truck, FileText, User, Warehouse, Printer, Search, Edit, Trash2, Save, X } from 'lucide-react';
+import { ArrowLeft, Calendar, Truck, FileText, User, Warehouse, Printer, Search, Edit, Trash2, Save, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { format, parseISO } from 'date-fns';
@@ -29,13 +29,12 @@ export default function ViewTransferPage() {
   const router = useRouter();
   const { t, language } = useTranslation();
   const { toast } = useToast();
-  const { transfers, setTransfers, transferItems, setTransferItems, settings } = useAppContext();
-  const { pdfSettings, customFont, appLogo } = settings;
+  const { transfers, setTransfers, transferItems, setTransferItems, settings, isLoading: isAppLoading } = useAppContext();
 
   const pdfRef = useRef<HTMLDivElement>(null);
   
-  const transfer = useMemo(() => transfers.find(t => t.id === transferId), [transfers, transferId]);
-  const items = useMemo(() => transferItems.filter(i => i.transferId === transferId), [transferItems, transferId]);
+  const transfer = useMemo(() => transfers?.find(t => t.id === transferId), [transfers, transferId]);
+  const items = useMemo(() => transferItems?.filter(i => i.transferId === transferId), [transferItems, transferId]);
   
   const [searchQuery, setSearchQuery] = useState('');
   const [isEditing, setIsEditing] = useState(false);
@@ -48,12 +47,10 @@ export default function ViewTransferPage() {
   }, [transfer]);
   
   const totalYearlyInvoices = useMemo(() => {
-      if (!transfer) return 0;
+      if (!transfer || !transfers) return 0;
       const currentYear = new Date(transfer.transferDate).getFullYear();
       return transfers.filter(t => t.transferDate && new Date(t.transferDate).getFullYear() === currentYear).length;
   }, [transfers, transfer]);
-
-  const isLoading = !transfer || !items;
   
   const filteredItems = useMemo(() => {
     if (!items) return [];
@@ -66,14 +63,14 @@ export default function ViewTransferPage() {
   }, [items, searchQuery]);
 
   const handleSave = () => {
-    if (!editableTransfer) return;
+    if (!editableTransfer || !transfers) return;
     setTransfers(prev => prev.map(t => t.id === editableTransfer.id ? editableTransfer : t));
     toast({ title: "Transfer Updated", description: "The transfer details have been saved." });
     setIsEditing(false);
   };
 
   const handleDelete = () => {
-    if (!transfer) return;
+    if (!transfer || !transferItems || !transfers) return;
     // Disassociate items
     setTransferItems(prev => prev.map(item =>
         item.transferId === transfer.id ? { ...item, transferId: null } : item
@@ -85,8 +82,9 @@ export default function ViewTransferPage() {
   };
 
   const handleDownloadPdf = async () => {
-    if (!pdfRef.current || !transfer || !items) return;
+    if (!pdfRef.current || !transfer || !items || !settings) return;
     
+    const { pdfSettings, customFont } = settings;
     const pdfContentEl = pdfRef.current;
     const scale = pdfSettings.invoice?.scale ?? 2;
 
@@ -97,7 +95,7 @@ export default function ViewTransferPage() {
       onclone: (document) => {
         if (customFont && language === 'ku') {
             const style = document.createElement('style');
-            style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
+            style.innerHTML = `@font-face { font-family: 'CustomAppFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomAppFont' !important; }`;
             document.head.appendChild(style);
         }
       }
@@ -133,6 +131,18 @@ export default function ViewTransferPage() {
     window.print();
   };
 
+  if (isAppLoading) {
+    return (
+        <div className="p-4 md:p-8 space-y-6">
+            <Skeleton className="h-10 w-48" />
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-64 w-full" />
+        </div>
+    );
+  }
+
+  const { pdfSettings, appLogo } = settings;
+
   return (
     <>
     {transfer && (
@@ -140,7 +150,7 @@ export default function ViewTransferPage() {
           <div ref={pdfRef}>
               <TransmitReportPdf
                 transfer={transfer}
-                items={items}
+                items={items || []}
                 settings={{...pdfSettings.invoice, logo: pdfSettings.invoice.logo ?? appLogo}}
                 invoiceNumber={transfer.invoiceNumber}
                 totalYearlyInvoices={totalYearlyInvoices}
@@ -191,12 +201,7 @@ export default function ViewTransferPage() {
           </div>
       </header>
 
-      {isLoading ? (
-        <div className="space-y-6">
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-64 w-full" />
-        </div>
-      ) : transfer && items ? (
+      {transfer && items ? (
         <div className="space-y-8">
             <Card>
                 <CardHeader>
