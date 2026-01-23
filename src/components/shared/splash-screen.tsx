@@ -19,7 +19,7 @@ export function SplashScreen() {
               src={logo}
               alt="Loading..."
               fill
-              objectFit="contain"
+              className="object-contain"
               priority
               unoptimized
             />

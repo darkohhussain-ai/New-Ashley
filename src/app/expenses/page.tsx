@@ -72,7 +72,25 @@ function ExpensesDashboardPage() {
         const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF('p', 'px', 'a4');
         const pdfWidth = pdf.internal.pageSize.getWidth();
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfWidth * (canvas.height / canvas.width));
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
+        const ratio = imgWidth / pdfWidth;
+        const scaledImgHeight = imgHeight / ratio;
+
+        let position = 0;
+        let heightLeft = scaledImgHeight;
+
+        pdf.addImage(canvas, 'PNG', 0, position, pdfWidth, scaledImgHeight);
+        heightLeft -= pdfHeight;
+
+        while (heightLeft > 0) {
+          position -= pdfHeight;
+          pdf.addPage();
+          pdf.addImage(canvas, 'PNG', 0, position, pdfWidth, scaledImgHeight);
+          heightLeft -= pdfHeight;
+        }
+        
         pdf.save(`expenses-summary-${format(selectedDate || new Date(), 'yyyy-MM')}.pdf`);
     };
 
@@ -128,7 +146,7 @@ function ExpensesDashboardPage() {
                                                 <TableCell>{formatCurrency(item.value)}</TableCell>
                                                 <TableCell>
                                                     <div className="flex items-center gap-2">
-                                                        <Progress value={percentage} className="h-2" style={{'--chart-1': COLORS[index % COLORS.length]} as React.CSSProperties} />
+                                                        <Progress value={percentage} style={{ '--progress-indicator-color': COLORS[index % COLORS.length] } as React.CSSProperties} />
                                                         <span className="text-xs text-muted-foreground">{percentage.toFixed(0)}%</span>
                                                     </div>
                                                 </TableCell>
