@@ -263,22 +263,9 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = pdf.internal.pageSize.getHeight();
         
-        const cardWidth = 600;
-        const cardHeight = 360;
-        const ratio = cardWidth / cardHeight;
-
-        let finalWidth = pdfWidth;
-        let finalHeight = finalWidth / ratio;
-
-        if (finalHeight > pdfHeight) {
-            finalHeight = pdfHeight;
-            finalWidth = finalHeight * ratio;
-        }
-
-        const x = (pdfWidth - finalWidth) / 2;
-        const y = (pdfHeight - finalHeight) / 2;
+        // Stretch to fill the entire page, ignoring original aspect ratio
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
         
-        pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
         pdf.save(`${employee.name.replace(/ /g, '_')}_card.pdf`);
     };
 
