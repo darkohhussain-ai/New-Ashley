@@ -36,7 +36,7 @@ export default function PdfViewPage() {
     const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = pdf.internal.pageSize.getHeight();
-    
+
     const canvas = await html2canvas(pdfContentRef.current, { 
       scale: 2, 
       useCORS: true, 
@@ -44,7 +44,7 @@ export default function PdfViewPage() {
       onclone: (document) => {
         if (customFont && language === 'ku') {
             const style = document.createElement('style');
-            style.innerHTML = `\'\'\'@font-face { font-family: 'CustomPdfFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }\'\'\'`;
+            style.innerHTML = `\'\'\'@font-face { font-family: 'CustomAppFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomAppFont' !important; }\'\'\'`;
             document.head.appendChild(style);
         }
       }

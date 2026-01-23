@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -394,6 +393,8 @@ export default function FileDetailPage() {
     if (!file || !pdfCardRef.current) return;
     
     const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
     
     const canvas = await html2canvas(pdfCardRef.current, {
         scale: 2, 
@@ -402,31 +403,30 @@ export default function FileDetailPage() {
         onclone: (document) => {
           if (customFont && language === 'ku') {
             const style = document.createElement('style');
-            style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
+            style.innerHTML = `\'\'\'@font-face { font-family: 'CustomPdfFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }\'\'\'`;
             document.head.appendChild(style);
           }
         }
     });
     
-    const imgData = canvas.toDataURL('image/png');
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
     const imgWidth = canvas.width;
     const imgHeight = canvas.height;
-    const ratio = imgWidth / imgHeight;
-    
-    let finalImgWidth = pdfWidth;
-    let finalImgHeight = finalImgWidth / ratio;
+    const ratio = imgWidth / pdfWidth;
+    const scaledImgHeight = imgHeight / ratio;
 
-    if (finalImgHeight > pdfHeight) {
-      finalImgHeight = pdfHeight;
-      finalImgWidth = finalImgHeight * ratio;
+    let heightLeft = scaledImgHeight;
+    let position = 0;
+
+    pdf.addImage(canvas, 'PNG', 0, position, pdfWidth, scaledImgHeight);
+    heightLeft -= pdfHeight;
+
+    while (heightLeft > 0) {
+      position -= pdfHeight;
+      pdf.addPage();
+      pdf.addImage(canvas, 'PNG', 0, position, pdfWidth, scaledImgHeight);
+      heightLeft -= pdfHeight;
     }
-
-    const x = (pdfWidth - finalImgWidth) / 2;
-    const y = 0;
     
-    pdf.addImage(imgData, 'PNG', x, y, finalImgWidth, finalImgHeight);
     pdf.save(`${file.storageName}.pdf`);
   };
 
@@ -494,7 +494,7 @@ export default function FileDetailPage() {
     );
   }
   
-  const employeeForFile = employees?.find(e => e.id === file.storekeeperId)
+  const employeeForFile = employees?.find(e => e.id === file.storekeeperId);
 
   return (
     <div className='bg-background min-h-screen'>
@@ -512,42 +512,10 @@ export default function FileDetailPage() {
                     file={{...(file || {}), ...editableFile} as ExcelFile}
                     employee={employeeForFile}
                     logoSrc={logoSrc}
+                    items={sortedItems}
+                    locations={locations}
+                    themeColor={settings.pdfSettings.report.reportColors?.general || '#22c55e'}
                 />
-                <div className="p-4">
-                  <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>{t('model')}</TableHead>
-                            <TableHead>{t('quantity')}</TableHead>
-                            <TableHead>{t('storage_status')}</TableHead>
-                            <TableHead>{t('condition')}</TableHead>
-                            <TableHead>{t('qty_per_condition')}</TableHead>
-                            <TableHead>{t('location')}</TableHead>
-                            <TableHead>{t('notes')}</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {sortedItems.map(item => (
-                            <TableRow key={item.id}>
-                                <TableCell>{item.model}</TableCell>
-                                <TableCell>{item.quantity}</TableCell>
-                                <TableCell>{t(item.storageStatus?.toLowerCase() || '') || item.storageStatus || ''}</TableCell>
-                                <TableCell>{t(item.modelCondition?.toLowerCase() || '') || item.modelCondition || ''}</TableCell>
-                                <TableCell>{item.quantityPerCondition ?? ''}</TableCell>
-                                <TableCell>{item.locationId ? getLocationName(item.locationId) : ''}</TableCell>
-                                <TableCell>{item.notes || ''}</TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                  </Table>
-                </div>
-                <div className="pt-24 px-4">
-                    <div className="flex justify-end">
-                        <div className="w-64 text-center">
-                            <p className="border-t pt-2">{t('warehouse_manager_signature')}</p>
-                        </div>
-                    </div>
-                </div>
             </div>
           )}
       </div>

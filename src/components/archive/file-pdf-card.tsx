@@ -53,8 +53,8 @@ export function FilePdfCard({ file, items, employee, locations, logoSrc, themeCo
                             <TableRow key={item.id}>
                                 <TableCell className="font-medium py-1">{item.model}</TableCell>
                                 <TableCell className="py-1">{item.quantity}</TableCell>
-                                <TableCell className="py-1">{item.storageStatus || 'N/A'}</TableCell>
-                                <TableCell className="py-1">{item.modelCondition || 'N/A'}</TableCell>
+                                <TableCell className="py-1">{t(item.storageStatus?.toLowerCase() || '') || item.storageStatus || 'N/A'}</TableCell>
+                                <TableCell className="py-1">{t(item.modelCondition?.toLowerCase() || '') || item.modelCondition || 'N/A'}</TableCell>
                                 <TableCell className="py-1">{item.quantityPerCondition ?? 'N/A'}</TableCell>
                                 <TableCell className="py-1">{getLocationName(item.locationId)}</TableCell>
                                 <TableCell className="text-gray-600 py-1 text-xs">{item.notes || 'N/A'}</TableCell>
