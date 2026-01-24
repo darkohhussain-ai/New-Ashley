@@ -1,9 +1,8 @@
-
 'use client';
 
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Plus, Trash2, Edit, Save, X, Loader2, FileDown, Printer, Settings, Receipt } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Edit, Save, X, Settings, Receipt } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -13,7 +12,7 @@ import { format, parseISO } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { useAppContext } from '@/context/app-provider';
-import type { SoldItemsList, SoldItemsListItem, Item, ItemCategory } from '@/lib/types';
+import type { SoldItemsList, SoldItemsListItem, ItemCategory } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -76,7 +75,7 @@ function CategoryManagerDialog({ open, onOpenChange }: { open: boolean, onOpenCh
 
 const SoldItemsCheckPage = () => {
     const { t } = useTranslation();
-    const { soldItemsLists, setSoldItemsLists, itemCategories, isLoading } = useAppContext();
+    const { soldItemsLists, setSoldItemsLists, itemCategories, setItemCategories, isLoading } = useAppContext();
     const { toast } = useToast();
 
     const [selectedList, setSelectedList] = useState<SoldItemsList | null>(null);
@@ -101,12 +100,12 @@ const SoldItemsCheckPage = () => {
             if (currentListState) {
                 setSelectedList(currentListState);
             } else {
-                setSelectedList(null);
+                setSelectedList(sortedLists[0] || null);
             }
         } else if (sortedLists.length > 0) {
             setSelectedList(sortedLists[0]);
         }
-    }, [soldItemsLists, selectedList?.id, sortedLists]);
+    }, [soldItemsLists, selectedList, sortedLists]);
     
     const handleSelectList = (list: SoldItemsList) => {
         setSelectedList(list);
@@ -234,7 +233,7 @@ const SoldItemsCheckPage = () => {
                     <Button variant="outline" size="icon" asChild>
                         <Link href="/items"><ArrowLeft /></Link>
                     </Button>
-                    <h1 className="text-2xl md:text-3xl font-bold">{t('sold_items_check')}</h1>
+                    <h1 className="text-2xl md:text-3xl font-bold">{t('waiting_lists')}</h1>
                 </div>
                  <div className="flex items-center gap-2">
                     <Button variant="outline" onClick={() => setIsCategoryDialogOpen(true)}>
@@ -246,12 +245,12 @@ const SoldItemsCheckPage = () => {
                 </div>
             </header>
             
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-full">
                 <div className="lg:col-span-1">
                 <Card>
                     <CardHeader><CardTitle>{t('all_lists')}</CardTitle></CardHeader>
                     <CardContent className="max-h-[60vh] overflow-y-auto">
-                    {isLoading ? <Loader2 className="mx-auto animate-spin" /> : (
+                    {isLoading ? <div className="text-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div></div> : (
                         <div className="space-y-2">
                         {sortedLists.map(list => (
                             <div key={list.id} onClick={() => handleSelectList(list)} className={`p-3 rounded-lg cursor-pointer border ${selectedList?.id === list.id ? 'bg-primary/10 border-primary' : 'hover:bg-muted'}`}>
@@ -286,7 +285,9 @@ const SoldItemsCheckPage = () => {
                                 <div><CardTitle>{selectedList.name}</CardTitle><CardDescription>{t('items_in_list_count', {count: selectedList.items.length})}</CardDescription></div>
                                 <div className="flex items-center gap-2">
                                   <Button variant="outline" onClick={handlePrint} disabled={!selectedList || selectedList.items.length === 0}>{t('print')}</Button>
-                                  <Button variant="outline" onClick={handleExportPdf} disabled={!selectedList || selectedList.items.length === 0}><FileDown className="mr-2 h-4 w-4" />{t('export_pdf')}</Button>
+                                  <Button variant="outline" onClick={handleExportPdf} disabled={!selectedList || selectedList.items.length === 0}>
+                                    <Receipt className="mr-2 h-4 w-4" />{t('export_pdf')}
+                                  </Button>
                                 </div>
                             </div>
                             ) : <CardTitle>{t('select_a_list')}</CardTitle>}
