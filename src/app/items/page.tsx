@@ -56,13 +56,6 @@ function ItemsPage() {
       href: "/sold-items",
       color: "bg-orange-500",
       permission: 'page:items:sold',
-    },
-    {
-      title: t("waiting_list"),
-      icon: ClipboardList,
-      href: "/items/waiting-list",
-      color: "bg-indigo-500",
-      permission: 'page:items:waiting-list',
     }
   ];
 
