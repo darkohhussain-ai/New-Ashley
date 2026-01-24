@@ -27,6 +27,7 @@ import {
   LogIn,
   Image as ImageIconLucide,
   X,
+  Home,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -259,44 +260,22 @@ function ColorPicker({
   );
 }
 
-function LoginTextEditor() {
-  const { t } = useTranslation();
-  const langContext = React.useContext(LanguageContext);
-
-  const [loginTitleEn, setLoginTitleEn] = React.useState(
-    langContext?.translations.en.login_title || ''
-  );
-  const [loginDescEn, setLoginDescEn] = React.useState(
-    langContext?.translations.en.login_description || ''
-  );
-  const [loginTitleKu, setLoginTitleKu] = React.useState(
-    langContext?.translations.ku.login_title || ''
-  );
-  const [loginDescKu, setLoginDescKu] = React.useState(
-    langContext?.translations.ku.login_description || ''
-  );
-
-  React.useEffect(() => {
-    if (langContext) {
-      langContext.setTranslations('en', {
-        ...langContext.translations.en,
-        login_title: loginTitleEn,
-        login_description: loginDescEn,
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loginTitleEn, loginDescEn]);
-
-  React.useEffect(() => {
-    if (langContext) {
-      langContext.setTranslations('ku', {
-        ...langContext.translations.ku,
-        login_title: loginTitleKu,
-        login_description: loginDescKu,
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loginTitleKu, loginDescKu]);
+function LoginTextEditor({ draftSettings, setDraftSettings }: {
+  draftSettings: AppSettings;
+  setDraftSettings: React.Dispatch<React.SetStateAction<AppSettings>>;
+}) {
+  const handleTranslationChange = (lang: 'en' | 'ku', key: string, value: string) => {
+    setDraftSettings(prev => ({
+      ...prev,
+      translations: {
+        ...prev.translations,
+        [lang]: {
+          ...prev.translations[lang],
+          [key]: value,
+        },
+      },
+    }));
+  };
 
   return (
     <Card>
@@ -317,16 +296,16 @@ function LoginTextEditor() {
             <Label htmlFor="login-title-en">Login Title</Label>
             <Input
               id="login-title-en"
-              value={loginTitleEn}
-              onChange={e => setLoginTitleEn(e.target.value)}
+              value={draftSettings.translations.en.login_title || ''}
+              onChange={e => handleTranslationChange('en', 'login_title', e.target.value)}
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="login-desc-en">Login Description</Label>
             <Input
               id="login-desc-en"
-              value={loginDescEn}
-              onChange={e => setLoginDescEn(e.target.value)}
+              value={draftSettings.translations.en.login_description || ''}
+              onChange={e => handleTranslationChange('en', 'login_description', e.target.value)}
             />
           </div>
         </div>
@@ -338,8 +317,8 @@ function LoginTextEditor() {
             <Label htmlFor="login-title-ku">Sernivîsa Têketinê</Label>
             <Input
               id="login-title-ku"
-              value={loginTitleKu}
-              onChange={e => setLoginTitleKu(e.target.value)}
+              value={draftSettings.translations.ku.login_title || ''}
+              onChange={e => handleTranslationChange('ku', 'login_title', e.target.value)}
               dir="rtl"
             />
           </div>
@@ -347,8 +326,8 @@ function LoginTextEditor() {
             <Label htmlFor="login-desc-ku">Danasîna Têketinê</Label>
             <Input
               id="login-desc-ku"
-              value={loginDescKu}
-              onChange={e => setLoginDescKu(e.target.value)}
+              value={draftSettings.translations.ku.login_description || ''}
+              onChange={e => handleTranslationChange('ku', 'login_description', e.target.value)}
               dir="rtl"
             />
           </div>
@@ -358,56 +337,76 @@ function LoginTextEditor() {
   );
 }
 
-function TranslationEditor({ onSave }: { onSave: () => void }) {
+function TranslationEditor({ onSave, draftSettings, setDraftSettings, storage }: {
+  onSave: () => void;
+  draftSettings: AppSettings;
+  setDraftSettings: React.Dispatch<React.SetStateAction<AppSettings>>;
+  storage: any; // FirebaseStorage
+}) {
   const { t } = useTranslation();
-  const langContext = React.useContext(LanguageContext);
-  const { settings, setSettings } = useAppContext();
+  const { toast } = useToast();
+  const [search, setSearch] = useState('');
 
   const handleFontUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = loadEvent => {
-        const result = loadEvent.target?.result as string;
-        setSettings(prev => ({ ...prev, customFont: result }));
-      };
-      reader.readAsDataURL(file);
-    }
+    if (!file || !storage) return;
+
+    const toastId = toast({
+      title: "Uploading Font...",
+      description: "Please wait while the font is being uploaded.",
+    }).id;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const localUrl = event.target?.result as string;
+      if (localUrl) {
+        const filePath = `settings/customFont.ttf`;
+        const sRef = storageRef(storage, filePath);
+        
+        uploadString(sRef, localUrl, 'data_url').then(() => {
+          getDownloadURL(sRef).then(downloadURL => {
+            setDraftSettings(prev => ({ ...prev, customFont: downloadURL }));
+            toast({
+              id: toastId,
+              title: "Font Uploaded",
+              description: "Click 'Save All Changes' to apply the new font.",
+            });
+          });
+        }).catch(error => {
+          console.error("Font upload error:", error);
+          toast({
+            id: toastId,
+            variant: "destructive",
+            title: "Upload Failed",
+            description: "Could not upload the font file.",
+          });
+        });
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+  
+  const handleTranslationChange = (lang: 'en' | 'ku', key: string, value: string) => {
+    setDraftSettings(prev => ({
+      ...prev,
+      translations: {
+        ...prev.translations,
+        [lang]: {
+          ...prev.translations[lang],
+          [key]: value
+        }
+      }
+    }));
   };
 
-  if (!langContext || !settings) return null;
-
-  const { translations, setTranslations } = langContext;
-  const [enTranslations, setEnTranslations] =
-    useState<Translations>(translations.en);
-  const [kuTranslations, setKuTranslations] =
-    useState<Translations>(translations.ku);
-  const [search, setSearch] = useState('');
-
-  useEffect(() => {
-    setEnTranslations(translations.en);
-    setKuTranslations(translations.ku);
-  }, [translations]);
-
-  const handleSaveTranslations = () => {
-    setTranslations('en', enTranslations);
-    setTranslations('ku', kuTranslations);
-  };
-
-  useEffect(handleSaveTranslations, [
-    enTranslations,
-    kuTranslations,
-    setTranslations,
-  ]);
-
-  const filteredKeys = Object.keys(enTranslations)
+  const filteredKeys = Object.keys(draftSettings.translations.en)
     .filter(
       key =>
         !['login_title', 'login_description'].includes(key) &&
         (key.toLowerCase().includes(search.toLowerCase()) ||
-          enTranslations[key].toLowerCase().includes(search.toLowerCase()) ||
-          (kuTranslations[key] &&
-            kuTranslations[key].toLowerCase().includes(search.toLowerCase())))
+          draftSettings.translations.en[key].toLowerCase().includes(search.toLowerCase()) ||
+          (draftSettings.translations.ku[key] &&
+            draftSettings.translations.ku[key].toLowerCase().includes(search.toLowerCase())))
     )
     .sort();
 
@@ -436,14 +435,14 @@ function TranslationEditor({ onSave }: { onSave: () => void }) {
                 onChange={handleFontUpload}
               />
             </div>
-            {settings.customFont && (
+            {draftSettings.customFont && (
               <div className="space-y-2">
                 <Label>{t('font_preview')}</Label>
                 <div
                   className="p-4 border rounded-lg"
                   style={{ fontFamily: 'CustomAppFont, sans-serif' }}
                 >
-                  <style>{`@font-face { font-family: 'CustomAppFont'; src: url(${settings.customFont}); }`}</style>
+                  <style>{`@font-face { font-family: 'CustomAppFont'; src: url(${draftSettings.customFont}); }`}</style>
                   <p className="text-lg">
                     The quick brown fox jumps over the lazy dog.
                   </p>
@@ -454,9 +453,6 @@ function TranslationEditor({ onSave }: { onSave: () => void }) {
               </div>
             )}
           </CardContent>
-          <CardFooter>
-            <Button onClick={onSave}><Save className="mr-2 h-4 w-4" />{t('save_font')}</Button>
-          </CardFooter>
         </Card>
         <div className="flex gap-4">
           <div className="relative flex-grow">
@@ -489,17 +485,13 @@ function TranslationEditor({ onSave }: { onSave: () => void }) {
                 </Label>
                 <Input
                   id={`en-${key}`}
-                  value={enTranslations[key] || ''}
-                  onChange={e =>
-                    setEnTranslations(p => ({ ...p, [key]: e.target.value }))
-                  }
+                  value={draftSettings.translations.en[key] || ''}
+                  onChange={e => handleTranslationChange('en', key, e.target.value)}
                 />
                 <Input
                   id={`ku-${key}`}
-                  value={kuTranslations[key] || ''}
-                  onChange={e =>
-                    setKuTranslations(p => ({ ...p, [key]: e.target.value }))
-                  }
+                  value={draftSettings.translations.ku[key] || ''}
+                  onChange={e => handleTranslationChange('ku', key, e.target.value)}
                   dir="rtl"
                 />
               </div>
@@ -690,7 +682,6 @@ function SettingsPage() {
               title: 'Upload Failed',
               description: 'Could not upload the image.',
             });
-            // Revert on failure? The prompt version doesn't.
           });
       }
     };
@@ -714,49 +705,62 @@ function SettingsPage() {
   };
 
   const handleResetToDefault = async () => {
-    toast({
+    const toastId = toast({
       title: "Resetting Data...",
       description: "This process can take up to a minute. Please don't close this tab.",
       duration: 60000,
-    });
+    }).id;
+
     setResetConfirmText("");
 
-    const resetOperations = [
-      () => setUsers(initialData.users),
-      () => setRoles(initialData.roles),
-      () => setEmployees(initialData.employees),
-      () => setExcelFiles(initialData.excelFiles),
-      () => setItems(initialData.items),
-      () => setLocations(initialData.locations),
-      () => setExpenses(initialData.expenses),
-      () => setExpenseReports(initialData.expenseReports),
-      () => setOvertime(initialData.overtime),
-      () => setBonuses(initialData.bonuses),
-      () => setWithdrawals(initialData.withdrawals),
-      () => setReceipts(initialData.receipts),
-      () => setItemCategories(initialData.itemCategories),
-      () => setTransfers(initialData.transfers),
-      () => setTransferItems(initialData.transferItems),
-      () => setMarketingFeedbacks(initialData.marketingFeedbacks),
-      () => setEvaluationQuestions(initialData.evaluationQuestions),
-    ];
+    try {
+        const resetOperations = [
+            () => setUsers(initialData.users),
+            () => setRoles(initialData.roles),
+            () => setEmployees(initialData.employees),
+            () => setExcelFiles(initialData.excelFiles),
+            () => setItems(initialData.items),
+            () => setLocations(initialData.locations),
+            () => setExpenses(initialData.expenses),
+            () => setExpenseReports(initialData.expenseReports),
+            () => setOvertime(initialData.overtime),
+            () => setBonuses(initialData.bonuses),
+            () => setWithdrawals(initialData.withdrawals),
+            () => setReceipts(initialData.receipts),
+            () => setItemCategories(initialData.itemCategories),
+            () => setTransfers(initialData.transfers),
+            () => setTransferItems(initialData.transferItems),
+            () => setMarketingFeedbacks(initialData.marketingFeedbacks),
+            () => setEvaluationQuestions(initialData.evaluationQuestions),
+        ];
 
-    for (const op of resetOperations) {
-        op();
-        await new Promise(resolve => setTimeout(resolve, 500));
+        for (const op of resetOperations) {
+            op();
+            await new Promise(resolve => setTimeout(resolve, 200)); // Throttle writes
+        }
+        
+        setSettings(initialSettings);
+        setDraftSettings(initialSettings);
+
+        toast({
+          id: toastId,
+          title: t('settings_reset'),
+          description: "Reset complete. The application will now reload.",
+        });
+
+        setTimeout(() => {
+            window.location.reload();
+        }, 2000);
+
+    } catch (error) {
+        console.error("Reset failed:", error);
+        toast({
+            id: toastId,
+            variant: "destructive",
+            title: "Reset Failed",
+            description: "An error occurred during the reset process.",
+        });
     }
-    
-    setSettings(initialSettings);
-    setDraftSettings(initialSettings);
-
-    toast({
-      title: t('settings_reset'),
-      description: "Reset complete. The application will now reload.",
-    });
-
-    setTimeout(() => {
-        window.location.reload();
-    }, 2000);
   };
 
   const handleExport = async () => {
@@ -856,7 +860,7 @@ function SettingsPage() {
           <div className="flex items-center gap-4">
             <Button variant="outline" size="icon" asChild>
               <Link href="/">
-                <ArrowLeft />
+                <Home />
               </Link>
             </Button>
             <h1 className="text-xl">{t('settings')}</h1>
@@ -1220,8 +1224,16 @@ function SettingsPage() {
           </TabsContent>
 
           <TabsContent value="language" className="pt-6 space-y-6">
-            <LoginTextEditor />
-            <TranslationEditor onSave={handleSave} />
+            <LoginTextEditor
+              draftSettings={draftSettings}
+              setDraftSettings={setDraftSettings}
+            />
+            <TranslationEditor
+              onSave={handleSave}
+              draftSettings={draftSettings}
+              setDraftSettings={setDraftSettings}
+              storage={storage}
+            />
           </TabsContent>
 
           <TabsContent value="pdf" className="pt-6">
