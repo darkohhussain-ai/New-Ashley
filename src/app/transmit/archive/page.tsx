@@ -17,12 +17,12 @@ import { Input } from '@/components/ui/input';
 
 
 export default function TransferArchivePage() {
-  const { transfers } = useAppContext();
+  const { transfers, transferItems } = useAppContext();
   const { t } = useTranslation();
   const [selectedMonth, setSelectedMonth] = useState<Date | undefined>(new Date());
   const [searchQuery, setSearchQuery] = useState('');
   
-  const isLoading = !transfers;
+  const isLoading = !transfers || !transferItems;
 
   const sortedTransfers = useMemo(() => {
     if (!transfers) return [];
@@ -30,9 +30,23 @@ export default function TransferArchivePage() {
     let itemsToDisplay = transfers;
 
     if (searchQuery) {
-      itemsToDisplay = transfers.filter(t => 
-        t.invoiceNumber?.toString().padStart(6,'0').includes(searchQuery)
-      );
+      const queryLower = searchQuery.toLowerCase();
+
+      const transferIdsWithMatchingItems = new Set<string>();
+      if (transferItems) {
+        transferItems.forEach(item => {
+          if (item.model.toLowerCase().includes(queryLower) && item.transferId) {
+            transferIdsWithMatchingItems.add(item.transferId);
+          }
+        });
+      }
+      
+      itemsToDisplay = transfers.filter(t => {
+        const invoiceMatch = t.invoiceNumber?.toString().padStart(6, '0').includes(searchQuery);
+        const modelMatch = transferIdsWithMatchingItems.has(t.id);
+        return invoiceMatch || modelMatch;
+      });
+
     } else if (selectedMonth) {
       itemsToDisplay = transfers.filter(t => 
         t.transferDate && 
@@ -46,7 +60,7 @@ export default function TransferArchivePage() {
         const dateB = b.transferDate ? parseISO(b.transferDate).getTime() : 0;
         return dateB - dateA;
     });
-  }, [transfers, selectedMonth, searchQuery]);
+  }, [transfers, transferItems, selectedMonth, searchQuery]);
 
   return (
     <div className="h-screen bg-background text-foreground flex flex-col">
@@ -63,7 +77,7 @@ export default function TransferArchivePage() {
             <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input 
-                    placeholder={t('search_by_invoice')}
+                    placeholder={t('search_by_invoice_or_model')}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-10 w-48"
@@ -139,7 +153,7 @@ export default function TransferArchivePage() {
           <div className="text-center py-16 border-2 border-dashed rounded-lg">
             <Archive className="mx-auto h-12 w-12 text-muted-foreground" />
             <h3 className="mt-4 text-lg font-medium">{searchQuery ? t('no_results') : t('no_archived_transfers')}</h3>
-            <p className="mt-2 text-sm text-muted-foreground">{searchQuery ? t('no_transfers_found_for_invoice', {query: searchQuery}) : t('no_archived_transfers_desc')}</p>
+            <p className="mt-2 text-sm text-muted-foreground">{searchQuery ? t('no_transfers_found_for_search', {query: searchQuery}) : t('no_archived_transfers_desc')}</p>
           </div>
         )}
       </main>

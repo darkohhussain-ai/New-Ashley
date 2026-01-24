@@ -644,6 +644,6 @@
   "page_will_reload": "پەڕەکە ئێستا دووبارە باردەکرێتەوە.",
   "import_failed": "هاوردەکردن سەرکەوتوو نەبوو",
   "invalid_or_corrupted_file": "فایلی هەڵبژێردراو نادروستە یان خراپ بووە.",
-  "search_by_invoice": "گەڕان بەپێی ژ. پسوولە...",
-  "search_by_model_or_invoice": "گەڕان بەپێی مۆدێل یان پسوولە..."
+  "search_by_invoice_or_model": "گەڕان بەپێی پسوولە یان مۆدێل...",
+  "no_transfers_found_for_search": "هیچ گواستنەوەیەک نەدۆزرایەوە کە لەگەڵ گەڕانەکەت \"{query}\" بگونجێت."
 }
