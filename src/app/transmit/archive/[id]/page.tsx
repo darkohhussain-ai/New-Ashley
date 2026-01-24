@@ -4,7 +4,7 @@
 import { useMemo, useRef, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Calendar, Truck, FileText, User, Warehouse, Printer, Search, Edit, Trash2, Save, X, Loader2 } from 'lucide-react';
+import { ArrowLeft, Calendar, Truck, FileText, User, Warehouse, Printer, Edit, Trash2, Save, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { format, parseISO } from 'date-fns';
@@ -36,7 +36,6 @@ export default function ViewTransferPage() {
   const transfer = useMemo(() => transfers?.find(t => t.id === transferId), [transfers, transferId]);
   const items = useMemo(() => transferItems?.filter(i => i.transferId === transferId), [transferItems, transferId]);
   
-  const [searchQuery, setSearchQuery] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [editableTransfer, setEditableTransfer] = useState<Transfer | null>(null);
 
@@ -52,16 +51,6 @@ export default function ViewTransferPage() {
       return transfers.filter(t => t.transferDate && new Date(t.transferDate).getFullYear() === currentYear).length;
   }, [transfers, transfer]);
   
-  const filteredItems = useMemo(() => {
-    if (!items) return [];
-    if (!searchQuery) return items;
-    const lowercasedQuery = searchQuery.toLowerCase();
-    return items.filter(item =>
-        item.model.toLowerCase().includes(lowercasedQuery) ||
-        item.invoiceNo?.toLowerCase().includes(lowercasedQuery)
-    );
-  }, [items, searchQuery]);
-
   const handleSave = () => {
     if (!editableTransfer || !transfers) return;
     setTransfers(prev => prev.map(t => t.id === editableTransfer.id ? editableTransfer : t));
@@ -262,18 +251,7 @@ export default function ViewTransferPage() {
             </Card>
             <Card>
                 <CardHeader>
-                    <div className="flex justify-between items-center">
-                        <CardTitle>{t('transferred_items')} ({items.length})</CardTitle>
-                        <div className="relative w-full max-w-sm">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input 
-                                placeholder="Search model or invoice..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-10"
-                            />
-                        </div>
-                    </div>
+                    <CardTitle>{t('transferred_items')} ({items.length})</CardTitle>
                 </CardHeader>
                 <CardContent>
                      <div className="overflow-x-auto">
@@ -288,7 +266,7 @@ export default function ViewTransferPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {filteredItems.map((item) => (
+                                {items.map((item) => (
                                     <TableRow key={item.id}>
                                         <TableCell className="font-medium">{item.model}</TableCell>
                                         <TableCell>{item.quantity}</TableCell>

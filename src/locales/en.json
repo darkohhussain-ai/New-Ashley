@@ -643,5 +643,7 @@
   "data_imported_successfully": "Data imported successfully!",
   "page_will_reload": "The page will now reload.",
   "import_failed": "Import Failed",
-  "invalid_or_corrupted_file": "The selected file is invalid or corrupted."
+  "invalid_or_corrupted_file": "The selected file is invalid or corrupted.",
+  "search_by_invoice": "Search by Invoice #...",
+  "no_transfers_found_for_invoice": "No transfers found matching invoice \"{query}\"."
 }
