@@ -4,7 +4,7 @@
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore'
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage';
 
 export async function initializeFirebase() {
@@ -12,35 +12,15 @@ export async function initializeFirebase() {
     return await getSdks(getApp());
   }
 
-  let firebaseApp;
-  try {
-    // This will succeed on App Hosting where env vars are present.
-    firebaseApp = initializeApp();
-  } catch (e) {
-    // This will fail in other environments (like local dev), which is expected.
-    console.log("Firebase auto-init failed, using local config. This is normal for development.");
-    firebaseApp = initializeApp(firebaseConfig);
-  }
-
+  const firebaseApp = initializeApp(firebaseConfig);
   return await getSdks(firebaseApp);
 }
 
 export async function getSdks(firebaseApp: FirebaseApp) {
-  const firestore = getFirestore(firebaseApp);
-  try {
-    await enableIndexedDbPersistence(firestore, { synchronizeTabs: true });
-  } catch (err: any) {
-      if (err.code == 'failed-precondition') {
-        // Multiple tabs open, persistence can only be enabled in one.
-        // This is a normal scenario and can be ignored.
-        console.log("Firestore persistence failed-precondition, likely due to multiple tabs. This is normal.");
-      } else if (err.code == 'unimplemented') {
-        // The current browser does not support all of the
-        // features required to enable persistence.
-        console.warn("Firestore persistence is not available in this browser.");
-      }
-  }
-
+  const firestore = initializeFirestore(firebaseApp, {
+      cache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+  });
+  
   return {
     firebaseApp,
     auth: getAuth(firebaseApp),

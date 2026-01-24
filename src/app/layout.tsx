@@ -18,20 +18,12 @@ import { cn } from '@/lib/utils';
 
 function CustomFontInjector() {
     const { settings } = useAppContext();
-    
-    const fontFace = settings.customFont 
-        ? `@font-face { font-family: 'CustomAppFont'; src: url(${settings.customFont}); }` 
-        : '';
-    
-    const fontBody = settings.customFont 
-        ? `'CustomAppFont', Arial, sans-serif` 
-        : `Arial, sans-serif`;
+    const fontBody = settings.fontFamily || 'Arial';
 
     return (
         <style>{`
-            ${fontFace}
             :root {
-                --font-body: ${fontBody};
+                --font-body: "${fontBody}";
             }
         `}</style>
     );
@@ -138,16 +130,7 @@ export default function RootLayout({
   
   return (
     <html suppressHydrationWarning>
-      <head>
-        <style>
-          {`
-            :root {
-              --font-body: Arial, sans-serif;
-            }
-          `}
-        </style>
-      </head>
-      <body className={cn('antialiased', 'min-h-screen')} suppressHydrationWarning>
+      <body className={cn('antialiased', 'min-h-screen font-sans')} suppressHydrationWarning>
         <FirebaseClientProvider>
           <AppProvider>
             <AuthProvider>

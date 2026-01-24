@@ -19,9 +19,7 @@ export function ReportWrapper({ title, date, logoSrc, themeColor = '#333333', ch
   const { settings } = useAppContext();
   const useKurdish = language === 'ku';
 
-  // Define font styles dynamically
-  const fontFace = settings?.customFont ? `@font-face { font-family: 'CustomAppFont'; src: url(${settings.customFont}); }` : '';
-  const fontFamily = settings?.customFont ? 'CustomAppFont, Arial, sans-serif' : 'Arial, sans-serif';
+  const fontFamily = settings?.fontFamily || 'Arial, sans-serif';
 
   return (
     <div 
@@ -31,7 +29,6 @@ export function ReportWrapper({ title, date, logoSrc, themeColor = '#333333', ch
     >
         <style>
           {`
-            ${fontFace}
             div { word-spacing: normal; }
             .pdf-table { width: 100%; border-collapse: collapse; }
             .pdf-table th, .pdf-table td {

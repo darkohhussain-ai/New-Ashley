@@ -8,6 +8,7 @@ import type { Employee, PdfSettings } from "@/lib/types";
 import { useEffect, useState } from "react";
 import { useTranslation } from "@/hooks/use-translation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAppContext } from "@/context/app-provider";
 
 type EmployeePdfCardProps = {
   employee: Employee;
@@ -16,6 +17,7 @@ type EmployeePdfCardProps = {
 
 export function EmployeePdfCard({ employee, settings }: EmployeePdfCardProps) {
   const { t, language } = useTranslation();
+  const { settings: globalSettings } = useAppContext();
   const [isMounted, setIsMounted] = useState(false);
   const useKurdish = language === 'ku';
 
@@ -29,7 +31,7 @@ export function EmployeePdfCard({ employee, settings }: EmployeePdfCardProps) {
 
 
   return (
-    <div className="bg-white text-gray-800 w-[600px] h-[360px] font-sans rounded-lg shadow-lg overflow-hidden border border-gray-200 flex" style={{ fontFamily: settings.customFont ? 'CustomAppFont' : 'Arial, sans-serif' }}>
+    <div className="bg-white text-gray-800 w-[600px] h-[360px] font-sans rounded-lg shadow-lg overflow-hidden border border-gray-200 flex" style={{ fontFamily: globalSettings.fontFamily || 'Arial, sans-serif' }}>
       
       {/* Left Side: Gradient Background */}
       <div 

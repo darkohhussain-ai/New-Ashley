@@ -2,32 +2,28 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { useAuth } from '@/hooks/use-auth';
 import { DashboardClient } from '@/app/dashboard/dashboard-client';
 import { Loader2 } from 'lucide-react';
 
 export default function Home() {
-  const [isAuth, setIsAuth] = useState<boolean | null>(null);
+  const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    const storedUser = sessionStorage.getItem('currentUser');
-    if (storedUser) {
-      setIsAuth(true);
-    } else {
-      setIsAuth(false);
+    if (!loading && !user) {
       router.replace('/login');
     }
-  }, [router]);
+  }, [user, loading, router]);
 
-  if (isAuth === true) {
-    return <DashboardClient />;
+  if (loading || !user) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <Loader2 className="h-16 w-16 animate-spin text-primary" />
+      </div>
+    );
   }
-  
-  // Render a loader while checking or redirecting
-  return (
-    <div className="flex h-screen w-full items-center justify-center bg-background">
-      <Loader2 className="h-16 w-16 animate-spin text-primary" />
-    </div>
-  );
+
+  return <DashboardClient />;
 }

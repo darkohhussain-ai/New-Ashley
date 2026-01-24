@@ -191,8 +191,6 @@ export type BranchColors = {
 
 export type PdfSettings = {
     logo?: string | null;
-    font?: string;
-    customFont?: string | null;
     themeColor?: string;
     secondaryColor?: string;
     reportColors?: ReportColors;
@@ -241,7 +239,7 @@ export type AppSettings = {
   dashboardBanner: string | null;
   dashboardBannerHeight: number;
   newsTickerText: string;
-  customFont: string | null;
+  fontFamily: string;
   translations: {
       en: Translations;
       ku: Translations;

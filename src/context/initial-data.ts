@@ -49,7 +49,6 @@ const defaultBranchColors: BranchColors = {
 
 const defaultReportSettings: PdfSettings = {
     logo: null,
-    customFont: null,
     themeColor: '#22c55e', // Green
     reportColors: defaultReportColors,
     tableTheme: 'striped',
@@ -62,7 +61,6 @@ const defaultReportSettings: PdfSettings = {
 
 const defaultInvoiceSettings: PdfSettings = {
     logo: null,
-    customFont: null,
     themeColor: '#f97316', // Orange for invoices
     secondaryColor: '#0F172A',
     titleTemplate: 'Transmit to {city}',
@@ -77,7 +75,6 @@ const defaultInvoiceSettings: PdfSettings = {
 
 const defaultCardSettings: PdfSettings = {
     logo: null,
-    customFont: null,
     themeColor: '#8b5cf6', // Violet
     headerText: 'Employee ID',
     footerText: 'Official Company ID',
@@ -103,7 +100,7 @@ export const initialSettings: AppSettings = {
     dashboardBanner: null,
     dashboardBannerHeight: 150,
     newsTickerText: 'Welcome to the Ashley DRP Manager! This is a scrolling news update.',
-    customFont: null,
+    fontFamily: 'Arial',
     translations: {
         en: en,
         ku: ku,
