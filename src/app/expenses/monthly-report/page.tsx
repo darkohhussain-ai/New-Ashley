@@ -39,7 +39,7 @@ export default function MonthlyExpenseReportPage() {
   const { user, hasPermission } = useAuth();
   const isReadOnly = !hasPermission('page:admin');
   
-  const { pdfSettings, customFont } = settings;
+  const { pdfSettings, fontFamily } = settings;
   const reportContentRef = useRef<HTMLDivElement>(null);
 
 
@@ -125,9 +125,9 @@ export default function MonthlyExpenseReportPage() {
       useCORS: true, 
       backgroundColor: 'white',
       onclone: (document) => {
-        if (customFont && language === 'ku') {
+        if (fontFamily) {
             const style = document.createElement('style');
-            style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
+            style.innerHTML = `body, table, div, p, h1, h2, h3 { font-family: '${fontFamily}', sans-serif !important; }`;
             document.head.appendChild(style);
         }
       }

@@ -338,67 +338,16 @@ function LoginTextEditor({ draftSettings, setDraftSettings }: {
   );
 }
 
-function TranslationEditor({ onSave, draftSettings, setDraftSettings, storage }: {
+function TranslationEditor({ onSave, draftSettings, setDraftSettings }: {
   onSave: () => void;
   draftSettings: AppSettings;
   setDraftSettings: React.Dispatch<React.SetStateAction<AppSettings>>;
-  storage: any; // FirebaseStorage
 }) {
   const { t } = useTranslation();
-  const { toast } = useToast();
   const [search, setSearch] = useState('');
-  const [uploadedFontUrl, setUploadedFontUrl] = useState<string | null>(null);
-  const [isUploadingFont, setIsUploadingFont] = useState(false);
 
-
-  const handleFontUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !storage) return;
-
-    setIsUploadingFont(true);
-    
-    try {
-        const localUrl = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = (event) => resolve(event.target?.result as string);
-            reader.onerror = (error) => reject(error);
-            reader.readAsDataURL(file);
-        });
-        
-        if (localUrl) {
-            const filePath = `settings/customFont.ttf`;
-            const sRef = storageRef(storage, filePath);
-            
-            await uploadString(sRef, localUrl, 'data_url');
-            const downloadURL = await getDownloadURL(sRef);
-            
-            setUploadedFontUrl(downloadURL);
-            toast({
-              title: "Upload Complete",
-              description: "Click 'Apply Font' to preview.",
-            });
-        }
-    } catch (error) {
-        console.error("Font upload error:", error);
-        toast({
-          variant: "destructive",
-          title: "Upload Failed",
-          description: "Could not upload the font file. Please try again.",
-        });
-    } finally {
-        setIsUploadingFont(false);
-    }
-  };
-  
-  const handleApplyFont = () => {
-    if (uploadedFontUrl) {
-      setDraftSettings(prev => ({ ...prev, customFont: uploadedFontUrl }));
-      toast({
-        title: "Font Applied",
-        description: "The new font is now previewing. Click 'Save All Changes' to make it permanent.",
-      });
-      setUploadedFontUrl(null);
-    }
+  const handleDraftChange = (key: keyof AppSettings, value: any) => {
+    setDraftSettings(prev => ({ ...prev, [key]: value }));
   };
 
   const handleTranslationChange = (lang: 'en' | 'ku', key: string, value: string) => {
@@ -437,39 +386,32 @@ function TranslationEditor({ onSave, draftSettings, setDraftSettings, storage }:
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Type /> {t('custom_app_font')}
+              <Type /> Application Font
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="font-upload">{t('upload_font_file')}</Label>
-              <Input
-                id="font-upload"
-                type="file"
-                accept=".ttf,.woff,.woff2"
-                onChange={handleFontUpload}
-                disabled={isUploadingFont}
-              />
+             <div className="space-y-2">
+              <Label htmlFor="font-select">Application Font</Label>
+              <Select value={draftSettings.fontFamily} onValueChange={(value) => handleDraftChange('fontFamily', value)}>
+                <SelectTrigger id="font-select">
+                  <SelectValue placeholder="Select a font" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Arial">Arial</SelectItem>
+                  <SelectItem value="Times New Roman">Times New Roman</SelectItem>
+                  <SelectItem value="Calibri">Calibri</SelectItem>
+                  <SelectItem value="Cambria">Cambria</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            {isUploadingFont && (
-                <div className="text-sm text-muted-foreground flex items-center gap-2 pt-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Uploading font...</span>
-                </div>
-            )}
-            {uploadedFontUrl && (
-                <Button onClick={handleApplyFont} className="w-full">
-                    <Play className="mr-2 h-4 w-4" /> Apply Font
-                </Button>
-            )}
-            {draftSettings.customFont && (
+
+            {draftSettings.fontFamily && (
               <div className="space-y-2">
                 <Label>{t('font_preview')}</Label>
                 <div
                   className="p-4 border rounded-lg"
-                  style={{ fontFamily: 'CustomAppFont, sans-serif' }}
+                  style={{ fontFamily: `${draftSettings.fontFamily}, sans-serif` }}
                 >
-                  <style>{`@font-face { font-family: 'CustomAppFont'; src: url(${draftSettings.customFont}); }`}</style>
                   <p className="text-lg">
                     The quick brown fox jumps over the lazy dog.
                   </p>
@@ -880,12 +822,8 @@ function SettingsPage() {
     <div className="h-screen bg-background text-foreground flex flex-col">
       <style>{`
             @font-face {
-              font-family: 'CustomPdfFont';
-              src: ${
-                currentPdfSettings?.customFont
-                  ? `url(${currentPdfSettings.customFont})`
-                  : 'none'
-              };
+              font-family: '${draftSettings.fontFamily}';
+              src: local('${draftSettings.fontFamily}');
             }
         `}</style>
       <header className="bg-card border-b p-4">
@@ -1265,7 +1203,6 @@ function SettingsPage() {
               onSave={handleSave}
               draftSettings={draftSettings}
               setDraftSettings={setDraftSettings}
-              storage={storage}
             />
           </TabsContent>
 
@@ -1533,7 +1470,7 @@ function SettingsPage() {
                             logoSrc={currentPdfSettings.logo ?? draftSettings.appLogo}
                             themeColor={draftSettings.pdfSettings.report.reportColors?.[selectedReportType] || '#22c55e'}
                         >
-                            <div className="p-6 flex-grow" style={{fontFamily: 'CustomPdfFont'}}>
+                            <div className="p-6 flex-grow" style={{fontFamily: draftSettings.fontFamily, sans-serif: 'sans-serif'}}>
                                 <h3 className="mb-2">{t('sample_section')}</h3>
                                 <p className="text-sm text-gray-600 mb-4">{t('sample_body_text')}</p>
                                 <Table className={cn(currentPdfSettings.tableTheme === 'grid' && 'border')}>
