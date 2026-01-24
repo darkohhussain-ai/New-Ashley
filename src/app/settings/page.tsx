@@ -352,10 +352,10 @@ function TranslationEditor({ onSave, draftSettings, setDraftSettings, storage }:
     const file = e.target.files?.[0];
     if (!file || !storage) return;
 
-    const toastId = toast({
+    const uploadToast = toast({
       title: "Uploading Font...",
       description: "Please wait while the font is being uploaded.",
-    }).id;
+    });
 
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -367,20 +367,28 @@ function TranslationEditor({ onSave, draftSettings, setDraftSettings, storage }:
         uploadString(sRef, localUrl, 'data_url').then(() => {
           getDownloadURL(sRef).then(downloadURL => {
             setUploadedFontUrl(downloadURL);
-            toast({
-              id: toastId,
+            uploadToast.update({
+              id: uploadToast.id,
               title: "Upload Complete",
               description: "Click 'Apply Font' to preview.",
+            });
+          }).catch(error => {
+            console.error("Font upload error:", error);
+            uploadToast.update({
+              id: uploadToast.id,
+              variant: "destructive",
+              title: "Upload Failed",
+              description: "Could not get the font URL.",
             });
           });
         }).catch(error => {
           console.error("Font upload error:", error);
-          toast({
-            id: toastId,
-            variant: "destructive",
-            title: "Upload Failed",
-            description: "Could not upload the font file.",
-          });
+           uploadToast.update({
+              id: uploadToast.id,
+              variant: "destructive",
+              title: "Upload Failed",
+              description: "The font could not be uploaded.",
+           });
         });
       }
     };
