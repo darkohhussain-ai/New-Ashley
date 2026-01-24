@@ -261,7 +261,7 @@
   "search_item_by_model": "Search Item by Model",
   "search_item_by_model_desc": "Find item locations across all Excel files.",
   "search": "Search",
-  "no_results": "No results",
+  "no_results": "No Results Found",
   "no_results_desc": "No items found with model containing \"{query}\".",
   "file_name": "File Name",
   "file_date": "File Date",
@@ -353,7 +353,7 @@
   "view_transfers": "View Transfers",
   "to_destination": "To",
   "items_lowercase": "items",
-  "no_archived_transfers": "No Archived Transfers",
+  "no_archived_transfers": "No archived transfers for this month.",
   "no_archived_transfers_desc": "Create your first transfer slip to see the archive here.",
   "transfer_details": "Transfer Details",
   "destination_city": "Destination City",
@@ -646,5 +646,10 @@
   "invalid_or_corrupted_file": "The selected file is invalid or corrupted.",
   "search_by_invoice": "Search by Invoice #...",
   "no_transfers_found_for_search": "No transfers found matching \"{query}\".",
-  "search_by_model_or_invoice": "Search by Model or Invoice..."
+  "search_by_invoice_or_model": "گەڕان بەپێی ژ. پسوولە یان مۆدێل...",
+  "matching_item_details": "وردەکاری کاڵا گونجاوەکان",
+  "matching_item_details_desc": "لیستی وردی هەموو کاڵاکان کە لەگەڵ گەڕانەکەتدا بۆ \"{query}\" دەگونجێن.",
+  "transfer": "گواستنەوە",
+  "date": "بەروار",
+  "view": "بینین"
 }

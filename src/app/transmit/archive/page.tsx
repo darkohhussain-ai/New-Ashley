@@ -3,7 +3,7 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Archive, Calendar as CalendarIcon, Truck, User, Eye, Search } from 'lucide-react';
+import { ArrowLeft, Archive, Calendar as CalendarIcon, Truck, User, Eye, Search, Inbox } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { format, parseISO, isSameMonth } from 'date-fns';
@@ -14,6 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 
 export default function TransferArchivePage() {
@@ -35,7 +36,7 @@ export default function TransferArchivePage() {
       const transferIdsWithMatchingItems = new Set<string>();
       if (transferItems) {
         transferItems.forEach(item => {
-          if (item.model.toLowerCase().includes(queryLower) && item.transferId) {
+          if ((item.model.toLowerCase().includes(queryLower) || item.invoiceNo?.toLowerCase().includes(queryLower)) && item.transferId) {
             transferIdsWithMatchingItems.add(item.transferId);
           }
         });
@@ -61,6 +62,34 @@ export default function TransferArchivePage() {
         return dateB - dateA;
     });
   }, [transfers, transferItems, selectedMonth, searchQuery]);
+  
+  const detailedSearchResults = useMemo(() => {
+    if (!searchQuery.trim() || !transferItems || !transfers) {
+      return [];
+    }
+
+    const queryLower = searchQuery.toLowerCase();
+
+    return transferItems
+      .filter(item => 
+        item.transferId && 
+        (item.model.toLowerCase().includes(queryLower) || item.invoiceNo?.toLowerCase().includes(queryLower))
+      )
+      .map(item => {
+        const transfer = transfers.find(t => t.id === item.transferId);
+        return {
+          ...item,
+          transferCargoName: transfer?.cargoName || 'N/A',
+          transferDate: transfer?.transferDate,
+          transferId: transfer?.id
+        };
+      })
+      .sort((a,b) => {
+          const dateA = a.transferDate ? parseISO(a.transferDate).getTime() : 0;
+          const dateB = b.transferDate ? parseISO(b.transferDate).getTime() : 0;
+          return dateB - dateA;
+      });
+  }, [searchQuery, transferItems, transfers]);
 
   return (
     <div className="h-screen bg-background text-foreground flex flex-col">
@@ -80,7 +109,7 @@ export default function TransferArchivePage() {
                     placeholder={t('search_by_invoice_or_model')}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 w-48"
+                    className="pl-10 w-64"
                 />
             </div>
             <Popover>
@@ -101,7 +130,7 @@ export default function TransferArchivePage() {
             </Popover>
         </div>
       </header>
-      <main className="flex-1 overflow-y-auto p-4 md:p-8">
+      <main className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8">
         {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[...Array(6)].map((_, i) => (
@@ -152,9 +181,57 @@ export default function TransferArchivePage() {
         ) : (
           <div className="text-center py-16 border-2 border-dashed rounded-lg">
             <Archive className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-medium">{searchQuery ? t('no_results') : t('no_archived_transfers')}</h3>
-            <p className="mt-2 text-sm text-muted-foreground">{searchQuery ? t('no_transfers_found_for_search', {query: searchQuery}) : t('no_archived_transfers_desc')}</p>
+            <h3 className="mt-4 text-lg font-medium">{t('no_results')}</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {searchQuery 
+                ? t('no_transfers_found_for_search', {query: searchQuery}) 
+                : t('no_archived_transfers')
+              }
+            </p>
           </div>
+        )}
+
+        {searchQuery && detailedSearchResults.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('matching_item_details')}</CardTitle>
+              <CardDescription>
+                {t('matching_item_details_desc', { query: searchQuery })}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t('model')}</TableHead>
+                    <TableHead>{t('quantity_short')}</TableHead>
+                    <TableHead>{t('invoice_no')}</TableHead>
+                    <TableHead>{t('transfer')}</TableHead>
+                    <TableHead>{t('date')}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {detailedSearchResults.map(item => (
+                    <TableRow key={item.id}>
+                      <TableCell>{item.model}</TableCell>
+                      <TableCell>{item.quantity}</TableCell>
+                      <TableCell>{item.invoiceNo || t('na')}</TableCell>
+                      <TableCell>
+                        <Button variant="link" asChild className="p-0 h-auto">
+                          <Link href={`/transmit/archive/${item.transferId}`}>
+                            {item.transferCargoName}
+                          </Link>
+                        </Button>
+                      </TableCell>
+                      <TableCell>
+                        {item.transferDate ? format(parseISO(item.transferDate), 'PPP') : t('na')}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         )}
       </main>
     </div>

@@ -261,7 +261,7 @@
   "search_item_by_model": "گەڕان بۆ کاڵا بەپێی مۆدێل",
   "search_item_by_model_desc": "شوێنی کاڵاکان لە هەموو فایلەکانی ئێکسڵدا بدۆزەرەوە.",
   "search": "گەڕان",
-  "no_results": "هیچ ئەنجامێک نییە",
+  "no_results": "هیچ ئەنجامێک نەدۆزرایەوە",
   "no_results_desc": "هیچ کاڵایەک نەدۆزرایەوە کە مۆدێلەکەی \"{query}\".ی تێدابێت",
   "file_name": "ناوی فایل",
   "file_date": "بەرواری فایل",
@@ -353,7 +353,7 @@
   "view_transfers": "بینینی گواستنەوەکان",
   "to_destination": "بۆ",
   "items_lowercase": "کاڵاکان",
-  "no_archived_transfers": "هیچ گواستنەوەیەکی ئەرشیفکراو نییە",
+  "no_archived_transfers": "هیچ گواستنەوەیەکی ئەرشیفکراو بۆ ئەم مانگە نییە.",
   "no_archived_transfers_desc": "یەکەم پسوولەی گواستنەوەی خۆت دروست بکە بۆ بینینی ئەرشیف لێرە.",
   "transfer_details": "وردەکارییەکانی گواستنەوە",
   "destination_city": "شاری مەبەست",
@@ -644,6 +644,12 @@
   "page_will_reload": "پەڕەکە ئێستا دووبارە باردەکرێتەوە.",
   "import_failed": "هاوردەکردن سەرکەوتوو نەبوو",
   "invalid_or_corrupted_file": "فایلی هەڵبژێردراو نادروستە یان خراپ بووە.",
-  "search_by_invoice_or_model": "گەڕان بەپێی پسوولە یان مۆدێل...",
-  "search_by_model_or_invoice": "گەڕان بەپێی مۆدێل یان پسوولە..."
+  "search_by_invoice": "گەڕان بەپێی ژ. پسوولە...",
+  "no_transfers_found_for_search": "هیچ گواستنەوەیەک نەدۆزرایەوە کە لەگەڵ \"{query}\"دا بگونجێت.",
+  "search_by_invoice_or_model": "گەڕان بەپێی ژ. پسوولە یان مۆدێل...",
+  "matching_item_details": "وردەکاری کاڵا گونجاوەکان",
+  "matching_item_details_desc": "لیستی وردی هەموو کاڵاکان کە لەگەڵ گەڕانەکەتدا بۆ \"{query}\" دەگونجێن.",
+  "transfer": "گواستنەوە",
+  "date": "بەروار",
+  "view": "بینین"
 }
