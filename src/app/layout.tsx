@@ -90,6 +90,23 @@ function AppContent({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         document.documentElement.lang = language;
         document.documentElement.dir = language === 'ku' ? 'rtl' : 'ltr';
+
+        // Listen for settings updates from other tabs
+        const channel = new BroadcastChannel('settings-update');
+        const handleMessage = (event: MessageEvent) => {
+            if (event.data === 'reload') {
+                // Add a small delay to allow data to sync, then reload
+                setTimeout(() => {
+                    window.location.reload();
+                }, 500);
+            }
+        };
+        channel.addEventListener('message', handleMessage);
+
+        return () => {
+            channel.removeEventListener('message', handleMessage);
+            channel.close();
+        };
     }, [language]);
     
     const isAppReady = !isLoading;

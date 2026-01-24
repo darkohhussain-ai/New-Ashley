@@ -346,6 +346,7 @@ function TranslationEditor({ onSave, draftSettings, setDraftSettings, storage }:
   const { t } = useTranslation();
   const { toast } = useToast();
   const [search, setSearch] = useState('');
+  const [uploadedFontUrl, setUploadedFontUrl] = useState<string | null>(null);
 
   const handleFontUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -365,11 +366,11 @@ function TranslationEditor({ onSave, draftSettings, setDraftSettings, storage }:
         
         uploadString(sRef, localUrl, 'data_url').then(() => {
           getDownloadURL(sRef).then(downloadURL => {
-            setDraftSettings(prev => ({ ...prev, customFont: downloadURL }));
+            setUploadedFontUrl(downloadURL);
             toast({
               id: toastId,
-              title: "Font Uploaded",
-              description: "Click 'Save All Changes' to apply the new font.",
+              title: "Upload Complete",
+              description: "Click 'Apply Font' to preview.",
             });
           });
         }).catch(error => {
@@ -386,6 +387,17 @@ function TranslationEditor({ onSave, draftSettings, setDraftSettings, storage }:
     reader.readAsDataURL(file);
   };
   
+  const handleApplyFont = () => {
+    if (uploadedFontUrl) {
+      setDraftSettings(prev => ({ ...prev, customFont: uploadedFontUrl }));
+      toast({
+        title: "Font Applied",
+        description: "The new font is now previewing. Click 'Save All Changes' to make it permanent.",
+      });
+      setUploadedFontUrl(null);
+    }
+  };
+
   const handleTranslationChange = (lang: 'en' | 'ku', key: string, value: string) => {
     setDraftSettings(prev => ({
       ...prev,
@@ -435,6 +447,11 @@ function TranslationEditor({ onSave, draftSettings, setDraftSettings, storage }:
                 onChange={handleFontUpload}
               />
             </div>
+            {uploadedFontUrl && (
+                <Button onClick={handleApplyFont} className="w-full">
+                    <Play className="mr-2 h-4 w-4" /> Apply Font
+                </Button>
+            )}
             {draftSettings.customFont && (
               <div className="space-y-2">
                 <Label>{t('font_preview')}</Label>
@@ -694,6 +711,13 @@ function SettingsPage() {
       title: 'Settings Saved',
       description: 'Your changes have been saved.',
     });
+     try {
+        const channel = new BroadcastChannel('settings-update');
+        channel.postMessage('reload');
+        channel.close();
+    } catch(e) {
+        console.error("Could not broadcast settings update", e);
+    }
   };
 
   const handleCancel = () => {
@@ -860,7 +884,7 @@ function SettingsPage() {
           <div className="flex items-center gap-4">
             <Button variant="outline" size="icon" asChild>
               <Link href="/">
-                <Home />
+                <ArrowLeft />
               </Link>
             </Button>
             <h1 className="text-xl">{t('settings')}</h1>
