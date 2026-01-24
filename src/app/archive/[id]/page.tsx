@@ -403,7 +403,7 @@ export default function FileDetailPage() {
         onclone: (document) => {
           if (customFont && language === 'ku') {
             const style = document.createElement('style');
-            style.innerHTML = `\'\'\'@font-face { font-family: 'CustomPdfFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }\'\'\'`;
+            style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
             document.head.appendChild(style);
           }
         }
