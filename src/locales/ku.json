@@ -673,5 +673,17 @@
   "save": "پاشەکەوتکردن",
   "add_item_to_list": "زیادکردنی کاڵا بۆ لیستی '{listName}'",
   "confirm_delete_list": "ئەمە لیستی '{listName}' و هەموو کاڵاکانی بە شێوەیەکی هەمیشەیی دەسڕێتەوە.",
-  "no_lists_created": "هێشتا هیچ لیستێک دروست نەکراوە."
+  "no_lists_created": "هێشتا هیچ لیستێک دروست نەکراوە.",
+  "backorders_waiting_list": "داواکاری دواخراو / لیستی چاوەڕوانی",
+  "stock_check": "پشکنینی کۆگا",
+  "check_inventory": "پشکنینی کۆگا",
+  "inventory_search_results_for": "ئەنجامی گەڕانی کۆگا بۆ '{itemName}'",
+  "no_matching_items_found": "هیچ کاڵایەکی گونجاو لە کۆگای سەرەکیدا نەدۆزرایەوە.",
+  "items_found_in_inventory": "{count} کاڵای گونجاو لە کۆگادا دۆزرایەوە.",
+  "mark_as_available": "نیشانکردن وەک بەردەست",
+  "status": "دۆخ",
+  "pending": "چاوەڕوان",
+  "available": "بەردەستە",
+  "completed": "تەواوبوو"
 }
+

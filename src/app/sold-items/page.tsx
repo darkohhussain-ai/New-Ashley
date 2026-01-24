@@ -1,10 +1,11 @@
+
 'use client';
 
 import { useState, useMemo, useRef } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Plus, Trash2, Edit, Save, X, Loader2, FileDown, Printer, Tag, CircleHelp, Settings, Receipt } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Edit, Save, X, Loader2, FileDown, Printer, Tag, CircleHelp, Settings, Receipt, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
@@ -12,7 +13,7 @@ import { format, parseISO } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { useAppContext } from '@/context/app-provider';
-import type { SoldItemReceipt, ItemCategory, WaitingList, WaitingListItem } from '@/lib/types';
+import type { SoldItemReceipt, ItemCategory, WaitingList, WaitingListItem, Item } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -23,6 +24,7 @@ import withAuth from '@/hooks/withAuth';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 function ReceiptsManager() {
   const { t } = useTranslation();
@@ -246,37 +248,52 @@ function ReceiptsManager() {
           </CardHeader>
           <CardContent>
               {isLoading ? <Loader2 className="mx-auto animate-spin" /> : (
-                <div className="space-y-4">
-                  {sortedReceipts.length > 0 ? sortedReceipts.map(receipt => (
-                    <div key={receipt.id} className="p-4 border rounded-lg flex justify-between items-start">
-                        <div>
-                            <p className="font-semibold text-primary flex items-center gap-2"><Receipt className="w-5 h-5"/> #{receipt.receiptNumber}</p>
-                            <p className="text-sm text-muted-foreground">{receipt.receiptDate ? format(parseISO(receipt.receiptDate), 'PPP') : ''}</p>
-                            <p className="text-sm mt-1">{receipt.customerName}</p>
-                            <div className="mt-2 space-x-1 space-y-1">
+                <div>
+                  {sortedReceipts.length > 0 ? (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>{t('receipt_number')}</TableHead>
+                          <TableHead>{t('receipt_date_optional')}</TableHead>
+                          <TableHead>{t('customer_name_optional')}</TableHead>
+                          <TableHead>{t('item_categories')}</TableHead>
+                          <TableHead className="text-right">{t('actions')}</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {sortedReceipts.map(receipt => (
+                          <TableRow key={receipt.id}>
+                            <TableCell className="font-semibold text-primary">#{receipt.receiptNumber}</TableCell>
+                            <TableCell>{receipt.receiptDate ? format(parseISO(receipt.receiptDate), 'PPP') : 'N/A'}</TableCell>
+                            <TableCell>{receipt.customerName || 'N/A'}</TableCell>
+                            <TableCell>
+                              <div className="flex flex-wrap gap-1">
                                 {receipt.itemCategories.map(catId => <Badge key={catId} variant="secondary">{getCategoryName(catId)}</Badge>)}
-                            </div>
-                        </div>
-                        <div className="flex items-center">
-                            <Button variant="ghost" size="icon" onClick={() => handleOpenReceiptDialog(receipt)}><Edit className="h-4 w-4"/></Button>
-                             <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
-                                  <AlertDialogDescription>This will permanently delete receipt #{receipt.receiptNumber}.</AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleDeleteReceipt(receipt.id)}>{t('delete')}</AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                        </div>
-                    </div>
-                  )) : (
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button variant="ghost" size="icon" onClick={() => handleOpenReceiptDialog(receipt)}><Edit className="h-4 w-4"/></Button>
+                               <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
+                                    <AlertDialogDescription>This will permanently delete receipt #{receipt.receiptNumber}.</AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDeleteReceipt(receipt.id)}>{t('delete')}</AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  ) : (
                       <div className="text-center py-16 border-2 border-dashed rounded-lg">
                           <Receipt className="mx-auto h-12 w-12 text-muted-foreground" />
                           <h3 className="mt-4 text-lg font-medium">{t('no_receipts_found')}</h3>
@@ -291,9 +308,57 @@ function ReceiptsManager() {
   );
 }
 
+function StockCheckDialog({ item, results, open, onClose, onMarkAvailable }: {
+  item: WaitingListItem | null;
+  results: Item[];
+  open: boolean;
+  onClose: () => void;
+  onMarkAvailable: () => void;
+}) {
+    const { t } = useTranslation();
+
+    if (!item) return null;
+
+    return (
+        <Dialog open={open} onOpenChange={onClose}>
+            <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle>{t('stock_check')}</DialogTitle>
+                    <DialogDescription>{t('inventory_search_results_for', {itemName: item.name})}</DialogDescription>
+                </DialogHeader>
+                <div className="max-h-[60vh] overflow-y-auto">
+                    {results.length > 0 ? (
+                        <div className="space-y-2">
+                           <p className="text-sm text-green-600">{t('items_found_in_inventory', {count: results.length})}</p>
+                           <Table>
+                               <TableHeader><TableRow><TableHead>{t('model')}</TableHead><TableHead>{t('quantity')}</TableHead><TableHead>{t('location')}</TableHead></TableRow></TableHeader>
+                               <TableBody>
+                                   {results.map(res => (
+                                       <TableRow key={res.id}>
+                                           <TableCell>{res.model}</TableCell>
+                                           <TableCell>{res.quantity}</TableCell>
+                                           <TableCell>{res.locationId || t('na')}</TableCell>
+                                       </TableRow>
+                                   ))}
+                               </TableBody>
+                           </Table>
+                        </div>
+                    ) : (
+                        <p className="py-8 text-center text-muted-foreground">{t('no_matching_items_found')}</p>
+                    )}
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={onClose}>{t('close')}</Button>
+                    {results.length > 0 && <Button onClick={onMarkAvailable}>{t('mark_as_available')}</Button>}
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
 function WaitingListsManager() {
   const { t } = useTranslation();
-  const { waitingLists, setWaitingLists, isLoading } = useAppContext();
+  const { waitingLists, setWaitingLists, isLoading, items: allItems } = useAppContext();
   const { toast } = useToast();
 
   const [selectedList, setSelectedList] = useState<WaitingList | null>(null);
@@ -306,11 +371,30 @@ function WaitingListsManager() {
   const [newItemName, setNewItemName] = useState('');
   const [newItemQty, setNewItemQty] = useState(1);
   const [newItemNotes, setNewItemNotes] = useState('');
+  
+  const [stockCheckItem, setStockCheckItem] = useState<WaitingListItem | null>(null);
+  const [stockCheckResults, setStockCheckResults] = useState<Item[]>([]);
 
   const sortedLists = useMemo(() => {
     if (!waitingLists) return [];
     return [...waitingLists].sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
   }, [waitingLists]);
+  
+  useEffect(() => {
+    if (selectedList) {
+      // Find the latest version of the selected list from the main state
+      const currentListState = waitingLists.find(l => l.id === selectedList.id);
+      if (currentListState) {
+        setSelectedList(currentListState);
+      } else {
+        // The list was deleted
+        setSelectedList(null);
+      }
+    } else if (sortedLists.length > 0) {
+      // Auto-select the first list if none is selected
+      setSelectedList(sortedLists[0]);
+    }
+  }, [waitingLists, selectedList?.id, sortedLists]);
   
   const handleSelectList = (list: WaitingList) => {
     setSelectedList(list);
@@ -349,17 +433,16 @@ function WaitingListsManager() {
     if (editingItem) { // Update
       const updatedItems = selectedList.items.map(item => item.id === editingItem.id ? { ...item, name: newItemName, quantity: newItemQty, notes: newItemNotes } : item);
       setWaitingLists(prev => prev.map(l => l.id === selectedList.id ? { ...l, items: updatedItems } : l));
-      setSelectedList(prev => prev ? { ...prev, items: updatedItems } : null);
     } else { // Add new
       const newItem: WaitingListItem = {
         id: crypto.randomUUID(),
         name: newItemName,
         quantity: newItemQty,
         notes: newItemNotes,
+        status: 'Pending',
       };
       const updatedItems = [...selectedList.items, newItem];
       setWaitingLists(prev => prev.map(l => l.id === selectedList.id ? { ...l, items: updatedItems } : l));
-      setSelectedList(prev => prev ? { ...prev, items: updatedItems } : null);
     }
 
     setIsItemDialogOpen(false);
@@ -373,7 +456,20 @@ function WaitingListsManager() {
     if (!selectedList) return;
     const updatedItems = selectedList.items.filter(item => item.id !== itemId);
     setWaitingLists(prev => prev.map(l => l.id === selectedList.id ? { ...l, items: updatedItems } : l));
-    setSelectedList(prev => prev ? { ...prev, items: updatedItems } : null);
+  };
+  
+  const handleUpdateStatus = (itemId: string, status: WaitingListItem['status']) => {
+    if (!selectedList) return;
+    const updatedItems = selectedList.items.map(item => item.id === itemId ? { ...item, status } : item);
+    setWaitingLists(prev => prev.map(l => l.id === selectedList.id ? { ...l, items: updatedItems } : l));
+  };
+  
+  const handleCheckStock = (item: WaitingListItem) => {
+    const results = allItems.filter(inventoryItem =>
+      inventoryItem.model.toLowerCase().includes(item.name.toLowerCase())
+    );
+    setStockCheckItem(item);
+    setStockCheckResults(results);
   };
 
   const handleExportPdf = () => {
@@ -386,8 +482,8 @@ function WaitingListsManager() {
 
     (doc as any).autoTable({
       startY: 30,
-      head: [[t('item_name'), t('quantity'), t('notes')]],
-      body: selectedList.items.map(item => [item.name, item.quantity, item.notes || '']),
+      head: [[t('item_name'), t('quantity'), t('status'), t('notes')]],
+      body: selectedList.items.map(item => [item.name, item.quantity, t(item.status?.toLowerCase() || 'pending'), item.notes || '']),
       styles: { halign: 'center', valign: 'middle' },
       headStyles: { halign: 'center', valign: 'middle' },
     });
@@ -404,17 +500,39 @@ function WaitingListsManager() {
 
     (doc as any).autoTable({
       startY: 30,
-      head: [[t('item_name'), t('quantity'), t('notes')]],
-      body: selectedList.items.map(item => [item.name, item.quantity, item.notes || '']),
+      head: [[t('item_name'), t('quantity'), t('status'), t('notes')]],
+      body: selectedList.items.map(item => [item.name, item.quantity, t(item.status?.toLowerCase() || 'pending'), item.notes || '']),
       styles: { halign: 'center', valign: 'middle' },
       headStyles: { halign: 'center', valign: 'middle' },
     });
     doc.autoPrint();
     window.open(doc.output('bloburl'), '_blank');
   };
+  
+  const getStatusBadgeVariant = (status?: WaitingListItem['status']) => {
+    switch (status) {
+        case 'Available': return 'default';
+        case 'Completed': return 'outline';
+        case 'Pending':
+        default:
+            return 'secondary';
+    }
+  }
 
   return (
     <>
+      <StockCheckDialog 
+        item={stockCheckItem}
+        results={stockCheckResults}
+        open={!!stockCheckItem}
+        onClose={() => setStockCheckItem(null)}
+        onMarkAvailable={() => {
+          if (stockCheckItem) {
+            handleUpdateStatus(stockCheckItem.id, 'Available');
+          }
+          setStockCheckItem(null);
+        }}
+      />
       <Dialog open={isListDialogOpen} onOpenChange={setIsListDialogOpen}>
         <DialogContent>
             <DialogHeader>
@@ -532,14 +650,29 @@ function WaitingListsManager() {
                   {selectedList ? (
                     <div className="overflow-x-auto">
                         <Table>
-                          <TableHeader><TableRow><TableHead>{t('item_name')}</TableHead><TableHead>{t('quantity')}</TableHead><TableHead>{t('notes')}</TableHead><TableHead className="text-right">{t('actions')}</TableHead></TableRow></TableHeader>
+                          <TableHeader><TableRow><TableHead>{t('item_name')}</TableHead><TableHead>{t('quantity')}</TableHead><TableHead>{t('status')}</TableHead><TableHead>{t('notes')}</TableHead><TableHead className="text-right">{t('actions')}</TableHead></TableRow></TableHeader>
                           <TableBody>
                             {selectedList.items.map(item => (
                               <TableRow key={item.id}>
                                 <TableCell>{item.name}</TableCell>
                                 <TableCell>{item.quantity}</TableCell>
+                                <TableCell>
+                                    <Select value={item.status || 'Pending'} onValueChange={(value: 'Pending' | 'Available' | 'Completed') => handleUpdateStatus(item.id, value)}>
+                                        <SelectTrigger className="w-32 h-8 text-xs">
+                                            <SelectValue>
+                                                <Badge variant={getStatusBadgeVariant(item.status)}>{t(item.status?.toLowerCase() || 'pending')}</Badge>
+                                            </SelectValue>
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Pending">{t('pending')}</SelectItem>
+                                            <SelectItem value="Available">{t('available')}</SelectItem>
+                                            <SelectItem value="Completed">{t('completed')}</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </TableCell>
                                 <TableCell>{item.notes || t('na')}</TableCell>
                                 <TableCell className="text-right">
+                                  <Button variant="ghost" size="icon" onClick={() => handleCheckStock(item)}><Search className="w-4 h-4 text-blue-500"/></Button>
                                   <Button variant="ghost" size="icon" onClick={() => { setEditingItem(item); setNewItemName(item.name); setNewItemQty(item.quantity); setNewItemNotes(item.notes || ''); setIsItemDialogOpen(true); }}><Edit className="w-4 h-4"/></Button>
                                   <Button variant="ghost" size="icon" onClick={() => handleDeleteItem(item.id)}><Trash2 className="w-4 h-4 text-destructive"/></Button>
                                 </TableCell>
@@ -574,7 +707,7 @@ const SoldItemsCheckPage = () => {
             <Tabs defaultValue="receipts" className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="receipts">{t('receipts')}</TabsTrigger>
-                <TabsTrigger value="waiting-lists">{t('waiting_lists')}</TabsTrigger>
+                <TabsTrigger value="waiting-lists">{t('backorders_waiting_list')}</TabsTrigger>
                 </TabsList>
                 <TabsContent value="receipts" className="mt-6">
                     <ReceiptsManager />

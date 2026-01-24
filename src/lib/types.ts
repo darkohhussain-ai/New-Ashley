@@ -66,6 +66,7 @@ export type WaitingListItem = {
   name: string;
   quantity: number;
   notes?: string;
+  status?: 'Pending' | 'Available' | 'Completed';
 };
 
 export type WaitingList = {

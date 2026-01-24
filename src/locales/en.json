@@ -673,6 +673,18 @@
   "save": "Save",
   "add_item_to_list": "Add Item to '{listName}'",
   "confirm_delete_list": "This will permanently delete the list '{listName}' and all its items.",
-  "no_lists_created": "No lists created yet."
+  "no_lists_created": "No lists created yet.",
+  "backorders_waiting_list": "Backorders / Waiting List",
+  "stock_check": "Stock Check",
+  "check_inventory": "Check Inventory",
+  "inventory_search_results_for": "Inventory Search Results for '{itemName}'",
+  "no_matching_items_found": "No matching items found in the main inventory.",
+  "items_found_in_inventory": "{count} matching item(s) found in inventory.",
+  "mark_as_available": "Mark as Available",
+  "status": "Status",
+  "pending": "Pending",
+  "available": "Available",
+  "completed": "Completed"
 }
+
 
