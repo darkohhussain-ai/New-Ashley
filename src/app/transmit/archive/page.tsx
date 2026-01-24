@@ -86,7 +86,9 @@ export default function TransferArchivePage() {
                                 <CardTitle className="text-lg leading-tight">{transfer.cargoName}</CardTitle>
                                 <CardDescription>{t('to_destination')}: {transfer.destinationCity}</CardDescription>
                             </div>
-                             <span className="text-xs font-mono text-muted-foreground mt-1">#{transfer.invoiceNumber.toString().padStart(6, '0')}</span>
+                             <span className="text-xs font-mono text-muted-foreground mt-1">
+                                #{transfer.invoiceNumber ? transfer.invoiceNumber.toString().padStart(6, '0') : 'N/A'}
+                             </span>
                         </div>
                     </CardHeader>
                     <CardContent className="flex-grow space-y-3 text-sm text-muted-foreground">
