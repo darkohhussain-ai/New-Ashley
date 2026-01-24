@@ -1470,7 +1470,7 @@ function SettingsPage() {
                             logoSrc={currentPdfSettings.logo ?? draftSettings.appLogo}
                             themeColor={draftSettings.pdfSettings.report.reportColors?.[selectedReportType] || '#22c55e'}
                         >
-                            <div className="p-6 flex-grow" style={{fontFamily: draftSettings.fontFamily, sans-serif: 'sans-serif'}}>
+                            <div className="p-6 flex-grow" style={{fontFamily: `${draftSettings.fontFamily}, sans-serif`}}>
                                 <h3 className="mb-2">{t('sample_section')}</h3>
                                 <p className="text-sm text-gray-600 mb-4">{t('sample_body_text')}</p>
                                 <Table className={cn(currentPdfSettings.tableTheme === 'grid' && 'border')}>
@@ -1595,3 +1595,5 @@ function SettingsPage() {
 }
 
 export default withAuth(SettingsPage);
+
+    

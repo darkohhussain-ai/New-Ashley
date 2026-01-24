@@ -2,7 +2,8 @@
 'use client';
 
 import React, { createContext, useContext, ReactNode, useState, useEffect, useCallback } from 'react';
-import { useAppContext } from '@/context/app-provider';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
 import type { User, Role } from '@/lib/types';
 
 interface AuthState {
@@ -16,9 +17,16 @@ interface AuthState {
 const AuthContext = createContext<AuthState | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { users, roles } = useAppContext();
+  const db = useFirestore();
+  
+  const usersRef = useMemoFirebase(() => (db ? collection(db, 'users') : null), [db]);
+  const { data: users, isLoading: usersLoading } = useCollection<User>(usersRef);
+
+  const rolesRef = useMemoFirebase(() => (db ? collection(db, 'roles') : null), [db]);
+  const { data: roles, isLoading: rolesLoading } = useCollection<Role>(rolesRef);
+
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(true);
   const [userPermissions, setUserPermissions] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -31,11 +39,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         sessionStorage.removeItem('currentUser');
       }
     }
-    setLoading(false);
+    setAuthLoading(false);
   }, []);
 
   useEffect(() => {
-    if (currentUser && roles.length > 0) {
+    if (currentUser && roles && roles.length > 0) {
       const userRole = roles.find(role => role.id === currentUser.roleId);
       if (userRole) {
         const newPermissions = new Set(userRole.permissions);
@@ -48,7 +56,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [currentUser, roles]);
 
+  const loading = usersLoading || rolesLoading || authLoading;
+
   const login = useCallback(async (username: string, password: string): Promise<boolean> => {
+    if (!users) {
+        console.error("Login tried before users were loaded.");
+        return false;
+    }
     const foundUser = users.find(
       u => u.username.toLowerCase() === username.toLowerCase() && u.password === password
     );
