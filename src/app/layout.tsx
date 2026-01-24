@@ -82,7 +82,7 @@ function SystemCornerLogo() {
 }
 
 function AppContent({ children }: { children: React.ReactNode }) {
-    const { isLoading } = useAppContext();
+    const { isLoading, settings } = useAppContext();
     const { language } = useTranslation();
     const pathname = usePathname();
     const isLoginPage = pathname === '/login';
@@ -91,24 +91,24 @@ function AppContent({ children }: { children: React.ReactNode }) {
         document.documentElement.lang = language;
         document.documentElement.dir = language === 'ku' ? 'rtl' : 'ltr';
     }, [language]);
-
-    if (isLoading) {
-        return <SplashScreen />;
-    }
+    
+    const isAppReady = !isLoading;
 
     return (
         <>
             <CustomFontInjector />
-            {!isLoginPage && (
-              <>
-                <MainBackground />
-                <AppHeader />
-                <SystemCornerLogo />
-              </>
-            )}
-            <div key={pathname} className="animate-fade-in-down">
-              {children}
-            </div>
+
+            {!isLoginPage && <MainBackground />}
+            {!isLoginPage && <SystemCornerLogo />}
+            
+            {isAppReady ? (
+                <>
+                    {!isLoginPage && <AppHeader />}
+                    <div key={pathname} className="animate-fade-in-down">
+                        {children}
+                    </div>
+                </>
+            ) : <SplashScreen />}
         </>
     );
 }

@@ -27,6 +27,7 @@ import {
   LogIn,
   Image as ImageIconLucide,
   X,
+  Home,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -88,7 +89,7 @@ import { cn } from '@/lib/utils';
 import { LanguageContext, Translations } from '@/context/language-provider';
 import withAuth from '@/hooks/withAuth';
 import { useAppContext } from '@/context/app-provider';
-import { initialSettings } from '@/context/initial-data';
+import { initialSettings, initialData } from '@/context/initial-data';
 import { getAllDataForExport, importData } from '@/hooks/use-local-storage';
 import { useStorage } from '@/firebase';
 import {
@@ -713,32 +714,50 @@ function SettingsPage() {
     });
   };
 
-  const handleResetToDefault = () => {
-    setEmployees(initialSettings.employees);
-    setItems(initialSettings.items);
-    setExcelFiles(initialSettings.excelFiles);
-    setLocations(initialSettings.locations);
-    setExpenses(initialSettings.expenses);
-    setExpenseReports(initialSettings.expenseReports);
-    setOvertime(initialSettings.overtime);
-    setBonuses(initialSettings.bonuses);
-    setWithdrawals(initialSettings.withdrawals);
-    setReceipts(initialSettings.receipts);
-    setItemCategories(initialSettings.itemCategories);
-    setTransfers(initialSettings.transfers);
-    setTransferItems(initialSettings.transferItems);
-    setMarketingFeedbacks(initialSettings.marketingFeedbacks);
-    setEvaluationQuestions(initialSettings.evaluationQuestions);
-    setUsers(initialSettings.users);
-    setRoles(initialSettings.roles);
+  const handleResetToDefault = async () => {
+    toast({
+      title: "Resetting Data...",
+      description: "This process can take up to a minute. Please don't close this tab.",
+      duration: 60000,
+    });
+    setResetConfirmText("");
+
+    const resetOperations = [
+      () => setUsers(initialData.users),
+      () => setRoles(initialData.roles),
+      () => setEmployees(initialData.employees),
+      () => setExcelFiles(initialData.excelFiles),
+      () => setItems(initialData.items),
+      () => setLocations(initialData.locations),
+      () => setExpenses(initialData.expenses),
+      () => setExpenseReports(initialData.expenseReports),
+      () => setOvertime(initialData.overtime),
+      () => setBonuses(initialData.bonuses),
+      () => setWithdrawals(initialData.withdrawals),
+      () => setReceipts(initialData.receipts),
+      () => setItemCategories(initialData.itemCategories),
+      () => setTransfers(initialData.transfers),
+      () => setTransferItems(initialData.transferItems),
+      () => setMarketingFeedbacks(initialData.marketingFeedbacks),
+      () => setEvaluationQuestions(initialData.evaluationQuestions),
+    ];
+
+    for (const op of resetOperations) {
+        op();
+        await new Promise(resolve => setTimeout(resolve, 500));
+    }
+    
     setSettings(initialSettings);
     setDraftSettings(initialSettings);
 
     toast({
       title: t('settings_reset'),
-      description: t('settings_reset_desc'),
+      description: "Reset complete. The application will now reload.",
     });
-    setResetConfirmText("");
+
+    setTimeout(() => {
+        window.location.reload();
+    }, 2000);
   };
 
   const handleExport = async () => {
@@ -807,8 +826,7 @@ function SettingsPage() {
         <header className="flex items-center gap-4 mb-8">
           <Button variant="outline" size="icon" asChild>
             <Link href="/">
-              {' '}
-              <ArrowLeft />{' '}
+              <Home />
             </Link>
           </Button>
           <h1 className="text-2xl md:text-3xl">{t('settings')}</h1>
@@ -839,8 +857,7 @@ function SettingsPage() {
           <div className="flex items-center gap-4">
             <Button variant="outline" size="icon" asChild>
               <Link href="/">
-                {' '}
-                <ArrowLeft />{' '}
+                <Home />
               </Link>
             </Button>
             <h1 className="text-xl">{t('settings')}</h1>
