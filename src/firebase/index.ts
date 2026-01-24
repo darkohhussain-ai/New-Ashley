@@ -28,11 +28,12 @@ export async function initializeFirebase() {
 export async function getSdks(firebaseApp: FirebaseApp) {
   const firestore = getFirestore(firebaseApp);
   try {
-    await enableIndexedDbPersistence(firestore);
+    await enableIndexedDbPersistence(firestore, { synchronizeTabs: true });
   } catch (err: any) {
       if (err.code == 'failed-precondition') {
         // Multiple tabs open, persistence can only be enabled in one.
-        // Silently fail, as another tab is handling persistence.
+        // This is a normal scenario and can be ignored.
+        console.log("Firestore persistence failed-precondition, likely due to multiple tabs. This is normal.");
       } else if (err.code == 'unimplemented') {
         // The current browser does not support all of the
         // features required to enable persistence.
