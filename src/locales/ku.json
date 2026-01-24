@@ -645,5 +645,5 @@
   "import_failed": "هاوردەکردن سەرکەوتوو نەبوو",
   "invalid_or_corrupted_file": "فایلی هەڵبژێردراو نادروستە یان خراپ بووە.",
   "search_by_invoice": "گەڕان بەپێی ژ. پسوولە...",
-  "no_transfers_found_for_invoice": "هیچ گواستنەوەیەک نەدۆزرایەوە کە لەگەڵ پسوولەی \"{query}\" بگونجێت."
+  "search_by_model_or_invoice": "گەڕان بەپێی مۆدێل یان پسوولە..."
 }

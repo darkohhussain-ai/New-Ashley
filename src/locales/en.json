@@ -645,5 +645,6 @@
   "import_failed": "Import Failed",
   "invalid_or_corrupted_file": "The selected file is invalid or corrupted.",
   "search_by_invoice": "Search by Invoice #...",
-  "no_transfers_found_for_invoice": "No transfers found matching invoice \"{query}\"."
+  "no_transfers_found_for_invoice": "No transfers found matching invoice \"{query}\".",
+  "search_by_model_or_invoice": "Search by model or invoice..."
 }
