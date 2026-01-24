@@ -351,53 +351,43 @@ function TranslationEditor({ onSave, draftSettings, setDraftSettings, storage }:
   const [isUploadingFont, setIsUploadingFont] = useState(false);
 
 
-  const handleFontUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFontUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !storage) return;
 
     setIsUploadingFont(true);
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const localUrl = event.target?.result as string;
-      if (localUrl) {
-        const filePath = `settings/customFont.ttf`;
-        const sRef = storageRef(storage, filePath);
+    
+    try {
+        const localUrl = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (event) => resolve(event.target?.result as string);
+            reader.onerror = (error) => reject(error);
+            reader.readAsDataURL(file);
+        });
         
-        uploadString(sRef, localUrl, 'data_url').then(() => {
-          getDownloadURL(sRef).then(downloadURL => {
+        if (localUrl) {
+            const filePath = `settings/customFont.ttf`;
+            const sRef = storageRef(storage, filePath);
+            
+            await uploadString(sRef, localUrl, 'data_url');
+            const downloadURL = await getDownloadURL(sRef);
+            
             setUploadedFontUrl(downloadURL);
             toast({
               title: "Upload Complete",
               description: "Click 'Apply Font' to preview.",
             });
-            setIsUploadingFont(false);
-          }).catch(err => {
-            console.error("Font upload error:", err);
-            toast({
-              variant: "destructive",
-              title: "Upload Failed",
-              description: "Could not get the font URL.",
-            });
-            setIsUploadingFont(false);
-          });
-        }).catch(err => {
-          console.error("Font upload error:", err);
-           toast({
-              variant: "destructive",
-              title: "Upload Failed",
-              description: "The font could not be uploaded.",
-           });
-           setIsUploadingFont(false);
+        }
+    } catch (error) {
+        console.error("Font upload error:", error);
+        toast({
+          variant: "destructive",
+          title: "Upload Failed",
+          description: "Could not upload the font file. Please try again.",
         });
-      } else {
+    } finally {
         setIsUploadingFont(false);
-      }
-    };
-    reader.onerror = () => {
-      setIsUploadingFont(false);
     }
-    reader.readAsDataURL(file);
   };
   
   const handleApplyFont = () => {
@@ -871,13 +861,11 @@ function SettingsPage() {
   if (!settings || !draftSettings) {
     return (
       <div className="h-screen bg-background text-foreground flex flex-col">
-        <header className="flex items-center gap-4 mb-8">
-          <Button variant="outline" size="icon" asChild>
-            <Link href="/">
-              <ArrowLeft />
-            </Link>
-          </Button>
-          <h1 className="text-2xl md:text-3xl">{t('settings')}</h1>
+        <header className="flex items-center gap-4 mb-8 p-4 border-b">
+            <Button variant="outline" size="icon" asChild>
+                <Link href="/"><ArrowLeft /></Link>
+            </Button>
+            <h1 className="text-2xl md:text-3xl">{t('settings')}</h1>
         </header>
         <div className="flex items-center justify-center flex-1">
           {t('loading')}
