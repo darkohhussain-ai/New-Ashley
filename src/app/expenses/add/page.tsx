@@ -328,6 +328,21 @@ export default function AddExpensePage() {
                             }}
                             captionLayout="dropdown-nav" fromYear={2020} toYear={2040} initialFocus 
                         />
+                         <div className="p-2 border-t">
+                            <Input 
+                                type="text"
+                                placeholder="yyyy-mm-dd"
+                                value={date ? format(date, 'yyyy-MM-dd') : ''}
+                                onChange={(e) => {
+                                    try {
+                                        const newDate = parseISO(e.target.value);
+                                        if (!isNaN(newDate.getTime())) {
+                                            setDate(newDate);
+                                        }
+                                    } catch {}
+                                }}
+                            />
+                        </div>
                     </PopoverContent>
                     </Popover>
                     <Button variant="outline" onClick={handlePrint} disabled={isLoading || dailyExpenses.length === 0}><Printer className="mr-2"/>{t('print')}</Button>

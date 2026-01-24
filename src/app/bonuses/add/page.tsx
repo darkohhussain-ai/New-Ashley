@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -203,12 +204,27 @@ export default function AddBonusPage() {
                     mode="single" 
                     selected={selectedDate} 
                     onSelect={(date) => {
-                        setSelectedDate(date);
+                        if(date) setSelectedDate(date);
                         setIsCalendarOpen(false);
                     }} 
                     initialFocus 
                     captionLayout="dropdown-nav" fromYear={2020} toYear={2040} 
                 />
+                <div className="p-2 border-t">
+                  <Input 
+                      type="text"
+                      placeholder="yyyy-mm-dd"
+                      value={selectedDate ? format(selectedDate, 'yyyy-MM-dd') : ''}
+                      onChange={(e) => {
+                          try {
+                              const newDate = parseISO(e.target.value);
+                              if (!isNaN(newDate.getTime())) {
+                                  setSelectedDate(newDate);
+                              }
+                          } catch {}
+                      }}
+                  />
+                </div>
               </PopoverContent>
             </Popover>
           </div>

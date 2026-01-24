@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
-import { format, formatISO } from 'date-fns';
+import { format, formatISO, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
@@ -218,6 +218,21 @@ export default function NewFilePage() {
                                     initialFocus 
                                     captionLayout="dropdown-nav" fromYear={2020} toYear={2040} 
                                 />
+                                <div className="p-2 border-t">
+                                    <Input 
+                                        type="text"
+                                        placeholder="yyyy-mm-dd"
+                                        value={date ? format(date, 'yyyy-MM-dd') : ''}
+                                        onChange={(e) => {
+                                            try {
+                                                const newDate = parseISO(e.target.value);
+                                                if (!isNaN(newDate.getTime())) {
+                                                    setDate(newDate);
+                                                }
+                                            } catch {}
+                                        }}
+                                    />
+                                </div>
                             </PopoverContent>
                         </Popover>
                     </div>

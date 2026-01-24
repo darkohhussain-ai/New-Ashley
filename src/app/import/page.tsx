@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -13,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
-import { format, formatISO } from 'date-fns';
+import { format, formatISO, parseISO } from 'date-fns';
 import * as XLSX from 'xlsx';
 import { cn } from '@/lib/utils';
 import { useAppContext } from '@/context/app-provider';
@@ -201,6 +202,21 @@ export default function ImportPage() {
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
                 <CalendarComponent mode="single" selected={date} onSelect={setDate} initialFocus />
+                 <div className="p-2 border-t">
+                    <Input 
+                        type="text"
+                        placeholder="yyyy-mm-dd"
+                        value={date ? format(date, 'yyyy-MM-dd') : ''}
+                        onChange={(e) => {
+                            try {
+                                const newDate = parseISO(e.target.value);
+                                if (!isNaN(newDate.getTime())) {
+                                    setDate(newDate);
+                                }
+                            } catch {}
+                        }}
+                    />
+                </div>
               </PopoverContent>
             </Popover>
           </div>

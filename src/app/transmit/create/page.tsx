@@ -5,7 +5,7 @@
 
 import { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Calendar as CalendarIcon, Truck, FileDown, User, Warehouse, Loader2 } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Edit, Save, X, Loader2, ListPlus, Calendar as CalendarIcon, Truck, FileDown, User, Warehouse } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -251,6 +251,21 @@ export default function CreateTransferPage() {
                                 }}
                                 initialFocus
                               />
+                              <div className="p-2 border-t">
+                                <Input 
+                                    type="text"
+                                    placeholder="yyyy-mm-dd"
+                                    value={transferDate ? format(transferDate, 'yyyy-MM-dd') : ''}
+                                    onChange={(e) => {
+                                        try {
+                                            const newDate = parseISO(e.target.value);
+                                            if (!isNaN(newDate.getTime())) {
+                                                setTransferDate(newDate);
+                                            }
+                                        } catch {}
+                                    }}
+                                />
+                              </div>
                             </PopoverContent>
                         </Popover>
                     </div>

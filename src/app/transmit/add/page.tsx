@@ -162,6 +162,22 @@ export default function AddItemsPage() {
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0">
                                 <Calendar mode="single" selected={editingItem ? (editingItem.requestDate ? new Date(editingItem.requestDate) : new Date()) : requestDate} onSelect={(date) => editingItem ? setEditingItem({...editingItem, requestDate: date ? formatISO(date) : undefined}) : setRequestDate(date)} initialFocus />
+                                 <div className="p-2 border-t">
+                                    <Input 
+                                        type="text"
+                                        placeholder="yyyy-mm-dd"
+                                        value={requestDate ? format(requestDate, 'yyyy-MM-dd') : ''}
+                                        onChange={(e) => {
+                                            try {
+                                                const newDate = parseISO(e.target.value);
+                                                if (!isNaN(newDate.getTime())) {
+                                                    const setter = editingItem ? (d: Date) => setEditingItem({...editingItem, requestDate: d.toISOString()}) : setRequestDate;
+                                                    setter(newDate);
+                                                }
+                                            } catch {}
+                                        }}
+                                    />
+                                </div>
                             </PopoverContent>
                         </Popover>
                     </div>
