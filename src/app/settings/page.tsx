@@ -27,7 +27,6 @@ import {
   LogIn,
   Image as ImageIconLucide,
   X,
-  Home,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -826,7 +825,7 @@ function SettingsPage() {
         <header className="flex items-center gap-4 mb-8">
           <Button variant="outline" size="icon" asChild>
             <Link href="/">
-              <Home />
+              <ArrowLeft />
             </Link>
           </Button>
           <h1 className="text-2xl md:text-3xl">{t('settings')}</h1>
@@ -857,7 +856,7 @@ function SettingsPage() {
           <div className="flex items-center gap-4">
             <Button variant="outline" size="icon" asChild>
               <Link href="/">
-                <Home />
+                <ArrowLeft />
               </Link>
             </Button>
             <h1 className="text-xl">{t('settings')}</h1>
