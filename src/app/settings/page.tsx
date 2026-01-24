@@ -1595,5 +1595,3 @@ function SettingsPage() {
 }
 
 export default withAuth(SettingsPage);
-
-    

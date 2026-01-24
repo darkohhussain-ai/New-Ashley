@@ -299,7 +299,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
         
         if (finalImgHeight > pdfHeight) {
             finalImgHeight = pdfHeight;
-            finalWidth = finalImgHeight * ratio;
+            finalImgWidth = finalImgHeight * ratio;
         }
 
         const x = (pdfWidth - finalImgWidth) / 2;
