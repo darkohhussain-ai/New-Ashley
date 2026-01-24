@@ -28,6 +28,7 @@ import {
   Image as ImageIconLucide,
   X,
   Home,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -347,15 +348,14 @@ function TranslationEditor({ onSave, draftSettings, setDraftSettings, storage }:
   const { toast } = useToast();
   const [search, setSearch] = useState('');
   const [uploadedFontUrl, setUploadedFontUrl] = useState<string | null>(null);
+  const [isUploadingFont, setIsUploadingFont] = useState(false);
+
 
   const handleFontUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !storage) return;
 
-    const uploadToast = toast({
-      title: "Uploading Font...",
-      description: "Please wait while the font is being uploaded.",
-    });
+    setIsUploadingFont(true);
 
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -367,31 +367,36 @@ function TranslationEditor({ onSave, draftSettings, setDraftSettings, storage }:
         uploadString(sRef, localUrl, 'data_url').then(() => {
           getDownloadURL(sRef).then(downloadURL => {
             setUploadedFontUrl(downloadURL);
-            uploadToast.update({
-              id: uploadToast.id,
+            toast({
               title: "Upload Complete",
               description: "Click 'Apply Font' to preview.",
             });
-          }).catch(error => {
-            console.error("Font upload error:", error);
-            uploadToast.update({
-              id: uploadToast.id,
+            setIsUploadingFont(false);
+          }).catch(err => {
+            console.error("Font upload error:", err);
+            toast({
               variant: "destructive",
               title: "Upload Failed",
               description: "Could not get the font URL.",
             });
+            setIsUploadingFont(false);
           });
-        }).catch(error => {
-          console.error("Font upload error:", error);
-           uploadToast.update({
-              id: uploadToast.id,
+        }).catch(err => {
+          console.error("Font upload error:", err);
+           toast({
               variant: "destructive",
               title: "Upload Failed",
               description: "The font could not be uploaded.",
            });
+           setIsUploadingFont(false);
         });
+      } else {
+        setIsUploadingFont(false);
       }
     };
+    reader.onerror = () => {
+      setIsUploadingFont(false);
+    }
     reader.readAsDataURL(file);
   };
   
@@ -453,8 +458,15 @@ function TranslationEditor({ onSave, draftSettings, setDraftSettings, storage }:
                 type="file"
                 accept=".ttf,.woff,.woff2"
                 onChange={handleFontUpload}
+                disabled={isUploadingFont}
               />
             </div>
+            {isUploadingFont && (
+                <div className="text-sm text-muted-foreground flex items-center gap-2 pt-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Uploading font...</span>
+                </div>
+            )}
             {uploadedFontUrl && (
                 <Button onClick={handleApplyFont} className="w-full">
                     <Play className="mr-2 h-4 w-4" /> Apply Font
@@ -527,6 +539,7 @@ function TranslationEditor({ onSave, draftSettings, setDraftSettings, storage }:
     </Card>
   );
 }
+
 
 function SettingsPage() {
   const { toast } = useToast();
