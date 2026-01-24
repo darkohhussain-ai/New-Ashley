@@ -15,7 +15,7 @@ import {
     Overtime,
     Bonus,
     CashWithdrawal,
-    SoldItemReceipt,
+    SoldItemsList,
     ItemCategory,
     Transfer,
     ItemForTransfer,
@@ -24,7 +24,6 @@ import {
     User,
     Role,
     AppSettings,
-    WaitingList,
 } from '@/lib/types';
 import { setDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { initialData, initialSettings } from './initial-data';
@@ -50,8 +49,6 @@ interface AppState {
     setBonuses: React.Dispatch<React.SetStateAction<Bonus[]>>;
     withdrawals: CashWithdrawal[];
     setWithdrawals: React.Dispatch<React.SetStateAction<CashWithdrawal[]>>;
-    receipts: SoldItemReceipt[];
-    setReceipts: React.Dispatch<React.SetStateAction<SoldItemReceipt[]>>;
     itemCategories: ItemCategory[];
     setItemCategories: React.Dispatch<React.SetStateAction<ItemCategory[]>>;
     transfers: Transfer[];
@@ -66,8 +63,8 @@ interface AppState {
     setUsers: React.Dispatch<React.SetStateAction<User[]>>;
     roles: Role[];
     setRoles: React.Dispatch<React.SetStateAction<Role[]>>;
-    waitingLists: WaitingList[];
-    setWaitingLists: React.Dispatch<React.SetStateAction<WaitingList[]>>;
+    soldItemsLists: SoldItemsList[];
+    setSoldItemsLists: React.Dispatch<React.SetStateAction<SoldItemsList[]>>;
     settings: AppSettings;
     setSettings: (value: React.SetStateAction<AppSettings>) => void;
     isLoading: boolean;
@@ -147,7 +144,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const [overtime, setOvertime, isOvertimeLoading] = useFirestoreCollection<Overtime>('overtime', initialData.overtime);
     const [bonuses, setBonuses, isBonusesLoading] = useFirestoreCollection<Bonus>('bonuses', initialData.bonuses);
     const [withdrawals, setWithdrawals, isWithdrawalsLoading] = useFirestoreCollection<CashWithdrawal>('withdrawals', initialData.withdrawals);
-    const [receipts, setReceipts, isReceiptsLoading] = useFirestoreCollection<SoldItemReceipt>('receipts', initialData.receipts);
     const [itemCategories, setItemCategories, isItemCategoriesLoading] = useFirestoreCollection<ItemCategory>('itemCategories', initialData.itemCategories);
     const [transfers, setTransfers, isTransfersLoading] = useFirestoreCollection<Transfer>('transfers', initialData.transfers);
     const [transferItems, setTransferItems, isTransferItemsLoading] = useFirestoreCollection<ItemForTransfer>('transferItems', initialData.transferItems);
@@ -155,7 +151,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const [evaluationQuestions, setEvaluationQuestions, isEvaluationQuestionsLoading] = useFirestoreCollection<EvaluationQuestion>('evaluationQuestions', initialData.evaluationQuestions);
     const [users, setUsers, isUsersLoading] = useFirestoreCollection<User>('users', initialData.users);
     const [roles, setRoles, isRolesLoading] = useFirestoreCollection<Role>('roles', initialData.roles);
-    const [waitingLists, setWaitingLists, isWaitingListsLoading] = useFirestoreCollection<WaitingList>('waitingLists', initialData.waitingLists);
+    const [soldItemsLists, setSoldItemsLists, isSoldItemsListsLoading] = useFirestoreCollection<SoldItemsList>('soldItemsLists', initialData.soldItemsLists);
     
     // Settings Singleton Document
     const settingsDocRef = useMemoFirebase(() => db ? doc(db, 'settings', 'main') : null, [db]);
@@ -197,7 +193,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
     }, [settingsDocRef, settings]);
     
-    const isLoading = isUserLoading || !isInitialSettingsLoaded || isEmployeesLoading || isExcelFilesLoading || isItemsLoading || isLocationsLoading || isExpensesLoading || isExpenseReportsLoading || isOvertimeLoading || isBonusesLoading || isWithdrawalsLoading || isReceiptsLoading || isItemCategoriesLoading || isTransfersLoading || isTransferItemsLoading || isMarketingFeedbacksLoading || isEvaluationQuestionsLoading || isUsersLoading || isRolesLoading || isWaitingListsLoading;
+    const isLoading = isUserLoading || !isInitialSettingsLoaded || isEmployeesLoading || isExcelFilesLoading || isItemsLoading || isLocationsLoading || isExpensesLoading || isExpenseReportsLoading || isOvertimeLoading || isBonusesLoading || isWithdrawalsLoading || isItemCategoriesLoading || isTransfersLoading || isTransferItemsLoading || isMarketingFeedbacksLoading || isEvaluationQuestionsLoading || isUsersLoading || isRolesLoading || isSoldItemsListsLoading;
 
     const value = useMemo<AppState>(() => ({
         employees, setEmployees,
@@ -209,7 +205,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         overtime, setOvertime,
         bonuses, setBonuses,
         withdrawals, setWithdrawals,
-        receipts, setReceipts,
         itemCategories, setItemCategories,
         transfers, setTransfers,
         transferItems, setTransferItems,
@@ -217,7 +212,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         evaluationQuestions, setEvaluationQuestions,
         users, setUsers,
         roles, setRoles,
-        waitingLists, setWaitingLists,
+        soldItemsLists, setSoldItemsLists,
         settings, 
         setSettings: setSettings,
         isLoading,
@@ -231,7 +226,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         overtime, setOvertime,
         bonuses, setBonuses,
         withdrawals, setWithdrawals,
-        receipts, setReceipts,
         itemCategories, setItemCategories,
         transfers, setTransfers,
         transferItems, setTransferItems,
@@ -239,7 +233,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         evaluationQuestions, setEvaluationQuestions,
         users, setUsers,
         roles, setRoles,
-        waitingLists, setWaitingLists,
+        soldItemsLists, setSoldItemsLists,
         settings,
         setSettings,
         isLoading

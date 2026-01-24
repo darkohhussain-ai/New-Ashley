@@ -42,7 +42,7 @@ export type ExcelFile = {
   id: string;
   storekeeperId: string;
   storageName: string;
-  categoryName: string;
+  categoryName:string;
   date: string;
   source: string;
   type: 'new' | 'imported';
@@ -61,19 +61,19 @@ export type Item = {
   updateStatus?: 'NEW' | 'UPDATED' | 'DELETED' | '';
 };
 
-export type WaitingListItem = {
+export type SoldItemsListItem = {
   id: string;
   name: string;
   quantity: number;
   notes?: string;
-  status?: 'Pending' | 'Available' | 'Completed';
+  categoryId: string;
 };
 
-export type WaitingList = {
+export type SoldItemsList = {
   id: string;
   name: string;
   date: string;
-  items: WaitingListItem[];
+  items: SoldItemsListItem[];
 };
 
 export type StorageLocation = {
@@ -127,14 +127,6 @@ export type CashWithdrawal = {
   date: string;
   notes?: string;
 };
-
-export type SoldItemReceipt = {
-    id: string;
-    receiptNumber: string;
-    receiptDate?: string;
-    customerName?: string;
-    itemCategories: string[];
-}
 
 export type ItemCategory = {
     id: string;
