@@ -1,5 +1,5 @@
 
-import { Employee, ExcelFile, Item, StorageLocation, Expense, ExpenseReport, Overtime, Bonus, CashWithdrawal, SoldItemReceipt, Transfer, ItemForTransfer, MarketingFeedback, EvaluationQuestion, AnswerOption, User, Role, AppSettings, AllPdfSettings, PdfSettings, ThemeColors, ItemCategory, BranchColors } from '@/lib/types';
+import { Employee, ExcelFile, Item, StorageLocation, Expense, ExpenseReport, Overtime, Bonus, CashWithdrawal, SoldItemReceipt, Transfer, ItemForTransfer, MarketingFeedback, EvaluationQuestion, AnswerOption, User, Role, AppSettings, AllPdfSettings, PdfSettings, ThemeColors, ItemCategory, BranchColors, WaitingList } from '@/lib/types';
 import { adminPermissions, adminAssistantPermissions, viewerPermissions, employeePermissions } from '@/lib/permissions';
 import en from '@/locales/en.json';
 import ku from '@/locales/ku.json';
@@ -135,6 +135,7 @@ export const initialData: {
     evaluationQuestions: EvaluationQuestion[],
     users: User[],
     roles: Role[],
+    waitingLists: WaitingList[],
 } = {
     employees: [
       { id: 'emp-01', name: 'Darko', employeeId: '01', role: 'Super Manager', createdAt: '2023-01-01T00:00:00.000Z', isActive: true },
@@ -179,4 +180,5 @@ export const initialData: {
     ],
     users: initialUsers,
     roles: initialRoles,
+    waitingLists: [],
 };

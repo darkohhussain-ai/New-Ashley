@@ -61,6 +61,20 @@ export type Item = {
   updateStatus?: 'NEW' | 'UPDATED' | 'DELETED' | '';
 };
 
+export type WaitingListItem = {
+  id: string;
+  name: string;
+  quantity: number;
+  notes?: string;
+};
+
+export type WaitingList = {
+  id: string;
+  name: string;
+  date: string;
+  items: WaitingListItem[];
+};
+
 export type StorageLocation = {
   id: string;
   name: string;

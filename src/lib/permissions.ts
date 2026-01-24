@@ -35,6 +35,7 @@ export const allPermissions: Permission[] = [
     { id: 'page:items:archive', description: 'View Excel file archive' },
     { id: 'page:items:pdf', description: 'View PDF archive' },
     { id: 'page:items:sold', description: 'Access sold items check' },
+    { id: 'page:items:waiting-list', description: 'Access and manage the waiting list' },
     
     // Marketing
     { id: 'page:marketing-feedback:view', description: 'Access Marketing Feedback dashboard' },
@@ -79,6 +80,7 @@ export const inventoryManagerPermissions = [
     'page:items:archive',
     'page:items:pdf',
     'page:items:sold',
+    'page:items:waiting-list',
     'page:transmit:view',
     'page:transmit:add',
     'page:transmit:staged',

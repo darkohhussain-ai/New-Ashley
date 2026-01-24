@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { ArrowLeft, MapPin, FilePlus, Upload, Archive, FileText, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, MapPin, FilePlus, Upload, Archive, FileText, ShoppingCart, ClipboardList } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -56,6 +56,13 @@ function ItemsPage() {
       href: "/sold-items",
       color: "bg-orange-500",
       permission: 'page:items:sold',
+    },
+    {
+      title: t("waiting_list"),
+      icon: ClipboardList,
+      href: "/items/waiting-list",
+      color: "bg-indigo-500",
+      permission: 'page:items:waiting-list',
     }
   ];
 

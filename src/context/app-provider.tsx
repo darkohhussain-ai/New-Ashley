@@ -24,6 +24,7 @@ import {
     User,
     Role,
     AppSettings,
+    WaitingList,
 } from '@/lib/types';
 import { setDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { initialData, initialSettings } from './initial-data';
@@ -65,6 +66,8 @@ interface AppState {
     setUsers: React.Dispatch<React.SetStateAction<User[]>>;
     roles: Role[];
     setRoles: React.Dispatch<React.SetStateAction<Role[]>>;
+    waitingLists: WaitingList[];
+    setWaitingLists: React.Dispatch<React.SetStateAction<WaitingList[]>>;
     settings: AppSettings;
     setSettings: (value: React.SetStateAction<AppSettings>) => void;
     isLoading: boolean;
@@ -152,6 +155,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const [evaluationQuestions, setEvaluationQuestions, isEvaluationQuestionsLoading] = useFirestoreCollection<EvaluationQuestion>('evaluationQuestions', initialData.evaluationQuestions);
     const [users, setUsers, isUsersLoading] = useFirestoreCollection<User>('users', initialData.users);
     const [roles, setRoles, isRolesLoading] = useFirestoreCollection<Role>('roles', initialData.roles);
+    const [waitingLists, setWaitingLists, isWaitingListsLoading] = useFirestoreCollection<WaitingList>('waitingLists', initialData.waitingLists);
     
     // Settings Singleton Document
     const settingsDocRef = useMemoFirebase(() => db ? doc(db, 'settings', 'main') : null, [db]);
@@ -193,7 +197,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
     }, [settingsDocRef, settings]);
     
-    const isLoading = isUserLoading || !isInitialSettingsLoaded || isEmployeesLoading || isExcelFilesLoading || isItemsLoading || isLocationsLoading || isExpensesLoading || isExpenseReportsLoading || isOvertimeLoading || isBonusesLoading || isWithdrawalsLoading || isReceiptsLoading || isItemCategoriesLoading || isTransfersLoading || isTransferItemsLoading || isMarketingFeedbacksLoading || isEvaluationQuestionsLoading || isUsersLoading || isRolesLoading;
+    const isLoading = isUserLoading || !isInitialSettingsLoaded || isEmployeesLoading || isExcelFilesLoading || isItemsLoading || isLocationsLoading || isExpensesLoading || isExpenseReportsLoading || isOvertimeLoading || isBonusesLoading || isWithdrawalsLoading || isReceiptsLoading || isItemCategoriesLoading || isTransfersLoading || isTransferItemsLoading || isMarketingFeedbacksLoading || isEvaluationQuestionsLoading || isUsersLoading || isRolesLoading || isWaitingListsLoading;
 
     const value = useMemo<AppState>(() => ({
         employees, setEmployees,
@@ -213,6 +217,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         evaluationQuestions, setEvaluationQuestions,
         users, setUsers,
         roles, setRoles,
+        waitingLists, setWaitingLists,
         settings, 
         setSettings: setSettings,
         isLoading,
@@ -234,6 +239,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         evaluationQuestions, setEvaluationQuestions,
         users, setUsers,
         roles, setRoles,
+        waitingLists, setWaitingLists,
         settings,
         setSettings,
         isLoading
