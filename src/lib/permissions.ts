@@ -34,7 +34,6 @@ export const allPermissions: Permission[] = [
     { id: 'page:items:import', description: 'Import items from Excel' },
     { id: 'page:items:archive', description: 'View Excel file archive' },
     { id: 'page:items:pdf', description: 'View PDF archive' },
-    { id: 'page:items:sold', description: 'Access sold items check' },
     
     // Marketing
     { id: 'page:marketing-feedback:view', description: 'Access Marketing Feedback dashboard' },

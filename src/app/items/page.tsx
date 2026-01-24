@@ -49,13 +49,6 @@ function ItemsPage() {
       href: "/pdf-archive",
       color: "bg-purple-500",
       permission: 'page:items:pdf',
-    },
-    {
-      title: t("sold_items_check"),
-      icon: ShoppingCart,
-      href: "/sold-items",
-      color: "bg-orange-500",
-      permission: 'page:items:sold',
     }
   ];
 
