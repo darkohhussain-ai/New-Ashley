@@ -4,6 +4,7 @@
 import React, { createContext, useContext, ReactNode, useState, useEffect, useCallback } from 'react';
 import { useAppContext } from '@/context/app-provider';
 import type { User } from '@/lib/types';
+import { initialData } from '@/context/initial-data';
 
 interface AuthState {
   user: User | null;
@@ -52,11 +53,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loading = appLoading || authLoading;
 
   const login = useCallback(async (username: string, password: string): Promise<boolean> => {
-    if (!users) {
-        console.error("Login tried before users were loaded.");
-        return false;
-    }
-    const foundUser = users.find(
+    const userList = (users && users.length > 0) ? users : initialData.users;
+    
+    const foundUser = userList.find(
       u => u.username.toLowerCase() === username.toLowerCase() && u.password === password
     );
 
