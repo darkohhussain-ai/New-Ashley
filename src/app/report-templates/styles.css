@@ -1,0 +1,178 @@
+/*
+=====================================
+PRINT-OPTIMIZED PDF STYLESHEET
+=====================================
+- Paper Size: A4 Landscape
+- All design tokens are controlled via CSS variables.
+- Handles fixed headers/footers and table pagination.
+*/
+
+/* ===================================== */
+/* 1. DESIGN CONTROL (CSS VARIABLES)     */
+/* ===================================== */
+:root {
+    /* Colors */
+    --primary-color: #0d47a1;         /* A deep, professional blue */
+    --header-background: #f8f9fa;     /* A very light grey for the header */
+    --table-header-background: #e9ecef; /* A slightly darker grey for table headers */
+    --table-border-color: #dee2e6;    /* A standard, non-intrusive border color */
+    --text-color: #212529;            /* Standard dark text for readability */
+    --header-text-color: #000000;
+    --footer-text-color: #6c757d;
+
+    /* Fonts */
+    --base-font-family: Arial, sans-serif;
+    --base-font-size: 10pt;
+
+    /* Spacing */
+    --page-margin: 20mm;
+    --header-height: 25mm;
+    --footer-height: 15mm;
+    --cell-padding: 8px;
+    --section-spacing: 25px;
+}
+
+/* ===================================== */
+/* 2. PAGE SETUP & PRINT RULES           */
+/* ===================================== */
+@page {
+    size: A4 landscape;
+    margin: var(--page-margin);
+}
+
+body {
+    font-family: var(--base-font-family);
+    font-size: var(--base-font-size);
+    color: var(--text-color);
+    -webkit-print-color-adjust: exact; /* Ensures background colors are printed in Chrome/Safari */
+    print-color-adjust: exact;         /* Standard property */
+}
+
+/* Page numbering using CSS counters */
+body {
+    counter-reset: page;
+}
+
+.page-number::after {
+    counter-increment: page;
+    content: "Page " counter(page);
+}
+
+/* This is a common pattern for showing total pages.
+   Puppeteer might need to inject this value if CSS alone is not sufficient.
+   If you can calculate total pages on the server, replace `{{totalPages}}`
+   in the template. Otherwise, this provides a fallback. */
+.page-number::after {
+    content: "Page " counter(page) " / " var(--page-count);
+}
+
+
+/* ===================================== */
+/* 3. HEADER & FOOTER                    */
+/* ===================================== */
+.report-header,
+.report-footer {
+    position: fixed;
+    width: calc(100% - (2 * var(--page-margin))); /* Full width minus margins */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 9pt;
+}
+
+.report-header {
+    top: 0;
+    left: var(--page-margin);
+    right: var(--page-margin);
+    height: var(--header-height);
+    background-color: var(--header-background);
+    border-bottom: 2px solid var(--primary-color);
+    padding: 0 10px;
+    color: var(--header-text-color);
+}
+
+.report-footer {
+    bottom: 0;
+    left: var(--page-margin);
+    right: var(--page-margin);
+    height: var(--footer-height);
+    border-top: 1px solid var(--table-border-color);
+    padding: 0 10px;
+    color: var(--footer-text-color);
+}
+
+.header-left, .footer-left { text-align: left; flex: 1; }
+.header-center, .footer-center { text-align: center; flex: 2; }
+.header-right, .footer-right { text-align: right; flex: 1; }
+
+.header-center h1 {
+    margin: 0;
+    font-size: 16pt;
+    color: var(--primary-color);
+}
+
+.logo {
+    max-height: calc(var(--header-height) - 15mm);
+    max-width: 100%;
+}
+
+/* ===================================== */
+/* 4. MAIN CONTENT & TABLE STYLING       */
+/* ===================================== */
+.report-content {
+    /* Add padding to prevent content from overlapping with fixed header/footer */
+    padding-top: var(--header-height);
+    padding-bottom: var(--footer-height);
+}
+
+section {
+    margin-bottom: var(--section-spacing);
+    page-break-inside: avoid; /* Try to keep sections on one page */
+}
+
+.list-title {
+    font-size: 14pt;
+    font-weight: bold;
+    color: var(--primary-color);
+    margin-bottom: 10px;
+    border-bottom: 1px solid var(--table-border-color);
+    padding-bottom: 5px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+/* Critical for repeating headers on new pages */
+thead {
+    display: table-header-group;
+    background-color: var(--table-header-background);
+}
+
+tbody {
+    display: table-row-group;
+}
+
+tr {
+    /* Critical for preventing rows from splitting across pages */
+    page-break-inside: avoid;
+}
+
+th, td {
+    border: 1px solid var(--table-border-color);
+    padding: var(--cell-padding);
+    text-align: left;
+    vertical-align: middle; /* Vertical centering */
+}
+
+th {
+    font-weight: bold;
+    text-align: center;
+}
+
+/* Alternate row styling for better readability */
+tbody tr:nth-child(even) {
+    background-color: #f8f9fa;
+}
