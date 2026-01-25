@@ -27,28 +27,6 @@ export function ReportWrapper({ title, date, logoSrc, themeColor = '#333333', ch
         style={{ fontFamily }}
         dir={useKurdish ? 'rtl' : 'ltr'}
     >
-        <style>
-          {`
-            div { word-spacing: normal; }
-            .pdf-table { width: 100%; border-collapse: collapse; }
-            .pdf-table th, .pdf-table td {
-              border: 1px solid #e0e0e0;
-              text-align: center;
-              vertical-align: middle;
-              padding: 4px;
-              font-size: 9px;
-              line-height: 1.2;
-            }
-            .pdf-table tr {
-                page-break-inside: avoid;
-            }
-            .pdf-table th {
-              font-weight: 500;
-              background-color: #f7f7f7;
-            }
-          `}
-        </style>
-        
         {/* Header */}
         <header className={cn("flex justify-between items-start pb-2 border-b-2", useKurdish && "flex-row-reverse")} style={{ borderColor: themeColor }}>
             <div className={cn("text-left", useKurdish && "text-right")}>

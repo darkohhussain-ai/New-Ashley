@@ -18,6 +18,7 @@ import { useTranslation } from '@/hooks/use-translation';
 import jsPDF from 'jspdf';
 import { ReportWrapper } from '@/components/reports/ReportWrapper';
 import html2canvas from 'html2canvas';
+import { OvertimeReportPdf } from '@/components/reports/OvertimeReportPdf';
 
 
 const formatCurrency = (amount: number) => {
@@ -31,7 +32,6 @@ const formatCurrency = (amount: number) => {
 export default function MonthlyOvertimeReportPage() {
   const { t, language } = useTranslation();
   const { overtime, employees, settings } = useAppContext();
-  const { pdfSettings, fontFamily } = settings;
   
   const reportContentRef = useRef<HTMLDivElement>(null);
 
@@ -93,9 +93,9 @@ export default function MonthlyOvertimeReportPage() {
         useCORS: true, 
         backgroundColor: 'white',
         onclone: (document) => {
-            if (fontFamily) {
+            if (settings.fontFamily) {
                 const style = document.createElement('style');
-                style.innerHTML = `body, table, div, p, h1, h2, h3 { font-family: '${fontFamily}', sans-serif !important; }`;
+                style.innerHTML = `body, table, div, p, h1, h2, h3 { font-family: '${settings.fontFamily}', sans-serif !important; }`;
                 document.head.appendChild(style);
             }
         }
@@ -122,38 +122,11 @@ export default function MonthlyOvertimeReportPage() {
       <div className="h-[calc(100vh-80px)] flex flex-col">
         <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
           <div ref={reportContentRef} className="bg-white" style={{width: '700px'}}>
-             <ReportWrapper 
-                title="Monthly Overtime Report" 
-                date={selectedDate ? format(selectedDate, 'MMMM yyyy') : ''}
-                logoSrc={pdfSettings.report.logo ?? null} 
-                themeColor={pdfSettings.report.reportColors?.overtime}
-             >
-                 <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>{t('employee')}</TableHead>
-                            <TableHead className="text-right">{t('total_hours')}</TableHead>
-                            <TableHead className="text-right">{t('total_amount')}</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {monthlyData.summary.map(item => (
-                            <TableRow key={item.employeeId}>
-                                <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{item.employeeName}</TableCell>
-                                <TableCell className="text-right">{item.totalHours.toFixed(2)}</TableCell>
-                                <TableCell className="text-right">{formatCurrency(item.totalAmount)}</TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                    <TableFooter>
-                        <TableRow>
-                            <TableCell>{t('grand_total')}</TableCell>
-                            <TableCell className="text-right">{monthlyData.totalHours.toFixed(2)}</TableCell>
-                            <TableCell className="text-right text-primary">{formatCurrency(monthlyData.totalAmount)}</TableCell>
-                        </TableRow>
-                    </TableFooter>
-                </Table>
-             </ReportWrapper>
+             <OvertimeReportPdf 
+                monthlyData={monthlyData}
+                settings={settings}
+                selectedDate={selectedDate}
+             />
           </div>
         </div>
         <div className="p-4 md:p-8 print:p-0 flex-1 overflow-y-auto">
