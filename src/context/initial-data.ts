@@ -19,9 +19,9 @@ const initialRoles: Role[] = [
 
 const initialUsers: User[] = [
     {
-        id: 'super-admin-user',
-        username: 'SuperAdmin',
-        password: 'SuperAdmin123',
+        id: 'user-admin-default',
+        username: 'admin',
+        password: 'password',
         roleId: 'role-admin'
     }
 ];

@@ -53,9 +53,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loading = appLoading || authLoading;
 
   const login = useCallback(async (username: string, password: string): Promise<boolean> => {
-    const userList = (users && users.length > 0) ? users : initialData.users;
+    // Combine users from context and initial data, giving precedence to context users.
+    const allPossibleUsers = [
+        ...(users || []),
+        ...initialData.users.filter(initialUser => !(users || []).some(u => u.id === initialUser.id))
+    ];
     
-    const foundUser = userList.find(
+    const foundUser = allPossibleUsers.find(
       u => u.username.toLowerCase() === username.toLowerCase() && u.password === password
     );
 
