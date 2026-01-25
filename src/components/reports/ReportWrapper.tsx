@@ -39,6 +39,9 @@ export function ReportWrapper({ title, date, logoSrc, themeColor = '#333333', ch
               font-size: 9px;
               line-height: 1.2;
             }
+            .pdf-table tr {
+                page-break-inside: avoid;
+            }
             .pdf-table th {
               font-weight: 500;
               background-color: #f7f7f7;

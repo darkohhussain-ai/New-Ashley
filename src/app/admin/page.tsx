@@ -43,6 +43,8 @@ function UserManagement() {
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
   const handleSaveUser = (user: User, isNew: boolean) => {
     if(isNew) {
@@ -169,12 +171,43 @@ function UserManagement() {
                     <TableCell>{user.username}</TableCell>
                     <TableCell>{getRoleName(user.roleId)}</TableCell>
                     <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => { setEditingUser(user); setIsDialogOpen(true); }}>
-                        <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDeleteUser(user.id)} disabled={user.username === 'Darko097'}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                      <Button variant="ghost" size="icon" onClick={() => { setEditingUser(user); setIsDialogOpen(true); }}>
+                          <Edit className="h-4 w-4" />
+                      </Button>
+                      <AlertDialog onOpenChange={(open) => !open && setDeleteConfirmText('')}>
+                          <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" disabled={user.username === 'Darko097'} onClick={() => setUserToDelete(user)}>
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                              <AlertDialogHeader>
+                                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                      This action cannot be undone. This will permanently delete the user account for <strong>{userToDelete?.username}</strong>. 
+                                      To confirm, please type <strong>DELETE {userToDelete?.username}</strong> below.
+                                  </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <Input
+                                  value={deleteConfirmText}
+                                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                                  placeholder={`DELETE ${userToDelete?.username}`}
+                                  autoFocus
+                              />
+                              <AlertDialogFooter>
+                                  <AlertDialogCancel onClick={() => setUserToDelete(null)}>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                      disabled={deleteConfirmText !== `DELETE ${userToDelete?.username}`}
+                                      onClick={() => {
+                                          if (userToDelete) handleDeleteUser(userToDelete.id);
+                                          setUserToDelete(null);
+                                      }}
+                                  >
+                                      Delete User
+                                  </AlertDialogAction>
+                              </AlertDialogFooter>
+                          </AlertDialogContent>
+                      </AlertDialog>
                     </TableCell>
                 </TableRow>
                 ))}

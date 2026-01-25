@@ -33,6 +33,38 @@ const FinancialTablePdf = ({ title, data, total }: { title: string, data: any[],
     );
 };
 
+const OvertimeTablePdf = ({ title, data, total }: { title: string, data: Overtime[], total: number }) => {
+    const { t } = useTranslation();
+    if (data.length === 0) return null;
+    return (
+        <div className="mb-6">
+            <h3 className="text-lg font-medium mb-2 pb-1 border-b-2">{title}</h3>
+            <Table className="pdf-table">
+                <TableHeader><TableRow>
+                    <TableHead>{t('date')}</TableHead>
+                    <TableHead>{t('overtime_hours')}</TableHead>
+                    <TableHead>{t('notes')}</TableHead>
+                    <TableHead className="text-right">{t('amount')}</TableHead>
+                </TableRow></TableHeader>
+                <TableBody>
+                    {data.map((item) => (
+                        <TableRow key={item.id}>
+                            <TableCell className="py-2">{item.date && !isNaN(parseISO(item.date).getTime()) ? format(parseISO(item.date), 'PP') : 'Invalid Date'}</TableCell>
+                            <TableCell className="py-2">{item.hours.toFixed(2)}</TableCell>
+                            <TableCell className="text-gray-600 py-2">{item.notes || 'N/A'}</TableCell>
+                            <TableCell className="text-right py-2">{formatCurrency(item.totalAmount)}</TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+                <TableFooter><TableRow>
+                    <TableCell colSpan={3} className="text-right font-medium">{t('total')}</TableCell>
+                    <TableCell className="text-right font-medium">{formatCurrency(total)}</TableCell>
+                </TableRow></TableFooter>
+            </Table>
+        </div>
+    );
+};
+
 export const AccountReportPdf = ({ employee, logoSrc, selectedDate, financials }: { employee: Employee, logoSrc: string | null, selectedDate: Date, financials: any }) => {
     const { t, language } = useTranslation();
     const displayName = language === 'ku' && employee.kurdishName ? employee.kurdishName : employee.name;
@@ -81,7 +113,7 @@ export const AccountReportPdf = ({ employee, logoSrc, selectedDate, financials }
             
                 <div className="mt-8">
                     <FinancialTablePdf title={t('expenses')} data={financials.selected.expenses.items} total={financials.selected.expenses.total} />
-                    <FinancialTablePdf title={t('overtime')} data={financials.selected.overtime.items} total={financials.selected.overtime.total} />
+                    <OvertimeTablePdf title={t('overtime')} data={financials.selected.overtime.items} total={financials.selected.overtime.total} />
                     <FinancialTablePdf title={t('bonuses')} data={financials.selected.bonuses.items} total={financials.selected.bonuses.total} />
                     <FinancialTablePdf title={t('cash_withdrawals')} data={financials.selected.withdrawals.items} total={financials.selected.withdrawals.total} />
                 </div>

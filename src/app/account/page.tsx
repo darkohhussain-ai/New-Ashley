@@ -75,6 +75,49 @@ const FinancialDetailTable = ({ title, data, total }: { title: string, data: any
   )
 }
 
+const OvertimeDetailTable = ({ title, data, total }: { title: string, data: Overtime[], total: number }) => {
+  const { t } = useTranslation();
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+      </CardHeader>
+      <CardContent className="max-h-60 overflow-y-auto">
+        {data.length > 0 ? (
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableCell>{t('date')}</TableCell>
+                        <TableCell>{t('overtime_hours')}</TableCell>
+                        <TableCell>{t('notes')}</TableCell>
+                        <TableCell className="text-right">{t('amount')}</TableCell>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {data.map((item) => (
+                        <TableRow key={item.id}>
+                            <TableCell>{item.date && !isNaN(parseISO(item.date).getTime()) ? format(parseISO(item.date), 'PP') : 'Invalid Date'}</TableCell>
+                            <TableCell>{item.hours.toFixed(2)}</TableCell>
+                            <TableCell className="text-muted-foreground">{item.notes || 'N/A'}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(item.totalAmount)}</TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+        ) : (
+          <p className="text-sm text-center text-muted-foreground py-4">{t('no_records_found')}</p>
+        )}
+      </CardContent>
+       {data.length > 0 && (
+          <CardFooter className="justify-end gap-2 bg-muted/50 text-sm">
+            <span className="text-muted-foreground">{t('total_colon')}</span>
+            <span className="font-medium text-primary">{formatCurrency(total)}</span>
+          </CardFooter>
+        )}
+    </Card>
+  )
+}
+
 function AccountPage() {
   const { t, language } = useTranslation();
   const { toast } = useToast();
@@ -423,7 +466,7 @@ function AccountPage() {
                         </Popover>
                     </div>
                     <FinancialDetailTable title={t('expenses')} data={monthlyFinancials.selected.expenses.items} total={monthlyFinancials.selected.expenses.total} />
-                    <FinancialDetailTable title={t('overtime')} data={monthlyFinancials.selected.overtime.items} total={monthlyFinancials.selected.overtime.total} />
+                    <OvertimeDetailTable title={t('overtime')} data={monthlyFinancials.selected.overtime.items as Overtime[]} total={monthlyFinancials.selected.overtime.total} />
                     <FinancialDetailTable title={t('bonuses')} data={monthlyFinancials.selected.bonuses.items} total={monthlyFinancials.selected.bonuses.total} />
                     <FinancialDetailTable title={t('cash_withdrawals')} data={monthlyFinancials.selected.withdrawals.items} total={monthlyFinancials.selected.withdrawals.total} />
                 </div>
