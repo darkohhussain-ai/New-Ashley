@@ -1,123 +1,118 @@
-<!-- 
-  =====================================
-  LIST TEMPLATES
-  =====================================
-  Instructions:
-  - Choose one of the blocks below based on the report type you need.
-  - Render your data inside the <tbody>.
-  - Inject the entire completed block into the `{{content}}` placeholder in `base-template.html`.
+<!--
+=====================================
+PDF CONTENT BLOCK TEMPLATES
+=====================================
+Instructions:
+- Your server-side script should select ONE of these blocks.
+- Populate it with data using Handlebars.
+- Inject the final HTML into the `{{{content}}}` placeholder in `base-template.html`.
 -->
 
 
 <!-- ===================================== -->
-<!-- EXAMPLE BLOCK: (A) Sales Report       -->
+<!-- BLOCK 1: Standard Report (Landscape)  -->
+<!-- Used for Sales, Inventory, HR lists -->
 <!-- ===================================== -->
-<section>
-    <h2 class="list-title">{{listTitle}}</h2>
+<section id="sales-report-block">
+    <h2 class="list-title">{{data.listTitle}}</h2>
     <table>
         <thead>
             <tr>
-                <th style="width: 5%;">{{index}}</th>
-                <th style="width: 40%;">{{itemName}}</th>
-                <th style="width: 15%;">{{quantity}}</th>
-                <th style="width: 20%;">{{unitPrice}}</th>
-                <th style="width: 20%;">{{totalPrice}}</th>
+                <!-- SUGGESTION – OPTIONAL: Column widths are suggestions. Adjust as needed for your data. -->
+                <th style="width: 5%;">{{#if data.labels.index}}{{data.labels.index}}{{else}}#{{/if}}</th>
+                <th style="width: 40%;">{{#if data.labels.itemName}}{{data.labels.itemName}}{{else}}Item Name{{/if}}</th>
+                <th style="width: 15%;">{{#if data.labels.quantity}}{{data.labels.quantity}}{{else}}Quantity{{/if}}</th>
+                <th style="width: 20%;">{{#if data.labels.unitPrice}}{{data.labels.unitPrice}}{{else}}Unit Price{{/if}}</th>
+                <th style="width: 20%;">{{#if data.labels.totalPrice}}{{data.labels.totalPrice}}{{else}}Total Price{{/if}}</th>
             </tr>
         </thead>
         <tbody>
-            <!-- Loop and render your data rows here -->
-            <!-- Example Row: -->
+            {{#each data.items}}
             <tr>
-                <td>1</td>
-                <td>Sample Product One</td>
-                <td>10</td>
-                <td>$50.00</td>
-                <td>$500.00</td>
+                <td>{{this.index}}</td>
+                <td style="text-align: left;">{{this.itemName}}</td>
+                <td>{{this.quantity}}</td>
+                <td>{{this.unitPrice}}</td>
+                <td>{{this.totalPrice}}</td>
             </tr>
-            <tr>
-                <td>2</td>
-                <td>Another Sample Item</td>
-                <td>5</td>
-                <td>$120.00</td>
-                <td>$600.00</td>
-            </tr>
-            <!-- End of loop -->
+            {{/each}}
         </tbody>
     </table>
 </section>
 
 
 <!-- ===================================== -->
-<!-- EXAMPLE BLOCK: (B) Inventory Report   -->
+<!-- BLOCK 2: Receipt / Voucher (Portrait) -->
 <!-- ===================================== -->
-<section>
-    <h2 class="list-title">{{listTitle}}</h2>
+<section id="receipt-block">
+    <div class="key-value-block">
+        {{#each data.details}}
+        <div class="key-value-row">
+            <span class="key-value-label">{{this.label}}:</span>
+            <span class="key-value-value">{{this.value}}</span>
+        </div>
+        {{/each}}
+    </div>
+
+    {{#if data.items}}
+    <h3 class="list-title" style="font-size: 12pt; margin-top: 20px;">Itemized List</h3>
     <table>
         <thead>
             <tr>
-                <th style="width: 5%;">{{index}}</th>
-                <th style="width: 20%;">{{itemCode}}</th>
-                <th style="width: 45%;">{{itemName}}</th>
-                <th style="width: 10%;">{{stockQuantity}}</th>
-                <th style="width: 20%;">{{warehouse}}</th>
+                <th style="width: 60%;">Description</th>
+                <th style="width: 20%;">QTY</th>
+                <th style="width: 20%;">Amount</th>
             </tr>
         </thead>
         <tbody>
-            <!-- Loop and render your data rows here -->
-            <!-- Example Row: -->
+            {{#each data.items}}
             <tr>
-                <td>1</td>
-                <td>SKU-001-A</td>
-                <td>Office Chair, Ergonomic</td>
-                <td>150</td>
-                <td>Main Warehouse</td>
+                <td style="text-align: left;">{{this.description}}</td>
+                <td>{{this.quantity}}</td>
+                <td>{{this.amount}}</td>
             </tr>
-            <tr>
-                <td>2</td>
-                <td>SKU-002-B</td>
-                <td>Standing Desk, Electric</td>
-                <td>75</td>
-                <td>Warehouse B</td>
-            </tr>
-            <!-- End of loop -->
+            {{/each}}
         </tbody>
     </table>
+    {{/if}}
+
+    <div class="receipt-total">
+        <span>TOTAL:</span>
+        <span>{{data.totalAmount}}</span>
+    </div>
+
+    <div style="margin-top: 40px; display: flex; justify-content: space-between;">
+        <div style="text-align: center;">
+            <p>_________________________</p>
+            <p>Recipient Signature</p>
+        </div>
+        <div style="text-align: center;">
+            <p>_________________________</p>
+            <p>Issuer Signature</p>
+        </div>
+    </div>
 </section>
 
 
 <!-- ===================================== -->
-<!-- EXAMPLE BLOCK: (C) Employee List      -->
+<!-- BLOCK 3: Card Grid (Portrait)         -->
 <!-- ===================================== -->
-<section>
-    <h2 class="list-title">{{listTitle}}</h2>
-    <table>
-        <thead>
-            <tr>
-                <th style="width: 5%;">{{index}}</th>
-                <th style="width: 30%;">{{fullName}}</th>
-                <th style="width: 25%;">{{role}}</th>
-                <th style="width: 25%;">{{department}}</th>
-                <th style="width: 15%;">{{status}}</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- Loop and render your data rows here -->
-            <!-- Example Row: -->
-            <tr>
-                <td>1</td>
-                <td>John Doe</td>
-                <td>Senior Engineer</td>
-                <td>Technology</td>
-                <td>Active</td>
-            </tr>
-            <tr>
-                <td>2</td>
-                <td>Jane Smith</td>
-                <td>Project Manager</td>
-                <td>Operations</td>
-                <td>Active</td>
-            </tr>
-            <!-- End of loop -->
-        </tbody>
-    </table>
+<section id="card-grid-block">
+    <!-- SUGGESTION – OPTIONAL:
+         The `card-grid-container` class defaults to a 2-column grid.
+         You can create more variants in CSS (e.g., .grid-3-col) for different densities.
+    -->
+    <div class="card-grid-container">
+        {{#each data.cards}}
+        <div class="card">
+            <!-- This is a generic card structure. Customize as needed. -->
+            <h4 style="font-size: 11pt; font-weight: bold; color: var(--primary-color); margin: 0 0 10px 0;">{{this.title}}</h4>
+            <div style="font-size: 8pt; line-height: 1.6;">
+                <p><strong>ID:</strong> {{this.id}}</p>
+                <p><strong>Role:</strong> {{this.role}}</p>
+                <p><strong>Department:</strong> {{this.department}}</p>
+            </div>
+        </div>
+        {{/each}}
+    </div>
 </section>

@@ -1,72 +1,91 @@
-# PDF Report Template System
+# Unified PDF Report Template System
 
-This directory contains a set of professional, government-style HTML and CSS templates designed for server-side PDF generation using a tool like Puppeteer.
+This directory contains a professional, government-style PDF template system designed for server-side rendering with tools like **jsreport** (using the `chrome-pdf` recipe) or **Puppeteer**.
 
 ## Architecture Overview
 
-The system is built on a modular, template-based architecture:
+The system is designed for maximum flexibility and maintainability by separating design, structure, and data.
 
-1.  **`base-template.html`**: This is the master layout file. It includes the document structure (`<html>`, `<head>`, `<body>`), a link to the stylesheet, and the fixed header and footer that will appear on every page of the report. It has a `{{content}}` placeholder where specific report data (like tables) should be injected.
+1.  **`base-template.html`**: This is the master layout file. It defines the document structure (`<html>`, `<body>`), links to the stylesheet, and contains the fixed header and footer structure that appears on every page. It uses a `{{{content}}}` placeholder where a specific report block is injected. The `<body>` tag has a class `{{document.type}}` which allows the CSS to apply different page styles (e.g., portrait vs. landscape).
 
-2.  **`styles.css`**: This file contains all the styling for the reports, optimized for print (`@media print`).
-    *   **CSS Variables**: At the top of the file, all design tokens (colors, fonts, spacing) are defined as CSS variables. You can change the entire look and feel of the reports just by modifying these variables.
-    *   **Page Layout**: It defines the A4 landscape layout, margins, and the fixed positioning of the header and footer.
-    *   **Table Styling**: It includes professional, Excel-like styling for tables, ensuring that table headers repeat on every page and that rows do not break across page splits.
+2.  **`styles.css`**: This is the global print-optimized stylesheet.
+    *   **Design Control**: At the top, a `:root` block defines all design tokens (colors, fonts, spacing) as CSS variables. To change the look and feel of all reports, you only need to modify these variables. These can be dynamically overridden in a `<style>` block by your server-side script.
+    *   **Page Layout**: It defines `@page` rules for different document types (`.report`, `.receipt`, `.card-grid`) to control orientation and margins.
+    *   **Core Components**: It includes styles for headers, footers, and professional, Excel-like tables with support for page breaking and repeating headers.
 
-3.  **`list-templates.html`**: This file contains example HTML snippets for different types of report tables (e.g., Sales, Inventory, Employee lists). These blocks are designed to be rendered with your data and then injected into the `{{content}}` placeholder in the `base-template.html`.
+3.  **`list-templates.html`**: This file contains a collection of pre-designed, reusable HTML blocks for different content types (reports, receipts, cards). Your server-side logic will select the appropriate block, populate it with data, and inject it into the `base-template.html`.
 
-## How to Use with Puppeteer
+## How to Use with jsreport
 
-Here is a conceptual guide to generating a PDF on the server:
+This system is optimized for use with jsreport and the `chrome-pdf` recipe.
 
-1.  **Read Templates**: Read the content of `base-template.html` and the appropriate list template from `list-templates.html`.
+1.  **Engine**: Set the template engine to `handlebars`.
+2.  **Recipe**: Use `chrome-pdf`.
+3.  **Template Structure**:
+    *   Your main jsreport template (`content`) will contain the logic to select and render a content block from `list-templates.html`.
+    *   Create a child template (`#asset`) for `styles.css` and another for `base-template.html`.
+    *   Your main template will wrap the rendered content with the base layout.
 
-2.  **Prepare Data**: Fetch the data you need for the report (e.g., from your database).
+**Example jsreport Script:**
 
-3.  **Render the Table**: Loop through your data to generate the `<tbody>` content for your chosen list template. For example, if you are creating a Sales Report, you would generate all the `<tr>` elements for the sales items.
+```javascript
+// Example jsreport script (conceptual)
+async function beforeRender(req, res) {
+    // 1. Choose content block based on document type
+    let contentBlock;
+    if (req.data.document.type === 'report') {
+        contentBlock = `{{> salesReport}}`; // Assuming salesReport is a partial
+    } else if (req.data.document.type === 'receipt') {
+        contentBlock = `{{> paymentReceipt}}`;
+    } // etc.
 
-4.  **Inject Content**:
-    *   Replace the `{{listTitle}}` and other table-specific placeholders in your list template with the rendered table content.
-    *   Inject the completed list HTML into the `{{content}}` placeholder within `base-template.html`.
+    // 2. Inject the chosen block into the main content placeholder
+    req.data.content = contentBlock;
+}
+```
 
-5.  **Replace Global Placeholders**: Replace all remaining placeholders in the base template (`{{reportTitle}}`, `{{reportDate}}`, `{{companyLogoUrl}}`, etc.) with their final values.
+## Example JSON Data Payload
 
-6.  **Generate PDF with Puppeteer**:
-    *   Launch a new Puppeteer browser instance.
-    *   Create a new page and set its content to your final, merged HTML.
-    *   Use `page.pdf()` to generate the PDF. Key options include:
-        *   `format: 'A4'`: Sets the page size.
-        *   `landscape: true`: Sets the orientation.
-        *   `printBackground: true`: Ensures background colors are rendered.
-        *   `displayHeaderFooter: false`: Our HTML/CSS handles the header and footer, so we disable Puppeteer's default.
-        *   `margin`: Set margins if needed, although the CSS `@page` rule is preferred.
+Your ERP should send a JSON object structured like this to jsreport:
 
-    ```javascript
-    // Example Puppeteer Code Snippet
-    const puppeteer = require('puppeteer');
+```json
+{
+  "settings": {
+    "primaryColor": "#0d47a1",
+    "headerBg": "#f8f9fa",
+    "tableHeaderBg": "#e9ecef",
+    "borderColor": "#dee2e6",
+    "baseFontFamily": "Arial, sans-serif",
+    "baseFontSize": "10pt",
+    "headerFontSize": "16pt",
+    "cellPadding": "8px",
+    "sectionSpacing": "25px",
+    "companyLogoUrl": "https://example.com/logo.png",
+    "officeText": "Head Office, Sulaimaniyah",
+    "footerNote": "Internal Use Only"
+  },
+  "document": {
+    "type": "report",
+    "title": "Monthly Sales Summary",
+    "date": "October 26, 2023",
+    "number": "REP-2023-10-001"
+  },
+  "data": {
+    "listTitle": "October Sales Transactions",
+    "items": [
+      { "index": 1, "itemName": "Ergonomic Office Chair", "quantity": 10, "unitPrice": 150.00, "totalPrice": 1500.00 },
+      { "index": 2, "itemName": "Electric Standing Desk", "quantity": 5, "unitPrice": 400.00, "totalPrice": 2000.00 }
+    ]
+  },
+  "totalPages": 5
+}
+```
 
-    async function generatePdf(htmlContent) {
-      const browser = await puppeteer.launch();
-      const page = await browser.newPage();
-      
-      await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
-      
-      const pdfBuffer = await page.pdf({
-        format: 'A4',
-        landscape: true,
-        printBackground: true,
-        displayHeaderFooter: false, // Important: Our CSS handles this
-        margin: {
-          top: '0px',
-          right: '0px',
-          bottom: '0px',
-          left: '0px'
-        }
-      });
-      
-      await browser.close();
-      return pdfBuffer;
-    }
-    ```
+## Troubleshooting & Best Practices
 
-This architecture gives you full control over the report's design through simple CSS variable changes, while the HTML structure remains clean and focused on the data.
+*   **Text Overflow**: Long text in table cells is handled by `word-break: break-word`. Ensure your server doesn't send excessively long, unbroken strings.
+*   **Page Breaks**:
+    *   `thead { display: table-header-group; }` ensures headers repeat on each new page.
+    *   `tr { page-break-inside: avoid; }` prevents a single table row from being split across two pages.
+*   **Scaling & DPI**: The `chrome-pdf` recipe in jsreport generally handles DPI well. If you encounter scaling issues, ensure your `@page` size in CSS matches the `paper` settings in your jsreport configuration. Avoid using `zoom` or `transform: scale()` for the whole body.
+*   **Fonts**: For custom fonts (like those for Kurdish/Arabic), ensure the font file is accessible to the server. You can either link to it via a URL in the CSS or embed it as a Base64 asset.
