@@ -2,9 +2,8 @@
 'use client';
 
 import React, { createContext, useContext, ReactNode, useState, useEffect, useCallback } from 'react';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
-import type { User, Role } from '@/lib/types';
+import { useAppContext } from '@/context/app-provider';
+import type { User } from '@/lib/types';
 
 interface AuthState {
   user: User | null;
@@ -17,13 +16,7 @@ interface AuthState {
 const AuthContext = createContext<AuthState | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const db = useFirestore();
-  
-  const usersRef = useMemoFirebase(() => (db ? collection(db, 'users') : null), [db]);
-  const { data: users, isLoading: usersLoading } = useCollection<User>(usersRef);
-
-  const rolesRef = useMemoFirebase(() => (db ? collection(db, 'roles') : null), [db]);
-  const { data: roles, isLoading: rolesLoading } = useCollection<Role>(rolesRef);
+  const { users, roles, isLoading: appLoading } = useAppContext();
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -56,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [currentUser, roles]);
 
-  const loading = usersLoading || rolesLoading || authLoading;
+  const loading = appLoading || authLoading;
 
   const login = useCallback(async (username: string, password: string): Promise<boolean> => {
     if (!users) {

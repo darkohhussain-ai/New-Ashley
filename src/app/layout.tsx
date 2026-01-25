@@ -132,8 +132,8 @@ export default function RootLayout({
     <html suppressHydrationWarning>
       <body className={cn('antialiased', 'min-h-screen font-sans')} suppressHydrationWarning>
         <FirebaseClientProvider>
-          <AuthProvider>
-            <AppProvider>
+          <AppProvider>
+            <AuthProvider>
               <LanguageProvider>
                 <ThemeProvider>
                   <AppContent>
@@ -142,8 +142,8 @@ export default function RootLayout({
                   <Toaster />
                 </ThemeProvider>
               </LanguageProvider>
-            </AppProvider>
-          </AuthProvider>
+            </AuthProvider>
+          </AppProvider>
         </FirebaseClientProvider>
       </body>
     </html>
