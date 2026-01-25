@@ -193,6 +193,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
     }, [settingsDocRef, settings]);
     
+    // This effect is a safeguard to prevent user lockout.
+    // If no users are found in the database, it seeds the initial users.
+    useEffect(() => {
+        if (!isUsersLoading && users && users.length === 0 && db) {
+            console.log("No users found. Seeding initial users to prevent lockout.");
+            const usersCol = collection(db, 'users');
+            initialData.users.forEach(user => {
+                const userDoc = doc(usersCol, user.id);
+                setDocumentNonBlocking(userDoc, user, { merge: false });
+            });
+            const rolesCol = collection(db, 'roles');
+            initialData.roles.forEach(role => {
+                const roleDoc = doc(rolesCol, role.id);
+                setDocumentNonBlocking(roleDoc, role, { merge: false });
+            });
+        }
+    }, [isUsersLoading, users, db]);
+
     const isLoading = isUserLoading || !isInitialSettingsLoaded || isEmployeesLoading || isExcelFilesLoading || isItemsLoading || isLocationsLoading || isExpensesLoading || isExpenseReportsLoading || isOvertimeLoading || isBonusesLoading || isWithdrawalsLoading || isItemCategoriesLoading || isTransfersLoading || isTransferItemsLoading || isMarketingFeedbacksLoading || isEvaluationQuestionsLoading || isUsersLoading || isRolesLoading || isSoldItemsListsLoading;
 
     const value = useMemo<AppState>(() => ({
