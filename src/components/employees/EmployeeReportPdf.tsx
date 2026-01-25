@@ -1,5 +1,4 @@
 
-
 'use client';
 import { Employee, Expense, Overtime, Bonus, CashWithdrawal, PdfSettings } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
@@ -56,11 +55,45 @@ const FinancialSection = ({ title, items, columns, bodyMapper, total, themeColor
     );
 };
 
+const OvertimeTablePdf = ({ title, data, totalAmount, totalHours }: { title: string, data: Overtime[], totalAmount: number, totalHours: number }) => {
+    const { t } = useTranslation();
+    if (data.length === 0) return null;
+    return (
+        <div className="mb-4">
+            <h3 className="text-base font-medium mb-2 pb-1 border-b-2">{title}</h3>
+            <Table className="pdf-table">
+                <TableHeader><TableRow>
+                    <TableHead className="text-[10px] py-1 h-auto">{t('date')}</TableHead>
+                    <TableHead className="text-[10px] py-1 h-auto">{t('overtime_hours')}</TableHead>
+                    <TableHead className="text-[10px] py-1 h-auto">{t('notes')}</TableHead>
+                    <TableHead className="text-right text-[10px] py-1 h-auto">{t('amount')}</TableHead>
+                </TableRow></TableHeader>
+                <TableBody>
+                    {data.map((item) => (
+                        <TableRow key={item.id}>
+                            <TableCell className="py-1 text-[10px] leading-snug">{item.date && !isNaN(parseISO(item.date).getTime()) ? format(parseISO(item.date), 'PP') : 'Invalid Date'}</TableCell>
+                            <TableCell className="py-1 text-[10px] leading-snug">{item.hours.toFixed(2)}</TableCell>
+                            <TableCell className="text-gray-600 py-1 text-[10px] leading-snug">{item.notes || 'N/A'}</TableCell>
+                            <TableCell className="text-right py-1 text-[10px] leading-snug">{formatCurrency(item.totalAmount)}</TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+                <TableFooter><TableRow>
+                    <TableCell colSpan={1} className="text-right text-[10px] py-1 font-medium">{t('total')}</TableCell>
+                    <TableCell className="text-center text-[10px] py-1 font-medium">{totalHours.toFixed(2)}</TableCell>
+                    <TableCell colSpan={1}></TableCell>
+                    <TableCell className="text-right text-[10px] py-1 font-medium">{formatCurrency(totalAmount)}</TableCell>
+                </TableRow></TableFooter>
+            </Table>
+        </div>
+    );
+};
+
 type EmployeeReportPdfProps = {
     employee: Employee;
     settings: PdfSettings;
     expenses: { items: Expense[], total: number };
-    overtime: { items: Overtime[], total: number };
+    overtime: { items: Overtime[], total: number, totalHours: number };
     bonuses: { items: Bonus[], total: number };
     withdrawals: { items: CashWithdrawal[], total: number };
 };
@@ -119,13 +152,11 @@ export function EmployeeReportPdf({ employee, settings, expenses, overtime, bonu
                         total={expenses.total}
                         themeColor={settings.reportColors?.expense}
                     />
-                     <FinancialSection 
+                     <OvertimeTablePdf
                         title={t('overtime')}
-                        items={overtime.items}
-                        columns={[t('date'), 'Hours', t('amount')]}
-                        bodyMapper={(o: Overtime) => [format(parseISO(o.date), 'PP'), o.hours.toFixed(2), formatCurrency(o.totalAmount)]}
-                        total={overtime.total}
-                        themeColor={settings.reportColors?.overtime}
+                        data={overtime.items}
+                        totalAmount={overtime.total}
+                        totalHours={overtime.totalHours}
                     />
                     <FinancialSection 
                         title={t('bonuses')}

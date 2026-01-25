@@ -346,7 +346,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                         employee={employee}
                         settings={reportSettings}
                         expenses={{ items: sortedExpenses, total: totalExpenses }}
-                        overtime={{ items: sortedOvertime, total: totalOvertimeAmount }}
+                        overtime={{ items: sortedOvertime, total: totalOvertimeAmount, totalHours: totalOvertimeHours }}
                         bonuses={{ items: sortedBonuses, total: totalBonuses }}
                         withdrawals={{ items: sortedWithdrawals, total: totalWithdrawals }}
                     />
