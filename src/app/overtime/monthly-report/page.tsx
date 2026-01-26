@@ -99,15 +99,32 @@ export default function MonthlyOvertimeReportPage() {
             console.error("Error adding custom font to PDF:", e);
         }
     }
+    
+    autoTable(doc, {
+        body: [
+            [{
+                content: t('monthly_overtime_report'),
+                styles: {
+                    halign: 'center',
+                    fontSize: 18,
+                    textColor: themeColor,
+                    font: useKurdishFont ? fontName : 'helvetica',
+                }
+            }],
+            [{
+                content: format(selectedDate, 'MMMM yyyy'),
+                styles: {
+                    halign: 'center',
+                    fontSize: 11,
+                    textColor: 100,
+                    font: useKurdishFont ? fontName : 'helvetica',
+                }
+            }],
+        ],
+        theme: 'plain',
+        startY: 20,
+    });
 
-
-    doc.setFontSize(18);
-    doc.setTextColor(themeColor);
-    doc.text(t('monthly_overtime_report'), 14, 22);
-
-    doc.setFontSize(11);
-    doc.setTextColor(100);
-    doc.text(format(selectedDate, 'MMMM yyyy'), 14, 30);
 
     const head = [[t('employee'), t('total_hours'), t('total_amount')]];
     const body = monthlyData.summary.map(item => [
@@ -126,7 +143,7 @@ export default function MonthlyOvertimeReportPage() {
       head,
       body,
       foot,
-      startY: 40,
+      startY: (doc as any).lastAutoTable.finalY + 10,
       theme: tableTheme,
       styles: {
         font: useKurdishFont ? fontName : 'helvetica',
