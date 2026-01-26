@@ -14,7 +14,7 @@ import { useAppContext } from '@/context/app-provider';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslation } from '@/hooks/use-translation';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 
 const formatCurrency = (amount: number) => {
@@ -105,7 +105,7 @@ export default function MonthlyOvertimeReportPage() {
       formatCurrency(monthlyData.totalAmount),
     ]];
 
-    (doc as any).autoTable({
+    autoTable(doc, {
       head,
       body,
       foot,
@@ -234,7 +234,7 @@ export default function MonthlyOvertimeReportPage() {
             ) : (
             <div className="text-center py-16 border-2 border-dashed rounded-lg print:hidden">
                 <CalendarIcon className="mx-auto h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-4 text-lg">{t('no_overtime_found')}</h3>
+                <h3 className="mt-4 text-lg font-medium">{t('no_overtime_found')}</h3>
                 <p className="mt-2 text-sm text-muted-foreground">{t('no_overtime_found_for_month', {month: selectedDate ? format(selectedDate, 'MMMM yyyy') : t('the_selected_month')})}</p>
             </div>
             )}
