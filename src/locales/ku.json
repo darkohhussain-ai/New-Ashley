@@ -626,6 +626,7 @@
   "login_background_desc": "وێنەی پاشبنەما بۆ شاشەی چوونەژوورەوەی سەرەکی.",
   "main_dashboard_background": "پاشبنەمای داشبۆردی سەرەکی",
   "main_dashboard_background_desc": "پاشبنەما بۆ ناوچەی داشبۆردی سەرەکی، لە پشت کارتەکانەوە.",
+  "dashboard_banner": "بانەری داشبۆرد",
   "dashboard_banner_desc": "وێنەیەکی بانەر کە لەسەری داشبۆرد پیشان دەدرێت.",
   "header_table_color": "ڕەنگی سەروتار/خشتە",
   "no_dot": "ژ.",
@@ -684,6 +685,9 @@
   "status": "دۆخ",
   "pending": "چاوەڕوان",
   "available": "بەردەستە",
-  "completed": "تەواوبوو"
+  "completed": "تەواوبوو",
+  "category": "پۆل",
+  "export_pdf": "هەناردەکردنی PDF"
 }
+
 

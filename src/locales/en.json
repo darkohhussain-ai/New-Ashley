@@ -626,6 +626,7 @@
   "login_background_desc": "Background image for the main login screen.",
   "main_dashboard_background": "Main Dashboard Background",
   "main_dashboard_background_desc": "Background for the main dashboard area, behind the cards.",
+  "dashboard_banner": "Dashboard Banner",
   "dashboard_banner_desc": "A banner image displayed at the top of the dashboard.",
   "header_table_color": "Header/Table Color",
   "no_dot": "No.",
@@ -684,7 +685,10 @@
   "status": "Status",
   "pending": "Pending",
   "available": "Available",
-  "completed": "Completed"
+  "category": "Category",
+  "completed": "Completed",
+  "export_pdf": "Export PDF"
 }
+
 
 
