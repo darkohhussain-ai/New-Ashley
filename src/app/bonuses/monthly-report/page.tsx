@@ -1,16 +1,39 @@
-
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Calendar as CalendarIcon, FileText, Printer, FileDown, BarChart } from 'lucide-react';
+import {
+  ArrowLeft,
+  Calendar as CalendarIcon,
+  FileText,
+  Printer,
+  FileDown,
+  BarChart,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableFooter,
+} from '@/components/ui/table';
 import { useAppContext } from '@/context/app-provider';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslation } from '@/hooks/use-translation';
@@ -19,7 +42,6 @@ import { ReportWrapper } from '@/components/reports/ReportWrapper';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import type { AllPdfSettings } from '@/lib/types';
-
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -35,9 +57,8 @@ export default function MonthlyBonusReportPage() {
   const { pdfSettings, customFont } = settings;
   const { user, hasPermission } = useAuth();
   const isReadOnly = !hasPermission('page:admin');
-  
-  const reportContentRef = useRef<HTMLDivElement>(null);
 
+  const reportContentRef = useRef<HTMLDivElement>(null);
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -45,65 +66,85 @@ export default function MonthlyBonusReportPage() {
   useEffect(() => {
     setSelectedDate(new Date());
   }, []);
-  
+
   const isLoading = !bonuses || !employees || !selectedDate;
 
   const getEmployeeName = (employeeId: string, useKurdish: boolean = false) => {
     const employee = employees.find(e => e.id === employeeId);
     if (!employee) return t('unknown');
-    if (isReadOnly && user?.username !== `${employee.name.split(' ')[0]}${employee.employeeId || ''}`) return '***';
+    if (
+      isReadOnly &&
+      user?.username !== `${employee.name.split(' ')[0]}${employee.employeeId || ''}`
+    )
+      return '***';
     return useKurdish && employee.kurdishName ? employee.kurdishName : employee.name;
   };
 
   const monthlyData = useMemo(() => {
-    if (isLoading || !bonuses || !employees || !selectedDate) return { records: [], summary: [], totalAmount: 0, totalLoads: 0, chartData: [] };
+    if (isLoading || !bonuses || !employees || !selectedDate)
+      return {
+        records: [],
+        summary: [],
+        totalAmount: 0,
+        totalLoads: 0,
+        chartData: [],
+      };
 
     const start = startOfMonth(selectedDate);
     const end = endOfMonth(selectedDate);
 
-    const filteredRecords = bonuses.filter(r => isWithinInterval(parseISO(r.date), { start, end }));
+    const filteredRecords = bonuses.filter(r =>
+      isWithinInterval(parseISO(r.date), { start, end })
+    );
 
-    const employeeTotals = new Map<string, { totalAmount: number; totalLoads: number }>();
+    const employeeTotals = new Map<
+      string,
+      { totalAmount: number; totalLoads: number }
+    >();
     filteredRecords.forEach(record => {
-      const current = employeeTotals.get(record.employeeId) || { totalAmount: 0, totalLoads: 0 };
+      const current = employeeTotals.get(record.employeeId) || {
+        totalAmount: 0,
+        totalLoads: 0,
+      };
       current.totalAmount += record.totalAmount;
       current.totalLoads += record.loadCount;
       employeeTotals.set(record.employeeId, current);
     });
 
-    const summary = Array.from(employeeTotals.entries()).map(([employeeId, totals]) => ({
-      employeeId,
-      employeeName: getEmployeeName(employeeId, language === 'ku'),
-      ...totals
-    })).sort((a,b) => b.totalAmount - a.totalAmount);
-    
+    const summary = Array.from(employeeTotals.entries())
+      .map(([employeeId, totals]) => ({
+        employeeId,
+        employeeName: getEmployeeName(employeeId, language === 'ku'),
+        ...totals,
+      }))
+      .sort((a, b) => b.totalAmount - a.totalAmount);
+
     const totalAmount = summary.reduce((sum, item) => sum + item.totalAmount, 0);
     const totalLoads = summary.reduce((sum, item) => sum + item.totalLoads, 0);
 
     return { records: filteredRecords, summary, totalAmount, totalLoads };
   }, [isLoading, selectedDate, bonuses, employees, getEmployeeName, language, isReadOnly, user, t]);
 
-
   const handlePrint = () => {
     window.print();
   };
-  
+
   const handleDownloadPdf = async () => {
     if (!reportContentRef.current || !selectedDate) return;
-    
+
     const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
-    
-    const canvas = await html2canvas(reportContentRef.current, { 
-      scale: 2, 
-      useCORS: true, 
+
+    const canvas = await html2canvas(reportContentRef.current, {
+      scale: 2,
+      useCORS: true,
       backgroundColor: 'white',
-      onclone: (document) => {
+      onclone: document => {
         if (customFont && language === 'ku') {
-            const style = document.createElement('style');
-            style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
-            document.head.appendChild(style);
+          const style = document.createElement('style');
+          style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
+          document.head.appendChild(style);
         }
-      }
+      },
     });
 
     const imgData = canvas.toDataURL('image/png');
@@ -113,7 +154,7 @@ export default function MonthlyBonusReportPage() {
     const ratio = imgWidth / imgHeight;
     const finalImgWidth = pdfWidth;
     const finalImgHeight = finalImgWidth / ratio;
-    
+
     doc.addImage(imgData, 'PNG', 0, 0, finalImgWidth, finalImgHeight);
     doc.save(`monthly-bonus-report-${format(selectedDate, 'yyyy-MM')}.pdf`);
   };
@@ -121,132 +162,229 @@ export default function MonthlyBonusReportPage() {
   return (
     <>
       <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-          <div ref={reportContentRef} className="bg-white" style={{width: '700px'}}>
-             <ReportWrapper 
-                title={t('monthly_bonus_report')} 
-                date={selectedDate ? format(selectedDate, 'MMMM yyyy') : ''}
-                logoSrc={pdfSettings.report.logo ?? null} 
-                themeColor={pdfSettings.report.reportColors?.bonus}
-             >
-                 <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>{t('employee')}</TableHead>
-                            <TableHead className="text-right">{t('total_loads')}</TableHead>
-                            <TableHead className="text-right">{t('total_bonus')}</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {monthlyData.summary.map(item => (
-                            <TableRow key={item.employeeId}>
-                                <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{item.employeeName}</TableCell>
-                                <TableCell className="text-right">{item.totalLoads.toFixed(0)}</TableCell>
-                                <TableCell className="text-right">{isReadOnly ? '***' : formatCurrency(item.totalAmount)}</TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                    <TableFooter>
-                        <TableRow>
-                            <TableCell className="text-lg">{t('grand_total')}</TableCell>
-                            <TableCell className="text-right text-lg">{monthlyData.totalLoads.toFixed(0)}</TableCell>
-                            <TableCell className="text-right text-lg text-primary">{isReadOnly ? '***' : formatCurrency(monthlyData.totalAmount)}</TableCell>
-                        </TableRow>
-                    </TableFooter>
-                </Table>
-             </ReportWrapper>
-          </div>
+        <div ref={reportContentRef} className="bg-white" style={{ width: '700px' }}>
+          <ReportWrapper
+            title={t('monthly_bonus_report')}
+            date={selectedDate ? format(selectedDate, 'MMMM yyyy') : ''}
+            logoSrc={pdfSettings.report.logo ?? null}
+            themeColor={pdfSettings.report.reportColors?.bonus}
+          >
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t('employee')}</TableHead>
+                  <TableHead className="text-right">{t('total_loads')}</TableHead>
+                  <TableHead className="text-right">{t('total_bonus')}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {monthlyData.summary.map(item => (
+                  <TableRow key={item.employeeId}>
+                    <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>
+                      {item.employeeName}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {item.totalLoads.toFixed(0)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {isReadOnly ? '***' : formatCurrency(item.totalAmount)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+              <TableFooter>
+                <TableRow>
+                  <TableCell className="text-lg">{t('grand_total')}</TableCell>
+                  <TableCell className="text-right text-lg">
+                    {monthlyData.totalLoads.toFixed(0)}
+                  </TableCell>
+                  <TableCell className="text-right text-lg text-primary">
+                    {isReadOnly ? '***' : formatCurrency(monthlyData.totalAmount)}
+                  </TableCell>
+                </TableRow>
+              </TableFooter>
+            </Table>
+          </ReportWrapper>
+        </div>
       </div>
-      <div className="h-[calc(100vh-80px)] flex flex-col">
+      <div className="h-[calc(100vh-80px)] flex flex-col print:hidden">
         <header className="flex items-center justify-between gap-4 mb-8 print:hidden p-4 md:p-8">
           <div className="flex items-center gap-4">
             <Button variant="outline" size="icon" asChild>
-              <Link href="/bonuses"><ArrowLeft /></Link>
+              <Link href="/bonuses">
+                <ArrowLeft />
+              </Link>
             </Button>
             <h1 className="text-2xl">{t('monthly_bonus_report')}</h1>
           </div>
           <div className="flex items-center gap-2">
             <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
               <PopoverTrigger asChild>
-                <Button variant="outline" className={cn("w-[280px] justify-start text-left", !selectedDate && "text-muted-foreground")}>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    'w-[280px] justify-start text-left',
+                    !selectedDate && 'text-muted-foreground'
+                  )}
+                >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {selectedDate ? format(selectedDate, 'MMMM yyyy') : <span>{t('pick_a_month')}</span>}
+                  {selectedDate ? (
+                    format(selectedDate, 'MMMM yyyy')
+                  ) : (
+                    <span>{t('pick_a_month')}</span>
+                  )}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="end">
                 <Calendar
                   mode="single"
                   selected={selectedDate}
-                  onSelect={(date) => {
+                  onSelect={date => {
                     setSelectedDate(date);
                     setIsCalendarOpen(false);
                   }}
-                  captionLayout="dropdown-nav" fromYear={2020} toYear={2040}
+                  captionLayout="dropdown-nav"
+                  fromYear={2020}
+                  toYear={2040}
                 />
               </PopoverContent>
             </Popover>
-            <Button variant="outline" onClick={handlePrint} disabled={isLoading || monthlyData.records.length === 0}><Printer className="mr-2"/>{t('print')}</Button>
-            <Button variant="outline" onClick={handleDownloadPdf} disabled={isLoading || monthlyData.records.length === 0}><FileDown className="mr-2"/>PDF</Button>
+            <Button
+              variant="outline"
+              onClick={handlePrint}
+              disabled={isLoading || monthlyData.records.length === 0}
+            >
+              <Printer className="mr-2" />
+              {t('print')}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleDownloadPdf}
+              disabled={isLoading || monthlyData.records.length === 0}
+            >
+              <FileDown className="mr-2" />
+              PDF
+            </Button>
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto px-4 md:px-8 print:p-8">
-            {isLoading ? (
-            <div className="space-y-6"><Skeleton className="h-64 w-full" /></div>
-            ) : monthlyData.records.length > 0 ? (
+        <main className="flex-1 overflow-y-auto px-4 md:px-8">
+          {isLoading ? (
+            <div className="space-y-6">
+              <Skeleton className="h-64 w-full" />
+            </div>
+          ) : monthlyData.records.length > 0 ? (
             <div className="space-y-8">
-                <Card className="print:shadow-none print:border-none">
+              <Card>
                 <CardHeader>
-                    <div className="hidden print:block text-center">
-                         <h1 className="text-2xl">{t('monthly_bonus_report')}</h1>
-                         <p className="text-muted-foreground">{selectedDate ? format(selectedDate, 'MMMM yyyy') : ''}</p>
-                    </div>
+                  <div className="text-center">
+                    <h1 className="text-2xl">{t('monthly_bonus_report')}</h1>
+                    <p className="text-muted-foreground">
+                      {selectedDate ? format(selectedDate, 'MMMM yyyy') : ''}
+                    </p>
+                  </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="overflow-x-auto">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>{t('employee')}</TableHead>
-                                    <TableHead className="text-right">{t('total_loads')}</TableHead>
-                                    <TableHead className="text-right">{t('total_bonus')}</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {monthlyData.summary.map(item => (
-                                    <TableRow key={item.employeeId}>
-                                        <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{item.employeeName}</TableCell>
-                                        <TableCell className="text-right">{item.totalLoads.toFixed(0)}</TableCell>
-                                        <TableCell className="text-right">{isReadOnly ? '***' : formatCurrency(item.totalAmount)}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                            <TableFooter>
-                                <TableRow>
-                                    <TableCell className="text-lg">{t('grand_total')}</TableCell>
-                                    <TableCell className="text-right text-lg">{monthlyData.totalLoads.toFixed(0)}</TableCell>
-                                    <TableCell className="text-right text-lg text-primary">{isReadOnly ? '***' : formatCurrency(monthlyData.totalAmount)}</TableCell>
-                                </TableRow>
-                            </TableFooter>
-                        </Table>
-                    </div>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>{t('employee')}</TableHead>
+                          <TableHead className="text-right">
+                            {t('total_loads')}
+                          </TableHead>
+                          <TableHead className="text-right">
+                            {t('total_bonus')}
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {monthlyData.summary.map(item => (
+                          <TableRow key={item.employeeId}>
+                            <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>
+                              {item.employeeName}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {item.totalLoads.toFixed(0)}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {isReadOnly
+                                ? '***'
+                                : formatCurrency(item.totalAmount)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                      <TableFooter>
+                        <TableRow>
+                          <TableCell className="text-lg">
+                            {t('grand_total')}
+                          </TableCell>
+                          <TableCell className="text-right text-lg">
+                            {monthlyData.totalLoads.toFixed(0)}
+                          </TableCell>
+                          <TableCell className="text-right text-lg text-primary">
+                            {isReadOnly
+                              ? '***'
+                              : formatCurrency(monthlyData.totalAmount)}
+                          </TableCell>
+                        </TableRow>
+                      </TableFooter>
+                    </Table>
+                  </div>
                 </CardContent>
-                </Card>
-                 <div className="hidden print:block pt-24">
-                    <div className="flex justify-end">
-                        <div className="w-64 text-center">
-                            <p className="border-t pt-2">{t('warehouse_manager_signature')}</p>
-                        </div>
-                    </div>
-                </div>
+              </Card>
             </div>
-            ) : (
+          ) : (
             <div className="text-center py-16 border-2 border-dashed rounded-lg print:hidden">
-                <BarChart className="mx-auto h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-4 text-lg font-medium">{t('no_bonuses_found')}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">{t('no_bonuses_found_for_month', {month: selectedDate ? format(selectedDate, 'MMMM yyyy') : 'the selected month'})}</p>
+              <BarChart className="mx-auto h-12 w-12 text-muted-foreground" />
+              <h3 className="mt-4 text-lg font-medium">
+                {t('no_bonuses_found')}
+              </h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {t('no_bonuses_found_for_month', {
+                  month: selectedDate
+                    ? format(selectedDate, 'MMMM yyyy')
+                    : 'the selected month',
+                })}
+              </p>
             </div>
-            )}
+          )}
         </main>
+      </div>
+      <div className="hidden print:block">
+        <ReportWrapper
+            title={t('monthly_bonus_report')}
+            date={selectedDate ? format(selectedDate, 'MMMM yyyy') : ''}
+            logoSrc={pdfSettings.report.logo ?? null}
+            themeColor={pdfSettings.report.reportColors?.bonus}
+        >
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>{t('employee')}</TableHead>
+                        <TableHead className="text-right">{t('total_loads')}</TableHead>
+                        <TableHead className="text-right">{t('total_bonus')}</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {monthlyData.summary.map(item => (
+                        <TableRow key={item.employeeId}>
+                            <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{item.employeeName}</TableCell>
+                            <TableCell className="text-right">{item.totalLoads.toFixed(0)}</TableCell>
+                            <TableCell className="text-right">{isReadOnly ? '***' : formatCurrency(item.totalAmount)}</TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+                <TableFooter>
+                    <TableRow>
+                        <TableCell className="text-lg">{t('grand_total')}</TableCell>
+                        <TableCell className="text-right text-lg">{monthlyData.totalLoads.toFixed(0)}</TableCell>
+                        <TableCell className="text-right text-lg text-primary">{isReadOnly ? '***' : formatCurrency(monthlyData.totalAmount)}</TableCell>
+                    </TableRow>
+                </TableFooter>
+            </Table>
+        </ReportWrapper>
       </div>
     </>
   );
