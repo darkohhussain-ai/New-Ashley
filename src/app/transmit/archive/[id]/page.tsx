@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo, useRef, useEffect, useState } from 'react';
@@ -10,11 +9,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { format, parseISO } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TransmitReportPdf } from '@/components/transmit/TransmitReportPdf';
-import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAppContext } from '@/context/app-provider';
-import type { Transfer, ItemForTransfer } from '@/lib/types';
+import type { Transfer, ItemForTransfer, BranchColors } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -81,50 +80,89 @@ export default function ViewTransferPage() {
     router.push('/transmit/archive');
   };
 
-  const handleDownloadPdf = async () => {
-    if (!pdfRef.current || !transfer || !items || !settings) return;
-    
+  const handleDownloadPdf = () => {
+    if (!transfer || !items || !settings) return;
+
     const { pdfSettings, customFont } = settings;
-    const pdfContentEl = pdfRef.current;
-    const scale = pdfSettings.invoice?.scale ?? 2;
+    const doc = new jsPDF();
+    const fontName = "CustomFont";
+    const useKurdishFont = language === 'ku' && customFont;
+    const themeColor = (transfer.destinationCity && (pdfSettings.invoice.branchColors as BranchColors)?.[transfer.destinationCity as keyof BranchColors]) || pdfSettings.invoice.themeColor;
 
-    const canvas = await html2canvas(pdfContentEl, { 
-      scale,
-      useCORS: true, 
-      backgroundColor: 'white',
-      onclone: (document) => {
-        if (customFont && language === 'ku') {
-            const style = document.createElement('style');
-            style.innerHTML = `@font-face { font-family: 'CustomAppFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomAppFont' !important; }`;
-            document.head.appendChild(style);
+    if (useKurdishFont) {
+        try {
+            const fontBase64 = customFont.split(',')[1];
+            if (fontBase64) {
+                doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
+                doc.addFont(`${fontName}.ttf`, fontName, 'normal');
+                doc.setFont(fontName);
+            }
+        } catch (e) {
+            console.error("Error adding custom font to PDF:", e);
         }
-      }
-    });
-
-    const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-
-    const imgWidth = canvas.width;
-    const imgHeight = canvas.height;
-    
-    const ratio = imgWidth / pdfWidth;
-    const scaledImgHeight = imgHeight / ratio;
-
-    let position = 0;
-    let heightLeft = scaledImgHeight;
-
-    pdf.addImage(canvas, 'PNG', 0, position, pdfWidth, scaledImgHeight);
-    heightLeft -= pdfHeight;
-
-    while (heightLeft > 0) {
-      position -= pdfHeight;
-      pdf.addPage();
-      pdf.addImage(canvas, 'PNG', 0, position, pdfWidth, scaledImgHeight);
-      heightLeft -= pdfHeight;
     }
 
-    pdf.save(`${transfer.cargoName}.pdf`);
+    const titleTemplate = pdfSettings.invoice.titleTemplate || t('INVOICE') + ' #{invoiceNumber}';
+    const finalTitle = titleTemplate
+        .replace('{city}', transfer.destinationCity || '')
+        .replace('{invoiceNumber}', transfer.invoiceNumber ? String(transfer.invoiceNumber).padStart(6, '0') : 'N/A');
+
+    autoTable(doc, {
+        body: [
+            [{
+                content: finalTitle,
+                styles: { halign: 'center', fontSize: 18, textColor: themeColor, font: useKurdishFont ? fontName : 'helvetica' }
+            }],
+            [{
+                content: format(parseISO(transfer.transferDate), 'PPP'),
+                styles: { halign: 'center', fontSize: 11, textColor: 100, font: useKurdishFont ? fontName : 'helvetica' }
+            }],
+        ],
+        theme: 'plain',
+        startY: 20,
+    });
+    
+    autoTable(doc, {
+        body: [
+            [
+              { content: `${t('driver')}: ${transfer.driverName}\n${t('manager')}: ${transfer.warehouseManagerName}`, styles: { font: useKurdishFont ? fontName : 'helvetica' } },
+              { content: `${t('slip_no')}: ${totalYearlyInvoices}`, styles: { halign: 'right', font: useKurdishFont ? fontName : 'helvetica' } }
+            ],
+        ],
+        theme: 'plain',
+        startY: (doc as any).lastAutoTable.finalY,
+    });
+
+    const head = [[t('no_dot'), t('model'), t('quantity'), t('invoice_no'), t('storage'), t('notes'), t('request_date')]];
+    const body = items.map((item, index) => [
+      index + 1,
+      item.model,
+      item.quantity,
+      item.invoiceNo || 'N/A',
+      item.storage || 'N/A',
+      item.notes || 'N/A',
+      item.requestDate ? format(parseISO(item.requestDate), 'yyyy-MM-dd') : 'N/A'
+    ]);
+
+    autoTable(doc, {
+        head,
+        body,
+        startY: (doc as any).lastAutoTable.finalY + 10,
+        theme: pdfSettings.invoice.tableTheme || 'striped',
+        styles: { font: useKurdishFont ? fontName : 'helvetica', valign: 'middle', cellPadding: 3, fontSize: 8 },
+        headStyles: { fillColor: themeColor, textColor: 255, fontStyle: 'bold', halign: 'center', font: useKurdishFont ? fontName : 'helvetica' },
+        columnStyles: {
+            0: { halign: 'center', cellWidth: 10 },
+            1: { halign: useKurdishFont ? 'right' : 'left' },
+            2: { halign: 'center' },
+            3: { halign: 'center' },
+            4: { halign: 'center' },
+            5: { halign: useKurdishFont ? 'right' : 'left' },
+            6: { halign: 'center' }
+        },
+    });
+
+    doc.save(`${transfer.cargoName}.pdf`);
   };
 
   const handlePrint = () => {

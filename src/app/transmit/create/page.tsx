@@ -1,6 +1,3 @@
-
-
-      
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -18,12 +15,11 @@ import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { TransmitReportPdf } from '@/components/transmit/TransmitReportPdf';
-import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAppContext } from '@/context/app-provider';
-import type { Transfer, ItemForTransfer, AllPdfSettings } from '@/lib/types';
+import type { Transfer, ItemForTransfer, AllPdfSettings, BranchColors } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
 
 
@@ -55,8 +51,6 @@ export default function CreateTransferPage() {
   const [lastTransfer, setLastTransfer] = useState<Transfer | null>(null);
   const [lastTransferItems, setLastTransferItems] = useState<ItemForTransfer[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
-  const pdfCardRef = useRef<HTMLDivElement>(null);
   
   const stagedItems = useMemo(() => transferItems.filter(item => !item.transferId), [transferItems]);
 
@@ -135,49 +129,82 @@ export default function CreateTransferPage() {
     }
   };
 
-  const handleDownloadPdf = async () => {
-    if (!pdfCardRef.current || !lastTransfer || !lastTransferItems || !pdfSettings) return;
+  const handleDownloadPdf = () => {
+    if (!lastTransfer || !lastTransferItems || !pdfSettings) return;
 
-    const pdfContentEl = pdfCardRef.current;
-    const scale = pdfSettings.invoice?.scale ?? 2;
-    
-    const canvas = await html2canvas(pdfContentEl, { 
-      scale,
-      useCORS: true, 
-      backgroundColor: 'white',
-      onclone: (document) => {
-        if (customFont) {
-            const style = document.createElement('style');
-            style.innerHTML = `@font-face { font-family: 'CustomAppFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3, span { font-family: 'CustomAppFont' !important; }`;
-            document.head.appendChild(style);
+    const doc = new jsPDF();
+    const fontName = "CustomFont";
+    const useKurdishFont = language === 'ku' && customFont;
+    const themeColor = (lastTransfer.destinationCity && (pdfSettings.invoice.branchColors as BranchColors)?.[lastTransfer.destinationCity as keyof BranchColors]) || pdfSettings.invoice.themeColor;
+
+    if (useKurdishFont) {
+        try {
+            const fontBase64 = customFont.split(',')[1];
+            if (fontBase64) {
+                doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
+                doc.addFont(`${fontName}.ttf`, fontName, 'normal');
+                doc.setFont(fontName);
+            }
+        } catch (e) {
+            console.error("Error adding custom font to PDF:", e);
         }
-      }
+    }
+
+    const titleTemplate = pdfSettings.invoice.titleTemplate || t('INVOICE') + ' #{invoiceNumber}';
+    const finalTitle = titleTemplate
+        .replace('{city}', lastTransfer.destinationCity || '')
+        .replace('{invoiceNumber}', lastTransfer.invoiceNumber ? String(lastTransfer.invoiceNumber).padStart(6, '0') : 'N/A');
+
+    autoTable(doc, {
+        body: [
+            [{ content: finalTitle, styles: { halign: 'center', fontSize: 18, textColor: themeColor, font: useKurdishFont ? fontName : 'helvetica' } }],
+            [{ content: format(parseISO(lastTransfer.transferDate), 'PPP'), styles: { halign: 'center', fontSize: 11, textColor: 100, font: useKurdishFont ? fontName : 'helvetica' } }],
+        ],
+        theme: 'plain',
+        startY: 20,
+    });
+    
+    autoTable(doc, {
+        body: [
+            [
+              { content: `${t('driver')}: ${lastTransfer.driverName}\n${t('manager')}: ${lastTransfer.warehouseManagerName}`, styles: { font: useKurdishFont ? fontName : 'helvetica' } },
+              { content: `${t('slip_no')}: ${transfers.length}`, styles: { halign: 'right', font: useKurdishFont ? fontName : 'helvetica' } }
+            ],
+        ],
+        theme: 'plain',
+        startY: (doc as any).lastAutoTable.finalY,
     });
 
-    const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-    
-    const imgWidth = canvas.width;
-    const imgHeight = canvas.height;
-    
-    const ratio = imgWidth / pdfWidth;
-    const scaledImgHeight = imgHeight / ratio;
+    const head = [[t('no_dot'), t('model'), t('quantity'), t('invoice_no'), t('storage'), t('notes'), t('request_date')]];
+    const body = lastTransferItems.map((item, index) => [
+      index + 1,
+      item.model,
+      item.quantity,
+      item.invoiceNo || 'N/A',
+      item.storage || 'N/A',
+      item.notes || 'N/A',
+      item.requestDate ? format(parseISO(item.requestDate), 'yyyy-MM-dd') : 'N/A'
+    ]);
 
-    let position = 0;
-    let heightLeft = scaledImgHeight;
+    autoTable(doc, {
+        head,
+        body,
+        startY: (doc as any).lastAutoTable.finalY + 10,
+        theme: pdfSettings.invoice.tableTheme || 'striped',
+        styles: { font: useKurdishFont ? fontName : 'helvetica', valign: 'middle', cellPadding: 3, fontSize: 8 },
+        headStyles: { fillColor: themeColor, textColor: 255, fontStyle: 'bold', halign: 'center', font: useKurdishFont ? fontName : 'helvetica' },
+        columnStyles: {
+            0: { halign: 'center', cellWidth: 10 },
+            1: { halign: useKurdishFont ? 'right' : 'left' },
+            2: { halign: 'center' },
+            3: { halign: 'center' },
+            4: { halign: 'center' },
+            5: { halign: useKurdishFont ? 'right' : 'left' },
+            6: { halign: 'center' }
+        },
+    });
 
-    pdf.addImage(canvas, 'PNG', 0, position, pdfWidth, scaledImgHeight);
-    heightLeft -= pdfHeight;
-
-    while (heightLeft > 0) {
-      position -= pdfHeight;
-      pdf.addPage();
-      pdf.addImage(canvas, 'PNG', 0, position, pdfWidth, scaledImgHeight);
-      heightLeft -= pdfHeight;
-    }
-    
-    pdf.save(`${lastTransfer.cargoName}.pdf`);
+    doc.save(`${lastTransfer.cargoName}.pdf`);
   };
 
   if (isAppLoading) {
@@ -186,19 +213,6 @@ export default function CreateTransferPage() {
 
   return (
     <>
-    {lastTransfer && pdfSettings && (
-       <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-          <div ref={pdfCardRef}>
-              <TransmitReportPdf
-                transfer={lastTransfer}
-                items={lastTransferItems}
-                settings={{...pdfSettings.invoice, logo: pdfSettings.invoice.logo ?? appLogo}}
-                invoiceNumber={lastTransfer.invoiceNumber}
-                totalYearlyInvoices={transfers.length}
-              />
-          </div>
-       </div>
-    )}
     <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
       <header className="flex items-center gap-4 mb-8">
           <Button variant="outline" size="icon" asChild>
