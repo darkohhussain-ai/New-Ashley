@@ -16,13 +16,11 @@ import { useAppContext } from '@/context/app-provider';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslation } from '@/hooks/use-translation';
 import { useAuth } from '@/hooks/use-auth';
-import useLocalStorage from '@/hooks/use-local-storage';
-import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import type { AllPdfSettings } from '@/lib/types';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { ReportWrapper } from '@/components/reports/ReportWrapper';
-import Image from 'next/image';
 
 
 const formatCurrency = (amount: number) => {
@@ -39,9 +37,7 @@ export default function MonthlyExpenseReportPage() {
   const { user, hasPermission } = useAuth();
   const isReadOnly = !hasPermission('page:admin');
   
-  const { pdfSettings, fontFamily } = settings;
-  const reportContentRef = useRef<HTMLDivElement>(null);
-
+  const { pdfSettings, customFont } = settings;
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -115,42 +111,64 @@ export default function MonthlyExpenseReportPage() {
     window.print();
   };
   
-  const handleDownloadPdf = async () => {
-    if (!reportContentRef.current || !selectedDate) return;
+  const handleDownloadPdf = () => {
+    if (!selectedDate || !settings || monthlyData.summary.length === 0) return;
+    const doc = new jsPDF();
+    const useKurdishFont = language === 'ku' && customFont;
+    const fontName = "CustomFont";
+    const themeColor = pdfSettings.report.reportColors?.expense || '#3b82f6';
     
-    const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
-    
-    const canvas = await html2canvas(reportContentRef.current, { 
-      scale: 2, 
-      useCORS: true, 
-      backgroundColor: 'white',
-      onclone: (document) => {
-        if (fontFamily) {
-            const style = document.createElement('style');
-            style.innerHTML = `body, table, div, p, h1, h2, h3 { font-family: '${fontFamily}', sans-serif !important; }`;
-            document.head.appendChild(style);
+    if (useKurdishFont) {
+        try {
+            const fontBase64 = customFont.split(',')[1];
+            if (fontBase64) {
+                doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
+                doc.addFont(`${fontName}.ttf`, fontName, 'normal');
+                doc.setFont(fontName);
+            }
+        } catch (e) {
+            console.error("Error adding custom font to PDF:", e);
         }
+    }
+    
+    autoTable(doc, {
+        body: [
+            [{ content: t('monthly_expense_report'), styles: { halign: 'center', fontSize: 18, textColor: themeColor, font: useKurdishFont ? fontName : 'helvetica' } }],
+            [{ content: format(selectedDate, 'MMMM yyyy'), styles: { halign: 'center', fontSize: 11, textColor: 100, font: useKurdishFont ? fontName : 'helvetica' } }],
+        ],
+        theme: 'plain',
+        startY: 20,
+    });
+    
+    const head = [[t('employee'), t('taxi_expenses'), t('purchases_buying_items'), t('total_amount')]];
+    const body = monthlyData.summary.map(item => [
+      item.employeeName,
+      isReadOnly ? '***' : formatCurrency(item.taxiTotal),
+      isReadOnly ? '***' : formatCurrency(item.purchasesTotal),
+      isReadOnly ? '***' : formatCurrency(item.totalAmount)
+    ]);
+    const foot = [[
+        { content: t('grand_total'), colSpan: 3, styles: { halign: 'right', fontStyle: 'bold' }},
+        { content: isReadOnly ? '***' : formatCurrency(monthlyData.grandTotal), styles: { halign: 'right', fontStyle: 'bold' }}
+    ]];
+    
+    autoTable(doc, {
+      head,
+      body,
+      foot,
+      startY: (doc as any).lastAutoTable.finalY + 10,
+      theme: pdfSettings.report.tableTheme || 'striped',
+      styles: { font: useKurdishFont ? fontName : 'helvetica', valign: 'middle', cellPadding: 3, fontSize: 8 },
+      headStyles: { fillColor: themeColor, textColor: 255, fontStyle: 'bold', halign: 'center', font: useKurdishFont ? fontName : 'helvetica' },
+      footStyles: { fillColor: [230, 230, 230], textColor: 0, fontStyle: 'bold' },
+      columnStyles: {
+        0: { halign: useKurdishFont ? 'right' : 'left' },
+        1: { halign: 'right' },
+        2: { halign: 'right' },
+        3: { halign: 'right', fontStyle: 'bold' }
       }
     });
 
-    const imgData = canvas.toDataURL('image/png');
-    const pdfWidth = doc.internal.pageSize.getWidth();
-    const pdfHeight = doc.internal.pageSize.getHeight();
-    const imgWidth = canvas.width;
-    const imgHeight = canvas.height;
-    const ratio = imgWidth / imgHeight;
-    
-    let finalImgWidth = pdfWidth;
-    let finalImgHeight = finalImgWidth / ratio;
-    
-    if (finalImgHeight > pdfHeight) {
-        finalImgHeight = pdfHeight;
-        finalImgWidth = finalImgHeight * ratio;
-    }
-
-    const x = (pdfWidth - finalImgWidth) / 2;
-    
-    doc.addImage(imgData, 'PNG', x, 0, finalImgWidth, finalImgHeight);
     doc.save(`monthly-expense-report-${format(selectedDate, 'yyyy-MM')}.pdf`);
   };
   
@@ -160,45 +178,6 @@ export default function MonthlyExpenseReportPage() {
 
   return (
     <>
-      <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-          <div ref={reportContentRef} style={{width: '800px'}}>
-              {selectedDate && (
-                <ReportWrapper
-                    title={t('monthly_expense_report')}
-                    date={format(selectedDate, 'MMMM yyyy')}
-                    logoSrc={pdfSettings.report.logo}
-                    themeColor={pdfSettings.report.reportColors?.expense || '#3b82f6'}
-                >
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>{t('employee')}</TableHead>
-                                <TableHead className="text-right">{t('taxi_expenses')}</TableHead>
-                                <TableHead className="text-right">{t('purchases_buying_items')}</TableHead>
-                                <TableHead className="text-right font-bold">{t('total_amount')}</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                        {monthlyData.summary.map((item, index) => (
-                            <TableRow key={item.employeeId} className={index % 2 === 0 ? 'bg-gray-100' : ''}>
-                                <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{item.employeeName}</TableCell>
-                                <TableCell className="text-right">{isReadOnly ? '***' : formatCurrency(item.taxiTotal)}</TableCell>
-                                <TableCell className="text-right">{isReadOnly ? '***' : formatCurrency(item.purchasesTotal)}</TableCell>
-                                <TableCell className="text-right font-bold">{isReadOnly ? '***' : formatCurrency(item.totalAmount)}</TableCell>
-                            </TableRow>
-                        ))}
-                        </TableBody>
-                        <TableFooter>
-                            <TableRow>
-                                <TableCell colSpan={3} className="text-right font-bold">{t('grand_total')}:</TableCell>
-                                <TableCell className="text-right font-bold">{isReadOnly ? '***' : formatCurrency(monthlyData.grandTotal)}</TableCell>
-                            </TableRow>
-                        </TableFooter>
-                    </Table>
-                </ReportWrapper>
-              )}
-          </div>
-      </div>
       <div className="min-h-screen bg-background text-foreground p-4 md:p-8 print:p-0">
         <header className="flex items-center justify-between gap-4 mb-8 print:hidden">
           <div className="flex items-center gap-4">
@@ -291,46 +270,6 @@ export default function MonthlyExpenseReportPage() {
                        </div>
                     </CardContent>
                 </Card>
-                <Card>
-                  <CardHeader><CardTitle>Report Preview</CardTitle></CardHeader>
-                  <CardContent className="bg-muted/30 p-4 flex justify-center">
-                    <div className="w-full max-w-3xl scale-[0.9] origin-top bg-white text-black">
-                       <ReportWrapper
-                            title={t('monthly_expense_report')}
-                            date={selectedDate ? format(selectedDate, 'MMMM yyyy') : ''}
-                            logoSrc={pdfSettings.report.logo}
-                            themeColor={pdfSettings.report.reportColors?.expense || '#3b82f6'}
-                        >
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>{t('employee')}</TableHead>
-                                        <TableHead className="text-right">{t('taxi_expenses')}</TableHead>
-                                        <TableHead className="text-right">{t('purchases_buying_items')}</TableHead>
-                                        <TableHead className="text-right font-bold">{t('total_amount')}</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                {monthlyData.summary.map((item, index) => (
-                                    <TableRow key={item.employeeId} className={index % 2 === 0 ? 'bg-gray-100' : ''}>
-                                        <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{item.employeeName}</TableCell>
-                                        <TableCell className="text-right">{isReadOnly ? '***' : formatCurrency(item.taxiTotal)}</TableCell>
-                                        <TableCell className="text-right">{isReadOnly ? '***' : formatCurrency(item.purchasesTotal)}</TableCell>
-                                        <TableCell className="text-right font-bold">{isReadOnly ? '***' : formatCurrency(item.totalAmount)}</TableCell>
-                                    </TableRow>
-                                ))}
-                                </TableBody>
-                                <TableFooter>
-                                    <TableRow>
-                                        <TableCell colSpan={3} className="text-right font-bold">{t('grand_total')}:</TableCell>
-                                        <TableCell className="text-right font-bold">{isReadOnly ? '***' : formatCurrency(monthlyData.grandTotal)}</TableCell>
-                                    </TableRow>
-                                </TableFooter>
-                            </Table>
-                        </ReportWrapper>
-                    </div>
-                  </CardContent>
-                </Card>
             </div>
             ) : (
             <div className="text-center py-16 border-2 border-dashed rounded-lg print:hidden">
@@ -340,6 +279,43 @@ export default function MonthlyExpenseReportPage() {
             </div>
             )}
         </main>
+      </div>
+       <div className="hidden print:block">
+        {selectedDate && (
+          <ReportWrapper
+              title={t('monthly_expense_report')}
+              date={format(selectedDate, 'MMMM yyyy')}
+              logoSrc={pdfSettings?.report.logo}
+              themeColor={pdfSettings?.report.reportColors?.expense || '#3b82f6'}
+          >
+              <Table>
+                  <TableHeader>
+                      <TableRow>
+                          <TableHead>{t('employee')}</TableHead>
+                          <TableHead className="text-right">{t('taxi_expenses')}</TableHead>
+                          <TableHead className="text-right">{t('purchases_buying_items')}</TableHead>
+                          <TableHead className="text-right font-bold">{t('total_amount')}</TableHead>
+                      </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                  {monthlyData.summary.map((item, index) => (
+                      <TableRow key={item.employeeId} className={index % 2 === 0 ? 'bg-gray-100' : ''}>
+                          <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{item.employeeName}</TableCell>
+                          <TableCell className="text-right">{isReadOnly ? '***' : formatCurrency(item.taxiTotal)}</TableCell>
+                          <TableCell className="text-right">{isReadOnly ? '***' : formatCurrency(item.purchasesTotal)}</TableCell>
+                          <TableCell className="text-right font-bold">{isReadOnly ? '***' : formatCurrency(item.totalAmount)}</TableCell>
+                      </TableRow>
+                  ))}
+                  </TableBody>
+                  <TableFooter>
+                      <TableRow>
+                          <TableCell colSpan={3} className="text-right font-bold">{t('grand_total')}:</TableCell>
+                          <TableCell className="text-right font-bold">{isReadOnly ? '***' : formatCurrency(monthlyData.grandTotal)}</TableCell>
+                      </TableRow>
+                  </TableFooter>
+              </Table>
+          </ReportWrapper>
+        )}
       </div>
     </>
   );

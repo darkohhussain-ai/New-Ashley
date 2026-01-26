@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Employee, Expense, ExpenseReport, AllPdfSettings } from '@/lib/types';
@@ -44,7 +45,7 @@ export function ExpenseReportPdf({ report, items, employees, settings }: Expense
     });
 
     return Object.values(groups).sort((a,b) => b.total - a.total);
-  }, [items, employees, language, getEmployeeName]);
+  }, [items, employees, language, getEmployeeName, t]);
 
   return (
     <ReportWrapper

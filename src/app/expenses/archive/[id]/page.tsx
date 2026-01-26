@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useRef } from 'react';
@@ -13,7 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from '@/hooks/use-translation';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import autoTable from 'jspdf-autotable';
 import { ExpenseReportPdf } from '@/components/expenses/ExpenseReportPdf';
 import type { Expense } from '@/lib/types';
 
@@ -72,41 +73,62 @@ export default function ViewExpenseReportPage() {
     window.print();
   };
   
-  const handleDownloadPdf = async () => {
-    if (!reportPdfRef.current) return;
-        
-    const canvas = await html2canvas(reportPdfRef.current, { 
-        scale: 2,
-        useCORS: true,
-         onclone: (document) => {
-            if (settings.customFont && language === 'ku') {
-                const style = document.createElement('style');
-                style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${settings.customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
-                document.head.appendChild(style);
+  const handleDownloadPdf = () => {
+    if (!report || !settings) return;
+    const doc = new jsPDF();
+    const { pdfSettings, customFont } = settings;
+    const useKurdishFont = language === 'ku' && customFont;
+    const themeColor = pdfSettings.report.reportColors?.expense || '#3b82f6';
+    const fontName = "CustomFont";
+
+    if (useKurdishFont) {
+        try {
+            const fontBase64 = customFont.split(',')[1];
+            if (fontBase64) {
+                doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
+                doc.addFont(`${fontName}.ttf`, fontName, 'normal');
+                doc.setFont(fontName);
             }
+        } catch (e) {
+            console.error("Error adding custom font to PDF:", e);
         }
-    });
-
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF('p', 'px', 'a4');
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-    const imgWidth = canvas.width;
-    const imgHeight = canvas.height;
-    const ratio = imgWidth / imgHeight;
-
-    let finalImgWidth = pdfWidth;
-    let finalImgHeight = pdfWidth / ratio;
-    
-    if (finalImgHeight > pdfHeight) {
-        finalImgHeight = pdfHeight;
-        finalImgWidth = finalImgHeight * ratio;
     }
     
-    const x = (pdfWidth - finalImgWidth) / 2;
+    autoTable(doc, {
+        body: [
+            [{ content: report.reportName, styles: { halign: 'center', fontSize: 18, textColor: themeColor, font: useKurdishFont ? fontName : 'helvetica' } }],
+            [{ content: format(parseISO(report.reportDate), 'PPP'), styles: { halign: 'center', fontSize: 11, textColor: 100, font: useKurdishFont ? fontName : 'helvetica' } }],
+        ],
+        theme: 'plain',
+        startY: 20,
+    });
 
-    pdf.addImage(imgData, 'PNG', x, 0, finalImgWidth, finalImgHeight);
-    pdf.save(`expenses-report-${report?.reportName}.pdf`);
+    autoTable(doc, {
+        head: [[t('employee'), t('expense_type'), t('notes'), t('amount')]],
+        body: reportItems.map(item => [
+            getEmployeeName(item.employeeId, useKurdishFont),
+            `${t(item.expenseType.toLowerCase().replace(/[\s()]/g, '_'))}${item.expenseSubType ? ` (${t(item.expenseSubType.toLowerCase().replace(/\s/g, '_'))})` : ''}`,
+            item.notes || '',
+            formatCurrency(item.amount),
+        ]),
+        foot: [[
+            { content: t('grand_total'), colSpan: 3, styles: { halign: 'right', fontStyle: 'bold' } },
+            { content: formatCurrency(report.totalAmount), styles: { halign: 'right', fontStyle: 'bold' } },
+        ]],
+        startY: (doc as any).lastAutoTable.finalY + 10,
+        theme: pdfSettings.report.tableTheme || 'striped',
+        styles: { font: useKurdishFont ? fontName : 'helvetica', valign: 'middle', cellPadding: 3, fontSize: 8 },
+        headStyles: { fillColor: themeColor, textColor: 255, fontStyle: 'bold', halign: 'center', font: useKurdishFont ? fontName : 'helvetica' },
+        footStyles: { fillColor: [230, 230, 230], textColor: 0, fontStyle: 'bold' },
+        columnStyles: {
+            0: { halign: useKurdishFont ? 'right' : 'left' },
+            1: { halign: useKurdishFont ? 'right' : 'left' },
+            2: { halign: useKurdishFont ? 'right' : 'left' },
+            3: { halign: 'right' },
+        },
+    });
+
+    doc.save(`${report.reportName}.pdf`);
   };
 
 
@@ -134,18 +156,6 @@ export default function ViewExpenseReportPage() {
 
   return (
     <>
-      <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-          <div ref={reportPdfRef} style={{ width: '700px' }}>
-              {report && employees && (
-                  <ExpenseReportPdf
-                    report={report}
-                    items={reportItems}
-                    employees={employees}
-                    settings={settings.pdfSettings}
-                  />
-              )}
-          </div>
-      </div>
       <div className="min-h-screen bg-background text-foreground p-4 md:p-8 print:p-0">
         <header className="flex items-center justify-between gap-4 mb-8 print:hidden">
           <div className="flex items-center gap-4">
@@ -231,6 +241,16 @@ export default function ViewExpenseReportPage() {
             )}
           </Card>
         </div>
+      </div>
+      <div className="hidden print:block">
+        {report && employees && settings.pdfSettings && (
+          <ExpenseReportPdf
+            report={report}
+            items={reportItems}
+            employees={employees}
+            settings={settings.pdfSettings}
+          />
+        )}
       </div>
     </>
   );
