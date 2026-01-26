@@ -77,10 +77,22 @@ const defaultCardSettings: PdfSettings = {
     fontSize: 12,
 };
 
+const defaultDatasheetSettings: PdfSettings = {
+    logo: null,
+    themeColor: '#059669', // Emerald
+    tableTheme: 'grid',
+    headerText: 'Product Datasheet',
+    footerText: 'Internal Use Only',
+    scale: 2,
+    width: 800,
+    fontSize: 10,
+};
+
 const defaultPdfSettings: AllPdfSettings = {
     report: defaultReportSettings,
     invoice: defaultInvoiceSettings,
     card: defaultCardSettings,
+    datasheet: defaultDatasheetSettings,
 };
 
 const defaultLightColors: ThemeColors = { background: '0 0% 100%', foreground: '224 71.4% 4.1%', primary: '220 82% 55%', accent: '220 13% 91%', card: '0 0% 100%', tabActiveBackground: '0 0% 100%', tabActiveForeground: '224 71.4% 4.1%', tableRowPrimary: '0 0% 100%', tableRowSecondary: '220 13% 96%', huanaHighlight: '210 100% 96%', locationOccupiedBorder: '210 100% 70%', locationOccupiedBg: '210 100% 96%'};

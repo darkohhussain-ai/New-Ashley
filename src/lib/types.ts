@@ -217,6 +217,7 @@ export type AllPdfSettings = {
     report: PdfSettings;
     invoice: PdfSettings;
     card: PdfSettings;
+    datasheet: PdfSettings;
 };
 
 export type ThemeColors = {
@@ -247,6 +248,7 @@ export type AppSettings = {
   dashboardBannerHeight: number;
   newsTickerText: string;
   fontFamily: string;
+  customFont: string | null;
   translations: {
       en: Translations;
       ku: Translations;

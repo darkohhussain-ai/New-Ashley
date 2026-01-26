@@ -402,7 +402,7 @@
   "color_palette": "Color Palette",
   "color_palette_desc": "Adjust colors for light and dark themes.",
   "custom_app_font": "Custom Application Font",
-  "upload_font_file": "Upload Font File (.ttf, .woff)",
+  "upload_font_file": "Upload Font File (.ttf)",
   "apply_font": "Apply Font",
   "font_preview": "Font Preview",
   "app_text": "Application Text",
@@ -685,10 +685,12 @@
   "status": "Status",
   "pending": "Pending",
   "available": "Available",
-  "category": "Category",
   "completed": "Completed",
-  "export_pdf": "Export PDF"
+  "category": "Category",
+  "export_pdf": "Export PDF",
+  "Datasheet": "Datasheet"
 }
+
 
 
 

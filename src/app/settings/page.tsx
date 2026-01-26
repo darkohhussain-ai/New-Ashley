@@ -29,6 +29,7 @@ import {
   X,
   Home,
   Loader2,
+  ClipboardList,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -484,7 +485,7 @@ function SettingsPage() {
     useState<AppSettings>(initialSettings);
   const [isDirty, setIsDirty] = useState(false);
 
-  const [activePdfTab, setActivePdfTab] = useState<'report' | 'invoice' | 'card'>('report');
+  const [activePdfTab, setActivePdfTab] = useState<'report' | 'invoice' | 'card' | 'datasheet'>('report');
   const [selectedReportType, setSelectedReportType] =
     useState<keyof NonNullable<AllPdfSettings['report']['reportColors']>>('general');
   const [importFile, setImportFile] = useState<File | null>(null);
@@ -1282,11 +1283,11 @@ function SettingsPage() {
                     <Tabs
                       value={activePdfTab}
                       onValueChange={v =>
-                        setActivePdfTab(v as 'report' | 'invoice' | 'card')
+                        setActivePdfTab(v as 'report' | 'invoice' | 'card' | 'datasheet')
                       }
                       className="w-full"
                     >
-                      <TabsList className="grid w-full grid-cols-3">
+                      <TabsList className="grid w-full grid-cols-4">
                         <TabsTrigger value="report">
                           <FileText className="mr-2" />
                           {t('report')}
@@ -1298,6 +1299,10 @@ function SettingsPage() {
                         <TabsTrigger value="card">
                           <CreditCard className="mr-2" />
                           {t('id_card')}
+                        </TabsTrigger>
+                        <TabsTrigger value="datasheet">
+                          <ClipboardList className="mr-2" />
+                          {t('Datasheet')}
                         </TabsTrigger>
                       </TabsList>
                     </Tabs>
@@ -1470,7 +1475,7 @@ function SettingsPage() {
                         />
                       </div>
                     )}
-                    {(activePdfTab === 'report' || activePdfTab === 'invoice') && (
+                    {(activePdfTab === 'report' || activePdfTab === 'invoice' || activePdfTab === 'datasheet') && (
                       <div className="flex items-center justify-between">
                         <Label htmlFor="table-theme-select">
                           {t('table_theme')}
@@ -1568,6 +1573,38 @@ function SettingsPage() {
                             settings={{...currentPdfSettings, logo: currentPdfSettings.logo ?? draftSettings.appLogo}}
                           />
                         </div>
+                      )}
+                       {activePdfTab === 'datasheet' && (
+                        <ReportWrapper
+                            title="Product Datasheet"
+                            date={format(new Date(), 'PPP')}
+                            logoSrc={currentPdfSettings.logo ?? draftSettings.appLogo}
+                            themeColor={draftSettings.pdfSettings.datasheet.themeColor || '#059669'}
+                        >
+                            <div className="p-6" style={{fontFamily: `${draftSettings.fontFamily}, sans-serif`}}>
+                                <h3 className="text-lg font-bold mb-2">Sample Product: Ergonomic Chair</h3>
+                                <p className="text-sm text-gray-600 mb-4">This is a detailed datasheet for the selected product, including specifications and inventory status.</p>
+                                <div className="grid grid-cols-2 gap-4 mb-4 text-xs">
+                                    <div><p className="text-gray-500">Item Code</p><p className="font-medium">CH-ERG-001</p></div>
+                                    <div><p className="text-gray-500">Category</p><p className="font-medium">Office Furniture</p></div>
+                                    <div><p className="text-gray-500">Total Stock</p><p className="font-medium">128 units</p></div>
+                                    <div><p className="text-gray-500">Warehouse</p><p className="font-medium">Ashley, Huana</p></div>
+                                </div>
+                                <Table className={cn(currentPdfSettings.tableTheme === 'grid' && 'border')}>
+                                    <TableHeader>
+                                        <TableRow style={{backgroundColor: draftSettings.pdfSettings.datasheet.themeColor, color: 'white'}} className="hover:bg-primary/90">
+                                            <TableHead className="text-white">Specification</TableHead>
+                                            <TableHead className="text-white">Value</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        <TableRow className={cn(currentPdfSettings.tableTheme === 'striped' && 'odd:bg-muted/50')}><TableCell>Material</TableCell><TableCell>Mesh, Aluminum</TableCell></TableRow>
+                                        <TableRow className={cn(currentPdfSettings.tableTheme === 'striped' && 'odd:bg-muted/50')}><TableCell>Color</TableCell><TableCell>Black</TableCell></TableRow>
+                                        <TableRow className={cn(currentPdfSettings.tableTheme === 'striped' && 'odd:bg-muted/50')}><TableCell>Warranty</TableCell><TableCell>5 Years</TableCell></TableRow>
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </ReportWrapper>
                       )}
                     </div>
                   </CardContent>

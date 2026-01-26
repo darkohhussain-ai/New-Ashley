@@ -402,7 +402,7 @@
   "color_palette": "پاڵێتی ڕەنگ",
   "color_palette_desc": "ڕەنگەکان بۆ دۆخی ڕووناک و تاریک ڕێکبخە.",
   "custom_app_font": "فۆنتی تایبەتی بەرنامە",
-  "upload_font_file": "بارکردنی فایلی فۆنت (.ttf, .woff)",
+  "upload_font_file": "بارکردنی فایلی فۆنت (.ttf)",
   "apply_font": "جێبەجێکردنی فۆنت",
   "font_preview": "پێشبینی فۆنت",
   "app_text": "دەقی بەرنامە",
@@ -687,7 +687,9 @@
   "available": "بەردەستە",
   "completed": "تەواوبوو",
   "category": "پۆل",
-  "export_pdf": "هەناردەکردنی PDF"
+  "export_pdf": "هەناردەکردنی PDF",
+  "Datasheet": "پەڕەی داتا"
 }
+
 
 

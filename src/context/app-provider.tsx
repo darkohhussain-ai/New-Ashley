@@ -173,6 +173,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                         report: { ...initialSettings.pdfSettings.report, ...(firestoreSettings.pdfSettings?.report || {}) },
                         invoice: { ...initialSettings.pdfSettings.invoice, ...(firestoreSettings.pdfSettings?.invoice || {}) },
                         card: { ...initialSettings.pdfSettings.card, ...(firestoreSettings.pdfSettings?.card || {}) },
+                        datasheet: { ...initialSettings.pdfSettings.datasheet, ...(firestoreSettings.pdfSettings?.datasheet || {}) },
                     }
                 };
                 setLocalSettings(mergedSettings);
