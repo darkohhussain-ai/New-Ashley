@@ -101,9 +101,9 @@ export default function MonthlyOvertimeReportPage() {
     ]);
     
     const foot = [[
-        { content: t('grand_total'), styles: { fontStyle: 'bold', halign: 'left' } },
-        { content: monthlyData.totalHours.toFixed(2), styles: { fontStyle: 'bold', halign: 'right' } },
-        { content: formatCurrency(monthlyData.totalAmount), styles: { fontStyle: 'bold', halign: 'right' } }
+      t('grand_total'),
+      monthlyData.totalHours.toFixed(2),
+      formatCurrency(monthlyData.totalAmount),
     ]];
 
     (doc as any).autoTable({
@@ -121,18 +121,23 @@ export default function MonthlyOvertimeReportPage() {
         fillColor: themeColor,
         textColor: 255,
         fontStyle: 'bold',
+        halign: 'center'
       },
       footStyles: {
         fillColor: [230, 230, 230],
         textColor: 0,
-        fontStyle: 'bold'
+        fontStyle: 'bold',
+      },
+      columnStyles: {
+        0: { halign: 'left' },
+        1: { halign: 'right' },
+        2: { halign: 'right' },
       },
       didDrawPage: (data: any) => {
-        const pageCount = doc.internal.pages.length;
         doc.setFontSize(8);
         doc.setTextColor(150);
         doc.text(
-          `Page ${data.pageNumber} of ${pageCount}`,
+          `Page ${data.pageNumber}`,
           data.settings.margin.left,
           doc.internal.pageSize.height - 10
         );
