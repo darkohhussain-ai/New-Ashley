@@ -529,6 +529,42 @@ function SettingsPage() {
   const handleDraftChange = (key: keyof AppSettings, value: any) => {
     setDraftSettings(prev => ({ ...prev, [key]: value }));
   };
+  
+  const handleFontUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.endsWith('.ttf')) {
+        toast({
+            variant: 'destructive',
+            title: 'Invalid Font Type',
+            description: 'Please upload a TrueType Font (.ttf) file for PDF embedding.',
+        });
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        const dataUrl = event.target?.result as string;
+        if (dataUrl) {
+            handleDraftChange('customFont', dataUrl);
+            toast({
+                title: "Font Ready",
+                description: "Custom font is loaded. Save changes to apply it to PDF reports.",
+            });
+        }
+    };
+    reader.onerror = (error) => {
+        console.error("Error reading font file:", error);
+        toast({
+            variant: 'destructive',
+            title: 'File Read Error',
+            description: 'Could not read the selected font file.',
+        });
+    };
+    reader.readAsDataURL(file);
+  };
+
 
   const handleThemeColorChange = (
     mode: 'light' | 'dark',
@@ -1195,6 +1231,34 @@ function SettingsPage() {
           </TabsContent>
 
           <TabsContent value="language" className="pt-6 space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Type /> {t('custom_app_font')}
+                </CardTitle>
+                <CardDescription>
+                  {t('upload_font_file')}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Input
+                  id="font-upload"
+                  type="file"
+                  accept=".ttf"
+                  onChange={handleFontUpload}
+                />
+                {draftSettings.customFont && (
+                  <div className="mt-4 space-y-2">
+                    <Label>{t('font_preview')}</Label>
+                    <div className="p-4 border rounded-lg" style={{ fontFamily: 'CustomAppFont' }}>
+                      <style>{`@font-face { font-family: 'CustomAppFont'; src: url(${draftSettings.customFont}); }`}</style>
+                      <p className="text-lg">The quick brown fox jumps over the lazy dog.</p>
+                      <p className="text-lg" dir="rtl">چۆنی باشی؟ سوپاس بۆ تۆ، من باشم.</p>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
             <LoginTextEditor
               draftSettings={draftSettings}
               setDraftSettings={setDraftSettings}
