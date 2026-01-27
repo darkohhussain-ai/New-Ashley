@@ -22,20 +22,20 @@ export function ReportWrapper({ title, date, themeColor = '#333333', qrCodeData,
 
   return (
     <div 
-        className="bg-white text-black p-6 text-xs leading-normal w-full"
+        className="bg-white text-black p-4 text-xs leading-normal w-full"
         style={{ fontFamily }}
         dir={useKurdish ? 'rtl' : 'ltr'}
     >
         {settings?.printHeaderImage && (
-            <div className="relative w-full h-28 mb-6">
+            <div className="relative w-full h-20 mb-4">
                 <img src={settings.printHeaderImage} alt="Report Header" style={{ objectFit: 'contain', width: '100%', height: '100%' }} />
             </div>
         )}
         
         {/* Header */}
-        <header className="flex justify-between items-start pb-2 mb-4" style={{ borderColor: themeColor }}>
+        <header className="flex justify-between items-start pb-2 mb-2" style={{ borderColor: themeColor }}>
             <div className={cn("text-left", useKurdish && "text-right")}>
-                <h1 className="text-xl font-medium" style={{ color: themeColor }}>{title}</h1>
+                <h1 className="text-lg font-medium" style={{ color: themeColor }}>{title}</h1>
                 <p className="text-sm text-gray-500 mt-1">{date}</p>
             </div>
              <div className="flex items-center gap-4">
@@ -57,7 +57,7 @@ export function ReportWrapper({ title, date, themeColor = '#333333', qrCodeData,
         </main>
 
         {/* Footer */}
-        <footer className={cn("mt-8 pt-4 flex justify-between items-end text-center", useKurdish && "flex-row-reverse justify-start")}>
+        <footer className={cn("mt-4 pt-2 flex justify-between items-end text-center", useKurdish && "flex-row-reverse justify-start")}>
              <div className="w-40 text-center">
                 <p className="text-gray-500 text-[9px]">{settings?.pdfSettings.report.footerText || t('generated_by_ashley_system')}</p>
              </div>
@@ -68,7 +68,7 @@ export function ReportWrapper({ title, date, themeColor = '#333333', qrCodeData,
         </footer>
 
         {settings?.printFooterImage && (
-            <div className="relative w-full h-24 mt-4">
+            <div className="relative w-full h-20 mt-2">
                 <img src={settings.printFooterImage} alt="Report Footer" style={{ objectFit: 'contain', width: '100%', height: '100%' }} />
             </div>
         )}
