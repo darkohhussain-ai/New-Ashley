@@ -29,14 +29,14 @@ import { Badge } from "@/components/ui/badge"
 import { useAppContext } from "@/context/app-provider"
 import type { Employee, Expense, Overtime, Bonus, CashWithdrawal, AllPdfSettings } from "@/lib/types"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { EmployeeReportPdfHeader } from "@/components/employees/employee-report-pdf-header"
 import { Separator } from "@/components/ui/separator"
 import { useTranslation } from "@/hooks/use-translation"
-import { translateNameToKurdish } from "@/ai/flows/translate-name-flow"
 import { Loader2 } from "lucide-react";
 import { useStorage } from "@/firebase";
 import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
 import { initialSettings } from "@/context/initial-data";
+import { EmployeeDashboardPrintView } from "@/components/employees/EmployeeDashboardPrintView";
+
 
 const employeeRoles: Exclude<Employee['role'], null | undefined>[] = [
     'Super Manager', 
@@ -361,7 +361,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
         autoTable(doc, {
             body: [
                 [{content: `${t('name')}:`, styles: {fontStyle: 'bold'}}, displayName],
-                [{content: `${t('id_colon')}`, styles: {fontStyle: 'bold'}}, employee.employeeId || 'N/A'],
+                [{content: `${t('id_colon')}:`, styles: {fontStyle: 'bold'}}, employee.employeeId || 'N/A'],
                 [{content: `${t('email_optional')}:`, styles: {fontStyle: 'bold'}}, employee.email || 'N/A'],
             ],
             startY: 40,
@@ -514,10 +514,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                                 {isEditing ? (
                                     <div className='space-y-4'>
                                         <Input className="text-2xl h-12" value={name} onChange={e => setName(e.target.value)} placeholder={t('employee_name')} />
-                                        <div className="relative">
-                                            <Input dir="rtl" className="text-2xl h-12" value={kurdishName} onChange={e => setKurdishName(e.target.value)} placeholder="ناو بە کوردی" />
-                                        </div>
-
+                                        <Input dir="rtl" className="text-2xl h-12" value={kurdishName} onChange={e => setKurdishName(e.target.value)} placeholder="ناو بە کوردی" />
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <Input value={uniqueId} onChange={e => setUniqueId(e.target.value)} placeholder={t('employee_id_optional')} />
                                             <Select value={role || undefined} onValueChange={(v: Employee['role']) => setRole(v)}>
@@ -781,7 +778,7 @@ function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean,
 
 function EmployeesPage() {
   const { t, language } = useTranslation();
-  const { employees, setEmployees, isLoading } = useAppContext();
+  const { employees, setEmployees, isLoading, settings } = useAppContext();
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
   const [isAddDialogOpen, setAddDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -842,6 +839,10 @@ function EmployeesPage() {
       }
     }
   }, [warehouseEmployees, marketingEmployees, selectedEmployeeId]);
+
+  const handlePrintDashboard = () => {
+    window.print();
+  };
   
   const renderEmployeeList = (list: Employee[], title: string) => (
     <>
@@ -873,65 +874,75 @@ function EmployeesPage() {
   )
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-background text-foreground">
-        <AddEmployeeDialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen} addEmployee={addEmployee} />
-        <header className="bg-card border-b p-4">
-            <div className="container mx-auto flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <Button variant="outline" size="icon" asChild><Link href="/"><ArrowLeft /></Link></Button>
-                    <h1 className="text-xl">{t('employees')}</h1>
-                </div>
-            </div>
-        </header>
+    <>
+      <div className="hidden print:block">
+        <EmployeeDashboardPrintView employees={[...warehouseEmployees, ...marketingEmployees]} settings={settings} />
+      </div>
+      <div className="h-screen w-screen flex flex-col bg-background text-foreground print:hidden">
+          <AddEmployeeDialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen} addEmployee={addEmployee} />
+          <header className="bg-card border-b p-4">
+              <div className="container mx-auto flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                      <Button variant="outline" size="icon" asChild><Link href="/"><ArrowLeft /></Link></Button>
+                      <h1 className="text-xl">{t('employees')}</h1>
+                  </div>
+                  <div className="flex items-center gap-2">
+                      <Button variant="outline" onClick={handlePrintDashboard}>
+                          <Printer className="mr-2 h-4 w-4" /> Print Dashboard
+                      </Button>
+                  </div>
+              </div>
+          </header>
 
-        <div className="flex flex-1 overflow-hidden">
-            <aside className={cn(
-                "w-full flex-col border-r md:w-auto md:max-w-xs",
-                selectedEmployeeId ? "hidden md:flex" : "flex"
-            )}>
-                <div className="p-4 space-y-4 border-b">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input placeholder={t('search_name_or_id')} className="pl-10" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
-                    </div>
-                     <Button onClick={() => setAddDialogOpen(true)} className="w-full"><Plus className="mr-2 h-4 w-4" /> {t('add_employee')}</Button>
-                </div>
-                <div className="flex-1 overflow-y-auto">
-                    {isLoading ? (
-                         <div className="p-4 space-y-2">{[...Array(8)].map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
-                    ) : (warehouseEmployees.length > 0 || marketingEmployees.length > 0) ? (
-                        <div className="p-2 space-y-1">
-                            {warehouseEmployees.length > 0 && renderEmployeeList(warehouseEmployees, t('warehouse'))}
-                            {marketingEmployees.length > 0 && renderEmployeeList(marketingEmployees, 'Marketing')}
-                        </div>
-                    ) : (
-                         <div className="text-center p-8">
-                            <User className="mx-auto h-12 w-12 text-muted-foreground" />
-                            <h3 className="mt-4 text-lg font-medium">{t('no_employees_found')}</h3>
-                            <p className="mt-2 text-sm text-muted-foreground">{t('no_employees_found_desc')}</p>
-                        </div>
-                    )}
-                </div>
-            </aside>
-            
-            <main className={cn(
-                "flex-1 overflow-y-auto",
-                selectedEmployeeId ? "block" : "hidden md:flex md:items-center md:justify-center"
-            )}>
-                {selectedEmployeeId ? (
-                    <EmployeeDetailView employeeId={selectedEmployeeId} onDeselect={() => setSelectedEmployeeId(null)}/>
-                ) : (
-                    !isLoading && (
-                        <div className="text-center">
-                            <Building className="mx-auto h-16 w-16 text-muted-foreground" />
-                            <h2 className="mt-2 text-2xl">{t('employees')}</h2>
-                            <p className="text-muted-foreground">{t('select_an_employee_to_view')}</p>
-                        </div>
-                    )
-                )}
-            </main>
-        </div>
-    </div>
+          <div className="flex flex-1 overflow-hidden">
+              <aside className={cn(
+                  "w-full flex-col border-r md:w-auto md:max-w-xs",
+                  selectedEmployeeId ? "hidden md:flex" : "flex"
+              )}>
+                  <div className="p-4 space-y-4 border-b">
+                      <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input placeholder={t('search_name_or_id')} className="pl-10" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                      </div>
+                      <Button onClick={() => setAddDialogOpen(true)} className="w-full"><Plus className="mr-2 h-4 w-4" /> {t('add_employee')}</Button>
+                  </div>
+                  <div className="flex-1 overflow-y-auto">
+                      {isLoading ? (
+                          <div className="p-4 space-y-2">{[...Array(8)].map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
+                      ) : (warehouseEmployees.length > 0 || marketingEmployees.length > 0) ? (
+                          <div className="p-2 space-y-1">
+                              {warehouseEmployees.length > 0 && renderEmployeeList(warehouseEmployees, t('warehouse'))}
+                              {marketingEmployees.length > 0 && renderEmployeeList(marketingEmployees, 'Marketing')}
+                          </div>
+                      ) : (
+                          <div className="text-center p-8">
+                              <User className="mx-auto h-12 w-12 text-muted-foreground" />
+                              <h3 className="mt-4 text-lg font-medium">{t('no_employees_found')}</h3>
+                              <p className="mt-2 text-sm text-muted-foreground">{t('no_employees_found_desc')}</p>
+                          </div>
+                      )}
+                  </div>
+              </aside>
+              
+              <main className={cn(
+                  "flex-1 overflow-y-auto",
+                  selectedEmployeeId ? "block" : "hidden md:flex md:items-center md:justify-center"
+              )}>
+                  {selectedEmployeeId ? (
+                      <EmployeeDetailView employeeId={selectedEmployeeId} onDeselect={() => setSelectedEmployeeId(null)}/>
+                  ) : (
+                      !isLoading && (
+                          <div className="text-center">
+                              <Building className="mx-auto h-16 w-16 text-muted-foreground" />
+                              <h2 className="mt-2 text-2xl">{t('employees')}</h2>
+                              <p className="text-muted-foreground">{t('select_an_employee_to_view')}</p>
+                          </div>
+                      )
+                  )}
+              </main>
+          </div>
+      </div>
+    </>
   )
 }
 

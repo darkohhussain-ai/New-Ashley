@@ -116,6 +116,12 @@
 }
 
 @layer utilities {
+  .break-inside-avoid {
+    break-inside: avoid;
+  }
+  .break-inside-avoid-page {
+    break-inside: avoid-page;
+  }
   .bg-status-correct { @apply bg-[hsl(var(--status-correct-bg))]; }
   .bg-status-less { @apply bg-[hsl(var(--status-less-bg))]; }
   .bg-status-more { @apply bg-[hsl(var(--status-more-bg))]; }
