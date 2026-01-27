@@ -12,9 +12,10 @@ type ReportWrapperProps = {
   logoSrc: string | null;
   themeColor?: string;
   children: React.ReactNode;
+  qrCodeData?: string;
 };
 
-export function ReportWrapper({ title, date, logoSrc, themeColor = '#333333', children }: ReportWrapperProps) {
+export function ReportWrapper({ title, date, logoSrc, themeColor = '#333333', qrCodeData, children }: ReportWrapperProps) {
   const { t, language } = useTranslation();
   const { settings } = useAppContext();
   const useKurdish = language === 'ku';
@@ -30,11 +31,24 @@ export function ReportWrapper({ title, date, logoSrc, themeColor = '#333333', ch
         {/* Header */}
         <header className={cn("flex justify-between items-start pb-2 border-b-2", useKurdish && "flex-row-reverse")} style={{ borderColor: themeColor }}>
             <div className={cn("text-left", useKurdish && "text-right")}>
-                <h1 className="text-sm font-medium">{t('ashley_mega_homestore_iraq')}</h1>
+                <h1 className="text-sm font-medium">{settings?.pdfSettings.report.headerText || t('ashley_mega_homestore_iraq')}</h1>
                 <p className="text-gray-600 text-[10px] leading-tight">{t('ashley_sulaimanyah_branch')}</p>
                 <p className="text-gray-600 text-[10px] leading-tight">{t('diwan_group_company')}</p>
             </div>
-            {logoSrc && <div className="relative w-24 h-12"><Image src={logoSrc} alt="Company Logo" fill className="object-contain" unoptimized /></div>}
+             <div className="flex items-center gap-4">
+                {qrCodeData && (
+                    <div className="relative w-16 h-16">
+                        <Image
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrCodeData)}`}
+                            alt="QR Code"
+                            fill
+                            className="object-contain"
+                            unoptimized
+                        />
+                    </div>
+                )}
+                {logoSrc && <div className="relative w-24 h-12"><Image src={logoSrc} alt="Company Logo" fill className="object-contain" unoptimized /></div>}
+            </div>
         </header>
 
         {/* Title */}
@@ -49,8 +63,11 @@ export function ReportWrapper({ title, date, logoSrc, themeColor = '#333333', ch
         </main>
 
         {/* Footer */}
-        <footer className={cn("mt-8 pt-4 flex justify-end items-end text-center", useKurdish && "flex-row-reverse justify-start")}>
-            <div className="w-40 text-center">
+        <footer className={cn("mt-8 pt-4 flex justify-between items-end text-center", useKurdish && "flex-row-reverse justify-start")}>
+             <div className="w-40 text-center">
+                <p className="text-gray-500 text-[9px]">{settings?.pdfSettings.report.footerText || t('generated_by_ashley_system')}</p>
+             </div>
+             <div className="w-40 text-center">
                 <div className="border-b border-gray-400 mb-1"></div>
                 <p className="text-[10px]">{t('warehouse_manager_signature')}</p>
             </div>

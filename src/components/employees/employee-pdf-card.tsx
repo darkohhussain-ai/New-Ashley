@@ -49,7 +49,7 @@ export function EmployeePdfCard({ employee, settings }: EmployeePdfCardProps) {
         
         <div className="text-center">
             <Avatar className="w-24 h-24 border-4 border-white/50 shadow-lg rounded-md bg-white/20 mb-2">
-                <AvatarImage src={employee.photoUrl} alt={displayName} className="rounded-md" />
+                <AvatarImage src={employee.photoUrl || undefined} alt={displayName} className="rounded-md" />
                 <AvatarFallback className="text-4xl bg-transparent text-white/80 rounded-md"><User /></AvatarFallback>
             </Avatar>
             <h2 className="text-lg font-bold" dir={useKurdish ? 'rtl' : 'ltr'}>{displayName}</h2>

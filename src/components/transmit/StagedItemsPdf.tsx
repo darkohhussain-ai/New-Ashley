@@ -221,6 +221,7 @@ export type AppSettings = {
   dashboardBanner: string | null;
   dashboardBannerHeight: number;
   newsTickerText: string;
+  fontFamily: string;
   customFont: string | null;
   translations: {
       en: Translations;

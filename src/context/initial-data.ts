@@ -107,6 +107,7 @@ export const initialSettings: AppSettings = {
     dashboardBannerHeight: 150,
     newsTickerText: 'Welcome to the Ashley DRP Manager! This is a scrolling news update.',
     fontFamily: 'Arial',
+    customFont: null,
     translations: {
         en: en,
         ku: ku,

@@ -689,8 +689,11 @@
   "category": "پۆل",
   "export_pdf": "هەناردەکردنی PDF",
   "Datasheet": "پەڕەی داتا",
-  "page": "پەڕە"
+  "page": "پەڕە",
+  "general": "گشتی",
+  "generated_by_ashley_system": "لەلایەن سیستەمی ئاشلییەوە دروستکراوە"
 }
+
 
 
 

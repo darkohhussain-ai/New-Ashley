@@ -250,22 +250,23 @@ export default function AddItemsPage() {
                                     <TableHead>{t('destination')}</TableHead>
                                     <TableHead>{t('invoice_no')}</TableHead>
                                     <TableHead>{t('storage')}</TableHead>
+                                    <TableHead>{t('notes')}</TableHead>
                                     <TableHead className="text-right">{t('actions')}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {isAppLoading ? (
-                                    <TableRow><TableCell colSpan={6} className="text-center h-24"><Loader2 className="mx-auto animate-spin"/></TableCell></TableRow>
+                                    <TableRow><TableCell colSpan={7} className="h-24 text-center"><Loader2 className="mx-auto animate-spin"/></TableCell></TableRow>
                                 ) : sortedItems.length > 0 ? sortedItems.map((item, index) => (
                                     <TableRow key={item.id} className={cn(
-                                        editingItem?.id === item.id ? "bg-muted" : (index % 2 === 0 ? 'bg-table-row-primary' : 'bg-table-row-secondary'),
-                                        item.storage === 'Huana' && 'bg-huana-highlight'
+                                        editingItem?.id === item.id ? "bg-muted" : "bg-transparent"
                                     )}>
                                         <TableCell className="font-medium">{item.model}</TableCell>
                                         <TableCell>{item.quantity}</TableCell>
                                         <TableCell>{item.destination}</TableCell>
                                         <TableCell>{item.invoiceNo || 'N/A'}</TableCell>
                                         <TableCell>{item.storage || 'N/A'}</TableCell>
+                                        <TableCell className="text-sm text-muted-foreground">{item.notes || 'N/A'}</TableCell>
                                         <TableCell className="text-right">
                                             <Button variant="ghost" size="icon" onClick={() => startEditing(item)}><Edit className="w-4 h-4"/></Button>
                                             <Button variant="ghost" size="icon" onClick={() => handleDeleteItem(item)}><Trash2 className="w-4 h-4 text-destructive"/></Button>
@@ -273,7 +274,7 @@ export default function AddItemsPage() {
                                     </TableRow>
                                 )) : (
                                     <TableRow>
-                                        <TableCell colSpan={6} className="text-center h-24">
+                                        <TableCell colSpan={7} className="text-center h-24">
                                             <ListPlus className="mx-auto h-12 w-12 text-muted-foreground mb-2"/>
                                             {t('no_items_staged_yet')}
                                         </TableCell>
