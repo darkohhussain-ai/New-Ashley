@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useState, useMemo, useRef } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Calendar as CalendarIcon, Printer } from 'lucide-react';
+import { ArrowLeft, Calendar as CalendarIcon, Printer, DollarSign, Clock, Gift, Banknote, FileText, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardTitle, CardHeader, CardDescription } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -31,6 +30,15 @@ function AshleyExpensesDashboard() {
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   
+  const menuItems = [
+    { title: t('expenses'), icon: DollarSign, href: '/expenses', color: 'bg-blue-500' },
+    { title: t('overtime'), icon: Clock, href: '/overtime', color: 'bg-orange-500' },
+    { title: t('bonuses'), icon: Gift, href: '/bonuses', color: 'bg-green-500' },
+    { title: t('cash_withdrawals'), icon: Banknote, href: '/cash-withdrawal', color: 'bg-rose-500' },
+    { title: t('monthly_reports'), icon: FileText, href: '/monthly-report', color: 'bg-indigo-500' },
+    { title: t('settings'), icon: Settings, href: '/ashley-expenses-settings', color: 'bg-gray-500' },
+  ];
+
   const monthlyTotals = useMemo(() => {
     if (!selectedDate) return { expenses: 0, overtime: 0, bonuses: 0, withdrawals: 0 };
     
@@ -137,8 +145,23 @@ function AshleyExpensesDashboard() {
             </div>
         </div>
       </header>
-      <main className='container mx-auto p-4 md:p-8 flex-1 overflow-y-auto'>
+      <main className='container mx-auto p-4 md:p-8 flex-1 overflow-y-auto space-y-8'>
         <DashboardContent />
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {menuItems.map((item) => (
+            <Link key={item.title} href={item.href} className="group block" passHref>
+                <Card className={cn("h-48 flex flex-col items-center justify-center text-white transition-transform transform hover:-translate-y-1 hover:shadow-xl", item.color)}>
+                  <CardContent className="flex flex-col items-center justify-center p-6 text-center">
+                    <div className="p-4 bg-white/20 rounded-full mb-4">
+                        <item.icon className="w-8 h-8" />
+                    </div>
+                    <CardTitle className="text-lg">{item.title}</CardTitle>
+                  </CardContent>
+                </Card>
+            </Link>
+          ))}
+        </div>
       </main>
     </div>
     </>
