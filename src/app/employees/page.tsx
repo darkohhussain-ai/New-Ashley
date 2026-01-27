@@ -33,7 +33,6 @@ import { EmployeeReportPdfHeader } from "@/components/employees/employee-report-
 import { Separator } from "@/components/ui/separator"
 import { useTranslation } from "@/hooks/use-translation"
 import { translateNameToKurdish } from "@/ai/flows/translate-name-flow"
-import { translateKurdishToEnglish } from "@/ai/flows/translate-kurdish-to-english-flow";
 import { Loader2 } from "lucide-react";
 import { useStorage } from "@/firebase";
 import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
@@ -104,7 +103,6 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
     const [phone, setPhone] = useState('');
     const [photoUrl, setPhotoUrl] = useState<string | undefined>(undefined);
     const [notes, setNotes] = useState('');
-    const [isTranslating, setIsTranslating] = useState(false);
     
     const cardPdfRef = useRef<HTMLDivElement>(null);
     const photoUploadRef = useRef<HTMLInputElement>(null);
@@ -420,26 +418,6 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
         doc.save(`${employee.name}_report.pdf`);
     };
 
-    const handleTranslateKuToEn = async () => {
-        if (!kurdishName.trim()) return;
-        setIsTranslating(true);
-        try {
-            const result = await translateKurdishToEnglish({ kurdishName });
-            if (result.englishName) {
-                setName(result.englishName);
-            }
-        } catch (e) {
-            console.error("Translation failed", e);
-            toast({
-                variant: "destructive",
-                title: "Translation Failed",
-                description: "Could not translate the name.",
-            });
-        } finally {
-            setIsTranslating(false);
-        }
-    };
-
     if (isLoading) {
         return (
             <div className="flex items-center justify-center h-full">
@@ -537,12 +515,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                                     <div className='space-y-4'>
                                         <Input className="text-2xl h-12" value={name} onChange={e => setName(e.target.value)} placeholder={t('employee_name')} />
                                         <div className="relative">
-                                             <div className="flex items-center gap-2">
-                                                <Input dir="rtl" className="text-2xl h-12 flex-1" value={kurdishName} onChange={e => setKurdishName(e.target.value)} placeholder="ناو بە کوردی" />
-                                                <Button type="button" variant="outline" size="icon" className="h-12 w-12" onClick={handleTranslateKuToEn} disabled={isTranslating || !kurdishName}>
-                                                    {isTranslating ? <Loader2 className="h-5 w-5 animate-spin"/> : <Wand2 className="h-5 w-5"/>}
-                                                </Button>
-                                            </div>
+                                            <Input dir="rtl" className="text-2xl h-12" value={kurdishName} onChange={e => setKurdishName(e.target.value)} placeholder="ناو بە کوردی" />
                                         </div>
 
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -712,27 +685,6 @@ function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean,
     const [phone, setPhone] = useState("");
     const [photoUrl, setPhotoUrl] = useState<string | undefined>();
     const [notes, setNotes] = useState("");
-    const [isTranslating, setIsTranslating] = useState(false);
-
-    const handleTranslateKuToEn = async () => {
-        if (!kurdishName.trim()) return;
-        setIsTranslating(true);
-        try {
-            const result = await translateKurdishToEnglish({ kurdishName });
-            if (result.englishName) {
-                setName(result.englishName);
-            }
-        } catch (e) {
-            console.error("Translation failed", e);
-            toast({
-                variant: "destructive",
-                title: "Translation Failed",
-                description: "Could not translate the name.",
-            });
-        } finally {
-            setIsTranslating(false);
-        }
-    };
 
     const resetForm = () => {
         setName(""); setKurdishName(""); setUniqueId(""); setRole(undefined); setEmploymentStartDate(undefined); setDateOfBirth(undefined);
@@ -798,12 +750,7 @@ function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean,
                     <div className="space-y-2"><Label htmlFor="name">{t('employee_name')}</Label><Input id="name" value={name} onChange={e => setName(e.target.value)} required placeholder="e.g. John Doe" /></div>
                     <div className="space-y-2 relative">
                         <Label htmlFor="kurdishName">ناو بە کوردی</Label>
-                        <div className="flex items-center gap-2">
-                           <Input id="kurdishName" value={kurdishName} onChange={e => setKurdishName(e.target.value)} dir="rtl" placeholder="بۆ نموونە، جۆن دۆ" className="flex-1"/>
-                           <Button type="button" variant="outline" size="icon" onClick={handleTranslateKuToEn} disabled={isTranslating || !kurdishName}>
-                                {isTranslating ? <Loader2 className="h-4 w-4 animate-spin"/> : <Wand2 className="h-4 w-4"/>}
-                            </Button>
-                        </div>
+                        <Input id="kurdishName" value={kurdishName} onChange={e => setKurdishName(e.target.value)} dir="rtl" placeholder="بۆ نموونە، جۆن دۆ"/>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2"><Label htmlFor="employeeId">{t('employee_id_optional')}</Label><Input id="employeeId" value={uniqueId} onChange={e => setUniqueId(e.target.value)} placeholder="e.g. 10234" /></div>

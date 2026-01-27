@@ -30,6 +30,7 @@ import {
   Home,
   Loader2,
   ClipboardList,
+  Printer,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -476,7 +477,7 @@ function TranslationEditor({ onSave, draftSettings, setDraftSettings }: {
 
 function SettingsPage() {
   const { toast } = useToast();
-  const { theme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const { t } = useTranslation();
   const { settings, setSettings, setEmployees, setItems, setExcelFiles, setLocations, setExpenses, setExpenseReports, setOvertime, setBonuses, setWithdrawals, setReceipts, setItemCategories, setTransfers, setTransferItems, setMarketingFeedbacks, setEvaluationQuestions, setUsers, setRoles } = useAppContext();
   const storage = useStorage();
@@ -1226,6 +1227,60 @@ function SettingsPage() {
                       )
                     }
                   />
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Printer /> Print Header & Footer
+                    </CardTitle>
+                    <CardDescription>
+                        Upload images to appear at the top and bottom of your printed documents.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="space-y-2">
+                        <Label>Header Image</Label>
+                         <div className="relative w-full h-24 mt-2 border rounded-md p-2 flex justify-center items-center bg-muted/30 overflow-hidden">
+                            {draftSettings.printHeaderImage ? (
+                                <Image
+                                    key={draftSettings.printHeaderImage}
+                                    src={draftSettings.printHeaderImage}
+                                    alt="Print Header Preview"
+                                    fill
+                                    className="object-contain"
+                                />
+                            ) : (
+                                <span className="text-sm text-muted-foreground">Header Preview</span>
+                            )}
+                        </div>
+                        <Input
+                            type="file"
+                            accept="image/*"
+                            onChange={e => handleFileUpload(e, 'settings/printHeader.png', 'printHeaderImage')}
+                        />
+                    </div>
+                     <div className="space-y-2">
+                        <Label>Footer Image</Label>
+                        <div className="relative w-full h-24 mt-2 border rounded-md p-2 flex justify-center items-center bg-muted/30 overflow-hidden">
+                            {draftSettings.printFooterImage ? (
+                                <Image
+                                    key={draftSettings.printFooterImage}
+                                    src={draftSettings.printFooterImage}
+                                    alt="Print Footer Preview"
+                                    fill
+                                    className="object-contain"
+                                />
+                            ) : (
+                                <span className="text-sm text-muted-foreground">Footer Preview</span>
+                            )}
+                        </div>
+                        <Input
+                            type="file"
+                            accept="image/*"
+                            onChange={e => handleFileUpload(e, 'settings/printFooter.png', 'printFooterImage')}
+                        />
+                    </div>
                 </CardContent>
               </Card>
             </div>

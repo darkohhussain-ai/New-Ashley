@@ -249,6 +249,8 @@ export type AppSettings = {
   newsTickerText: string;
   fontFamily: string;
   customFont: string | null;
+  printHeaderImage: string | null;
+  printFooterImage: string | null;
   translations: {
       en: Translations;
       ku: Translations;

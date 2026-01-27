@@ -27,6 +27,11 @@ export function ReportWrapper({ title, date, logoSrc, themeColor = '#333333', qr
         style={{ fontFamily }}
         dir={useKurdish ? 'rtl' : 'ltr'}
     >
+        {settings?.printHeaderImage && (
+            <div className="relative w-full h-24 mb-4">
+                <img src={settings.printHeaderImage} alt="Report Header" style={{ objectFit: 'contain', width: '100%', height: '100%' }} />
+            </div>
+        )}
         {/* Header */}
         <header className={cn("flex justify-between items-start pb-2 border-b-2", useKurdish && "flex-row-reverse")} style={{ borderColor: themeColor }}>
             <div className={cn("text-left", useKurdish && "text-right")}>
@@ -69,6 +74,12 @@ export function ReportWrapper({ title, date, logoSrc, themeColor = '#333333', qr
                 <p className="text-[10px]">{t('warehouse_manager_signature')}</p>
             </div>
         </footer>
+
+        {settings?.printFooterImage && (
+            <div className="relative w-full h-24 mt-4">
+                <img src={settings.printFooterImage} alt="Report Footer" style={{ objectFit: 'contain', width: '100%', height: '100%' }} />
+            </div>
+        )}
     </div>
   );
 }

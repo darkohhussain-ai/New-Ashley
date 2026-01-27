@@ -108,6 +108,8 @@ export const initialSettings: AppSettings = {
     newsTickerText: 'Welcome to the Ashley DRP Manager! This is a scrolling news update.',
     fontFamily: 'Arial',
     customFont: null,
+    printHeaderImage: null,
+    printFooterImage: null,
     translations: {
         en: en,
         ku: ku,
