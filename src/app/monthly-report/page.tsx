@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Calendar as CalendarIcon, FileText, Printer, Loader2, FileDown } from 'lucide-react';
+import { ArrowLeft, Calendar as CalendarIcon, FileText, Printer, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -15,8 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslation } from '@/hooks/use-translation';
 import { useAuth } from '@/hooks/use-auth';
 import { FullMonthlyReportPdf } from '@/components/reports/FullMonthlyReportPdf';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import { ReportWrapper } from '@/components/reports/ReportWrapper';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -29,11 +28,8 @@ const formatCurrency = (amount: number) => {
 export default function MonthlyReportPage() {
   const { t, language } = useTranslation();
   const { employees, expenses, overtime, bonuses, withdrawals, settings } = useAppContext();
-  const { pdfSettings, customFont } = settings;
   const { user, hasPermission } = useAuth();
   const isReadOnly = !hasPermission('page:admin');
-  const reportContentRef = useRef<HTMLDivElement>(null);
-
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   
@@ -108,102 +104,10 @@ export default function MonthlyReportPage() {
   const handlePrint = () => {
     window.print();
   };
-
-  const handleDownloadPdf = async () => {
-    if (!reportContentRef.current || !selectedDate) return;
-    
-    const doc = new jsPDF({ orientation: 'l', unit: 'px', format: 'a4' });
-    
-    const canvas = await html2canvas(reportContentRef.current, { 
-        scale: 2, 
-        useCORS: true, 
-        backgroundColor: 'white',
-        onclone: (document) => {
-            if (customFont && language === 'ku') {
-                const style = document.createElement('style');
-                style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
-                document.head.appendChild(style);
-            }
-        }
-    });
-
-    const imgData = canvas.toDataURL('image/png');
-    const pdfWidth = doc.internal.pageSize.getWidth();
-    const pdfHeight = doc.internal.pageSize.getHeight();
-    const imgWidth = canvas.width;
-    const imgHeight = canvas.height;
-    
-    const ratio = imgWidth / imgHeight;
-    let finalImgHeight = pdfWidth / ratio;
-
-    let position = 0;
-    
-    if (finalImgHeight < pdfHeight) {
-        doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, finalImgHeight);
-    } else {
-        let heightLeft = imgHeight;
-        const scaledImgWidth = pdfHeight * ratio;
-        while(heightLeft > 0) {
-            doc.addImage(imgData, 'PNG', (pdfWidth - scaledImgWidth) / 2, position, scaledImgWidth, pdfHeight);
-            heightLeft -= (imgHeight * (pdfHeight / finalImgHeight));
-            position -= pdfHeight;
-            if(heightLeft > 0) {
-                doc.addPage();
-            }
-        }
-    }
-    
-    doc.save(`monthly-report-${format(selectedDate, 'yyyy-MM')}.pdf`);
-  };
-
-  return (
-    <>
-      <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-          <div ref={reportContentRef} className="bg-white" style={{width: '1122px'}}>
-              {selectedDate && <FullMonthlyReportPdf
-                  records={monthlyReportData.records}
-                  date={selectedDate}
-                  settings={settings}
-                  getEmployeeName={getEmployeeName}
-              />}
-          </div>
-      </div>
-      <div className="hidden print:block">
-        {selectedDate && <FullMonthlyReportPdf
-            records={monthlyReportData.records}
-            date={selectedDate}
-            settings={settings}
-            getEmployeeName={getEmployeeName}
-        />}
-      </div>
-
-      <div className="h-[calc(100vh-80px)] flex flex-col print:hidden">
-        <header className="flex items-center justify-between gap-4 mb-8 print:hidden p-4 md:p-8">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="icon" asChild>
-              <Link href="/ashley-expenses"><ArrowLeft /></Link>
-            </Button>
-            <h1 className="text-2xl">{t('monthly_reports')}</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className={cn("w-[280px] justify-start text-left", !selectedDate && "text-muted-foreground")}>
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {selectedDate ? format(selectedDate, 'MMMM yyyy') : <span>{t('pick_a_month')}</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="end">
-                <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} captionLayout="dropdown-nav" fromYear={2020} toYear={2040} />
-              </PopoverContent>
-            </Popover>
-             <Button variant="outline" onClick={handlePrint} disabled={isLoading || monthlyReportData.records.length === 0}><Printer className="mr-2"/>{t('print')}</Button>
-             <Button variant="outline" onClick={handleDownloadPdf} disabled={isLoading || monthlyReportData.records.length === 0}><FileDown className="mr-2"/>PDF</Button>
-          </div>
-        </header>
-
-        <main className="flex-1 overflow-y-auto px-4 md:px-8">
-          {isLoading ? (
+  
+  const PageContent = () => (
+      <>
+        {isLoading ? (
             <div className="space-y-6"><Skeleton className="h-64 w-full" /></div>
           ) : monthlyReportData.records.length > 0 ? (
             <Card>
@@ -260,6 +164,48 @@ export default function MonthlyReportPage() {
                 <p className="mt-2 text-sm text-muted-foreground">{t('no_records_found_for_month', {month: selectedDate ? format(selectedDate, 'MMMM yyyy') : t('the_selected_month')})}</p>
             </div>
           )}
+      </>
+  );
+
+  return (
+    <>
+      <div className="hidden print:block">
+        <ReportWrapper>
+          {selectedDate && <FullMonthlyReportPdf
+              records={monthlyReportData.records}
+              date={selectedDate}
+              settings={settings}
+              getEmployeeName={getEmployeeName}
+          />}
+        </ReportWrapper>
+      </div>
+
+      <div className="h-[calc(100vh-80px)] flex flex-col print:hidden">
+        <header className="flex items-center justify-between gap-4 mb-8 p-4 md:p-8">
+          <div className="flex items-center gap-4">
+            <Button variant="outline" size="icon" asChild>
+              <Link href="/ashley-expenses"><ArrowLeft /></Link>
+            </Button>
+            <h1 className="text-2xl">{t('monthly_reports')}</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className={cn("w-[280px] justify-start text-left", !selectedDate && "text-muted-foreground")}>
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {selectedDate ? format(selectedDate, 'MMMM yyyy') : <span>{t('pick_a_month')}</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} captionLayout="dropdown-nav" fromYear={2020} toYear={2040} />
+              </PopoverContent>
+            </Popover>
+             <Button variant="outline" onClick={handlePrint} disabled={isLoading || monthlyReportData.records.length === 0}><Printer className="mr-2"/>{t('print')}</Button>
+          </div>
+        </header>
+
+        <main className="flex-1 overflow-y-auto px-4 md:px-8">
+          <PageContent />
         </main>
       </div>
     </>

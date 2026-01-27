@@ -4,7 +4,7 @@
 
 import { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Calendar as CalendarIcon, FileText, Printer, Loader2, FileDown, BarChart } from 'lucide-react';
+import { ArrowLeft, Calendar as CalendarIcon, FileText, Printer, Loader2, BarChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -16,12 +16,9 @@ import { useAppContext } from '@/context/app-provider';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslation } from '@/hooks/use-translation';
 import { useAuth } from '@/hooks/use-auth';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import type { AllPdfSettings } from '@/lib/types';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { ReportWrapper } from '@/components/reports/ReportWrapper';
-
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -111,114 +108,19 @@ export default function MonthlyExpenseReportPage() {
     window.print();
   };
   
-  const handleDownloadPdf = () => {
-    if (!selectedDate || !settings || monthlyData.summary.length === 0) return;
-    const doc = new jsPDF();
-    const useKurdishFont = language === 'ku' && customFont;
-    const fontName = "CustomFont";
-    const themeColor = pdfSettings.report.reportColors?.expense || '#3b82f6';
-    
-    if (useKurdishFont) {
-        try {
-            const fontBase64 = customFont.split(',')[1];
-            if (fontBase64) {
-                doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
-                doc.addFont(`${fontName}.ttf`, fontName, 'normal');
-                doc.setFont(fontName);
-            }
-        } catch (e) {
-            console.error("Error adding custom font to PDF:", e);
-        }
-    }
-    
-    autoTable(doc, {
-        body: [
-            [{ content: t('monthly_expense_report'), styles: { halign: 'center', fontSize: 18, textColor: themeColor, font: useKurdishFont ? fontName : 'helvetica' } }],
-            [{ content: format(selectedDate, 'MMMM yyyy'), styles: { halign: 'center', fontSize: 11, textColor: 100, font: useKurdishFont ? fontName : 'helvetica' } }],
-        ],
-        theme: 'plain',
-        startY: 20,
-    });
-    
-    const head = [[t('employee'), t('taxi_expenses'), t('purchases_buying_items'), t('total_amount')]];
-    const body = monthlyData.summary.map(item => [
-      item.employeeName,
-      isReadOnly ? '***' : formatCurrency(item.taxiTotal),
-      isReadOnly ? '***' : formatCurrency(item.purchasesTotal),
-      isReadOnly ? '***' : formatCurrency(item.totalAmount)
-    ]);
-    const foot = [[
-        { content: t('grand_total'), colSpan: 3, styles: { halign: 'right', fontStyle: 'bold' }},
-        { content: isReadOnly ? '***' : formatCurrency(monthlyData.grandTotal), styles: { halign: 'right', fontStyle: 'bold' }}
-    ]];
-    
-    autoTable(doc, {
-      head,
-      body,
-      foot,
-      startY: (doc as any).lastAutoTable.finalY + 10,
-      theme: pdfSettings.report.tableTheme || 'striped',
-      styles: { font: useKurdishFont ? fontName : 'helvetica', valign: 'middle', cellPadding: 3, fontSize: 8 },
-      headStyles: { fillColor: themeColor, textColor: 255, fontStyle: 'bold', halign: 'center', font: useKurdishFont ? fontName : 'helvetica' },
-      footStyles: { fillColor: [230, 230, 230], textColor: 0, fontStyle: 'bold' },
-      columnStyles: {
-        0: { halign: useKurdishFont ? 'right' : 'left' },
-        1: { halign: 'right' },
-        2: { halign: 'right' },
-        3: { halign: 'right', fontStyle: 'bold' }
-      }
-    });
-
-    doc.save(`monthly-expense-report-${format(selectedDate, 'yyyy-MM')}.pdf`);
-  };
-  
   if (isLoading) {
     return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
-
-  return (
-    <>
-      <div className="min-h-screen bg-background text-foreground p-4 md:p-8 print:p-0">
-        <header className="flex items-center justify-between gap-4 mb-8 print:hidden">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="icon" asChild>
-              <Link href="/expenses"><ArrowLeft /></Link>
-            </Button>
-            <h1 className="text-2xl">{t('monthly_expense_report')}</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className={cn("w-[280px] justify-start text-left", !selectedDate && "text-muted-foreground")}>
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {selectedDate ? format(selectedDate, 'MMMM yyyy') : <span>{t('pick_a_month')}</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="end">
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={(date) => {
-                    setSelectedDate(date);
-                    setIsCalendarOpen(false);
-                  }}
-                  captionLayout="dropdown-nav" fromYear={2020} toYear={2040}
-                />
-              </PopoverContent>
-            </Popover>
-            <Button variant="outline" onClick={handlePrint} disabled={isLoading || monthlyData.summary.length === 0}><Printer className="mr-2"/>{t('print')}</Button>
-            <Button variant="outline" onClick={handleDownloadPdf} disabled={isLoading || monthlyData.summary.length === 0}><FileDown className="mr-2"/>PDF</Button>
-          </div>
-        </header>
-
-        <main className="print:p-8">
-            {isLoading ? (
+  
+  const PageContent = () => (
+      <>
+        {isLoading ? (
             <div className="space-y-6"><Skeleton className="h-64 w-full" /></div>
             ) : monthlyData.summary.length > 0 ? (
             <div className="space-y-8">
                 <Card className="print:shadow-none print:border-none">
                     <CardHeader>
-                        <div className="hidden print:block text-center">
+                        <div className="text-center">
                             <h1 className="text-2xl">{t('monthly_expense_report')}</h1>
                             <p className="text-muted-foreground">{selectedDate ? format(selectedDate, 'MMMM yyyy') : ''}</p>
                         </div>
@@ -278,44 +180,51 @@ export default function MonthlyExpenseReportPage() {
                 <p className="mt-2 text-sm text-muted-foreground">{t('no_expenses_found_for_month', {month: selectedDate ? format(selectedDate, 'MMMM yyyy') : 'the selected month'})}</p>
             </div>
             )}
-        </main>
+      </>
+  );
+
+  return (
+    <>
+      <div className="hidden print:block">
+        <ReportWrapper>
+          <PageContent />
+        </ReportWrapper>
       </div>
-       <div className="hidden print:block">
-        {selectedDate && (
-          <ReportWrapper
-              title={t('monthly_expense_report')}
-              date={format(selectedDate, 'MMMM yyyy')}
-              logoSrc={pdfSettings?.report.logo}
-              themeColor={pdfSettings?.report.reportColors?.expense || '#3b82f6'}
-          >
-              <Table>
-                  <TableHeader>
-                      <TableRow>
-                          <TableHead>{t('employee')}</TableHead>
-                          <TableHead className="text-right">{t('taxi_expenses')}</TableHead>
-                          <TableHead className="text-right">{t('purchases_buying_items')}</TableHead>
-                          <TableHead className="text-right font-bold">{t('total_amount')}</TableHead>
-                      </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                  {monthlyData.summary.map((item, index) => (
-                      <TableRow key={item.employeeId} className={index % 2 === 0 ? 'bg-gray-100' : ''}>
-                          <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{item.employeeName}</TableCell>
-                          <TableCell className="text-right">{isReadOnly ? '***' : formatCurrency(item.taxiTotal)}</TableCell>
-                          <TableCell className="text-right">{isReadOnly ? '***' : formatCurrency(item.purchasesTotal)}</TableCell>
-                          <TableCell className="text-right font-bold">{isReadOnly ? '***' : formatCurrency(item.totalAmount)}</TableCell>
-                      </TableRow>
-                  ))}
-                  </TableBody>
-                  <TableFooter>
-                      <TableRow>
-                          <TableCell colSpan={3} className="text-right font-bold">{t('grand_total')}:</TableCell>
-                          <TableCell className="text-right font-bold">{isReadOnly ? '***' : formatCurrency(monthlyData.grandTotal)}</TableCell>
-                      </TableRow>
-                  </TableFooter>
-              </Table>
-          </ReportWrapper>
-        )}
+      <div className="h-[calc(100vh-80px)] flex flex-col print:hidden">
+        <header className="flex items-center justify-between gap-4 mb-8 p-4 md:p-8">
+          <div className="flex items-center gap-4">
+            <Button variant="outline" size="icon" asChild>
+              <Link href="/expenses"><ArrowLeft /></Link>
+            </Button>
+            <h1 className="text-2xl">{t('monthly_expense_report')}</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className={cn("w-[280px] justify-start text-left", !selectedDate && "text-muted-foreground")}>
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {selectedDate ? format(selectedDate, 'MMMM yyyy') : <span>{t('pick_a_month')}</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => {
+                    setSelectedDate(date);
+                    setIsCalendarOpen(false);
+                  }}
+                  captionLayout="dropdown-nav" fromYear={2020} toYear={2040}
+                />
+              </PopoverContent>
+            </Popover>
+            <Button variant="outline" onClick={handlePrint} disabled={isLoading || monthlyData.summary.length === 0}><Printer className="mr-2"/>{t('print')}</Button>
+          </div>
+        </header>
+
+        <main className="flex-1 overflow-y-auto px-4 md:px-8">
+            <PageContent />
+        </main>
       </div>
     </>
   );

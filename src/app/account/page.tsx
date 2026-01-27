@@ -18,6 +18,7 @@ import {
   Banknote,
   Calendar as CalendarIcon,
   Loader2,
+  Printer,
 } from 'lucide-react';
 import {
   Card,
@@ -59,6 +60,7 @@ import {
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
+import { ReportWrapper } from '@/components/reports/ReportWrapper';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -415,6 +417,10 @@ function AccountPage() {
     }
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   if (isLoading || !employeeDetails || !monthlyFinancials || !selectedDate) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -422,12 +428,9 @@ function AccountPage() {
       </div>
     );
   }
-
-  return (
-    <>
-      <div className="min-h-screen bg-background text-foreground">
-        <main className="container mx-auto p-4 md:p-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+  
+  const PageContent = () => (
+     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1 space-y-8">
               <Card>
                 <CardHeader className="items-center text-center">
@@ -663,6 +666,24 @@ function AccountPage() {
               </div>
             </div>
           </div>
+  );
+
+  return (
+    <>
+      <div className="hidden print:block">
+          <ReportWrapper>
+            <PageContent />
+          </ReportWrapper>
+      </div>
+
+      <div className="min-h-screen bg-background text-foreground print:hidden">
+        <main className="container mx-auto p-4 md:p-8">
+          <div className="flex justify-end gap-2 mb-4">
+            <Button variant="outline" onClick={handlePrint}>
+              <Printer className="mr-2" /> {t('print')}
+            </Button>
+          </div>
+          <PageContent />
         </main>
       </div>
     </>

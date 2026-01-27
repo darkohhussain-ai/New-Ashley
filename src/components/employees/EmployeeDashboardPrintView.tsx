@@ -22,15 +22,9 @@ const EmployeeDetailItem = ({ icon: Icon, label, value }: { icon: React.ElementT
 
 export const EmployeeDashboardPrintView = ({ employees, settings }: { employees: Employee[], settings: AppSettings }) => {
     const { t, language } = useTranslation();
-    const { pdfSettings } = settings;
 
     return (
-        <ReportWrapper
-            title={t('employees_dashboard')}
-            date={format(new Date(), 'PPP')}
-            logoSrc={settings.appLogo}
-            themeColor={pdfSettings.report.reportColors?.general || '#22c55e'}
-        >
+        <ReportWrapper>
             <div className="space-y-4">
                 {employees.map(employee => {
                      const displayName = language === 'ku' && employee.kurdishName ? employee.kurdishName : employee.name;

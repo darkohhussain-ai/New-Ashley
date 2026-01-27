@@ -4,7 +4,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, Trash2, Calendar as CalendarIcon, User, Edit, Save, X, FileText, Banknote, Printer, Loader2, FileDown } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Calendar as CalendarIcon, User, Edit, Save, X, FileText, Banknote, Printer, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -20,10 +20,8 @@ import { useAppContext } from '@/context/app-provider';
 import type { CashWithdrawal, AllPdfSettings } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { useAuth } from '@/hooks/use-auth';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import { CashWithdrawalReportPdf } from '@/components/reports/CashWithdrawalReportPdf';
-
+import { ReportWrapper } from '@/components/reports/ReportWrapper';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -42,7 +40,6 @@ export default function AddCashWithdrawalPage() {
 
   const { employees, withdrawals, setWithdrawals, settings } = useAppContext();
   const isReadOnly = !hasPermission('page:admin');
-  const pdfRef = useRef<HTMLDivElement>(null);
 
   const dateParam = searchParams.get('date');
 
@@ -162,123 +159,16 @@ export default function AddCashWithdrawalPage() {
 
   const isLoading = !employees || !withdrawals;
 
-
   const handlePrint = () => {
     window.print();
-  };
-  
-  const handleDownloadPdf = async () => {
-    if (!pdfRef.current || !selectedDate || dailyWithdrawals.length === 0) return;
-    const doc = new jsPDF();
-    
-    const canvas = await html2canvas(pdfRef.current, { 
-        scale: 2, 
-        useCORS: true, 
-        backgroundColor: 'white',
-        onclone: (document) => {
-            if (settings?.customFont && language === 'ku') {
-                const style = document.createElement('style');
-                style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${settings.customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
-                document.head.appendChild(style);
-            }
-        }
-    });
-
-    const imgData = canvas.toDataURL('image/png');
-    const pdfWidth = doc.internal.pageSize.getWidth();
-    const imgWidth = canvas.width;
-    const imgHeight = canvas.height;
-    const ratio = imgWidth / imgHeight;
-    const finalImgWidth = pdfWidth;
-    const finalImgHeight = finalImgWidth / ratio;
-
-    doc.addImage(imgData, 'PNG', 0, 0, finalImgWidth, finalImgHeight);
-    doc.save(`withdrawal-report-${format(selectedDate, 'yyyy-MM-dd')}.pdf`);
   };
 
   if (!selectedDate) {
     return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
-
-  return (
-    <>
-     <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-      <div ref={pdfRef}>
-        {selectedDate && (
-          <CashWithdrawalReportPdf
-            records={dailyWithdrawals}
-            date={selectedDate}
-            settings={settings}
-            getEmployeeName={getEmployeeName}
-          />
-        )}
-      </div>
-    </div>
-    <div className="hidden print:block">
-      {selectedDate && (
-          <CashWithdrawalReportPdf
-              records={dailyWithdrawals}
-              date={selectedDate}
-              settings={settings}
-              getEmployeeName={getEmployeeName}
-          />
-      )}
-    </div>
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="bg-card border-b p-4 print:hidden">
-        <div className="container mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="icon" asChild>
-              <Link href="/cash-withdrawal">
-                <ArrowLeft />
-              </Link>
-            </Button>
-            <h1 className="text-xl">{t('daily_cash_withdrawals')}</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-              <PopoverTrigger asChild>
-                <Button variant={"outline"} className={cn("w-48 justify-start text-left", !selectedDate && "text-muted-foreground")}>
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {selectedDate ? format(selectedDate, "PPP") : <span>{t('pick_a_date')}</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="end">
-                 <Calendar 
-                    mode="single" 
-                    selected={selectedDate} 
-                    onSelect={(date) => { 
-                        if(date) setSelectedDate(date);
-                        setIsCalendarOpen(false);
-                    }} 
-                    initialFocus 
-                    captionLayout="dropdown-nav" fromYear={2020} toYear={2040} 
-                  />
-                  <div className="p-2 border-t">
-                      <Input 
-                          type="text"
-                          placeholder="yyyy-mm-dd"
-                          value={selectedDate ? format(selectedDate, 'yyyy-MM-dd') : ''}
-                          onChange={(e) => {
-                              try {
-                                  const newDate = parseISO(e.target.value);
-                                  if (!isNaN(newDate.getTime())) {
-                                      setSelectedDate(newDate);
-                                  }
-                              } catch {}
-                          }}
-                      />
-                  </div>
-              </PopoverContent>
-            </Popover>
-            <Button variant="outline" onClick={handlePrint} disabled={isLoading || dailyWithdrawals.length === 0}><Printer className="mr-2"/>{t('print')}</Button>
-            <Button variant="outline" onClick={handleDownloadPdf} disabled={isLoading || dailyWithdrawals.length === 0}><FileDown className="mr-2"/>PDF</Button>
-          </div>
-        </div>
-      </header>
-
-      <main className="container mx-auto p-4 md:p-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+  
+  const PageContent = () => (
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className={cn("lg:col-span-1 print:hidden", isReadOnly && "opacity-50 pointer-events-none")}>
                 <Card>
                 <CardHeader>
@@ -412,8 +302,70 @@ export default function AddCashWithdrawalPage() {
                 </Card>
             </div>
             </div>
-      </main>
-    </div>
+  );
+
+  return (
+    <>
+      <div className="hidden print:block">
+        <ReportWrapper>
+          {selectedDate && <CashWithdrawalReportPdf records={dailyWithdrawals} date={selectedDate} settings={settings} getEmployeeName={getEmployeeName} />}
+        </ReportWrapper>
+      </div>
+      <div className="min-h-screen bg-background text-foreground print:hidden">
+        <header className="bg-card border-b p-4">
+          <div className="container mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button variant="outline" size="icon" asChild>
+                <Link href="/cash-withdrawal">
+                  <ArrowLeft />
+                </Link>
+              </Button>
+              <h1 className="text-xl">{t('daily_cash_withdrawals')}</h1>
+            </div>
+            <div className="flex items-center gap-2">
+              <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant={"outline"} className={cn("w-48 justify-start text-left", !selectedDate && "text-muted-foreground")}>
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {selectedDate ? format(selectedDate, "PPP") : <span>{t('pick_a_date')}</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="end">
+                  <Calendar 
+                      mode="single" 
+                      selected={selectedDate} 
+                      onSelect={(date) => { 
+                          if(date) setSelectedDate(date);
+                          setIsCalendarOpen(false);
+                      }} 
+                      initialFocus 
+                      captionLayout="dropdown-nav" fromYear={2020} toYear={2040} 
+                    />
+                    <div className="p-2 border-t">
+                        <Input 
+                            type="text"
+                            placeholder="yyyy-mm-dd"
+                            value={selectedDate ? format(selectedDate, 'yyyy-MM-dd') : ''}
+                            onChange={(e) => {
+                                try {
+                                    const newDate = parseISO(e.target.value);
+                                    if (!isNaN(newDate.getTime())) {
+                                        setSelectedDate(newDate);
+                                    }
+                                } catch {}
+                            }}
+                        />
+                    </div>
+                </PopoverContent>
+              </Popover>
+              <Button variant="outline" onClick={handlePrint} disabled={isLoading || dailyWithdrawals.length === 0}><Printer className="mr-2"/>{t('print')}</Button>
+            </div>
+          </div>
+        </header>
+        <main className="container mx-auto p-4 md:p-8">
+          <PageContent />
+        </main>
+      </div>
     </>
   );
 }

@@ -3,7 +3,7 @@
 
 import { useState, useMemo, useRef } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Calendar as CalendarIcon, Printer, FileDown } from 'lucide-react';
+import { ArrowLeft, Calendar as CalendarIcon, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardTitle, CardHeader, CardDescription } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -15,8 +15,6 @@ import { Progress } from '@/components/ui/progress';
 import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import { ReportWrapper } from '@/components/reports/ReportWrapper';
 
 const formatCurrency = (amount: number) => {
@@ -28,9 +26,8 @@ const formatCurrency = (amount: number) => {
 };
 
 function AshleyExpensesDashboard() {
-  const { t, language } = useTranslation();
+  const { t } = useTranslation();
   const { expenses, overtime, bonuses, withdrawals, settings } = useAppContext();
-  const printRef = useRef<HTMLDivElement>(null);
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   
@@ -63,26 +60,6 @@ function AshleyExpensesDashboard() {
   const grandTotal = chartData.reduce((sum, item) => sum + item.total, 0);
 
   const handlePrint = () => window.print();
-
-  const handleDownloadPdf = async () => {
-    if (!printRef.current || !selectedDate) return;
-    const canvas = await html2canvas(printRef.current, {
-      scale: 2,
-      useCORS: true,
-      onclone: (document) => {
-        if (settings?.customFont && language === 'ku') {
-            const style = document.createElement('style');
-            style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${settings.customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
-            document.head.appendChild(style);
-        }
-      }
-    });
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF('p', 'px', 'a4');
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfWidth * (canvas.height / canvas.width));
-    pdf.save(`ashley-expenses-summary-${format(selectedDate, 'yyyy-MM')}.pdf`);
-  };
 
   const DashboardContent = () => (
     <Card>
@@ -127,35 +104,14 @@ function AshleyExpensesDashboard() {
 
   return (
     <>
-      <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-        <div ref={printRef} style={{ width: '700px' }}>
-          {selectedDate && (
-            <ReportWrapper
-              title={t('monthly_overview')}
-              date={format(selectedDate, 'MMMM yyyy')}
-              logoSrc={settings.appLogo}
-              themeColor={settings.pdfSettings.report.reportColors?.general}
-            >
-              <DashboardContent />
-            </ReportWrapper>
-          )}
-        </div>
-      </div>
       <div className="hidden print:block">
-        {selectedDate && (
-          <ReportWrapper
-            title={t('monthly_overview')}
-            date={format(selectedDate, 'MMMM yyyy')}
-            logoSrc={settings.appLogo}
-            themeColor={settings.pdfSettings.report.reportColors?.general}
-          >
-            <DashboardContent />
-          </ReportWrapper>
-        )}
+        <ReportWrapper>
+          <DashboardContent />
+        </ReportWrapper>
       </div>
 
-      <div className="h-[calc(100vh-80px)] flex flex-col">
-       <header className="bg-card border-b p-4 print:hidden">
+      <div className="h-[calc(100vh-80px)] flex flex-col print:hidden">
+       <header className="bg-card border-b p-4">
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button variant="outline" size="icon" asChild>
@@ -167,7 +123,6 @@ function AshleyExpensesDashboard() {
           </div>
             <div className='flex items-center gap-2'>
                 <Button onClick={handlePrint} variant="outline"><Printer className="mr-2 h-4 w-4"/> {t('print')}</Button>
-                <Button onClick={handleDownloadPdf} variant="outline"><FileDown className="mr-2 h-4 w-4"/> {t('download_pdf')}</Button>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant={"outline"} className={cn("w-48 justify-start text-left font-normal", !selectedDate && "text-muted-foreground")}>

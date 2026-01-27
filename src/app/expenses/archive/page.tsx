@@ -3,13 +3,14 @@
 
 import { useMemo } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Archive, Calendar as CalendarIcon, DollarSign, Eye, Plus } from 'lucide-react';
+import { ArrowLeft, Archive, Calendar as CalendarIcon, DollarSign, Eye, Plus, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { format, parseISO } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAppContext } from '@/context/app-provider';
 import { useTranslation } from '@/hooks/use-translation';
+import { ReportWrapper } from '@/components/reports/ReportWrapper';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'IQD', maximumFractionDigits: 0 }).format(amount);
 
@@ -22,21 +23,13 @@ export default function ExpenseArchivePage() {
     if (!expenseReports) return [];
     return [...expenseReports].sort((a, b) => new Date(b.reportDate).getTime() - new Date(a.reportDate).getTime());
   }, [expenseReports]);
-
-  return (
-    <div className="h-screen bg-background text-foreground flex flex-col">
-      <header className="flex items-center justify-between gap-4 p-4 md:p-8 border-b">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" asChild>
-            <Link href="/expenses"><ArrowLeft /></Link>
-          </Button>
-          <h1 className="text-2xl md:text-3xl">{t('expense_report_archive')}</h1>
-        </div>
-        <Button asChild>
-          <Link href="/expenses/add"><Plus className="mr-2" /> {t('create_report')}</Link>
-        </Button>
-      </header>
-      <main className="flex-1 overflow-y-auto p-4 md:p-8">
+  
+  const handlePrint = () => {
+    window.print();
+  }
+  
+  const PageContent = () => (
+      <>
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
@@ -64,7 +57,7 @@ export default function ExpenseArchivePage() {
                     {formatCurrency(report.totalAmount)}
                   </p>
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="print:hidden">
                   <Button asChild className="w-full">
                     <Link href={`/expenses/archive/${report.id}`}><Eye className="mr-2"/>{t('view_edit_details')}</Link>
                   </Button>
@@ -80,7 +73,35 @@ export default function ExpenseArchivePage() {
             <Button asChild className="mt-4"><Link href="/expenses/add">{t('create_report')}</Link></Button>
           </div>
         )}
-      </main>
-    </div>
+      </>
+  );
+
+  return (
+    <>
+      <div className="hidden print:block">
+        <ReportWrapper>
+          <PageContent />
+        </ReportWrapper>
+      </div>
+      <div className="h-screen bg-background text-foreground flex flex-col print:hidden">
+        <header className="flex items-center justify-between gap-4 p-4 md:p-8 border-b">
+          <div className="flex items-center gap-4">
+            <Button variant="outline" size="icon" asChild>
+              <Link href="/expenses"><ArrowLeft /></Link>
+            </Button>
+            <h1 className="text-2xl md:text-3xl">{t('expense_report_archive')}</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button onClick={handlePrint} variant="outline"><Printer className="mr-2 h-4 w-4"/> {t('print')}</Button>
+            <Button asChild>
+              <Link href="/expenses/add"><Plus className="mr-2" /> {t('create_report')}</Link>
+            </Button>
+          </div>
+        </header>
+        <main className="flex-1 overflow-y-auto p-4 md:p-8">
+            <PageContent />
+        </main>
+      </div>
+    </>
   );
 }

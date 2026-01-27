@@ -1,9 +1,9 @@
 
 'use client';
 
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, FilePlus, Archive, Calendar as CalendarIcon, PieChart as PieChartIcon, Printer, FileDown } from 'lucide-react';
+import { ArrowLeft, FilePlus, Archive, Calendar as CalendarIcon, PieChart as PieChartIcon, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardTitle, CardHeader, CardDescription } from '@/components/ui/card';
 import { useTranslation } from '@/hooks/use-translation';
@@ -13,8 +13,6 @@ import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'da
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Progress } from '@/components/ui/progress';
 import { ReportWrapper } from '@/components/reports/ReportWrapper';
@@ -24,9 +22,8 @@ const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { styl
 const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))', '#FF8042', '#00C49F', '#FFBB28'];
 
 function ExpensesDashboardPage() {
-    const { t, language } = useTranslation();
-    const { expenses, settings } = useAppContext();
-    const contentRef = useRef<HTMLDivElement>(null);
+    const { t } = useTranslation();
+    const { expenses } = useAppContext();
 
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
     
@@ -66,26 +63,6 @@ function ExpensesDashboardPage() {
     const grandTotal = useMemo(() => monthlyExpenseData.expenseTypeData.reduce((sum, item) => sum + item.value, 0), [monthlyExpenseData.expenseTypeData]);
     
     const handlePrint = () => window.print();
-
-    const handleDownloadPdf = async () => {
-        if (!contentRef.current) return;
-        const canvas = await html2canvas(contentRef.current, { 
-            scale: 2,
-            useCORS: true,
-            onclone: (document) => {
-                if (settings?.customFont && language === 'ku') {
-                    const style = document.createElement('style');
-                    style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${settings.customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
-                    document.head.appendChild(style);
-                }
-            }
-        });
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF('p', 'px', 'a4');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfWidth * (canvas.height / canvas.width));
-        pdf.save(`expenses-summary-${format(selectedDate || new Date(), 'yyyy-MM')}.pdf`);
-    };
 
     const DashboardContent = () => (
          <Card>
@@ -131,35 +108,15 @@ function ExpensesDashboardPage() {
     );
 
     return (
-        <div className="h-screen bg-background text-foreground flex flex-col print:h-auto">
-            <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-                <div ref={contentRef} style={{ width: '700px' }}>
-                    {selectedDate && (
-                        <ReportWrapper
-                        title={t('expense_breakdown')}
-                        date={format(selectedDate, 'MMMM yyyy')}
-                        logoSrc={settings.appLogo}
-                        themeColor={settings.pdfSettings.report.reportColors?.expense}
-                        >
-                            <DashboardContent />
-                        </ReportWrapper>
-                    )}
-                </div>
-            </div>
-            <div className="hidden print:block">
-                 {selectedDate && (
-                    <ReportWrapper
-                        title={t('expense_breakdown')}
-                        date={format(selectedDate, 'MMMM yyyy')}
-                        logoSrc={settings.appLogo}
-                        themeColor={settings.pdfSettings.report.reportColors?.expense}
-                    >
-                        <DashboardContent />
-                    </ReportWrapper>
-                 )}
-            </div>
+      <>
+        <div className="hidden print:block">
+            <ReportWrapper>
+                <DashboardContent />
+            </ReportWrapper>
+        </div>
 
-            <header className="bg-card border-b p-4 print:hidden">
+        <div className="h-screen bg-background text-foreground flex flex-col print:hidden">
+            <header className="bg-card border-b p-4">
                 <div className="container mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <Button variant="outline" size="icon" asChild>
@@ -169,7 +126,6 @@ function ExpensesDashboardPage() {
                     </div>
                      <div className="flex items-center gap-2">
                         <Button onClick={handlePrint} variant="outline"><Printer className="mr-2 h-4 w-4"/> {t('print')}</Button>
-                        <Button onClick={handleDownloadPdf} variant="outline"><FileDown className="mr-2 h-4 w-4"/> {t('download_pdf')}</Button>
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button variant={"outline"} className={cn("w-48 justify-start text-left font-normal", !selectedDate && "text-muted-foreground")}>
@@ -187,7 +143,7 @@ function ExpensesDashboardPage() {
             <main className='container mx-auto p-4 md:p-8 flex-1 overflow-y-auto space-y-8'>
                  <DashboardContent />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 print:hidden">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {menuItems.map((item) => (
                         <Link key={item.title} href={item.href} className="group block" passHref>
                             <Card className={cn("h-48 flex flex-col items-center justify-center text-white transition-transform transform hover:-translate-y-1 hover:shadow-xl", item.color)}>
@@ -203,6 +159,7 @@ function ExpensesDashboardPage() {
                 </div>
             </main>
         </div>
+      </>
     );
 }
 

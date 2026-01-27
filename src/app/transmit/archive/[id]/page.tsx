@@ -3,14 +3,12 @@
 import { useMemo, useRef, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Calendar, Truck, FileText, User, Warehouse, Printer, Edit, Trash2, Save, X, Search } from 'lucide-react';
+import { ArrowLeft, Calendar, Truck, User, Warehouse, Printer, Edit, Trash2, Save, X, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { format, parseISO } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TransmitReportPdf } from '@/components/transmit/TransmitReportPdf';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAppContext } from '@/context/app-provider';
 import type { Transfer, ItemForTransfer, BranchColors } from '@/lib/types';
@@ -22,16 +20,15 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { ReportWrapper } from '@/components/reports/ReportWrapper';
 
 export default function ViewTransferPage() {
   const { id: transferId } = useParams();
   const router = useRouter();
-  const { t, language } = useTranslation();
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { transfers, setTransfers, transferItems, setTransferItems, settings, isLoading: isAppLoading } = useAppContext();
 
-  const pdfRef = useRef<HTMLDivElement>(null);
-  
   const transfer = useMemo(() => transfers?.find(t => t.id === transferId), [transfers, transferId]);
   const items = useMemo(() => transferItems?.filter(i => i.transferId === transferId), [transferItems, transferId]);
   
@@ -80,91 +77,6 @@ export default function ViewTransferPage() {
     router.push('/transmit/archive');
   };
 
-  const handleDownloadPdf = () => {
-    if (!transfer || !items || !settings) return;
-
-    const { pdfSettings, customFont } = settings;
-    const doc = new jsPDF();
-    const fontName = "CustomFont";
-    const useKurdishFont = language === 'ku' && customFont;
-    const themeColor = (transfer.destinationCity && (pdfSettings.invoice.branchColors as BranchColors)?.[transfer.destinationCity as keyof BranchColors]) || pdfSettings.invoice.themeColor;
-
-    if (useKurdishFont) {
-        try {
-            const fontBase64 = customFont.split(',')[1];
-            if (fontBase64) {
-                doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
-                doc.addFont(`${fontName}.ttf`, fontName, 'normal');
-                doc.setFont(fontName);
-            }
-        } catch (e) {
-            console.error("Error adding custom font to PDF:", e);
-        }
-    }
-
-    const titleTemplate = pdfSettings.invoice.titleTemplate || t('INVOICE') + ' #{invoiceNumber}';
-    const finalTitle = titleTemplate
-        .replace('{city}', transfer.destinationCity || '')
-        .replace('{invoiceNumber}', transfer.invoiceNumber ? String(transfer.invoiceNumber).padStart(6, '0') : 'N/A');
-
-    autoTable(doc, {
-        body: [
-            [{
-                content: finalTitle,
-                styles: { halign: 'center', fontSize: 18, textColor: themeColor, font: useKurdishFont ? fontName : 'helvetica' }
-            }],
-            [{
-                content: format(parseISO(transfer.transferDate), 'PPP'),
-                styles: { halign: 'center', fontSize: 11, textColor: 100, font: useKurdishFont ? fontName : 'helvetica' }
-            }],
-        ],
-        theme: 'plain',
-        startY: 20,
-    });
-    
-    autoTable(doc, {
-        body: [
-            [
-              { content: `${t('driver')}: ${transfer.driverName}\n${t('manager')}: ${transfer.warehouseManagerName}`, styles: { font: useKurdishFont ? fontName : 'helvetica' } },
-              { content: `${t('slip_no')}: ${totalYearlyInvoices}`, styles: { halign: 'right', font: useKurdishFont ? fontName : 'helvetica' } }
-            ],
-        ],
-        theme: 'plain',
-        startY: (doc as any).lastAutoTable.finalY,
-    });
-
-    const head = [[t('no_dot'), t('model'), t('quantity'), t('invoice_no'), t('storage'), t('notes'), t('request_date')]];
-    const body = items.map((item, index) => [
-      index + 1,
-      item.model,
-      item.quantity,
-      item.invoiceNo || 'N/A',
-      item.storage || 'N/A',
-      item.notes || 'N/A',
-      item.requestDate ? format(parseISO(item.requestDate), 'yyyy-MM-dd') : 'N/A'
-    ]);
-
-    autoTable(doc, {
-        head,
-        body,
-        startY: (doc as any).lastAutoTable.finalY + 10,
-        theme: pdfSettings.invoice.tableTheme || 'striped',
-        styles: { font: useKurdishFont ? fontName : 'helvetica', valign: 'middle', cellPadding: 3, fontSize: 8 },
-        headStyles: { fillColor: themeColor, textColor: 255, fontStyle: 'bold', halign: 'center', font: useKurdishFont ? fontName : 'helvetica' },
-        columnStyles: {
-            0: { halign: 'center', cellWidth: 10 },
-            1: { halign: useKurdishFont ? 'right' : 'left' },
-            2: { halign: 'center' },
-            3: { halign: 'center' },
-            4: { halign: 'center' },
-            5: { halign: useKurdishFont ? 'right' : 'left' },
-            6: { halign: 'center' }
-        },
-    });
-
-    doc.save(`${transfer.cargoName}.pdf`);
-  };
-
   const handlePrint = () => {
     window.print();
   };
@@ -180,67 +92,9 @@ export default function ViewTransferPage() {
   }
 
   const { pdfSettings, appLogo } = settings;
-
-  return (
-    <>
-    {transfer && (
-       <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-          <div ref={pdfRef}>
-              <TransmitReportPdf
-                transfer={transfer}
-                items={items || []}
-                settings={{...pdfSettings.invoice, logo: pdfSettings.invoice.logo ?? appLogo}}
-                invoiceNumber={transfer.invoiceNumber}
-                totalYearlyInvoices={totalYearlyInvoices}
-              />
-          </div>
-       </div>
-    )}
-    <div className="min-h-screen bg-background text-foreground p-4 md:p-8 print:p-0">
-      <header className="flex items-center justify-between gap-4 mb-8 print:hidden">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="icon" asChild>
-                <Link href="/transmit/archive"><ArrowLeft /></Link>
-            </Button>
-            <h1 className="text-2xl md:text-3xl font-bold">{t('transfer_details')}</h1>
-          </div>
-          <div className="flex items-center gap-2">
-             {isEditing ? (
-                <>
-                    <Button onClick={handleSave}><Save className="mr-2 h-4 w-4" /> {t('save_changes')}</Button>
-                    <Button variant="ghost" onClick={() => setIsEditing(false)}><X className="mr-2 h-4 w-4" /> {t('cancel')}</Button>
-                </>
-             ) : (
-                <>
-                    <Button variant="outline" onClick={() => setIsEditing(true)}><Edit className="mr-2 h-4 w-4" /> {t('edit')}</Button>
-                    <Button onClick={handleDownloadPdf} disabled={!transfer || !items}>
-                        <FileText className="mr-2"/> {t('download_pdf')}
-                    </Button>
-                    <Button variant="outline" onClick={handlePrint} disabled={!transfer || !items}>
-                        <Printer className="mr-2"/> {t('print')}
-                    </Button>
-                     <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button variant="destructive"><Trash2 className="mr-2 h-4 w-4"/> {t('delete')}</Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                            <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
-                            <AlertDialogDescription>This will delete the transfer slip and return all its items to the staging list. This action cannot be undone.</AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleDelete}>{t('delete')}</AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                </>
-             )}
-          </div>
-      </header>
-
-      {transfer && items ? (
-        <div className="space-y-8">
+  
+  const PageContent = () => (
+    <div className="space-y-8">
             <Card>
                 <CardHeader>
                     {isEditing ? (
@@ -305,7 +159,7 @@ export default function ViewTransferPage() {
                         <div className="relative w-full max-w-sm">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
-                                placeholder={t('search_by_model_or_invoice')}
+                                placeholder={t('search_by_invoice_or_model')}
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="pl-10"
@@ -341,13 +195,72 @@ export default function ViewTransferPage() {
                 </CardContent>
             </Card>
         </div>
-      ) : (
-        <div className="text-center py-16">
-            <h2 className="text-2xl font-bold">{t('transfer_not_found')}</h2>
-            <p className="text-muted-foreground">{t('transfer_not_found_desc')}</p>
-        </div>
-      )}
-    </div>
+  );
+
+  if (!transfer || !items) {
+    return (
+      <div className="text-center py-16">
+          <h2 className="text-2xl font-bold">{t('transfer_not_found')}</h2>
+          <p className="text-muted-foreground">{t('transfer_not_found_desc')}</p>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="hidden print:block">
+        <ReportWrapper>
+          <TransmitReportPdf
+            transfer={transfer}
+            items={items || []}
+            settings={{...pdfSettings.invoice, logo: pdfSettings.invoice.logo ?? appLogo}}
+            invoiceNumber={transfer.invoiceNumber}
+            totalYearlyInvoices={totalYearlyInvoices}
+          />
+        </ReportWrapper>
+      </div>
+      <div className="min-h-screen bg-background text-foreground p-4 md:p-8 print:hidden">
+        <header className="flex items-center justify-between gap-4 mb-8">
+            <div className="flex items-center gap-4">
+              <Button variant="outline" size="icon" asChild>
+                  <Link href="/transmit/archive"><ArrowLeft /></Link>
+              </Button>
+              <h1 className="text-2xl md:text-3xl font-bold">{t('transfer_details')}</h1>
+            </div>
+            <div className="flex items-center gap-2">
+              {isEditing ? (
+                  <>
+                      <Button onClick={handleSave}><Save className="mr-2 h-4 w-4" /> {t('save_changes')}</Button>
+                      <Button variant="ghost" onClick={() => setIsEditing(false)}><X className="mr-2 h-4 w-4" /> {t('cancel')}</Button>
+                  </>
+              ) : (
+                  <>
+                      <Button variant="outline" onClick={() => setIsEditing(true)}><Edit className="mr-2 h-4 w-4" /> {t('edit')}</Button>
+                      <Button variant="outline" onClick={handlePrint}>
+                          <Printer className="mr-2"/> {t('print')}
+                      </Button>
+                       <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                              <Button variant="destructive"><Trash2 className="mr-2 h-4 w-4"/> {t('delete')}</Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                              <AlertDialogHeader>
+                              <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
+                              <AlertDialogDescription>This will delete the transfer slip and return all its items to the staging list. This action cannot be undone.</AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                              <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                              <AlertDialogAction onClick={handleDelete}>{t('delete')}</AlertDialogAction>
+                              </AlertDialogFooter>
+                          </AlertDialogContent>
+                      </AlertDialog>
+                  </>
+              )}
+            </div>
+        </header>
+
+        <PageContent />
+      </div>
     </>
   );
 }
