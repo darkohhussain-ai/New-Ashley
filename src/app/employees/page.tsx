@@ -22,6 +22,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { EmployeePdfCard } from "@/components/employees/employee-pdf-card"
 import html2canvas from 'html2canvas'
 import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
@@ -35,7 +36,6 @@ import { translateNameToKurdish } from "@/ai/flows/translate-name-flow"
 import { Loader2 } from "lucide-react";
 import { useStorage } from "@/firebase";
 import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
-import { EmployeeReportPdf } from "@/components/employees/EmployeeReportPdf";
 import { initialSettings } from "@/context/initial-data";
 
 
@@ -56,9 +56,6 @@ const safeDate = (dateValue: string | undefined | null): Date | null => {
     return null;
   }
 };
-
-
-const employeeRoles = ["Super Manager", "Manager", "IT", "Employee Supervisor", "Transport Supervisor", "Employee", "Marketing"];
 
 
 function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, onDeselect: () => void }) {
@@ -99,7 +96,6 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
     const [notes, setNotes] = useState('');
     
     const cardPdfRef = useRef<HTMLDivElement>(null);
-    const fullReportPdfRef = useRef<HTMLDivElement>(null);
     const photoUploadRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -270,42 +266,147 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
     };
 
     const handleDownloadReport = async () => {
-        if (!fullReportPdfRef.current || !employee || !settings) return;
-        
-        const canvas = await html2canvas(fullReportPdfRef.current, { 
-            scale: 2, 
-            useCORS: true,
-            backgroundColor: 'white',
-            onclone: (document) => {
-                if (settings.customFont && language === 'ku') {
-                    const style = document.createElement('style');
-                    style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${settings.customFont}); } body { font-family: 'CustomPdfFont', sans-serif !important; }`;
-                    document.head.appendChild(style);
+        if (!employee || !settings) return;
+
+        const doc = new jsPDF();
+        const { pdfSettings, customFont, appLogo } = settings;
+        const useKurdishFont = language === 'ku' && customFont;
+        const fontName = "CustomFont";
+        const themeColor = pdfSettings.report.reportColors?.general || '#22c55e';
+        const tableTheme = pdfSettings.report.tableTheme || 'striped';
+        const displayName = language === 'ku' && employee.kurdishName ? employee.kurdishName : employee.name;
+
+
+        if (useKurdishFont) {
+            try {
+                const fontBase64 = customFont.split(',')[1];
+                if (fontBase64) {
+                    doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
+                    doc.addFont(`${fontName}.ttf`, fontName, 'normal');
+                    doc.setFont(fontName);
                 }
+            } catch (e) {
+                console.error("Error adding custom font to PDF:", e);
             }
-        });
+        }
         
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
+        const logoUrl = pdfSettings.report.logo ?? appLogo;
+        let logoData: string | null = null;
+        if (logoUrl) {
+            try {
+                const response = await fetch(logoUrl);
+                const blob = await response.blob();
+                logoData = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result as string);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
+                });
+            } catch (e) { console.error("Could not load logo for PDF:", e); }
+        }
         
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
-        const imgWidth = canvas.width;
-        const imgHeight = canvas.height;
-        const ratio = imgWidth / imgHeight;
-        
-        let finalImgWidth = pdfWidth;
-        let finalImgHeight = finalImgWidth / ratio;
-        
-        if (finalImgHeight > pdfHeight) {
-            finalImgHeight = pdfHeight;
-            finalImgWidth = finalImgHeight * ratio;
+        let photoData: string | null = null;
+        if (employee.photoUrl) {
+             try {
+                const response = await fetch(employee.photoUrl);
+                const blob = await response.blob();
+                photoData = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result as string);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
+                });
+            } catch (e) { console.error("Could not load employee photo for PDF:", e); }
         }
 
-        const x = (pdfWidth - finalImgWidth) / 2;
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const margin = 14;
+        const lastY = { y: 0 };
+        
+        const addHeaderAndFooter = (data: any) => {
+            if (useKurdishFont) doc.setFont(fontName);
+            // Header
+            if (logoData) {
+                doc.addImage(logoData, 'PNG', margin, 15, 24, 12);
+            }
+            doc.setFontSize(18);
+            doc.setTextColor(themeColor);
+            doc.text(t('employee_report'), pageWidth / 2, 22, { align: 'center' });
+            doc.setFontSize(11);
+            doc.setTextColor(100);
+            doc.text(displayName, pageWidth / 2, 30, { align: 'center' });
+            
+            // Footer
+            const pageHeight = doc.internal.pageSize.getHeight();
+            const pageCount = doc.internal.getNumberOfPages();
+            doc.setFontSize(8);
+            doc.setTextColor(150);
+            doc.text(`${t('page')} ${data.pageNumber} / ${pageCount}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
+            doc.text(pdfSettings.report.footerText || t('generated_by_ashley_system'), margin, pageHeight - 10);
+        };
+        
+        // Employee Info Section
+        if (photoData) {
+            doc.addImage(photoData, 'PNG', margin, 40, 25, 25);
+        }
+        autoTable(doc, {
+            body: [
+                [{content: `${t('name')}:`, styles: {fontStyle: 'bold'}}, displayName],
+                [{content: `${t('id_colon')}`, styles: {fontStyle: 'bold'}}, employee.employeeId || 'N/A'],
+                [{content: `${t('email_optional')}:`, styles: {fontStyle: 'bold'}}, employee.email || 'N/A'],
+            ],
+            startY: 40,
+            tableWidth: (pageWidth / 2) - margin * 2,
+            margin: { left: margin + 30 },
+            theme: 'plain',
+            styles: { fontSize: 9, font: useKurdishFont ? fontName : 'helvetica', halign: useKurdishFont ? 'right': 'left' },
+        });
+        autoTable(doc, {
+            body: [
+                [{content: `${t('role_optional')}:`, styles: {fontStyle: 'bold'}}, employee.role || 'N/A'],
+                [{content: `${t('joined_date')}:`, styles: {fontStyle: 'bold'}}, safeEmploymentStartDate ? format(safeEmploymentStartDate, 'PPP') : 'N/A'],
+                [{content: `${t('phone_optional')}:`, styles: {fontStyle: 'bold'}}, employee.phone || 'N/A'],
+            ],
+            startY: 40,
+            tableWidth: (pageWidth / 2) - margin,
+            margin: { left: (pageWidth / 2) },
+            theme: 'plain',
+            styles: { fontSize: 9, font: useKurdishFont ? fontName : 'helvetica', halign: useKurdishFont ? 'right': 'left' },
+            didDrawPage: addHeaderAndFooter
+        });
+        
+        lastY.y = (doc as any).lastAutoTable.finalY + 10;
+        
+        const addFinancialTable = (title: string, head: string[][], body: any[], foot: string[][], color: string | undefined) => {
+            if (body.length === 0) return;
+             doc.setFontSize(12);
+             doc.setTextColor(color || '#000000');
+             doc.text(title, margin, lastY.y);
+             lastY.y += 5;
+            
+            autoTable(doc, {
+                head,
+                body,
+                foot,
+                startY: lastY.y,
+                theme: tableTheme,
+                styles: { fontSize: 8, font: useKurdishFont ? fontName : 'helvetica' },
+                headStyles: { fillColor: color, font: useKurdishFont ? fontName : 'helvetica' },
+                didDrawPage: addHeaderAndFooter
+            });
+            lastY.y = (doc as any).lastAutoTable.finalY + 10;
+        };
 
-        pdf.addImage(imgData, 'PNG', x, 0, finalImgWidth, finalImgHeight);
-        pdf.save(`${employee.name}_report_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+        // Financial Tables
+        addFinancialTable(t('expenses'), [[t('date'), t('notes'), t('amount')]], sortedExpenses.map(e => [format(parseISO(e.date), 'PP'), e.notes || '', formatCurrency(e.amount)]), [[{ content: t('total'), colSpan: 2, styles: { halign: 'right' } }, formatCurrency(totalExpenses)]], pdfSettings.report.reportColors?.expense);
+        
+        addFinancialTable(t('overtime'), [[t('date'), t('overtime_hours'), t('notes'), t('amount')]], sortedOvertime.map(o => [format(parseISO(o.date), 'PP'), o.hours.toFixed(2), o.notes || '', formatCurrency(o.totalAmount)]), [[{ content: t('total'), colSpan: 1, styles: { halign: 'right' } }, `${totalOvertimeHours.toFixed(2)}h`, '', formatCurrency(totalOvertimeAmount)]], pdfSettings.report.reportColors?.overtime);
+        
+        addFinancialTable(t('bonuses'), [[t('date'), t('notes'), t('amount')]], sortedBonuses.map(b => [format(parseISO(b.date), 'PP'), b.notes || '', formatCurrency(b.totalAmount)]), [[{ content: t('total'), colSpan: 2, styles: { halign: 'right' } }, formatCurrency(totalBonuses)]], pdfSettings.report.reportColors?.bonus);
+        
+        addFinancialTable(t('cash_withdrawals'), [[t('date'), t('notes'), t('amount')]], sortedWithdrawals.map(w => [format(parseISO(w.date), 'PP'), w.notes || '', formatCurrency(w.amount)]), [[{ content: t('total'), colSpan: 2, styles: { halign: 'right' } }, formatCurrency(totalWithdrawals)]], pdfSettings.report.reportColors?.withdrawal);
+
+        doc.save(`${employee.name}_report.pdf`);
     };
 
     if (isLoading) {
@@ -329,28 +430,11 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
     const safeEmploymentStartDate = safeDate(employee.employmentStartDate);
     const safeDateOfBirth = safeDate(employee.dateOfBirth);
     const displayName = language === 'ku' && employee.kurdishName ? employee.kurdishName : employee.name;
-    const reportSettings = {...pdfSettings.report, logo: pdfSettings.report.logo ?? appLogo};
 
     return (
         <>
              <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
                 <div ref={cardPdfRef}><EmployeePdfCard employee={employee} settings={pdfSettings.card} /></div>
-                <div ref={fullReportPdfRef} style={{ width: '800px', background: 'white', color: 'black' }}>
-                    <style>{`
-                        @font-face { 
-                            font-family: 'CustomPdfFont'; 
-                            src: ${settings?.customFont ? `url(${settings.customFont})` : 'none'}; 
-                        }
-                    `}</style>
-                    <EmployeeReportPdf 
-                        employee={employee}
-                        settings={reportSettings}
-                        expenses={{ items: sortedExpenses, total: totalExpenses }}
-                        overtime={{ items: sortedOvertime, total: totalOvertimeAmount, totalHours: totalOvertimeHours }}
-                        bonuses={{ items: sortedBonuses, total: totalBonuses }}
-                        withdrawals={{ items: sortedWithdrawals, total: totalWithdrawals }}
-                    />
-                </div>
             </div>
             <div className="w-full h-full flex flex-col">
                 <header className="flex items-center justify-between gap-2 p-4 border-b">
