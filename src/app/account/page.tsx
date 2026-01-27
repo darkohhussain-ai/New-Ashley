@@ -17,8 +17,6 @@ import {
   Gift,
   Banknote,
   Calendar as CalendarIcon,
-  FileDown,
-  Printer,
   Loader2,
 } from 'lucide-react';
 import {
@@ -61,9 +59,6 @@ import {
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
-import { AccountReportPdf } from '@/components/account/AccountReportPdf';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -222,9 +217,6 @@ function AccountPage() {
   useEffect(() => {
     setSelectedDate(new Date());
   }, []);
-
-  const fullReportPdfRef = useRef<HTMLDivElement>(null);
-  const logoSrc = settings?.appLogo || null;
 
   // Form State
   const [photoUrl, setPhotoUrl] = useState<string | undefined>(undefined);
@@ -423,42 +415,6 @@ function AccountPage() {
     }
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
-
-  const handleDownloadPdf = async () => {
-    if (!fullReportPdfRef.current || !employeeDetails) return;
-
-    const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
-
-    const canvas = await html2canvas(fullReportPdfRef.current, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: 'white',
-      onclone: document => {
-        if (settings?.customFont) {
-          const style = document.createElement('style');
-          style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${settings.customFont}); } body, table, div, p, h1, h2, h3, span { font-family: 'CustomPdfFont' !important; }`;
-          document.head.appendChild(style);
-        }
-      },
-    });
-
-    const imgData = canvas.toDataURL('image/png');
-    const pdfWidth = doc.internal.pageSize.getWidth();
-    const imgWidth = canvas.width;
-    const imgHeight = canvas.height;
-    const ratio = imgWidth / imgHeight;
-    const finalImgWidth = pdfWidth;
-    const finalImgHeight = finalImgWidth / ratio;
-
-    doc.addImage(imgData, 'PNG', 0, 0, finalImgWidth, finalImgHeight);
-    doc.save(
-      `${employeeDetails.name}_report_${format(new Date(), 'yyyy-MM-dd')}.pdf`
-    );
-  };
-
   if (isLoading || !employeeDetails || !monthlyFinancials || !selectedDate) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -469,40 +425,8 @@ function AccountPage() {
 
   return (
     <>
-      <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-        <div ref={fullReportPdfRef} style={{ width: '700px' }}>
-          {employeeDetails && monthlyFinancials && selectedDate && (
-            <AccountReportPdf
-              employee={employeeDetails}
-              logoSrc={logoSrc}
-              selectedDate={selectedDate}
-              financials={monthlyFinancials}
-            />
-          )}
-        </div>
-      </div>
-
-      <div className="hidden print:block">
-        {employeeDetails && monthlyFinancials && selectedDate && (
-          <AccountReportPdf
-            employee={employeeDetails}
-            logoSrc={logoSrc}
-            selectedDate={selectedDate}
-            financials={monthlyFinancials}
-          />
-        )}
-      </div>
-
-      <div className="min-h-screen bg-background text-foreground print-hidden">
+      <div className="min-h-screen bg-background text-foreground">
         <main className="container mx-auto p-4 md:p-8">
-          <div className="flex justify-end gap-2 mb-4 print:hidden">
-            <Button variant="outline" onClick={handlePrint}>
-              <Printer className="mr-2" /> Print
-            </Button>
-            <Button variant="outline" onClick={handleDownloadPdf}>
-              <FileDown className="mr-2" /> Download PDF
-            </Button>
-          </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1 space-y-8">
               <Card>
