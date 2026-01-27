@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -16,7 +17,7 @@ import { useAppContext } from '@/context/app-provider';
 import { useTranslation } from '@/hooks/use-translation';
 import { DashboardCard } from './dashboard-card';
 import { useAuth } from '@/hooks/use-auth';
-import { Loader2 } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const allMenuItems = [
     {
@@ -107,8 +108,14 @@ export function DashboardClient() {
   
   if (isLoading) {
       return (
-        <div className="flex h-[calc(100vh-80px)] w-full items-center justify-center bg-background">
-            <Loader2 className="h-16 w-16 animate-spin text-primary" />
+        <div className="container mx-auto p-4 md:p-8">
+            <Skeleton className="h-8 w-64 mb-2" />
+            <Skeleton className="h-5 w-48 mb-8" />
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {[...Array(8)].map((_, i) => (
+                    <Skeleton key={i} className="h-48 w-full" />
+                ))}
+            </div>
         </div>
       );
   }

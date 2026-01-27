@@ -4,6 +4,7 @@
 import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
 import { useAppContext } from '@/context/app-provider';
+import Image from 'next/image';
 
 type ReportWrapperProps = {
   title: string;
@@ -28,7 +29,7 @@ export function ReportWrapper({ title, date, logoSrc, themeColor = '#333333', qr
         dir={useKurdish ? 'rtl' : 'ltr'}
     >
         {settings?.printHeaderImage && (
-            <div className="relative w-full h-24 mb-4">
+            <div className="relative w-full h-28 mb-6">
                 <img src={settings.printHeaderImage} alt="Report Header" style={{ objectFit: 'contain', width: '100%', height: '100%' }} />
             </div>
         )}

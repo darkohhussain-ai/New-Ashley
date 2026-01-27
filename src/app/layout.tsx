@@ -15,6 +15,8 @@ import { usePathname } from 'next/navigation';
 import { FirebaseClientProvider } from '@/firebase';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
+
 
 function CustomFontInjector() {
     const { settings } = useAppContext();
@@ -101,7 +103,16 @@ function AppContent({ children }: { children: React.ReactNode }) {
         };
     }, [language]);
     
-    const isAppReady = !isLoading;
+    if (isLoading) {
+        if (pathname === '/login') {
+            return (
+                <div className="flex min-h-screen items-center justify-center p-4">
+                    <Skeleton className="w-full max-w-sm h-96" />
+                </div>
+            )
+        }
+        return <SplashScreen />;
+    }
 
     return (
         <>
@@ -110,14 +121,10 @@ function AppContent({ children }: { children: React.ReactNode }) {
             {!isLoginPage && <MainBackground />}
             {!isLoginPage && <SystemCornerLogo />}
             
-            {isAppReady ? (
-                <>
-                    {!isLoginPage && <AppHeader />}
-                    <div key={pathname} className="animate-fade-in-down">
-                        {children}
-                    </div>
-                </>
-            ) : <SplashScreen />}
+            {!isLoginPage && <AppHeader />}
+            <div key={pathname} className="animate-fade-in-down">
+                {children}
+            </div>
         </>
     );
 }
