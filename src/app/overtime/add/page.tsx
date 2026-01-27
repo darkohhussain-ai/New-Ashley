@@ -22,7 +22,7 @@ import { useTranslation } from '@/hooks/use-translation';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { ReportWrapper } from '@/components/reports/ReportWrapper';
+import { OvertimeReportPdf } from '@/components/reports/OvertimeReportPdf';
 
 
 const formatCurrency = (amount: number) => {
@@ -210,50 +210,30 @@ export default function AddOvertimePage() {
 
   return (
     <>
-    <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-      <div ref={pdfRef}>
+      <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+        <div ref={pdfRef}>
+          {selectedDate && (
+            <OvertimeReportPdf
+              records={overtimeRecords}
+              date={selectedDate}
+              settings={settings}
+              getEmployeeName={getEmployeeName}
+            />
+          )}
+        </div>
+      </div>
+      <div className="hidden print:block">
         {selectedDate && (
-          <ReportWrapper
-              title={t('daily_overtime_report')}
-              date={format(selectedDate, 'PPP')}
-              logoSrc={pdfSettings.report.logo ?? appLogo}
-              themeColor={pdfSettings.report.reportColors?.overtime}
-              qrCodeData={typeof window !== 'undefined' ? `${window.location.origin}/overtime/add?date=${formatISO(selectedDate)}` : ''}
-          >
-              <Table>
-                  <TableHeader>
-                      <TableRow className="bg-gray-100">
-                          <TableHead>{t('employee')}</TableHead>
-                          <TableHead className="text-center">{t('overtime_hours')}</TableHead>
-                          <TableHead className="text-center">{t('salary')}</TableHead>
-                          <TableHead>{t('notes')}</TableHead>
-                      </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                      {overtimeRecords.map((record, index) => (
-                          <TableRow key={record.id} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
-                              <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{getEmployeeName(record.employeeId, language === 'ku')}</TableCell>
-                              <TableCell className="text-center">{record.hours.toFixed(2)}</TableCell>
-                              <TableCell className="text-center">{formatCurrency(record.totalAmount)}</TableCell>
-                              <TableCell>{record.notes || t('na')}</TableCell>
-                          </TableRow>
-                      ))}
-                  </TableBody>
-                  <TableFooter>
-                      <TableRow className="bg-gray-200">
-                          <TableCell colSpan={1} className="font-semibold text-right">{t('total')}</TableCell>
-                          <TableCell className="text-center font-semibold">{totalHours.toFixed(2)} {t('hours_short')}</TableCell>
-                          <TableCell className="text-center font-semibold text-primary">{formatCurrency(totalAmount)}</TableCell>
-                          <TableCell></TableCell>
-                      </TableRow>
-                  </TableFooter>
-              </Table>
-          </ReportWrapper>
+            <OvertimeReportPdf
+                records={overtimeRecords}
+                date={selectedDate}
+                settings={settings}
+                getEmployeeName={getEmployeeName}
+            />
         )}
       </div>
-    </div>
-    <div className="h-[calc(100vh-80px)] flex flex-col">
-      <header className="bg-card border-b p-4 print:hidden">
+    <div className="h-[calc(100vh-80px)] flex flex-col print:hidden">
+      <header className="bg-card border-b p-4">
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button variant="outline" size="icon" asChild>
@@ -292,7 +272,7 @@ export default function AddOvertimePage() {
 
       <main className="container mx-auto p-4 md:p-8 flex-1 overflow-y-auto">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-1 print:hidden">
+            <div className="lg:col-span-1">
                 <Card>
                 <CardHeader>
                     <CardTitle>{t('add_overtime_record')}</CardTitle>

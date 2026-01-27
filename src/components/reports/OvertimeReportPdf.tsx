@@ -1,97 +1,75 @@
-'use client';
 
-import { Employee, Expense, ExpenseReport, AllPdfSettings } from '@/lib/types';
+'use client';
+import { Overtime, AppSettings } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { format, parseISO } from 'date-fns';
-import { useTranslation } from '@/hooks/use-translation';
-import { ReportWrapper } from '@/components/reports/ReportWrapper';
 import { useMemo } from 'react';
+import { useTranslation } from '@/hooks/use-translation';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'IQD', maximumFractionDigits: 0 }).format(amount);
 
-type ExpenseReportPdfProps = {
-  report: ExpenseReport;
-  items: Expense[];
-  employees: Employee[];
-  settings: AllPdfSettings;
-};
+export const OvertimeReportPdf = ({ records, date, settings, getEmployeeName }: { records: Overtime[], date: Date, settings: AppSettings, getEmployeeName: (id: string, useKurdish?: boolean) => string }) => {
+    const { t, language } = useTranslation();
+    const useKurdish = language === 'ku';
 
-export function ExpenseReportPdf({ report, items, employees, settings }: ExpenseReportPdfProps) {
-  const { t, language } = useTranslation();
+    const { totalHours, totalAmount } = useMemo(() => {
+        return records.reduce(
+            (acc, record) => {
+                acc.totalHours += record.hours;
+                acc.totalAmount += record.totalAmount;
+                return acc;
+            }, { totalHours: 0, totalAmount: 0 });
+    }, [records]);
 
-  const getEmployeeName = (employeeId: string, useKurdish: boolean = false) => {
-    const employee = employees.find(e => e.id === employeeId);
-    if (!employee) return t('unknown');
-    return useKurdish && employee.kurdishName ? employee.kurdishName : employee.name;
-  };
-  
-  const groupedExpenses = useMemo(() => {
-    if (!items || !employees) return [];
-    
-    const groups: Record<string, { employeeName: string; expenses: Expense[]; total: number }> = {};
-    
-    items.forEach(exp => {
-      if (!groups[exp.employeeId]) {
-        groups[exp.employeeId] = {
-          employeeName: getEmployeeName(exp.employeeId, language === 'ku'),
-          expenses: [],
-          total: 0
-        };
-      }
-      groups[exp.employeeId].expenses.push(exp);
-      groups[exp.employeeId].total += exp.amount;
-    });
+    return (
+        <div className="bg-white text-black p-8 font-sans" style={{ fontFamily: settings.fontFamily || 'Arial' }} dir={useKurdish ? 'rtl' : 'ltr'}>
+            {settings?.printHeaderImage && (
+                <div className="relative w-full h-28 mb-6">
+                    <img src={settings.printHeaderImage} alt="Report Header" style={{ objectFit: 'contain', width: '100%', height: '100%' }} />
+                </div>
+            )}
 
-    return Object.values(groups).sort((a,b) => b.total - a.total);
-  }, [items, employees, language, getEmployeeName, t]);
+            <div className="text-center my-8">
+                <h1 className="text-2xl font-bold" style={{ color: settings.pdfSettings.report.reportColors?.overtime || '#f97316' }}>
+                    {t('daily_overtime_report')}
+                </h1>
+                <p className="text-gray-500 mt-1">{format(date, 'PPPP')}</p>
+            </div>
 
-  return (
-    <ReportWrapper
-      title={report.reportName}
-      date={format(parseISO(report.reportDate), 'PPP')}
-      logoSrc={settings.report.logo}
-      themeColor={settings.report.reportColors?.expense || '#3b82f6'}
-    >
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-base font-medium mb-2">{t('summary_by_employee')}</h2>
-          <Table className="pdf-table">
-            <TableHeader><TableRow><TableHead>{t('employee')}</TableHead><TableHead className="text-right">{t('total_amount')}</TableHead></TableRow></TableHeader>
-            <TableBody>
-              {groupedExpenses.map((group, index) => (
-                <TableRow key={group.employeeName}>
-                  <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'} className="py-1">{group.employeeName}</TableCell>
-                  <TableCell className="text-right py-1">{formatCurrency(group.total)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-             <TableFooter>
-                <TableRow>
-                    <TableCell className="text-right font-medium">{t('grand_total')}</TableCell>
-                    <TableCell className="text-right font-medium">{formatCurrency(report.totalAmount)}</TableCell>
-                </TableRow>
-            </TableFooter>
-          </Table>
-        </div>
-        {items.length > 0 && (
-          <div>
-            <h2 className="text-base font-medium mb-2">{t('all_transactions')}</h2>
-            <Table className="pdf-table">
-              <TableHeader><TableRow><TableHead>{t('employee')}</TableHead><TableHead>{t('expense_type')}</TableHead><TableHead>{t('notes')}</TableHead><TableHead className="text-right">{t('amount')}</TableHead></TableRow></TableHeader>
-              <TableBody>
-                {items.sort((a,b) => getEmployeeName(a.employeeId).localeCompare(getEmployeeName(b.employeeId))).map((item, index) => (
-                  <TableRow key={item.id}>
-                    <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'} className="py-1">{getEmployeeName(item.employeeId, language === 'ku')}</TableCell>
-                    <TableCell className="py-1 text-xs">{t(item.expenseType.toLowerCase().replace(/[\s()]/g, '_'))}{item.expenseSubType ? ` (${t(item.expenseSubType.toLowerCase().replace(/\s/g, '_'))})` : ''}</TableCell>
-                    <TableCell className="text-gray-600 py-1 text-xs">{item.notes || t('na')}</TableCell>
-                    <TableCell className="text-right py-1">{formatCurrency(item.amount)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>{t('employee')}</TableHead>
+                        <TableHead className="text-center">{t('overtime_hours')}</TableHead>
+                        <TableHead className="text-center">{t('salary')}</TableHead>
+                        <TableHead>{t('notes')}</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {records.map(record => (
+                        <TableRow key={record.id}>
+                            <TableCell>{getEmployeeName(record.employeeId, useKurdish)}</TableCell>
+                            <TableCell className="text-center">{record.hours.toFixed(2)}</TableCell>
+                            <TableCell className="text-center">{formatCurrency(record.totalAmount)}</TableCell>
+                            <TableCell>{record.notes || t('na')}</TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+                <TableFooter>
+                    <TableRow className="bg-gray-100 font-bold">
+                        <TableCell>{t('total')}</TableCell>
+                        <TableCell className="text-center">{totalHours.toFixed(2)}</TableCell>
+                        <TableCell className="text-center">{formatCurrency(totalAmount)}</TableCell>
+                        <TableCell></TableCell>
+                    </TableRow>
+                </TableFooter>
             </Table>
-          </div>
-        )}
-      </div>
-    </ReportWrapper>
-  );
-}
+            
+            {settings?.printFooterImage && (
+                <div className="relative w-full h-28 mt-10">
+                    <img src={settings.printFooterImage} alt="Report Footer" style={{ objectFit: 'contain', width: '100%', height: '100%' }} />
+                </div>
+            )}
+        </div>
+    );
+};
