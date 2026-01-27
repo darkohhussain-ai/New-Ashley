@@ -4,7 +4,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, Trash2, Calendar as CalendarIcon, User, Edit, Save, X, FileText, Truck, Printer, Loader2 } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Calendar as CalendarIcon, User, Edit, Save, X, FileText, Truck, Printer, Loader2, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -20,6 +20,9 @@ import { useAppContext } from '@/context/app-provider';
 import type { Bonus, AllPdfSettings } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { useAuth } from '@/hooks/use-auth';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import { BonusReportPdf } from '@/components/reports/BonusReportPdf';
 
 
 const formatCurrency = (amount: number) => {
@@ -40,6 +43,7 @@ export default function AddBonusPage() {
 
   const { employees, bonuses, setBonuses, settings } = useAppContext();
   const { salarySettings } = settings;
+  const pdfRef = useRef<HTMLDivElement>(null);
 
   const dateParam = searchParams.get('date');
   const isReadOnly = !hasPermission('page:admin');
@@ -174,12 +178,63 @@ export default function AddBonusPage() {
     window.print();
   };
   
+  const handleDownloadPdf = async () => {
+    if (!pdfRef.current || !selectedDate || dailyBonuses.length === 0) return;
+    const doc = new jsPDF();
+    
+    const canvas = await html2canvas(pdfRef.current, { 
+        scale: 2, 
+        useCORS: true, 
+        backgroundColor: 'white',
+        onclone: (document) => {
+            if (settings?.customFont && language === 'ku') {
+                const style = document.createElement('style');
+                style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${settings.customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
+                document.head.appendChild(style);
+            }
+        }
+    });
+
+    const imgData = canvas.toDataURL('image/png');
+    const pdfWidth = doc.internal.pageSize.getWidth();
+    const imgWidth = canvas.width;
+    const imgHeight = canvas.height;
+    const ratio = imgWidth / imgHeight;
+    const finalImgWidth = pdfWidth;
+    const finalImgHeight = finalImgWidth / ratio;
+
+    doc.addImage(imgData, 'PNG', 0, 0, finalImgWidth, finalImgHeight);
+    doc.save(`bonus-report-${format(selectedDate, 'yyyy-MM-dd')}.pdf`);
+  };
+
   if (!selectedDate) {
     return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
   return (
     <>
+    <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+      <div ref={pdfRef}>
+        {selectedDate && (
+          <BonusReportPdf
+            records={dailyBonuses}
+            date={selectedDate}
+            settings={settings}
+            getEmployeeName={getEmployeeName}
+          />
+        )}
+      </div>
+    </div>
+    <div className="hidden print:block">
+      {selectedDate && (
+          <BonusReportPdf
+              records={dailyBonuses}
+              date={selectedDate}
+              settings={settings}
+              getEmployeeName={getEmployeeName}
+          />
+      )}
+    </div>
     <div className="min-h-screen bg-background text-foreground">
       <header className="bg-card border-b p-4 print:hidden">
         <div className="container mx-auto flex items-center justify-between">
@@ -227,6 +282,8 @@ export default function AddBonusPage() {
                 </div>
               </PopoverContent>
             </Popover>
+            <Button variant="outline" onClick={handlePrint} disabled={isLoading || dailyBonuses.length === 0}><Printer className="mr-2"/>{t('print')}</Button>
+            <Button variant="outline" onClick={handleDownloadPdf} disabled={isLoading || dailyBonuses.length === 0}><FileDown className="mr-2"/>PDF</Button>
           </div>
         </div>
       </header>
