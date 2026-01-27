@@ -38,6 +38,15 @@ import { useStorage } from "@/firebase";
 import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
 import { initialSettings } from "@/context/initial-data";
 
+const employeeRoles: Exclude<Employee['role'], null | undefined>[] = [
+    'Super Manager', 
+    'Manager', 
+    'IT', 
+    'Employee Supervisor', 
+    'Transport Supervisor', 
+    'Employee', 
+    'Marketing'
+];
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
