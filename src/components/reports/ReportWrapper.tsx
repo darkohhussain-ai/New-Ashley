@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useTranslation } from '@/hooks/use-translation';
@@ -9,13 +8,12 @@ import Image from 'next/image';
 type ReportWrapperProps = {
   title: string;
   date: string;
-  logoSrc: string | null;
   themeColor?: string;
   children: React.ReactNode;
   qrCodeData?: string;
 };
 
-export function ReportWrapper({ title, date, logoSrc, themeColor = '#333333', qrCodeData, children }: ReportWrapperProps) {
+export function ReportWrapper({ title, date, themeColor = '#333333', qrCodeData, children }: ReportWrapperProps) {
   const { t, language } = useTranslation();
   const { settings } = useAppContext();
   const useKurdish = language === 'ku';
@@ -50,7 +48,6 @@ export function ReportWrapper({ title, date, logoSrc, themeColor = '#333333', qr
                         />
                     </div>
                 )}
-                {logoSrc && <div style={{ height: '3rem', width: '6rem' }} className="flex items-center justify-end"><img src={logoSrc} alt="Company Logo" style={{ objectFit: 'contain', maxHeight: '100%', maxWidth: '100%' }} /></div>}
             </div>
         </header>
 

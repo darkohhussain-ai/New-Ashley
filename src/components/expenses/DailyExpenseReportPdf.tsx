@@ -1,9 +1,8 @@
-
 'use client';
 import { Expense, AppSettings, Employee } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
-import { format, parseISO } from 'date-fns';
-import { useMemo } from 'react';
+import { format } from 'date-fns';
+import { useMemo, Fragment } from 'react';
 import { useTranslation } from '@/hooks/use-translation';
 import { ReportWrapper } from '@/components/reports/ReportWrapper';
 
@@ -43,46 +42,47 @@ export function DailyExpenseReportPdf({ records, date, settings, getEmployeeName
     <ReportWrapper
       title={t('daily_expense_report')}
       date={format(date, 'PPPP')}
-      logoSrc={settings.appLogo}
       themeColor={settings.pdfSettings.report.reportColors?.expense || '#3b82f6'}
     >
-      <div className="space-y-4">
-        {groupedExpenses.map(group => (
-          <div key={group.employeeName} className="break-inside-avoid">
-            <h3 className="text-base font-medium mb-2">{group.employeeName}</h3>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t('expense_type')}</TableHead>
-                  <TableHead>{t('notes')}</TableHead>
-                  <TableHead className="text-right">{t('amount')}</TableHead>
+      <Table className="text-xs border">
+        <TableHeader>
+          <TableRow>
+            <TableHead className="border">{t('employee')}</TableHead>
+            <TableHead className="border">{t('expense_type')}</TableHead>
+            <TableHead className="border">{t('notes')}</TableHead>
+            <TableHead className="text-right border">{t('amount')}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {groupedExpenses.map(group => (
+            <Fragment key={group.employeeName}>
+              {group.expenses.map((exp, index) => (
+                <TableRow key={exp.id}>
+                  <TableCell className="border p-1">
+                    {index === 0 ? group.employeeName : ''}
+                  </TableCell>
+                  <TableCell className="border p-1">
+                    {t(exp.expenseType.toLowerCase().replace(/[\s()]/g, '_'))}
+                    {exp.expenseSubType ? ` (${t(exp.expenseSubType.toLowerCase().replace(/\s/g, '_'))})` : ''}
+                  </TableCell>
+                  <TableCell className="border p-1 text-muted-foreground">{exp.notes || 'N/A'}</TableCell>
+                  <TableCell className="text-right border p-1">{formatCurrency(exp.amount)}</TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {group.expenses.map(exp => (
-                  <TableRow key={exp.id}>
-                    <TableCell className="text-xs">{t(exp.expenseType.toLowerCase().replace(/[\s()]/g, '_'))}{exp.expenseSubType ? ` (${t(exp.expenseSubType.toLowerCase().replace(/\s/g, '_'))})` : ''}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{exp.notes || 'N/A'}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(exp.amount)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-              <TableFooter>
-                <TableRow>
-                  <TableCell colSpan={2} className="text-right font-bold">{t('total')}</TableCell>
-                  <TableCell className="text-right font-bold">{formatCurrency(group.total)}</TableCell>
-                </TableRow>
-              </TableFooter>
-            </Table>
-          </div>
-        ))}
-        <div className="flex justify-end pt-4 border-t-2 border-primary">
-          <div className="text-lg font-bold flex items-center gap-4">
-              <span>{t('grand_total')}:</span>
-              <span className="text-primary">{formatCurrency(grandTotal)}</span>
-          </div>
-        </div>
-      </div>
+              ))}
+              <TableRow className="bg-muted/50 font-semibold">
+                <TableCell colSpan={3} className="text-right border p-1">{group.employeeName} {t('total')}</TableCell>
+                <TableCell className="text-right border p-1">{formatCurrency(group.total)}</TableCell>
+              </TableRow>
+            </Fragment>
+          ))}
+        </TableBody>
+        <TableFooter>
+          <TableRow className="font-bold text-base bg-muted">
+            <TableCell colSpan={3} className="text-right border p-2">{t('grand_total')}</TableCell>
+            <TableCell className="text-right border p-2">{formatCurrency(grandTotal)}</TableCell>
+          </TableRow>
+        </TableFooter>
+      </Table>
     </ReportWrapper>
   );
 }

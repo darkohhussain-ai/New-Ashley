@@ -1,4 +1,3 @@
-
 'use client';
 import { Overtime, AppSettings } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
@@ -27,7 +26,6 @@ export const OvertimeReportPdf = ({ records, date, settings, getEmployeeName }: 
         <ReportWrapper
             title={t('daily_overtime_report')}
             date={format(date, 'PPPP')}
-            logoSrc={settings.appLogo}
             themeColor={settings.pdfSettings.report.reportColors?.overtime || '#f97316'}
         >
             <Table>

@@ -1,5 +1,3 @@
-
-
 'use client';
 import { ItemForTransfer, Transfer, PdfSettings, BranchColors } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -31,7 +29,6 @@ export const TransmitReportPdf = ({ transfer, items, settings, invoiceNumber, to
         <ReportWrapper
             title={finalTitle}
             date={formattedDate}
-            logoSrc={settings.logo}
             themeColor={themeColor}
         >
             <section className="grid grid-cols-2 gap-4 my-4 text-[10px] leading-snug">

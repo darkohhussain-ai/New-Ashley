@@ -1,5 +1,3 @@
-
-
 'use client';
 import { Employee, Expense, Overtime, Bonus, CashWithdrawal, PdfSettings } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
@@ -65,7 +63,7 @@ const OvertimeTablePdf = ({ title, data, total }: { title: string, data: Overtim
     );
 };
 
-export const AccountReportPdf = ({ employee, logoSrc, selectedDate, financials }: { employee: Employee, logoSrc: string | null, selectedDate: Date, financials: any }) => {
+export const AccountReportPdf = ({ employee, selectedDate, financials }: { employee: Employee, selectedDate: Date, financials: any }) => {
     const { t, language } = useTranslation();
     const displayName = language === 'ku' && employee.kurdishName ? employee.kurdishName : employee.name;
     const reportDate = selectedDate ? format(selectedDate, 'MMMM yyyy') : format(new Date(), 'MMMM yyyy');
@@ -74,7 +72,6 @@ export const AccountReportPdf = ({ employee, logoSrc, selectedDate, financials }
        <ReportWrapper
             title={t('employee_report')}
             date={reportDate}
-            logoSrc={logoSrc}
             themeColor="#2563eb" // a default blue
        >
             <div dir={language === 'ku' ? 'rtl' : 'ltr'}>

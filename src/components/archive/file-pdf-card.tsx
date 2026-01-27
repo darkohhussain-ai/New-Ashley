@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -12,11 +11,10 @@ type FileReportPdfProps = {
   items: Item[];
   employee: Employee;
   locations: StorageLocation[];
-  logoSrc: string | null;
   themeColor: string;
 };
 
-export function FilePdfCard({ file, items, employee, locations, logoSrc, themeColor }: FileReportPdfProps) {
+export function FilePdfCard({ file, items, employee, locations, themeColor }: FileReportPdfProps) {
     const { t } = useTranslation();
 
     const getLocationName = (id?: string) => locations?.find(l => l.id === id)?.name || 'N/A';
@@ -25,7 +23,6 @@ export function FilePdfCard({ file, items, employee, locations, logoSrc, themeCo
         <ReportWrapper
             title={file.storageName}
             date={file.date ? format(parseISO(file.date), 'PPP') : 'N/A'}
-            logoSrc={logoSrc}
             themeColor={themeColor}
         >
             <div className="grid grid-cols-2 gap-4 mb-6 text-xs">

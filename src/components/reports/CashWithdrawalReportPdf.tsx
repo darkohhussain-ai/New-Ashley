@@ -1,4 +1,3 @@
-
 'use client';
 import { CashWithdrawal, AppSettings } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
@@ -21,7 +20,6 @@ export const CashWithdrawalReportPdf = ({ records, date, settings, getEmployeeNa
         <ReportWrapper
             title={t('daily_cash_withdrawals')}
             date={format(date, 'PPPP')}
-            logoSrc={settings.appLogo}
             themeColor={settings.pdfSettings.report.reportColors?.withdrawal || '#ef4444'}
         >
             <Table>

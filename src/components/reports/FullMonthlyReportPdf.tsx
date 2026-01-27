@@ -39,7 +39,6 @@ export const FullMonthlyReportPdf = ({ records, date, settings, getEmployeeName 
         <ReportWrapper
             title={t('monthly_reports')}
             date={format(date, 'MMMM yyyy')}
-            logoSrc={settings.appLogo}
             themeColor={settings.pdfSettings.report.reportColors?.general}
         >
             <Table>
