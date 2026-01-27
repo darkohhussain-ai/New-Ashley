@@ -1,7 +1,6 @@
 
 'use client';
 
-import Image from 'next/image';
 import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
 import { useAppContext } from '@/context/app-provider';
@@ -38,16 +37,14 @@ export function ReportWrapper({ title, date, logoSrc, themeColor = '#333333', qr
              <div className="flex items-center gap-4">
                 {qrCodeData && (
                     <div className="relative w-16 h-16">
-                        <Image
+                        <img
                             src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrCodeData)}`}
                             alt="QR Code"
-                            fill
-                            className="object-contain"
-                            unoptimized
+                            style={{ objectFit: 'contain', width: '100%', height: '100%' }}
                         />
                     </div>
                 )}
-                {logoSrc && <div className="relative w-24 h-12"><Image src={logoSrc} alt="Company Logo" fill className="object-contain" unoptimized /></div>}
+                {logoSrc && <div style={{ height: '3rem', width: '6rem' }} className="flex items-center justify-end"><img src={logoSrc} alt="Company Logo" style={{ objectFit: 'contain', maxHeight: '100%', maxWidth: '100%' }} /></div>}
             </div>
         </header>
 
