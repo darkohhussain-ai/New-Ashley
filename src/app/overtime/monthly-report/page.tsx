@@ -15,6 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslation } from '@/hooks/use-translation';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { useToast } from '@/hooks/use-toast';
 
 
 const formatCurrency = (amount: number) => {
@@ -28,6 +29,7 @@ const formatCurrency = (amount: number) => {
 export default function MonthlyOvertimeReportPage() {
   const { t, language } = useTranslation();
   const { overtime, employees, settings, isLoading } = useAppContext();
+  const { toast } = useToast();
   
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -77,7 +79,7 @@ export default function MonthlyOvertimeReportPage() {
     window.print();
   };
 
-  const handleDownloadPdf = () => {
+  const handleDownloadPdf = async () => {
     if (isLoading || monthlyData.records.length === 0 || !selectedDate || !settings) return;
 
     const doc = new jsPDF();
@@ -88,7 +90,6 @@ export default function MonthlyOvertimeReportPage() {
 
     if (useKurdishFont) {
         try {
-            // Assumes customFont is a base64 encoded data URI string
             const fontBase64 = settings.customFont.split(',')[1];
             if (fontBase64) {
                 doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
@@ -100,31 +101,27 @@ export default function MonthlyOvertimeReportPage() {
         }
     }
     
-    autoTable(doc, {
-        body: [
-            [{
-                content: t('monthly_overtime_report'),
-                styles: {
-                    halign: 'center',
-                    fontSize: 18,
-                    textColor: themeColor,
-                    font: useKurdishFont ? fontName : 'helvetica',
-                }
-            }],
-            [{
-                content: format(selectedDate, 'MMMM yyyy'),
-                styles: {
-                    halign: 'center',
-                    fontSize: 11,
-                    textColor: 100,
-                    font: useKurdishFont ? fontName : 'helvetica',
-                }
-            }],
-        ],
-        theme: 'plain',
-        startY: 20,
-    });
-
+    const logoUrl = settings.pdfSettings.report.logo ?? settings.appLogo;
+    let logoData: string | null = null;
+    if (logoUrl) {
+        try {
+            const response = await fetch(logoUrl);
+            const blob = await response.blob();
+            logoData = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        } catch (e) {
+            console.error("Could not load logo for PDF:", e);
+            toast({
+                variant: "destructive",
+                title: "Could not load logo",
+                description: "The logo image could not be embedded in the PDF.",
+            });
+        }
+    }
 
     const head = [[t('employee'), t('total_hours'), t('total_amount')]];
     const body = monthlyData.summary.map(item => [
@@ -138,12 +135,17 @@ export default function MonthlyOvertimeReportPage() {
       monthlyData.totalHours.toFixed(2),
       formatCurrency(monthlyData.totalAmount),
     ]];
+    
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 14;
+
 
     autoTable(doc, {
       head,
       body,
       foot,
-      startY: (doc as any).lastAutoTable.finalY + 10,
+      startY: 40,
       theme: tableTheme,
       styles: {
         font: useKurdishFont ? fontName : 'helvetica',
@@ -169,16 +171,35 @@ export default function MonthlyOvertimeReportPage() {
         1: { halign: 'right' },
         2: { halign: 'right' },
       },
-      didDrawPage: (data: any) => {
-        if(useKurdishFont) {
-          doc.setFont(fontName);
+      didDrawPage: (data) => {
+        if (useKurdishFont) doc.setFont(fontName);
+        // Header
+        if (logoData) {
+            doc.addImage(logoData, 'PNG', margin, 15, 24, 12);
         }
+        doc.setFontSize(18);
+        doc.setTextColor(themeColor);
+        doc.text(t('monthly_overtime_report'), pageWidth / 2, 22, { align: 'center' });
+
+        doc.setFontSize(11);
+        doc.setTextColor(100);
+        doc.text(format(selectedDate, 'MMMM yyyy'), pageWidth / 2, 30, { align: 'center' });
+        
+        // Footer
+        const pageCount = doc.internal.getNumberOfPages();
         doc.setFontSize(8);
         doc.setTextColor(150);
         doc.text(
-          `Page ${data.pageNumber}`,
-          data.settings.margin.left,
-          doc.internal.pageSize.height - 10
+          `${t('page')} ${data.pageNumber} / ${pageCount}`,
+          pageWidth - margin,
+          pageHeight - 10,
+          { align: 'right' }
+        );
+        const footerText = settings.pdfSettings.report.footerText || "Generated by Ashley DRP System";
+        doc.text(
+            footerText,
+            margin,
+            pageHeight - 10
         );
       }
     });
