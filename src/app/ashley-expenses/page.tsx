@@ -1,23 +1,22 @@
 
 'use client';
 
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import Link from 'next/link';
-import { CreditCard, Clock, Gift, Banknote, Settings, FileText, Calendar, Wallet, BarChart, ArrowLeft, Printer, FileDown } from 'lucide-react';
+import { ArrowLeft, Calendar as CalendarIcon, Printer, FileDown } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardTitle, CardHeader, CardDescription } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/hooks/use-translation';
-import { useAuth } from '@/hooks/use-auth';
 import withAuth from '@/hooks/withAuth';
 import { useAppContext } from '@/context/app-provider';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Progress } from '@/components/ui/progress';
 import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { Button } from '@/components/ui/button';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { ReportWrapper } from '@/components/reports/ReportWrapper';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -27,23 +26,12 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
-
 function AshleyExpensesDashboard() {
-  const { t } = useTranslation();
-  const { hasPermission } = useAuth();
-  const { expenses, overtime, bonuses, withdrawals } = useAppContext();
-  const contentRef = useRef<HTMLDivElement>(null);
+  const { t, language } = useTranslation();
+  const { expenses, overtime, bonuses, withdrawals, settings } = useAppContext();
+  const printRef = useRef<HTMLDivElement>(null);
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  
-  const menuItems = [
-    { title: t('expenses'), icon: FileText, href: "/expenses", permission: 'page:ashley-expenses:expenses' },
-    { title: t('overtime'), icon: Clock, href: "/overtime", permission: 'page:ashley-expenses:overtime' },
-    { title: t('bonuses'), icon: Gift, href: "/bonuses", permission: 'page:ashley-expenses:bonuses' },
-    { title: t('cash_withdrawals'), icon: Banknote, href: "/cash-withdrawal", permission: 'page:ashley-expenses:withdrawals' },
-    { title: t('monthly_reports'), icon: Calendar, href: "/monthly-report", permission: 'page:ashley-expenses:reports' },
-    { title: t('settings'), icon: Settings, href: "/ashley-expenses-settings", permission: 'page:ashley-expenses:settings' }
-  ];
   
   const monthlyTotals = useMemo(() => {
     if (!selectedDate) return { expenses: 0, overtime: 0, bonuses: 0, withdrawals: 0 };
@@ -65,10 +53,10 @@ function AshleyExpensesDashboard() {
   }, [selectedDate, expenses, overtime, bonuses, withdrawals]);
   
   const chartData = [
-      { name: t('expenses'), total: monthlyTotals.expenses, fill: 'hsl(var(--chart-1))' },
-      { name: t('overtime'), total: monthlyTotals.overtime, fill: 'hsl(var(--chart-2))' },
-      { name: t('bonuses'), total: monthlyTotals.bonuses, fill: 'hsl(var(--chart-3))' },
-      { name: t('cash_withdrawals'), total: monthlyTotals.withdrawals, fill: 'hsl(var(--chart-4))' },
+      { name: t('expenses'), total: monthlyTotals.expenses, fill: settings.pdfSettings.report.reportColors?.expense || 'hsl(var(--chart-1))' },
+      { name: t('overtime'), total: monthlyTotals.overtime, fill: settings.pdfSettings.report.reportColors?.overtime || 'hsl(var(--chart-2))' },
+      { name: t('bonuses'), total: monthlyTotals.bonuses, fill: settings.pdfSettings.report.reportColors?.bonus || 'hsl(var(--chart-3))' },
+      { name: t('cash_withdrawals'), total: monthlyTotals.withdrawals, fill: settings.pdfSettings.report.reportColors?.withdrawal || 'hsl(var(--chart-4))' },
   ];
   
   const grandTotal = chartData.reduce((sum, item) => sum + item.total, 0);
@@ -76,27 +64,96 @@ function AshleyExpensesDashboard() {
   const handlePrint = () => window.print();
 
   const handleDownloadPdf = async () => {
-    if (!contentRef.current) return;
-    const canvas = await html2canvas(contentRef.current, { scale: 2 });
+    if (!printRef.current || !selectedDate) return;
+    const canvas = await html2canvas(printRef.current, {
+      scale: 2,
+      useCORS: true,
+      onclone: (document) => {
+        if (settings?.customFont && language === 'ku') {
+            const style = document.createElement('style');
+            style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${settings.customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
+            document.head.appendChild(style);
+        }
+      }
+    });
     const imgData = canvas.toDataURL('image/png');
     const pdf = new jsPDF('p', 'px', 'a4');
     const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-    const imgWidth = canvas.width;
-    const imgHeight = canvas.height;
-    const ratio = imgWidth / imgHeight;
-    let finalImgWidth = pdfWidth;
-    let finalImgHeight = finalImgWidth / ratio;
-    if (finalImgHeight > pdfHeight) {
-      finalImgHeight = pdfHeight;
-      finalImgWidth = finalImgHeight * ratio;
-    }
-    pdf.addImage(imgData, 'PNG', 0, 0, finalImgWidth, finalImgHeight);
-    pdf.save(`ashley-expenses-summary-${format(selectedDate || new Date(), 'yyyy-MM')}.pdf`);
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfWidth * (canvas.height / canvas.width));
+    pdf.save(`ashley-expenses-summary-${format(selectedDate, 'yyyy-MM')}.pdf`);
   };
 
+  const DashboardContent = () => (
+    <Card>
+      <CardHeader>
+          <CardTitle>{t('monthly_overview')}</CardTitle>
+          <CardDescription>{t('monthly_overview_desc', { month: selectedDate ? format(selectedDate, 'MMMM yyyy') : ''})}</CardDescription>
+      </CardHeader>
+      <CardContent>
+          {grandTotal > 0 ? (
+              <Table>
+                  <TableHeader>
+                      <TableRow>
+                          <TableHead>Category</TableHead>
+                          <TableHead>Total Amount</TableHead>
+                          <TableHead className="w-[40%]">Visualization</TableHead>
+                      </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                      {chartData.map(item => {
+                          const percentage = grandTotal > 0 ? (item.total / grandTotal) * 100 : 0;
+                          return (
+                              <TableRow key={item.name}>
+                                  <TableCell>{item.name}</TableCell>
+                                  <TableCell>{formatCurrency(item.total)}</TableCell>
+                                  <TableCell>
+                                      <div className="flex items-center gap-2">
+                                          <Progress value={percentage} style={{ '--progress-indicator-color': item.fill } as React.CSSProperties} />
+                                          <span className="text-xs text-muted-foreground">{percentage.toFixed(0)}%</span>
+                                      </div>
+                                  </TableCell>
+                              </TableRow>
+                          );
+                      })}
+                  </TableBody>
+              </Table>
+          ) : (
+              <p className="text-center text-muted-foreground py-8">{t('no_records_found_for_month', {month: selectedDate ? format(selectedDate, 'MMMM yyyy') : t('the_selected_month')})}</p>
+          )}
+      </CardContent>
+   </Card>
+  );
+
   return (
-    <div className="h-[calc(100vh-80px)] flex flex-col print:h-auto">
+    <>
+      <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+        <div ref={printRef} style={{ width: '700px' }}>
+          {selectedDate && (
+            <ReportWrapper
+              title={t('monthly_overview')}
+              date={format(selectedDate, 'MMMM yyyy')}
+              logoSrc={settings.appLogo}
+              themeColor={settings.pdfSettings.report.reportColors?.general}
+            >
+              <DashboardContent />
+            </ReportWrapper>
+          )}
+        </div>
+      </div>
+      <div className="hidden print:block">
+        {selectedDate && (
+          <ReportWrapper
+            title={t('monthly_overview')}
+            date={format(selectedDate, 'MMMM yyyy')}
+            logoSrc={settings.appLogo}
+            themeColor={settings.pdfSettings.report.reportColors?.general}
+          >
+            <DashboardContent />
+          </ReportWrapper>
+        )}
+      </div>
+
+      <div className="h-[calc(100vh-80px)] flex flex-col">
        <header className="bg-card border-b p-4 print:hidden">
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -113,7 +170,7 @@ function AshleyExpensesDashboard() {
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant={"outline"} className={cn("w-48 justify-start text-left font-normal", !selectedDate && "text-muted-foreground")}>
-                      <Calendar className="mr-2 h-4 w-4" />
+                      <CalendarIcon className="mr-2 h-4 w-4" />
                       {selectedDate ? format(selectedDate, "MMMM yyyy") : <span>{t('pick_a_month')}</span>}
                     </Button>
                   </PopoverTrigger>
@@ -124,59 +181,11 @@ function AshleyExpensesDashboard() {
             </div>
         </div>
       </header>
-      <main ref={contentRef} className='container mx-auto p-4 md:p-8 flex-1 overflow-y-auto'>
-         <Card className="mb-8">
-            <CardHeader>
-                <CardTitle>{t('monthly_overview')}</CardTitle>
-                <CardDescription>{t('monthly_overview_desc', { month: selectedDate ? format(selectedDate, 'MMMM yyyy') : ''})}</CardDescription>
-            </CardHeader>
-            <CardContent>
-                {grandTotal > 0 ? (
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Category</TableHead>
-                                <TableHead>Total Amount</TableHead>
-                                <TableHead className="w-[40%]">Visualization</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {chartData.map(item => {
-                                const percentage = grandTotal > 0 ? (item.total / grandTotal) * 100 : 0;
-                                return (
-                                    <TableRow key={item.name}>
-                                        <TableCell>{item.name}</TableCell>
-                                        <TableCell>{formatCurrency(item.total)}</TableCell>
-                                        <TableCell>
-                                            <div className="flex items-center gap-2">
-                                                <Progress value={percentage} className="h-2" style={{'--chart-1': item.fill} as React.CSSProperties} />
-                                                <span className="text-xs text-muted-foreground">{percentage.toFixed(0)}%</span>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                );
-                            })}
-                        </TableBody>
-                    </Table>
-                ) : (
-                    <p className="text-center text-muted-foreground py-8">{t('no_records_found_for_month', {month: selectedDate ? format(selectedDate, 'MMMM yyyy') : t('the_selected_month')})}</p>
-                )}
-            </CardContent>
-         </Card>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 print:hidden">
-          {menuItems.filter(item => hasPermission(item.permission)).map((item) => (
-            <Link key={item.title} href={item.href} className="group block" passHref>
-                <Card className="h-48 flex flex-col justify-between p-6 transition-all hover:shadow-lg hover:-translate-y-1 border-2 border-transparent hover:border-primary/50">
-                    <div>
-                        <item.icon className={cn("w-8 h-8 mb-4 text-primary")} />
-                        <CardTitle className="text-lg">{item.title}</CardTitle>
-                    </div>
-                </Card>
-            </Link>
-          ))}
-        </div>
+      <main className='container mx-auto p-4 md:p-8 flex-1 overflow-y-auto'>
+        <DashboardContent />
       </main>
     </div>
+    </>
   );
 }
 

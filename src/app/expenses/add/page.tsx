@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
@@ -22,8 +21,8 @@ import type { Employee, Expense, ExpenseReport, AllPdfSettings } from '@/lib/typ
 import { useTranslation } from '@/hooks/use-translation';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import { ExpenseReportPdf } from '@/components/expenses/ExpenseReportPdf';
+import html2canvas from 'html2canvas';
+import { DailyExpenseReportPdf } from '@/components/expenses/DailyExpenseReportPdf';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'IQD', maximumFractionDigits: 0 }).format(amount);
 
@@ -224,62 +223,25 @@ export default function AddExpensePage() {
     window.print();
   }
 
-  const handleDownloadPdf = () => {
-    if (!dailyReport || !settings) return;
-    const doc = new jsPDF();
-    const { pdfSettings, customFont } = settings;
-    const useKurdishFont = language === 'ku' && customFont;
-    const themeColor = pdfSettings.report.reportColors?.expense || '#3b82f6';
-    const fontName = "CustomFont";
-
-    if (useKurdishFont) {
-        try {
-            const fontBase64 = customFont.split(',')[1];
-            if (fontBase64) {
-                doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
-                doc.addFont(`${fontName}.ttf`, fontName, 'normal');
-                doc.setFont(fontName);
+  const handleDownloadPdf = async () => {
+    if (!reportPdfRef.current || !date) return;
+    const canvas = await html2canvas(reportPdfRef.current, {
+        scale: 2,
+        useCORS: true,
+        onclone: (document) => {
+            if (settings?.customFont && language === 'ku') {
+                const style = document.createElement('style');
+                style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${settings.customFont}); } body, table, div, p, h1, h2, h3, span { font-family: 'CustomPdfFont' !important; }`;
+                document.head.appendChild(style);
             }
-        } catch (e) {
-            console.error("Error adding custom font to PDF:", e);
-        }
-    }
-
-    autoTable(doc, {
-        body: [
-            [{ content: dailyReport.reportName, styles: { halign: 'center', fontSize: 18, textColor: themeColor, font: useKurdishFont ? fontName : 'helvetica' } }],
-            [{ content: format(parseISO(dailyReport.reportDate), 'PPP'), styles: { halign: 'center', fontSize: 11, textColor: 100, font: useKurdishFont ? fontName : 'helvetica' } }],
-        ],
-        theme: 'plain',
-        startY: 20,
-    });
-
-    autoTable(doc, {
-        head: [[t('employee'), t('expense_type'), t('notes'), t('amount')]],
-        body: dailyExpenses.map(item => [
-            getEmployeeName(item.employeeId, useKurdishFont),
-            `${t(item.expenseType.toLowerCase().replace(/[\s()]/g, '_'))}${item.expenseSubType ? ` (${t(item.expenseSubType.toLowerCase().replace(/\s/g, '_'))})` : ''}`,
-            item.notes || '',
-            formatCurrency(item.amount),
-        ]),
-        foot: [[
-            { content: t('grand_total'), colSpan: 3, styles: { halign: 'right', fontStyle: 'bold' } },
-            { content: formatCurrency(grandTotal), styles: { halign: 'right', fontStyle: 'bold' } },
-        ]],
-        startY: (doc as any).lastAutoTable.finalY + 10,
-        theme: pdfSettings.report.tableTheme || 'striped',
-        styles: { font: useKurdishFont ? fontName : 'helvetica', valign: 'middle', cellPadding: 3, fontSize: 8 },
-        headStyles: { fillColor: themeColor, textColor: 255, fontStyle: 'bold', halign: 'center', font: useKurdishFont ? fontName : 'helvetica' },
-        footStyles: { fillColor: [230, 230, 230], textColor: 0, fontStyle: 'bold' },
-        columnStyles: {
-            0: { halign: useKurdishFont ? 'right' : 'left' },
-            1: { halign: useKurdishFont ? 'right' : 'left' },
-            2: { halign: useKurdishFont ? 'right' : 'left' },
-            3: { halign: 'right' },
         },
     });
 
-    doc.save(`${dailyReport.reportName}.pdf`);
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF('p', 'px', 'a4');
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfWidth * (canvas.height / canvas.width));
+    pdf.save(`daily-expense-report-${format(date, 'yyyy-MM-dd')}.pdf`);
   };
 
   const handleSaveAndRefresh = () => {
@@ -310,194 +272,205 @@ export default function AddExpensePage() {
 
   return (
     <>
-        <div className="min-h-screen bg-background text-foreground p-4 md:p-8 print:p-0">
-            <header className="flex items-center justify-between gap-4 mb-8 print:hidden">
-                <div className="flex items-center gap-4">
-                <Button variant="outline" size="icon" asChild>
-                    <Link href="/expenses"><ArrowLeft /></Link>
-                </Button>
-                <h1 className="text-2xl md:text-3xl">{t('add_daily_expense')}</h1>
-                </div>
-                <div className="flex items-center gap-2">
-                    <Label className="hidden sm:block">{t('date')}:</Label>
-                    <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                    <PopoverTrigger asChild>
-                        <Button variant="outline" className={cn("w-48 justify-start text-left", !date && "text-muted-foreground")}>
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {date ? format(date, 'PPP') : <span>{t('pick_a_date')}</span>}
+        <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+            <div ref={reportPdfRef} style={{ width: '700px' }}>
+                {date && <DailyExpenseReportPdf records={dailyExpenses} date={date} settings={settings} getEmployeeName={getEmployeeName} />}
+            </div>
+        </div>
+        <div className="hidden print:block">
+             {date && <DailyExpenseReportPdf records={dailyExpenses} date={date} settings={settings} getEmployeeName={getEmployeeName} />}
+        </div>
+        <div className="min-h-screen bg-background text-foreground">
+            <header className="bg-card border-b p-4 print:hidden">
+                <div className="container mx-auto flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <Button variant="outline" size="icon" asChild>
+                            <Link href="/expenses"><ArrowLeft /></Link>
                         </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                        <Calendar 
-                            mode="single" 
-                            selected={date} 
-                            onSelect={(d) => {
-                                if(d) setDate(d);
-                                setIsCalendarOpen(false);
-                            }}
-                            captionLayout="dropdown-nav" fromYear={2020} toYear={2040} initialFocus 
-                        />
-                         <div className="p-2 border-t">
-                            <Input 
-                                type="text"
-                                placeholder="yyyy-mm-dd"
-                                value={date ? format(date, 'yyyy-MM-dd') : ''}
-                                onChange={(e) => {
-                                    try {
-                                        const newDate = parseISO(e.target.value);
-                                        if (!isNaN(newDate.getTime())) {
-                                            setDate(newDate);
-                                        }
-                                    } catch {}
+                        <h1 className="text-xl">{t('add_daily_expense')}</h1>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Label className="hidden sm:block">{t('date')}:</Label>
+                        <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                        <PopoverTrigger asChild>
+                            <Button variant="outline" className={cn("w-48 justify-start text-left", !date && "text-muted-foreground")}>
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {date ? format(date, 'PPP') : <span>{t('pick_a_date')}</span>}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                            <Calendar 
+                                mode="single" 
+                                selected={date} 
+                                onSelect={(d) => {
+                                    if(d) setDate(d);
+                                    setIsCalendarOpen(false);
                                 }}
+                                captionLayout="dropdown-nav" fromYear={2020} toYear={2040} initialFocus 
                             />
-                        </div>
-                    </PopoverContent>
-                    </Popover>
-                    <Button variant="outline" onClick={handlePrint} disabled={isLoading || dailyExpenses.length === 0}><Printer className="mr-2"/>{t('print')}</Button>
-                    <Button variant="outline" onClick={handleDownloadPdf} disabled={isLoading || dailyExpenses.length === 0}><FileDown className="mr-2"/>PDF</Button>
-                    <Button onClick={handleSaveAndRefresh}><RefreshCw className="mr-2 h-4 w-4" /> {t('save_and_refresh')}</Button>
+                            <div className="p-2 border-t">
+                                <Input 
+                                    type="text"
+                                    placeholder="yyyy-mm-dd"
+                                    value={date ? format(date, 'yyyy-MM-dd') : ''}
+                                    onChange={(e) => {
+                                        try {
+                                            const newDate = parseISO(e.target.value);
+                                            if (!isNaN(newDate.getTime())) {
+                                                setDate(newDate);
+                                            }
+                                        } catch {}
+                                    }}
+                                />
+                            </div>
+                        </PopoverContent>
+                        </Popover>
+                        <Button variant="outline" onClick={handlePrint} disabled={isLoading || dailyExpenses.length === 0}><Printer className="mr-2"/>{t('print')}</Button>
+                        <Button variant="outline" onClick={handleDownloadPdf} disabled={isLoading || dailyExpenses.length === 0}><FileDown className="mr-2"/>PDF</Button>
+                    </div>
                 </div>
             </header>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-1 print:hidden">
-                <Card>
-                    <CardHeader>
-                    <CardTitle>{editingExpense ? t('edit_expense') : t('new_expense_entry')}</CardTitle>
-                    <CardDescription>{editingExpense ? t('update_expense_details') : t('add_new_expense_for_date')}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                     <div className="space-y-2">
-                        <Label htmlFor="report-select">{t('or_load_from_report')}</Label>
-                        <Select onValueChange={handleReportSelect}>
-                            <SelectTrigger id="report-select">
-                                <SelectValue placeholder={t('select_existing_report')} />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {sortedExpenseReports.map(report => (
-                                    <SelectItem key={report.id} value={report.id}>
-                                        {report.reportName}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="employee">{t('employee')}</Label>
-                        <Select value={selectedEmployee} onValueChange={setSelectedEmployee} disabled={isSaving}>
-                        <SelectTrigger><SelectValue placeholder={t('select_an_employee')} /></SelectTrigger>
-                        <SelectContent>{warehouseEmployees.map(e => <SelectItem key={e.id} value={e.id} dir={language === 'ku' ? 'rtl' : 'ltr'}>{language==='ku' && e.kurdishName ? e.kurdishName : e.name}</SelectItem>)}</SelectContent>
-                        </Select>
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="expense-type">{t('expense_type')}</Label>
-                        <Select value={expenseType} onValueChange={(v) => { setExpenseType(v); setExpenseSubType(''); }} disabled={isSaving}>
-                            <SelectTrigger><SelectValue placeholder={t('select_expense_type')} /></SelectTrigger>
-                            <SelectContent>
-                                {mainExpenseTypes.map(type => <SelectItem key={type} value={type}>{t(type.toLowerCase().replace(/[\s()]/g, '_'))}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    {expenseType === 'Taxi Expenses' && (
+            <main className="container mx-auto p-4 md:p-8">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div className="lg:col-span-1 print:hidden">
+                    <Card>
+                        <CardHeader>
+                        <CardTitle>{editingExpense ? t('edit_expense') : t('new_expense_entry')}</CardTitle>
+                        <CardDescription>{editingExpense ? t('update_expense_details') : t('add_new_expense_for_date')}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="expense-sub-type">{t('taxi_sub_type')}</Label>
-                            <Select value={expenseSubType} onValueChange={setExpenseSubType} disabled={isSaving}>
-                                <SelectTrigger id="expense-sub-type"><SelectValue placeholder={t('select_taxi_sub_type')} /></SelectTrigger>
+                            <Label htmlFor="report-select">{t('or_load_from_report')}</Label>
+                            <Select onValueChange={handleReportSelect}>
+                                <SelectTrigger id="report-select">
+                                    <SelectValue placeholder={t('select_existing_report')} />
+                                </SelectTrigger>
                                 <SelectContent>
-                                    {taxiSubTypes.map(type => <SelectItem key={type} value={type}>{t(type.toLowerCase().replace(/\s/g, '_'))}</SelectItem>)}
+                                    {sortedExpenseReports.map(report => (
+                                        <SelectItem key={report.id} value={report.id}>
+                                            {report.reportName}
+                                        </SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
                         </div>
-                    )}
-                    <div className="space-y-2">
-                        <Label htmlFor="amount">{t('amount_iqd')}</Label>
-                        <Input id="amount" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="e.g., 25000" disabled={isSaving}/>
+                        <div className="space-y-2">
+                            <Label htmlFor="employee">{t('employee')}</Label>
+                            <Select value={selectedEmployee} onValueChange={setSelectedEmployee} disabled={isSaving}>
+                            <SelectTrigger><SelectValue placeholder={t('select_an_employee')} /></SelectTrigger>
+                            <SelectContent>{warehouseEmployees.map(e => <SelectItem key={e.id} value={e.id} dir={language === 'ku' ? 'rtl' : 'ltr'}>{language==='ku' && e.kurdishName ? e.kurdishName : e.name}</SelectItem>)}</SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="expense-type">{t('expense_type')}</Label>
+                            <Select value={expenseType} onValueChange={(v) => { setExpenseType(v); setExpenseSubType(''); }} disabled={isSaving}>
+                                <SelectTrigger><SelectValue placeholder={t('select_expense_type')} /></SelectTrigger>
+                                <SelectContent>
+                                    {mainExpenseTypes.map(type => <SelectItem key={type} value={type}>{t(type.toLowerCase().replace(/[\s()]/g, '_'))}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        {expenseType === 'Taxi Expenses' && (
+                            <div className="space-y-2">
+                                <Label htmlFor="expense-sub-type">{t('taxi_sub_type')}</Label>
+                                <Select value={expenseSubType} onValueChange={setExpenseSubType} disabled={isSaving}>
+                                    <SelectTrigger id="expense-sub-type"><SelectValue placeholder={t('select_taxi_sub_type')} /></SelectTrigger>
+                                    <SelectContent>
+                                        {taxiSubTypes.map(type => <SelectItem key={type} value={type}>{t(type.toLowerCase().replace(/\s/g, '_'))}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
+                        <div className="space-y-2">
+                            <Label htmlFor="amount">{t('amount_iqd')}</Label>
+                            <Input id="amount" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="e.g., 25000" disabled={isSaving}/>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="description">{t('notes')}</Label>
+                            <Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} placeholder={t('notes_optional_expense')} disabled={isSaving}/>
+                        </div>
+                        </CardContent>
+                        <CardFooter className="flex gap-2">
+                        <Button onClick={handleAddOrUpdateExpense} disabled={isSaving} className="w-full">
+                            {isSaving ? <Loader2 className="animate-spin mr-2"/> : editingExpense ? <Save className="mr-2"/> : <Plus className="mr-2" />}
+                            {editingExpense ? t('save_changes') : t('add_expense')}
+                        </Button>
+                        {editingExpense && <Button variant="ghost" onClick={cancelEditing}><X/></Button>}
+                        </CardFooter>
+                    </Card>
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="description">{t('notes')}</Label>
-                        <Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} placeholder={t('notes_optional_expense')} disabled={isSaving}/>
-                    </div>
-                    </CardContent>
-                    <CardFooter className="flex gap-2">
-                    <Button onClick={handleAddOrUpdateExpense} disabled={isSaving} className="w-full">
-                        {isSaving ? <Loader2 className="animate-spin mr-2"/> : editingExpense ? <Save className="mr-2"/> : <Plus className="mr-2" />}
-                        {editingExpense ? t('save_changes') : t('add_expense')}
-                    </Button>
-                    {editingExpense && <Button variant="ghost" onClick={cancelEditing}><X/></Button>}
-                    </CardFooter>
-                </Card>
-                </div>
-                <div className="lg:col-span-2">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>{t('expenses_for_date', { date: date ? format(date, 'PPP') : '...' })}</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="divide-y">
-                                {isLoading ? (
-                                    <div className="p-8 text-center text-muted-foreground">{t('loading_records')}...</div>
-                                ) : groupedDailyExpenses && groupedDailyExpenses.length > 0 ? (
-                                    groupedDailyExpenses.map(group => (
-                                    <div key={group.employeeName} className="py-3 first:pt-0 last:pb-0">
-                                        {group.expenses.map(exp => (
-                                        <div key={exp.id} className="py-3 flex justify-between items-start gap-4">
-                                            <div className="flex-1">
-                                                <p className="flex items-center gap-2" dir={language === 'ku' ? 'rtl' : 'ltr'}><User className="h-4 w-4 text-primary" /> {getEmployeeName(exp.employeeId, language === 'ku')}</p>
-                                                <p className="text-sm text-muted-foreground mt-1">{t(exp.expenseType.toLowerCase().replace(/[\s()]/g, '_'))}{exp.expenseSubType ? ` (${t(exp.expenseSubType.toLowerCase().replace(/\s/g, '_'))})` : ''}</p>
-                                                {exp.notes && <p className="text-sm mt-1">{exp.notes}</p>}
-                                            </div>
-                                            <div className='flex flex-col items-end'>
-                                                <p className="font-semibold text-primary">{formatCurrency(exp.amount)}</p>
-                                                <div className="flex gap-1 mt-1 print:hidden">
-                                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEditing(exp)}><Edit className="h-4 w-4"/></Button>
-                                                    <AlertDialog>
-                                                        <AlertDialogTrigger asChild>
-                                                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"><Trash2 className="h-4 w-4"/></Button>
-                                                        </AlertDialogTrigger>
-                                                        <AlertDialogContent>
-                                                            <AlertDialogHeader>
-                                                                <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
-                                                                <AlertDialogDescription>{t('confirm_delete_expense')}</AlertDialogDescription>
-                                                            </AlertDialogHeader>
-                                                            <AlertDialogFooter>
-                                                                <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-                                                                <AlertDialogAction onClick={() => handleDelete(exp)}>{t('delete')}</AlertDialogAction>
-                                                            </AlertDialogFooter>
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
+                    <div className="lg:col-span-2">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>{t('expenses_for_date', { date: date ? format(date, 'PPP') : '...' })}</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="divide-y">
+                                    {isLoading ? (
+                                        <div className="p-8 text-center text-muted-foreground">{t('loading_records')}...</div>
+                                    ) : groupedDailyExpenses && groupedDailyExpenses.length > 0 ? (
+                                        groupedDailyExpenses.map(group => (
+                                        <div key={group.employeeName} className="py-3 first:pt-0 last:pb-0">
+                                            {group.expenses.map(exp => (
+                                            <div key={exp.id} className="py-3 flex justify-between items-start gap-4">
+                                                <div className="flex-1">
+                                                    <p className="flex items-center gap-2" dir={language === 'ku' ? 'rtl' : 'ltr'}><User className="h-4 w-4 text-primary" /> {getEmployeeName(exp.employeeId, language === 'ku')}</p>
+                                                    <p className="text-sm text-muted-foreground mt-1">{t(exp.expenseType.toLowerCase().replace(/[\s()]/g, '_'))}{exp.expenseSubType ? ` (${t(exp.expenseSubType.toLowerCase().replace(/\s/g, '_'))})` : ''}</p>
+                                                    {exp.notes && <p className="text-sm mt-1">{exp.notes}</p>}
+                                                </div>
+                                                <div className='flex flex-col items-end'>
+                                                    <p className="font-semibold text-primary">{formatCurrency(exp.amount)}</p>
+                                                    <div className="flex gap-1 mt-1 print:hidden">
+                                                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEditing(exp)}><Edit className="h-4 w-4"/></Button>
+                                                        <AlertDialog>
+                                                            <AlertDialogTrigger asChild>
+                                                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"><Trash2 className="h-4 w-4"/></Button>
+                                                            </AlertDialogTrigger>
+                                                            <AlertDialogContent>
+                                                                <AlertDialogHeader>
+                                                                    <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
+                                                                    <AlertDialogDescription>{t('confirm_delete_expense')}</AlertDialogDescription>
+                                                                </AlertDialogHeader>
+                                                                <AlertDialogFooter>
+                                                                    <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                                                                    <AlertDialogAction onClick={() => handleDelete(exp)}>{t('delete')}</AlertDialogAction>
+                                                                </AlertDialogFooter>
+                                                            </AlertDialogContent>
+                                                        </AlertDialog>
+                                                    </div>
                                                 </div>
                                             </div>
+                                            ))}
+                                            {group.expenses.length > 1 && (
+                                                <div className="flex justify-end items-center mt-2 pt-2 border-t border-dashed">
+                                                    <p className="text-sm font-semibold text-muted-foreground">
+                                                    {group.employeeName} {t('total')}: {formatCurrency(group.total)}
+                                                    </p>
+                                                </div>
+                                            )}
                                         </div>
-                                        ))}
-                                        {group.expenses.length > 1 && (
-                                            <div className="flex justify-end items-center mt-2 pt-2 border-t border-dashed">
-                                                <p className="text-sm font-semibold text-muted-foreground">
-                                                {group.employeeName} {t('total')}: {formatCurrency(group.total)}
-                                                </p>
-                                            </div>
-                                        )}
-                                    </div>
-                                    ))
-                                ) : (
-                                    <div className="text-center h-24 text-muted-foreground flex items-center justify-center">
-                                        {t('no_expenses_for_date')}
-                                    </div>
-                                )}
-                            </div>
-                        </CardContent>
-                        {grandTotal > 0 && (
-                        <CardFooter className="bg-muted/80 py-4 justify-end">
-                            <div className="text-lg font-bold flex items-center gap-4">
-                                <span>{t('grand_total')}:</span>
-                                <span className="text-primary">{formatCurrency(grandTotal)}</span>
-                            </div>
-                        </CardFooter>
-                        )}
-                    </Card>
+                                        ))
+                                    ) : (
+                                        <div className="text-center h-24 text-muted-foreground flex items-center justify-center">
+                                            {t('no_expenses_for_date')}
+                                        </div>
+                                    )}
+                                </div>
+                            </CardContent>
+                            {grandTotal > 0 && (
+                            <CardFooter className="bg-muted/80 py-4 justify-end">
+                                <div className="text-lg font-bold flex items-center gap-4">
+                                    <span>{t('grand_total')}:</span>
+                                    <span className="text-primary">{formatCurrency(grandTotal)}</span>
+                                </div>
+                            </CardFooter>
+                            )}
+                        </Card>
 
+                    </div>
                 </div>
-            </div>
+            </main>
         </div>
     </>
   );
