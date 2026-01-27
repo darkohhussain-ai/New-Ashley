@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Calendar as CalendarIcon, FileText, Printer, Loader2 } from 'lucide-react';
+import { ArrowLeft, Calendar as CalendarIcon, FileText, Printer, Loader2, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -15,7 +14,9 @@ import { useAppContext } from '@/context/app-provider';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslation } from '@/hooks/use-translation';
 import { useAuth } from '@/hooks/use-auth';
-
+import { FullMonthlyReportPdf } from '@/components/reports/FullMonthlyReportPdf';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -27,97 +28,164 @@ const formatCurrency = (amount: number) => {
 
 export default function MonthlyReportPage() {
   const { t, language } = useTranslation();
-  const { overtime, bonuses, withdrawals, employees } = useAppContext();
+  const { employees, expenses, overtime, bonuses, withdrawals, settings } = useAppContext();
+  const { pdfSettings, customFont } = settings;
   const { user, hasPermission } = useAuth();
   const isReadOnly = !hasPermission('page:admin');
+  const reportContentRef = useRef<HTMLDivElement>(null);
+
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
-  const [reportType, setReportType] = useState<'overtime' | 'bonuses' | 'withdrawals'>('overtime');
   
   useEffect(() => {
     setSelectedDate(new Date());
   }, []);
-  
-  const isLoading = !overtime || !bonuses || !withdrawals || !employees || !selectedDate;
 
-  const getEmployeeName = (employeeId: string) => {
+  const isLoading = !employees || !expenses || !overtime || !bonuses || !withdrawals || !selectedDate;
+  
+  const getEmployeeName = (employeeId: string, useKurdish: boolean = false) => {
     const employee = employees.find(e => e.id === employeeId);
     if (!employee) return t('unknown');
     if (isReadOnly && user?.username !== `${employee.name.split(' ')[0]}${employee.employeeId || ''}`) return '***';
-    return language === 'ku' && employee.kurdishName ? employee.kurdishName : employee.name;
+    return useKurdish && employee.kurdishName ? employee.kurdishName : employee.name;
   };
 
-  const monthlyData = useMemo(() => {
-    if (isLoading) return { records: [], summary: [], totalAmount: 0, totalHours: 0, totalLoads: 0 };
+  const monthlyReportData = useMemo(() => {
+    if (isLoading || !selectedDate) return { records: [] };
 
-    const start = startOfMonth(selectedDate!);
-    const end = endOfMonth(selectedDate!);
+    const start = startOfMonth(selectedDate);
+    const end = endOfMonth(selectedDate);
 
-    let records: any[] = [];
-    if (reportType === 'overtime') records = overtime;
-    else if (reportType === 'bonuses') records = bonuses;
-    else if (reportType === 'withdrawals') records = withdrawals;
+    const reportData = employees.map(emp => {
+      const empExpenses = expenses.filter(e => e.employeeId === emp.id && isWithinInterval(parseISO(e.date), { start, end }));
+      const empOvertime = overtime.filter(o => o.employeeId === emp.id && isWithinInterval(parseISO(o.date), { start, end }));
+      const empBonuses = bonuses.filter(b => b.employeeId === emp.id && isWithinInterval(parseISO(b.date), { start, end }));
+      const empWithdrawals = withdrawals.filter(w => w.employeeId === emp.id && isWithinInterval(parseISO(w.date), { start, end }));
 
-    const filteredRecords = records.filter(r => isWithinInterval(parseISO(r.date), { start, end }));
+      const totalExpenses = empExpenses.reduce((sum, e) => sum + e.amount, 0);
+      const totalOvertime = empOvertime.reduce((sum, o) => sum + o.totalAmount, 0);
+      const totalBonuses = empBonuses.reduce((sum, b) => sum + b.totalAmount, 0);
+      const totalWithdrawals = empWithdrawals.reduce((sum, w) => sum + w.amount, 0);
 
-    const employeeTotals = new Map<string, { totalAmount: number; totalHours?: number; totalLoads?: number }>();
-    
-    filteredRecords.forEach(record => {
-      const current = employeeTotals.get(record.employeeId) || { totalAmount: 0, totalHours: 0, totalLoads: 0 };
-      current.totalAmount += record.totalAmount || record.amount || 0;
-      if (reportType === 'overtime') current.totalHours = (current.totalHours || 0) + record.hours;
-      if (reportType === 'bonuses') current.totalLoads = (current.totalLoads || 0) + record.loadCount;
-      employeeTotals.set(record.employeeId, current);
+      const salary = 0; // Salary calculation logic to be implemented here
+      const netSalary = salary + totalOvertime + totalBonuses - totalExpenses - totalWithdrawals;
+
+      return {
+        employeeId: emp.id,
+        employeeName: getEmployeeName(emp.id, language === 'ku'),
+        salary,
+        totalOvertime,
+        totalBonuses,
+        totalExpenses,
+        totalWithdrawals,
+        netSalary,
+      };
     });
 
-    const summary = Array.from(employeeTotals.entries()).map(([employeeId, totals]) => ({
-      employeeId,
-      employeeName: getEmployeeName(employeeId),
-      ...totals
-    })).sort((a,b) => b.totalAmount - a.totalAmount);
-    
-    const totalAmount = summary.reduce((sum, item) => sum + item.totalAmount, 0);
-    const totalHours = reportType === 'overtime' ? summary.reduce((sum, item) => sum + (item.totalHours || 0), 0) : 0;
-    const totalLoads = reportType === 'bonuses' ? summary.reduce((sum, item) => sum + (item.totalLoads || 0), 0) : 0;
+    return { records: reportData };
+  }, [isLoading, employees, expenses, overtime, bonuses, withdrawals, selectedDate, getEmployeeName, language, isReadOnly, user?.username, t]);
 
-    return { records: filteredRecords, summary, totalAmount, totalHours, totalLoads };
-  }, [isLoading, selectedDate, reportType, overtime, bonuses, withdrawals, employees, getEmployeeName, t, language, isReadOnly, user]);
+  const grandTotals = useMemo(() => {
+    return monthlyReportData.records.reduce((acc, record) => {
+        acc.salary += record.salary;
+        acc.totalOvertime += record.totalOvertime;
+        acc.totalBonuses += record.totalBonuses;
+        acc.totalExpenses += record.totalExpenses;
+        acc.totalWithdrawals += record.totalWithdrawals;
+        acc.netSalary += record.netSalary;
+        return acc;
+    }, {
+        salary: 0,
+        totalOvertime: 0,
+        totalBonuses: 0,
+        totalExpenses: 0,
+        totalWithdrawals: 0,
+        netSalary: 0,
+    });
+  }, [monthlyReportData.records]);
 
 
   const handlePrint = () => {
     window.print();
   };
 
-  const reportTitles = {
-    overtime: t('monthly_overtime_report'),
-    bonuses: t('monthly_bonus_report'),
-    withdrawals: t('monthly_withdrawal_report')
+  const handleDownloadPdf = async () => {
+    if (!reportContentRef.current || !selectedDate) return;
+    
+    const doc = new jsPDF({ orientation: 'l', unit: 'px', format: 'a4' });
+    
+    const canvas = await html2canvas(reportContentRef.current, { 
+        scale: 2, 
+        useCORS: true, 
+        backgroundColor: 'white',
+        onclone: (document) => {
+            if (customFont && language === 'ku') {
+                const style = document.createElement('style');
+                style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
+                document.head.appendChild(style);
+            }
+        }
+    });
+
+    const imgData = canvas.toDataURL('image/png');
+    const pdfWidth = doc.internal.pageSize.getWidth();
+    const pdfHeight = doc.internal.pageSize.getHeight();
+    const imgWidth = canvas.width;
+    const imgHeight = canvas.height;
+    
+    const ratio = imgWidth / imgHeight;
+    let finalImgHeight = pdfWidth / ratio;
+
+    let position = 0;
+    
+    if (finalImgHeight < pdfHeight) {
+        doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, finalImgHeight);
+    } else {
+        let heightLeft = imgHeight;
+        const scaledImgWidth = pdfHeight * ratio;
+        while(heightLeft > 0) {
+            doc.addImage(imgData, 'PNG', (pdfWidth - scaledImgWidth) / 2, position, scaledImgWidth, pdfHeight);
+            heightLeft -= (imgHeight * (pdfHeight / finalImgHeight));
+            position -= pdfHeight;
+            if(heightLeft > 0) {
+                doc.addPage();
+            }
+        }
+    }
+    
+    doc.save(`monthly-report-${format(selectedDate, 'yyyy-MM')}.pdf`);
   };
-  
-  if (isLoading) {
-      return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>
-  }
 
   return (
     <>
-      <div className="min-h-screen bg-background text-foreground p-4 md:p-8 print:p-0">
-        <header className="flex items-center justify-between gap-4 mb-8 print:hidden">
+      <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+          <div ref={reportContentRef} className="bg-white" style={{width: '1122px'}}>
+              {selectedDate && <FullMonthlyReportPdf
+                  records={monthlyReportData.records}
+                  date={selectedDate}
+                  settings={settings}
+                  getEmployeeName={getEmployeeName}
+              />}
+          </div>
+      </div>
+      <div className="hidden print:block">
+        {selectedDate && <FullMonthlyReportPdf
+            records={monthlyReportData.records}
+            date={selectedDate}
+            settings={settings}
+            getEmployeeName={getEmployeeName}
+        />}
+      </div>
+
+      <div className="h-[calc(100vh-80px)] flex flex-col print:hidden">
+        <header className="flex items-center justify-between gap-4 mb-8 print:hidden p-4 md:p-8">
           <div className="flex items-center gap-4">
             <Button variant="outline" size="icon" asChild>
               <Link href="/ashley-expenses"><ArrowLeft /></Link>
             </Button>
-            <h1 className="text-xl">{reportTitles[reportType]}</h1>
+            <h1 className="text-2xl">{t('monthly_reports')}</h1>
           </div>
           <div className="flex items-center gap-2">
-            <select
-                value={reportType}
-                onChange={(e) => setReportType(e.target.value as any)}
-                className="h-10 px-4 py-2 bg-background border border-input rounded-md text-sm"
-            >
-                <option value="overtime">{t('overtime')}</option>
-                <option value="bonuses">{t('bonuses')}</option>
-                <option value="withdrawals">{t('cash_withdrawals')}</option>
-            </select>
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" className={cn("w-[280px] justify-start text-left", !selectedDate && "text-muted-foreground")}>
@@ -129,70 +197,69 @@ export default function MonthlyReportPage() {
                 <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} captionLayout="dropdown-nav" fromYear={2020} toYear={2040} />
               </PopoverContent>
             </Popover>
-            <Button onClick={handlePrint} disabled={isLoading || monthlyData.records.length === 0}><Printer className="mr-2"/>{t('print')}</Button>
+             <Button variant="outline" onClick={handlePrint} disabled={isLoading || monthlyReportData.records.length === 0}><Printer className="mr-2"/>{t('print')}</Button>
+             <Button variant="outline" onClick={handleDownloadPdf} disabled={isLoading || monthlyReportData.records.length === 0}><FileDown className="mr-2"/>PDF</Button>
           </div>
         </header>
 
-        <main className="print:p-8">
-            {isLoading ? (
+        <main className="flex-1 overflow-y-auto px-4 md:px-8">
+          {isLoading ? (
             <div className="space-y-6"><Skeleton className="h-64 w-full" /></div>
-            ) : monthlyData.records.length > 0 ? (
-            <div className="space-y-8">
-                <Card className="print:shadow-none print:border-none">
-                <CardHeader>
-                    <div className="text-center">
-                         <h1 className="text-2xl">{reportTitles[reportType]}</h1>
-                         <p className="text-muted-foreground">{selectedDate ? format(selectedDate, 'MMMM yyyy') : ''}</p>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <div className="overflow-x-auto">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>{t('employee')}</TableHead>
-                                    {reportType === 'overtime' && <TableHead className="text-right">{t('total_hours')}</TableHead>}
-                                    {reportType === 'bonuses' && <TableHead className="text-right">{t('total_loads')}</TableHead>}
-                                    <TableHead className="text-right">{t('total_amount')}</TableHead>
+          ) : monthlyReportData.records.length > 0 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>{t('summary_for_month', { month: selectedDate ? format(selectedDate, 'MMMM yyyy') : ''})}</CardTitle>
+                <CardDescription>{t('summary_for_month_desc')}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>{t('employee')}</TableHead>
+                                <TableHead className="text-right">{t('salary')}</TableHead>
+                                <TableHead className="text-right">{t('overtime')}</TableHead>
+                                <TableHead className="text-right">{t('bonuses')}</TableHead>
+                                <TableHead className="text-right">{t('expenses')}</TableHead>
+                                <TableHead className="text-right">{t('cash_withdrawals')}</TableHead>
+                                <TableHead className="text-right font-bold">{t('net_salary')}</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {monthlyReportData.records.map(record => (
+                                <TableRow key={record.employeeId}>
+                                    <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{record.employeeName}</TableCell>
+                                    <TableCell className="text-right">{formatCurrency(record.salary)}</TableCell>
+                                    <TableCell className="text-right">{formatCurrency(record.totalOvertime)}</TableCell>
+                                    <TableCell className="text-right">{formatCurrency(record.totalBonuses)}</TableCell>
+                                    <TableCell className="text-right text-red-500">{formatCurrency(record.totalExpenses)}</TableCell>
+                                    <TableCell className="text-right text-red-500">{formatCurrency(record.totalWithdrawals)}</TableCell>
+                                    <TableCell className="text-right font-bold text-primary">{isReadOnly ? '***' : formatCurrency(record.netSalary)}</TableCell>
                                 </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {monthlyData.summary.map(item => (
-                                    <TableRow key={item.employeeId}>
-                                        <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{item.employeeName}</TableCell>
-                                        {reportType === 'overtime' && <TableCell className="text-right">{item.totalHours?.toFixed(2)}</TableCell>}
-                                        {reportType === 'bonuses' && <TableCell className="text-right">{item.totalLoads}</TableCell>}
-                                        <TableCell className="text-right">{isReadOnly ? '***' : formatCurrency(item.totalAmount)}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                            <TableFooter>
-                                <TableRow>
-                                    <TableCell>{t('grand_total')}</TableCell>
-                                     {reportType === 'overtime' && <TableCell className="text-right">{monthlyData.totalHours.toFixed(2)}</TableCell>}
-                                     {reportType === 'bonuses' && <TableCell className="text-right">{monthlyData.totalLoads}</TableCell>}
-                                    <TableCell className="text-right text-primary">{isReadOnly ? '***' : formatCurrency(monthlyData.totalAmount)}</TableCell>
-                                </TableRow>
-                            </TableFooter>
-                        </Table>
-                    </div>
-                </CardContent>
-                </Card>
-                <div className="hidden print:block pt-24">
-                    <div className="flex justify-end">
-                        <div className="w-64 text-center">
-                            <p className="border-t pt-2">{t('warehouse_manager_signature')}</p>
-                        </div>
-                    </div>
+                            ))}
+                        </TableBody>
+                         <TableFooter>
+                            <TableRow>
+                                <TableCell className="font-bold">{t('grand_total')}</TableCell>
+                                <TableCell className="text-right font-bold">{formatCurrency(grandTotals.salary)}</TableCell>
+                                <TableCell className="text-right font-bold">{formatCurrency(grandTotals.totalOvertime)}</TableCell>
+                                <TableCell className="text-right font-bold">{formatCurrency(grandTotals.totalBonuses)}</TableCell>
+                                <TableCell className="text-right font-bold text-red-500">{formatCurrency(grandTotals.totalExpenses)}</TableCell>
+                                <TableCell className="text-right font-bold text-red-500">{formatCurrency(grandTotals.totalWithdrawals)}</TableCell>
+                                <TableCell className="text-right font-bold text-primary">{isReadOnly ? '***' : formatCurrency(grandTotals.netSalary)}</TableCell>
+                            </TableRow>
+                        </TableFooter>
+                    </Table>
                 </div>
-            </div>
-            ) : (
-            <div className="text-center py-16 border-2 border-dashed rounded-lg print:hidden">
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="text-center py-16 border-2 border-dashed rounded-lg">
                 <CalendarIcon className="mx-auto h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-4 text-lg">{t('no_records_found')}</h3>
+                <h3 className="mt-4 text-lg font-medium">{t('no_records_found')}</h3>
                 <p className="mt-2 text-sm text-muted-foreground">{t('no_records_found_for_month', {month: selectedDate ? format(selectedDate, 'MMMM yyyy') : t('the_selected_month')})}</p>
             </div>
-            )}
+          )}
         </main>
       </div>
     </>
