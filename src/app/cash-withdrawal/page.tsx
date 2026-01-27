@@ -13,14 +13,15 @@ import { useAppContext } from '@/context/app-provider';
 import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ReportWrapper } from '@/components/reports/ReportWrapper';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'IQD', maximumFractionDigits: 0 }).format(amount);
 
 function CashWithdrawalDashboardPage() {
-  const { t } = useTranslation();
-  const { withdrawals, employees } = useAppContext();
+  const { t, language } = useTranslation();
+  const { withdrawals, employees, settings } = useAppContext();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -55,7 +56,17 @@ function CashWithdrawalDashboardPage() {
 
   const handleDownloadPdf = async () => {
     if (!contentRef.current) return;
-    const canvas = await html2canvas(contentRef.current, { scale: 2 });
+    const canvas = await html2canvas(contentRef.current, { 
+      scale: 2,
+      useCORS: true,
+      onclone: (document) => {
+        if (settings?.customFont && language === 'ku') {
+            const style = document.createElement('style');
+            style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${settings.customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
+            document.head.appendChild(style);
+        }
+      }
+    });
     const imgData = canvas.toDataURL('image/png');
     const pdf = new jsPDF('p', 'px', 'a4');
     const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -63,8 +74,61 @@ function CashWithdrawalDashboardPage() {
     pdf.save(`cash-withdrawal-summary-${format(selectedDate || new Date(), 'yyyy-MM')}.pdf`);
   };
 
+  const DashboardContent = () => (
+     <Card>
+        <CardHeader>
+            <CardTitle className="flex items-center gap-2"><BarChartIcon /> {t('withdrawal_summary')}</CardTitle>
+            <CardDescription>{t('monthly_overview_desc', { month: selectedDate ? format(selectedDate, 'MMMM yyyy') : ''})}</CardDescription>
+        </CardHeader>
+        <CardContent>
+            {monthlyData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={monthlyData}>
+                        <XAxis dataKey="employeeName" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                        <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${formatCurrency(value)}`} />
+                        <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                        <Legend />
+                        <Bar dataKey="totalAmount" name="Total Withdrawn" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                </ResponsiveContainer>
+            ) : (
+                <div className="text-center py-16">
+                    <p className="text-muted-foreground">{t('no_withdrawals_found_for_month', { month: selectedDate ? format(selectedDate, 'MMMM yyyy') : '' })}</p>
+                </div>
+            )}
+        </CardContent>
+    </Card>
+  );
+
   return (
     <div className="h-screen bg-background text-foreground flex flex-col print:h-auto">
+       <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+          <div ref={contentRef} style={{ width: '700px' }}>
+              {selectedDate && (
+                  <ReportWrapper
+                  title={t('withdrawal_summary')}
+                  date={format(selectedDate, 'MMMM yyyy')}
+                  logoSrc={settings.appLogo}
+                  themeColor={settings.pdfSettings.report.reportColors?.withdrawal}
+                  >
+                      <DashboardContent />
+                  </ReportWrapper>
+              )}
+          </div>
+      </div>
+      <div className="hidden print:block">
+            {selectedDate && (
+                <ReportWrapper
+                title={t('withdrawal_summary')}
+                date={format(selectedDate, 'MMMM yyyy')}
+                logoSrc={settings.appLogo}
+                themeColor={settings.pdfSettings.report.reportColors?.withdrawal}
+                >
+                    <DashboardContent />
+                </ReportWrapper>
+            )}
+      </div>
+
       <header className="bg-card border-b p-4 print:hidden">
         <div className="container mx-auto flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -90,30 +154,8 @@ function CashWithdrawalDashboardPage() {
             </div>
         </div>
       </header>
-      <main ref={contentRef} className='container mx-auto p-4 md:p-8 flex-1 overflow-y-auto space-y-8'>
-         <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><BarChartIcon /> {t('withdrawal_summary')}</CardTitle>
-                <CardDescription>{t('monthly_overview_desc', { month: selectedDate ? format(selectedDate, 'MMMM yyyy') : ''})}</CardDescription>
-            </CardHeader>
-            <CardContent>
-                {monthlyData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={monthlyData}>
-                            <XAxis dataKey="employeeName" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                            <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${formatCurrency(value)}`} />
-                            <Tooltip formatter={(value: number) => formatCurrency(value)} />
-                            <Legend />
-                            <Bar dataKey="totalAmount" name="Total Withdrawn" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                    </ResponsiveContainer>
-                ) : (
-                    <div className="text-center py-16">
-                        <p className="text-muted-foreground">{t('no_withdrawals_found_for_month', { month: selectedDate ? format(selectedDate, 'MMMM yyyy') : '' })}</p>
-                    </div>
-                )}
-            </CardContent>
-        </Card>
+      <main className='container mx-auto p-4 md:p-8 flex-1 overflow-y-auto space-y-8'>
+        <DashboardContent />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 print:hidden">
           {menuItems.map((item) => (
             <Link key={item.title} href={item.href} className="group block" passHref>

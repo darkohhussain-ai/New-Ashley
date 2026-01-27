@@ -17,14 +17,15 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Progress } from '@/components/ui/progress';
+import { ReportWrapper } from '@/components/reports/ReportWrapper';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'IQD', maximumFractionDigits: 0 }).format(amount);
 
 const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))', '#FF8042', '#00C49F', '#FFBB28'];
 
 function ExpensesDashboardPage() {
-    const { t } = useTranslation();
-    const { expenses } = useAppContext();
+    const { t, language } = useTranslation();
+    const { expenses, settings } = useAppContext();
     const contentRef = useRef<HTMLDivElement>(null);
 
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
@@ -68,34 +69,96 @@ function ExpensesDashboardPage() {
 
     const handleDownloadPdf = async () => {
         if (!contentRef.current) return;
-        const canvas = await html2canvas(contentRef.current, { scale: 2 });
+        const canvas = await html2canvas(contentRef.current, { 
+            scale: 2,
+            useCORS: true,
+            onclone: (document) => {
+                if (settings?.customFont && language === 'ku') {
+                    const style = document.createElement('style');
+                    style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${settings.customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
+                    document.head.appendChild(style);
+                }
+            }
+        });
         const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF('p', 'px', 'a4');
         const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
-        const imgWidth = canvas.width;
-        const imgHeight = canvas.height;
-        const ratio = imgWidth / pdfWidth;
-        const scaledImgHeight = imgHeight / ratio;
-
-        let position = 0;
-        let heightLeft = scaledImgHeight;
-
-        pdf.addImage(canvas, 'PNG', 0, position, pdfWidth, scaledImgHeight);
-        heightLeft -= pdfHeight;
-
-        while (heightLeft > 0) {
-          position -= pdfHeight;
-          pdf.addPage();
-          pdf.addImage(canvas, 'PNG', 0, position, pdfWidth, scaledImgHeight);
-          heightLeft -= pdfHeight;
-        }
-        
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfWidth * (canvas.height / canvas.width));
         pdf.save(`expenses-summary-${format(selectedDate || new Date(), 'yyyy-MM')}.pdf`);
     };
 
+    const DashboardContent = () => (
+         <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><PieChartIcon /> {t('expense_breakdown')}</CardTitle>
+                <CardDescription>{t('monthly_overview_desc', { month: selectedDate ? format(selectedDate, 'MMMM yyyy') : ''})}</CardDescription>
+            </CardHeader>
+            <CardContent>
+                {monthlyExpenseData.expenseTypeData.length > 0 ? (
+                     <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Category</TableHead>
+                                <TableHead>Total Amount</TableHead>
+                                <TableHead className="w-[40%]">Visualization</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {monthlyExpenseData.expenseTypeData.map((item, index) => {
+                                const percentage = grandTotal > 0 ? (item.value / grandTotal) * 100 : 0;
+                                return (
+                                    <TableRow key={item.name} className="odd:bg-table-row-secondary even:bg-table-row-primary">
+                                        <TableCell>{item.name}</TableCell>
+                                        <TableCell>{formatCurrency(item.value)}</TableCell>
+                                        <TableCell>
+                                            <div className="flex items-center gap-2">
+                                                <Progress value={percentage} style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                                                <span className="text-xs text-muted-foreground">{percentage.toFixed(0)}%</span>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            })}
+                        </TableBody>
+                    </Table>
+                ) : (
+                     <div className="text-center py-16">
+                        <p className="text-muted-foreground">{t('no_expenses_found_for_month', { month: selectedDate ? format(selectedDate, 'MMMM yyyy') : '' })}</p>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    );
+
     return (
         <div className="h-screen bg-background text-foreground flex flex-col print:h-auto">
+            <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+                <div ref={contentRef} style={{ width: '700px' }}>
+                    {selectedDate && (
+                        <ReportWrapper
+                        title={t('expense_breakdown')}
+                        date={format(selectedDate, 'MMMM yyyy')}
+                        logoSrc={settings.appLogo}
+                        themeColor={settings.pdfSettings.report.reportColors?.expense}
+                        >
+                            <DashboardContent />
+                        </ReportWrapper>
+                    )}
+                </div>
+            </div>
+            <div className="hidden print:block">
+                 {selectedDate && (
+                    <ReportWrapper
+                        title={t('expense_breakdown')}
+                        date={format(selectedDate, 'MMMM yyyy')}
+                        logoSrc={settings.appLogo}
+                        themeColor={settings.pdfSettings.report.reportColors?.expense}
+                    >
+                        <DashboardContent />
+                    </ReportWrapper>
+                 )}
+            </div>
+
             <header className="bg-card border-b p-4 print:hidden">
                 <div className="container mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-4">
@@ -121,47 +184,8 @@ function ExpensesDashboardPage() {
                     </div>
                 </div>
             </header>
-            <main ref={contentRef} className='container mx-auto p-4 md:p-8 flex-1 overflow-y-auto space-y-8'>
-                 <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><PieChartIcon /> {t('expense_breakdown')}</CardTitle>
-                        <CardDescription>{t('monthly_overview_desc', { month: selectedDate ? format(selectedDate, 'MMMM yyyy') : ''})}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {monthlyExpenseData.expenseTypeData.length > 0 ? (
-                             <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Category</TableHead>
-                                        <TableHead>Total Amount</TableHead>
-                                        <TableHead className="w-[40%]">Visualization</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {monthlyExpenseData.expenseTypeData.map((item, index) => {
-                                        const percentage = grandTotal > 0 ? (item.value / grandTotal) * 100 : 0;
-                                        return (
-                                            <TableRow key={item.name}>
-                                                <TableCell>{item.name}</TableCell>
-                                                <TableCell>{formatCurrency(item.value)}</TableCell>
-                                                <TableCell>
-                                                    <div className="flex items-center gap-2">
-                                                        <Progress value={percentage} style={{ '--progress-indicator-color': COLORS[index % COLORS.length] } as React.CSSProperties} />
-                                                        <span className="text-xs text-muted-foreground">{percentage.toFixed(0)}%</span>
-                                                    </div>
-                                                </TableCell>
-                                            </TableRow>
-                                        );
-                                    })}
-                                </TableBody>
-                            </Table>
-                        ) : (
-                             <div className="text-center py-16">
-                                <p className="text-muted-foreground">{t('no_expenses_found_for_month', { month: selectedDate ? format(selectedDate, 'MMMM yyyy') : '' })}</p>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
+            <main className='container mx-auto p-4 md:p-8 flex-1 overflow-y-auto space-y-8'>
+                 <DashboardContent />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 print:hidden">
                     {menuItems.map((item) => (

@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Progress } from '@/components/ui/progress';
 import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { ReportWrapper } from '@/components/reports/ReportWrapper';
@@ -100,15 +101,15 @@ function AshleyExpensesDashboard() {
                       </TableRow>
                   </TableHeader>
                   <TableBody>
-                      {chartData.map(item => {
+                      {chartData.map((item, index) => {
                           const percentage = grandTotal > 0 ? (item.total / grandTotal) * 100 : 0;
                           return (
-                              <TableRow key={item.name}>
+                              <TableRow key={item.name} className="odd:bg-table-row-secondary even:bg-table-row-primary">
                                   <TableCell>{item.name}</TableCell>
                                   <TableCell>{formatCurrency(item.total)}</TableCell>
                                   <TableCell>
                                       <div className="flex items-center gap-2">
-                                          <Progress value={percentage} style={{ '--progress-indicator-color': item.fill } as React.CSSProperties} />
+                                          <Progress value={percentage} style={{ backgroundColor: item.fill }} />
                                           <span className="text-xs text-muted-foreground">{percentage.toFixed(0)}%</span>
                                       </div>
                                   </TableCell>
@@ -175,7 +176,7 @@ function AshleyExpensesDashboard() {
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="end">
-                    <CalendarComponent mode="single" selected={selectedDate} onSelect={setSelectedDate} captionLayout="dropdown-nav" fromYear={2020} toYear={2040} />
+                    <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} captionLayout="dropdown-nav" fromYear={2020} toYear={2040} />
                   </PopoverContent>
                 </Popover>
             </div>
