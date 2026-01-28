@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, User, Calendar as CalendarIcon, Building, FileText, MapPin, Edit, Trash2, Save, X, ArrowUpDown, ArrowDown, ArrowUp, FileSpreadsheet, ChevronLeft, ChevronRight, Download, Search, Upload, Printer } from 'lucide-react';
+import { ArrowLeft, User, Calendar as CalendarIcon, Building, FileText, MapPin, Edit, Trash2, Save, X, ArrowUpDown, ArrowDown, ArrowUp, ChevronLeft, ChevronRight, Search, Upload, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -15,14 +15,11 @@ import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
-import jsPDF from 'jspdf';
-import * as XLSX from 'xlsx';
-import html2canvas from 'html2canvas';
-import { FilePdfCard } from '@/components/archive/file-pdf-card';
 import { useAppContext } from '@/context/app-provider';
 import type { ExcelFile, Item, Employee, StorageLocation } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import * as XLSX from 'xlsx';
 
 
 type SortableKeys = keyof Item;
@@ -118,7 +115,6 @@ export default function FileDetailPage() {
   const { appLogo: logoSrc, customFont } = settings;
   
   const updateFileInputRef = useRef<HTMLInputElement>(null);
-  const pdfCardRef = useRef<HTMLDivElement>(null);
   
   const file = useMemo(() => excelFiles.find(f => f.id === fileId), [excelFiles, fileId]);
   const fileItems = useMemo(() => items.filter(i => i.fileId === fileId), [items, fileId]);
@@ -389,65 +385,6 @@ export default function FileDetailPage() {
     }
   };
 
-  const handleDownloadPdf = async () => {
-    if (!file || !pdfCardRef.current) return;
-    
-    const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-    
-    const canvas = await html2canvas(pdfCardRef.current, {
-        scale: 2, 
-        useCORS: true,
-        backgroundColor: 'white',
-        onclone: (document) => {
-          if (customFont && language === 'ku') {
-            const style = document.createElement('style');
-            style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
-            document.head.appendChild(style);
-          }
-        }
-    });
-    
-    const imgWidth = canvas.width;
-    const imgHeight = canvas.height;
-    const ratio = imgWidth / pdfWidth;
-    const scaledImgHeight = imgHeight / ratio;
-
-    let heightLeft = scaledImgHeight;
-    let position = 0;
-
-    pdf.addImage(canvas, 'PNG', 0, position, pdfWidth, scaledImgHeight);
-    heightLeft -= pdfHeight;
-
-    while (heightLeft > 0) {
-      position -= pdfHeight;
-      pdf.addPage();
-      pdf.addImage(canvas, 'PNG', 0, position, pdfWidth, scaledImgHeight);
-      heightLeft -= pdfHeight;
-    }
-    
-    pdf.save(`${file.storageName}.pdf`);
-  };
-
-  const handleDownloadExcel = () => {
-    if (!file || !sortedItems) return;
-    const dataToExport = sortedItems.map(item => ({
-      'Model': item.model,
-      'Quantity': item.quantity,
-      'Storage Status': item.storageStatus || '',
-      'Condition': item.modelCondition || '',
-      'Quantity Per Condition': item.quantityPerCondition ?? '',
-      'Location': item.locationId ? getLocationName(item.locationId) : '',
-      'Notes': item.notes || ''
-    }));
-
-    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Items');
-    XLSX.writeFile(workbook, `${editableFile.storageName || file.storageName}.xlsx`);
-  };
-
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery]);
@@ -505,20 +442,6 @@ export default function FileDetailPage() {
         className="hidden"
         accept=".xlsx,.xls"
       />
-     <div style={{ position: 'absolute', left: '-9999px', top: '-9999px', background: 'white', color: 'black' }}>
-          {file && employeeForFile && (
-            <div ref={pdfCardRef} style={{ width: '800px' }}>
-                <FilePdfCard
-                    file={{...(file || {}), ...editableFile} as ExcelFile}
-                    employee={employeeForFile}
-                    logoSrc={logoSrc}
-                    items={sortedItems}
-                    locations={locations}
-                    themeColor={settings.pdfSettings.report.reportColors?.general || '#22c55e'}
-                />
-            </div>
-          )}
-      </div>
       <header className="bg-card border-b p-4 print:hidden">
         <div className="container mx-auto flex items-center justify-between gap-4">
             <div className='flex items-center gap-4'>
@@ -541,7 +464,6 @@ export default function FileDetailPage() {
                 ) : (
                     <>
                     <Button onClick={() => setIsEditing(true)}><Edit className="mr-2"/>{t('edit')}</Button>
-                    <Button variant="outline" onClick={handleDownloadPdf}><FileText className="mr-2 h-4 w-4" /> {t('download_pdf')}</Button>
                     <Button variant="outline" onClick={handlePrint}><Printer className="mr-2 h-4 w-4" /> {t('print')}</Button>
                     <AlertDialog>
                         <AlertDialogTrigger asChild><Button variant="destructive"><Trash2 className="mr-2"/>{t('delete')}</Button></AlertDialogTrigger>

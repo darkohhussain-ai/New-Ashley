@@ -14,7 +14,7 @@ const FinancialTablePdf = ({ title, data, total }: { title: string, data: any[],
     return (
         <div className="mb-6">
             <h3 className="text-lg font-medium mb-2 pb-1 border-b-2">{title}</h3>
-            <Table className="pdf-table">
+            <Table>
                 <TableHeader><TableRow><TableHead>{t('date')}</TableHead><TableHead>{t('notes')}</TableHead><TableHead className="text-right">{t('amount')}</TableHead></TableRow></TableHeader>
                 <TableBody>
                     {data.map((item, index) => (
@@ -37,7 +37,7 @@ const OvertimeTablePdf = ({ title, data, total }: { title: string, data: Overtim
     return (
         <div className="mb-6">
             <h3 className="text-lg font-medium mb-2 pb-1 border-b-2">{title}</h3>
-            <Table className="pdf-table">
+            <Table>
                 <TableHeader><TableRow>
                     <TableHead>{t('date')}</TableHead>
                     <TableHead>{t('overtime_hours')}</TableHead>
@@ -63,17 +63,13 @@ const OvertimeTablePdf = ({ title, data, total }: { title: string, data: Overtim
     );
 };
 
-export const AccountReportPdf = ({ employee, selectedDate, financials }: { employee: Employee, selectedDate: Date, financials: any }) => {
+export const AccountReportPdf = ({ employee, selectedDate, financials, logoSrc }: { employee: Employee, selectedDate: Date, financials: any, logoSrc: string | null }) => {
     const { t, language } = useTranslation();
     const displayName = language === 'ku' && employee.kurdishName ? employee.kurdishName : employee.name;
     const reportDate = selectedDate ? format(selectedDate, 'MMMM yyyy') : format(new Date(), 'MMMM yyyy');
 
     return (
-       <ReportWrapper
-            title={t('employee_report')}
-            date={reportDate}
-            themeColor="#2563eb" // a default blue
-       >
+       <ReportWrapper>
             <div dir={language === 'ku' ? 'rtl' : 'ltr'}>
                 <div className="flex items-start gap-6 p-4 rounded-lg bg-gray-50 border">
                     <Avatar className="w-28 h-28 border-4 border-white shadow-md">

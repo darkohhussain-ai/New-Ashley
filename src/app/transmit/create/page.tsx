@@ -1,40 +1,33 @@
-
 'use client';
 
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Plus, Trash2, Edit, Save, X, Loader2, ListPlus, Calendar as CalendarIcon, Truck, FileDown, User, Warehouse } from 'lucide-react';
+import { ArrowLeft, Plus, Truck, Calendar as CalendarIcon, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { format, formatISO, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
-import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { useAppContext } from '@/context/app-provider';
-import type { Transfer, ItemForTransfer, AllPdfSettings, BranchColors } from '@/lib/types';
+import type { Transfer, ItemForTransfer } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
-
 
 const destinations = ["Erbil", "Baghdad", "Diwan", "Dohuk"];
 
 export default function CreateTransferPage() {
   const { toast } = useToast();
-  const { t, language } = useTranslation();
-  const { transferItems, setTransferItems, transfers, setTransfers, settings, isLoading: isAppLoading } = useAppContext();
-  const { pdfSettings, customFont, appLogo } = settings || {};
+  const { t } = useTranslation();
+  const { transferItems, setTransferItems, transfers, setTransfers, isLoading: isAppLoading } = useAppContext();
 
   const [isSaving, setIsSaving] = useState(false);
-
-  // Form State
   const [destinationCity, setDestinationCity] = useState('');
   const [driverName, setDriverName] = useState('');
   const [warehouseManagerName, setWarehouseManagerName] = useState('');
@@ -43,7 +36,6 @@ export default function CreateTransferPage() {
   const [selectedItems, setSelectedItems] = useState<Record<string, boolean>>({});
   
   useEffect(() => {
-    // Only set the date on the client-side
     if (!isAppLoading) {
         setTransferDate(new Date());
     }
@@ -56,8 +48,7 @@ export default function CreateTransferPage() {
   const stagedItems = useMemo(() => transferItems.filter(item => !item.transferId), [transferItems]);
 
   const filteredItems = useMemo(() => {
-    if (!stagedItems) return [];
-    if (!destinationCity) return []; // Return empty array if no destination is selected
+    if (!stagedItems || !destinationCity) return [];
     return stagedItems.filter(item => item.destination === destinationCity);
   }, [stagedItems, destinationCity]);
   
@@ -130,87 +121,9 @@ export default function CreateTransferPage() {
     }
   };
 
-  const handleDownloadPdf = () => {
-    if (!lastTransfer || !lastTransferItems || !pdfSettings) return;
-
-    const doc = new jsPDF();
-    const fontName = "CustomFont";
-    const useKurdishFont = language === 'ku' && customFont;
-    const themeColor = (lastTransfer.destinationCity && (pdfSettings.invoice.branchColors as BranchColors)?.[lastTransfer.destinationCity as keyof BranchColors]) || pdfSettings.invoice.themeColor;
-
-    if (useKurdishFont) {
-        try {
-            const fontBase64 = customFont.split(',')[1];
-            if (fontBase64) {
-                doc.addFileToVFS(`${fontName}.ttf`, fontBase64);
-                doc.addFont(`${fontName}.ttf`, fontName, 'normal');
-                doc.setFont(fontName);
-            }
-        } catch (e) {
-            console.error("Error adding custom font to PDF:", e);
-        }
-    }
-
-    const titleTemplate = pdfSettings.invoice.titleTemplate || t('INVOICE') + ' #{invoiceNumber}';
-    const finalTitle = titleTemplate
-        .replace('{city}', lastTransfer.destinationCity || '')
-        .replace('{invoiceNumber}', lastTransfer.invoiceNumber ? String(lastTransfer.invoiceNumber).padStart(6, '0') : 'N/A');
-
-    autoTable(doc, {
-        body: [
-            [{ content: finalTitle, styles: { halign: 'center', fontSize: 18, textColor: themeColor, font: useKurdishFont ? fontName : 'helvetica' } }],
-            [{ content: format(parseISO(lastTransfer.transferDate), 'PPP'), styles: { halign: 'center', fontSize: 11, textColor: 100, font: useKurdishFont ? fontName : 'helvetica' } }],
-        ],
-        theme: 'plain',
-        startY: 20,
-    });
-    
-    autoTable(doc, {
-        body: [
-            [
-              { content: `${t('driver')}: ${lastTransfer.driverName}\n${t('manager')}: ${lastTransfer.warehouseManagerName}`, styles: { font: useKurdishFont ? fontName : 'helvetica' } },
-              { content: `${t('slip_no')}: ${transfers.length}`, styles: { halign: 'right', font: useKurdishFont ? fontName : 'helvetica' } }
-            ],
-        ],
-        theme: 'plain',
-        startY: (doc as any).lastAutoTable.finalY,
-    });
-
-    const head = [[t('no_dot'), t('model'), t('quantity'), t('invoice_no'), t('storage'), t('notes'), t('request_date')]];
-    const body = lastTransferItems.map((item, index) => [
-      index + 1,
-      item.model,
-      item.quantity,
-      item.invoiceNo || 'N/A',
-      item.storage || 'N/A',
-      item.notes || 'N/A',
-      item.requestDate ? format(parseISO(item.requestDate), 'yyyy-MM-dd') : 'N/A'
-    ]);
-
-    autoTable(doc, {
-        head,
-        body,
-        startY: (doc as any).lastAutoTable.finalY + 10,
-        theme: pdfSettings.invoice.tableTheme || 'striped',
-        styles: { font: useKurdishFont ? fontName : 'helvetica', valign: 'middle', cellPadding: 3, fontSize: 8 },
-        headStyles: { fillColor: themeColor, textColor: 255, fontStyle: 'bold', halign: 'center', font: useKurdishFont ? fontName : 'helvetica' },
-        columnStyles: {
-            0: { halign: 'center', cellWidth: 10 },
-            1: { halign: useKurdishFont ? 'right' : 'left' },
-            2: { halign: 'center' },
-            3: { halign: 'center' },
-            4: { halign: 'center' },
-            5: { halign: useKurdishFont ? 'right' : 'left' },
-            6: { halign: 'center' }
-        },
-    });
-
-    doc.save(`${lastTransfer.cargoName}.pdf`);
+  const handlePrint = () => {
+    window.print();
   };
-
-  if (isAppLoading) {
-      return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
-  }
 
   return (
     <>
@@ -318,11 +231,7 @@ export default function CreateTransferPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {isAppLoading ? (
-                                  [...Array(5)].map((_, i) => (
-                                    <TableRow key={i}><TableCell colSpan={4} className="h-12 text-center"><Loader2 className="mx-auto animate-spin" /></TableCell></TableRow>
-                                  ))
-                                ) : filteredItems.length > 0 ? filteredItems.map((item) => (
+                                {filteredItems.length > 0 ? filteredItems.map((item) => (
                                     <TableRow key={item.id} data-state={selectedItems[item.id] && "selected"}>
                                         <TableCell>
                                           <Checkbox
@@ -351,51 +260,6 @@ export default function CreateTransferPage() {
             </Card>
         </div>
       </div>
-      
-      {lastTransfer && (
-         <AlertDialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-            <AlertDialogContent className="max-w-2xl">
-                <AlertDialogHeader>
-                    <AlertDialogTitle>{t('transfer_slip_created_title')}</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        {t('transfer_slip_created_desc', {cargoName: lastTransfer.cargoName})}
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <div className="max-h-[60vh] overflow-y-auto p-1">
-                   <h3 className="text-lg font-semibold mb-2">{t('transfer_summary')}</h3>
-                   <div className="grid grid-cols-2 gap-4 text-sm mb-4">
-                        <p className="flex gap-2 items-center"><Truck className="w-4 h-4 text-primary"/> <strong>{t('destination')}:</strong> {lastTransfer.destinationCity}</p>
-                        <p className="flex gap-2 items-center"><CalendarIcon className="w-4 h-4 text-primary"/> <strong>{t('date')}:</strong> {format(parseISO(lastTransfer.transferDate), 'PPP')}</p>
-                        <p className="flex gap-2 items-center"><User className="w-4 h-4 text-primary"/> <strong>{t('driver')}:</strong> {lastTransfer.driverName}</p>
-                        <p className="flex gap-2 items-center"><Warehouse className="w-4 h-4 text-primary"/> <strong>{t('manager')}:</strong> {lastTransfer.warehouseManagerName}</p>
-                   </div>
-                   <h3 className="text-lg font-semibold mb-2">{t('transferred_items')} ({lastTransfer.itemIds.length})</h3>
-                   <div className="border rounded-md">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>{t('model')}</TableHead>
-                                    <TableHead>{t('quantity')}</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                               {lastTransferItems.map(item => (
-                                   <TableRow key={item.id}>
-                                       <TableCell>{item.model}</TableCell>
-                                       <TableCell>{item.quantity}</TableCell>
-                                   </TableRow>
-                               ))}
-                            </TableBody>
-                        </Table>
-                   </div>
-                </div>
-                <AlertDialogFooter>
-                    <Button variant="outline" onClick={() => setIsModalOpen(false)}>{t('close')}</Button>
-                    <Button onClick={handleDownloadPdf}><FileDown className="mr-2"/> {t('download_pdf')}</Button>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-         </AlertDialog>
-      )}
     </div>
     </>
   );

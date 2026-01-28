@@ -1,10 +1,9 @@
-
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, Trash2, Calendar as CalendarIcon, Clock, User, Edit, Save, X, Printer, Loader2, FileDown } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Calendar as CalendarIcon, Clock, User, Edit, Save, X, Printer, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -20,8 +19,6 @@ import { useAppContext } from '@/context/app-provider';
 import type { Overtime, AllPdfSettings } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import { OvertimeReportPdf } from '@/components/reports/OvertimeReportPdf';
 
 
@@ -175,53 +172,12 @@ export default function AddOvertimePage() {
     window.print();
   };
 
-  const handleDownloadPdf = async () => {
-    if (!pdfRef.current || !selectedDate || overtimeRecords.length === 0) return;
-    const doc = new jsPDF();
-    
-    const canvas = await html2canvas(pdfRef.current, { 
-        scale: 2, 
-        useCORS: true, 
-        backgroundColor: 'white',
-        onclone: (document) => {
-            if (customFont && language === 'ku') {
-                const style = document.createElement('style');
-                style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
-                document.head.appendChild(style);
-            }
-        }
-    });
-
-    const imgData = canvas.toDataURL('image/png');
-    const pdfWidth = doc.internal.pageSize.getWidth();
-    const imgWidth = canvas.width;
-    const imgHeight = canvas.height;
-    const ratio = imgWidth / imgHeight;
-    const finalImgWidth = pdfWidth;
-    const finalImgHeight = finalImgWidth / ratio;
-
-    doc.addImage(imgData, 'PNG', 0, 0, finalImgWidth, finalImgHeight);
-    doc.save(`overtime-report-${format(selectedDate, 'yyyy-MM-dd')}.pdf`);
-  };
-  
   if (!selectedDate) {
     return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
   return (
     <>
-      <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-        <div ref={pdfRef}>
-          {selectedDate && (
-            <OvertimeReportPdf
-              records={overtimeRecords}
-              date={selectedDate}
-              settings={settings}
-              getEmployeeName={getEmployeeName}
-            />
-          )}
-        </div>
-      </div>
       <div className="hidden print:block">
         {selectedDate && (
             <OvertimeReportPdf
@@ -265,7 +221,6 @@ export default function AddOvertimePage() {
               </PopoverContent>
             </Popover>
              <Button variant="outline" onClick={handlePrint} disabled={isLoading || overtimeRecords.length === 0}><Printer className="mr-2"/>{t('print')}</Button>
-             <Button variant="outline" onClick={handleDownloadPdf} disabled={isLoading || overtimeRecords.length === 0}><FileDown className="mr-2"/>PDF</Button>
           </div>
         </div>
       </header>

@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Plus, Trash2, Edit, Save, X, Settings, Receipt } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Edit, Save, X, Settings, Receipt, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -19,8 +19,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import withAuth from '@/hooks/withAuth';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const initialNewItem: Omit<SoldItemsListItem, 'id'> = {
@@ -169,33 +167,8 @@ const SoldItemsCheckPage = () => {
         setSoldItemsLists(prev => prev.map(l => l.id === selectedList.id ? { ...l, items: updatedItems } : l));
     };
 
-    const handleExportPdf = () => {
-        if (!selectedList) return;
-        const doc = new jsPDF();
-        doc.text(selectedList.name, 14, 16);
-        doc.setFontSize(10);
-        doc.text(format(parseISO(selectedList.date), 'PPP'), 14, 22);
-        (doc as any).autoTable({
-          startY: 30,
-          head: [[t('item_name'), t('category'), t('quantity'), t('notes')]],
-          body: selectedList.items.map(item => [item.name, itemCategories.find(c => c.id === item.categoryId)?.name || 'N/A', item.quantity, item.notes || '']),
-        });
-        doc.save(`${selectedList.name}.pdf`);
-    };
-
     const handlePrint = () => {
-        const doc = new jsPDF();
-        if (!selectedList) return;
-        doc.text(selectedList.name, 14, 16);
-        doc.setFontSize(10);
-        doc.text(format(parseISO(selectedList.date), 'PPP'), 14, 22);
-        (doc as any).autoTable({
-            startY: 30,
-            head: [[t('item_name'), t('category'), t('quantity'), t('notes')]],
-            body: selectedList.items.map(item => [item.name, itemCategories.find(c => c.id === item.categoryId)?.name || 'N/A', item.quantity, item.notes || '']),
-        });
-        doc.autoPrint();
-        window.open(doc.output('bloburl'), '_blank');
+        window.print();
     };
 
     return (
@@ -285,9 +258,6 @@ const SoldItemsCheckPage = () => {
                                 <div><CardTitle>{selectedList.name}</CardTitle><CardDescription>{t('items_in_list_count', {count: selectedList.items.length})}</CardDescription></div>
                                 <div className="flex items-center gap-2">
                                   <Button variant="outline" onClick={handlePrint} disabled={!selectedList || selectedList.items.length === 0}>{t('print')}</Button>
-                                  <Button variant="outline" onClick={handleExportPdf} disabled={!selectedList || selectedList.items.length === 0}>
-                                    <Receipt className="mr-2 h-4 w-4" />{t('export_pdf')}
-                                  </Button>
                                 </div>
                             </div>
                             ) : <CardTitle>{t('select_a_list')}</CardTitle>}
