@@ -56,7 +56,10 @@
     "recharts": "latest",
     "tailwind-merge": "latest",
     "tailwindcss-animate": "latest",
-    "zod": "latest"
+    "zod": "latest",
+    "html2canvas": "latest",
+    "jspdf": "latest",
+    "xlsx": "latest"
   },
   "devDependencies": {
     "@types/node": "latest",

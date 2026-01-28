@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Star, Loader2, ChevronsRight, Plus, Settings, LayoutDashboard, FileText, FileDown, FileSpreadsheet, Trash2, Edit, Save } from 'lucide-react';
+import { ArrowLeft, Star, Loader2, ChevronsRight, Plus, Settings, LayoutDashboard, FileText, Trash2, Edit, Save, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -17,9 +17,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
-import * as XLSX from 'xlsx';
 import { MarketingReportPdf } from '@/components/marketing/MarketingReportPdf';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { cn } from '@/lib/utils';
@@ -27,6 +24,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useTranslation } from '@/hooks/use-translation';
 import { Progress } from '@/components/ui/progress';
 import withAuth from '@/hooks/withAuth';
+import { ReportWrapper } from '@/components/reports/ReportWrapper';
 
 
 function AddMarketingEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean, onOpenChange: (open: boolean) => void, addEmployee: (employee: Omit<Employee, 'id'>) => void }) {
@@ -262,7 +260,6 @@ function MarketingFeedbackPage() {
     const [currentEmployeeId, setCurrentEmployeeId] = useState<string | null>(null);
     
     const [selectedEmployeeForHistory, setSelectedEmployeeForHistory] = useState<string | null>(null);
-    const pdfReportRef = useRef<HTMLDivElement>(null);
 
     const marketingEmployees = useMemo(() => {
         return employees.filter(e => e.role === 'Marketing').sort((a, b) => {
@@ -402,94 +399,6 @@ function MarketingFeedbackPage() {
           .sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
     }, [marketingFeedbacks, selectedEmployeeForHistory]);
 
-    const handleDownloadPdf = async () => {
-        if (!marketingFeedbacks.length || !pdfReportRef.current) {
-            toast({ title: t('no_data'), description: t('no_data_to_export') });
-            return;
-        }
-
-        const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
-        
-        const canvas = await html2canvas(pdfReportRef.current, { 
-          scale: 2, 
-          useCORS: true, 
-          backgroundColor: 'white',
-          onclone: (document) => {
-            if (customFontBase64 && language === 'ku') {
-                const style = document.createElement('style');
-                style.innerHTML = `@font-face { font-family: 'CustomPdfFont'; src: url(${customFontBase64}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomPdfFont' !important; }`;
-                document.head.appendChild(style);
-            }
-          }
-        });
-
-        const imgData = canvas.toDataURL('image/png');
-        const pdfWidth = doc.internal.pageSize.getWidth();
-        const pdfHeight = doc.internal.pageSize.getHeight();
-        const imgWidth = canvas.width;
-        const imgHeight = canvas.height;
-        const ratio = imgWidth / imgHeight;
-        
-        let finalImgWidth = pdfWidth;
-        let finalImgHeight = finalImgWidth / ratio;
-
-        if (finalImgHeight > pdfHeight) {
-          finalImgHeight = pdfHeight;
-          finalImgWidth = finalImgHeight * ratio;
-        }
-
-        const x = (pdfWidth - finalImgWidth) / 2;
-        
-        doc.addImage(imgData, 'PNG', x, 0, finalImgWidth, finalImgHeight);
-        doc.save(`Marketing_Feedback_Report_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
-    };
-
-    const handleDownloadExcel = () => {
-        if (!marketingFeedbacks.length) {
-             toast({ title: t('no_data'), description: t('no_data_to_export') });
-            return;
-        }
-        const wb = XLSX.utils.book_new();
-
-        const rankingsData = evaluationSummary.map((item, index) => ({
-            Rank: index + 1,
-            Employee: item.name,
-            'Total Score': item.score,
-        }));
-        const rankingsWs = XLSX.utils.json_to_sheet(rankingsData);
-        XLSX.utils.book_append_sheet(wb, rankingsWs, 'Employee Rankings');
-
-        if (perQuestionRankings && perQuestionRankings.length > 0) {
-            const questionRankingsData = perQuestionRankings.flatMap(q => 
-                q.scores.map(s => ({
-                    Question: q.questionText,
-                    Employee: s.name,
-                    Score: s.score
-                }))
-            );
-            const questionsWs = XLSX.utils.json_to_sheet(questionRankingsData);
-            XLSX.utils.book_append_sheet(wb, questionsWs, 'Per Question Rankings');
-        }
-
-        const rawData = marketingFeedbacks.map(fb => {
-            const employee = employees.find(e => e.id === fb.employeeId);
-            const base: Record<string, any> = {
-                Date: format(parseISO(fb.date), 'yyyy-MM-dd'),
-                Employee: employee ? (language === 'ku' && employee.kurdishName ? employee.kurdishName : employee.name) : t('unknown'),
-                'Total Score': fb.totalScore,
-            };
-            fb.responses.forEach(res => {
-                const question = evaluationQuestions.find(q => q.id === res.questionId);
-                base[question ? (question.text) : res.questionId] = res.answer;
-            });
-            return base;
-        });
-        const rawDataWs = XLSX.utils.json_to_sheet(rawData);
-        XLSX.utils.book_append_sheet(wb, rawDataWs, 'Raw Feedback Data');
-
-        XLSX.writeFile(wb, `Marketing_Feedback_Export_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
-    };
-
     const getRowClass = (index: number) => {
         switch (index) {
             case 0: return "bg-yellow-100 dark:bg-yellow-900/50 hover:bg-yellow-100/80 dark:hover:bg-yellow-900/60";
@@ -503,241 +412,242 @@ function MarketingFeedbackPage() {
 
 
     return (
-        <div className="h-screen bg-background text-foreground flex flex-col">
-             <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-                <div ref={pdfReportRef} style={{ width: '700px' }}>
+        <>
+            <div className="hidden print:block">
+                <ReportWrapper>
                     <MarketingReportPdf
                         logoSrc={logoSrc}
                         totalEvaluations={marketingFeedbacks.length}
                         evaluationSummary={evaluationSummary}
                         perQuestionRankings={perQuestionRankings || []}
                     />
-                </div>
+                </ReportWrapper>
             </div>
-            <AddMarketingEmployeeDialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen} addEmployee={addMarketingEmployee} />
-            <ManageQuestionsDialog open={isManageQuestionsOpen} onOpenChange={setManageQuestionsOpen} />
-            <EditSubmissionDialog feedback={editingFeedback} open={!!editingFeedback} onOpenChange={(open) => !open && setEditingFeedback(null)} />
+            <div className="h-screen bg-background text-foreground flex flex-col print:hidden">
+                <AddMarketingEmployeeDialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen} addEmployee={addMarketingEmployee} />
+                <ManageQuestionsDialog open={isManageQuestionsOpen} onOpenChange={setManageQuestionsOpen} />
+                <EditSubmissionDialog feedback={editingFeedback} open={!!editingFeedback} onOpenChange={(open) => !open && setEditingFeedback(null)} />
 
-            <header className="flex items-center justify-between gap-4 mb-8 p-4 md:p-8 border-b">
-                <div className='flex items-center gap-4'>
-                    <Button variant="outline" size="icon" asChild>
-                        <Link href="/"><ArrowLeft /></Link>
-                    </Button>
-                    <h1 className="text-2xl md:text-3xl">{t('marketing_feedback')}</h1>
-                </div>
-                <div className='flex items-center gap-2'>
-                    <Button variant="outline" onClick={() => setManageQuestionsOpen(true)}>
-                        <Settings className="mr-2 h-4 w-4" /> {t('manage_questions')}
-                    </Button>
-                    <Button onClick={() => setAddDialogOpen(true)}>
-                        <Plus className="mr-2 h-4 w-4" /> {t('add_employee')}
-                    </Button>
-                </div>
-            </header>
-            
-            <main className="flex-1 overflow-y-auto px-4 md:px-8">
-                <Tabs defaultValue="dashboard">
-                    <TabsList className="mb-6 grid grid-cols-2">
-                        <TabsTrigger value="dashboard"><LayoutDashboard className="mr-2" />{t('dashboard')}</TabsTrigger>
-                        <TabsTrigger value="form"><FileText className="mr-2" />{t('feedback_form')}</TabsTrigger>
-                    </TabsList>
+                <header className="flex items-center justify-between gap-4 mb-8 p-4 md:p-8 border-b">
+                    <div className='flex items-center gap-4'>
+                        <Button variant="outline" size="icon" asChild>
+                            <Link href="/"><ArrowLeft /></Link>
+                        </Button>
+                        <h1 className="text-2xl md:text-3xl">{t('marketing_feedback')}</h1>
+                    </div>
+                    <div className='flex items-center gap-2'>
+                        <Button variant="outline" onClick={() => setManageQuestionsOpen(true)}>
+                            <Settings className="mr-2 h-4 w-4" /> {t('manage_questions')}
+                        </Button>
+                        <Button onClick={() => setAddDialogOpen(true)}>
+                            <Plus className="mr-2 h-4 w-4" /> {t('add_employee')}
+                        </Button>
+                    </div>
+                </header>
+                
+                <main className="flex-1 overflow-y-auto px-4 md:px-8">
+                    <Tabs defaultValue="dashboard">
+                        <TabsList className="mb-6 grid grid-cols-2">
+                            <TabsTrigger value="dashboard"><LayoutDashboard className="mr-2" />{t('dashboard')}</TabsTrigger>
+                            <TabsTrigger value="form"><FileText className="mr-2" />{t('feedback_form')}</TabsTrigger>
+                        </TabsList>
 
-                    <TabsContent value="dashboard">
-                        <div className="flex justify-end mb-4 gap-2">
-                            <Button variant="outline" onClick={handleDownloadPdf}><FileDown className="mr-2 h-4 w-4"/> PDF</Button>
-                            <Button variant="outline" onClick={handleDownloadExcel}><FileSpreadsheet className="mr-2 h-4 w-4"/> Excel</Button>
-                        </div>
-                        <div className="space-y-8">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>{t('employee_performance')}</CardTitle>
-                                    <CardDescription>{t('employee_performance_desc', { maxScore })}</CardDescription>
-                                </CardHeader>
-                                <CardContent className="max-h-[300px] overflow-y-auto">
-                                {isLoading ? <Loader2 className="animate-spin" /> : (
-                                    <Table>
-                                        <TableHeader><TableRow><TableHead>{t('rank')}</TableHead><TableHead>{t('employee')}</TableHead><TableHead className="text-right">{t('total_score')}</TableHead></TableRow></TableHeader>
-                                        <TableBody>
-                                            {evaluationSummary.map((item, index) => (
-                                                <TableRow key={item.employeeId} className={cn(getRowClass(index))}>
-                                                    <TableCell className="font-semibold">{index + 1}</TableCell>
-                                                    <TableCell>{item.name}</TableCell>
-                                                    <TableCell className="text-right font-medium">{item.score}</TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                )}
-                                </CardContent>
-                            </Card>
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>{t('per_question_rankings')}</CardTitle>
-                                    <CardDescription>{t('per_question_rankings_desc')}</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <Accordion type="single" collapsible className="w-full">
-                                        {perQuestionRankings && perQuestionRankings.map((q, index) => (
-                                            <AccordionItem value={`item-${index}`} key={q.questionId}>
-                                                <AccordionTrigger>{q.questionText}</AccordionTrigger>
-                                                <AccordionContent>
-                                                    <div className="overflow-x-auto">
-                                                        <Table>
-                                                            <TableHeader>
-                                                                <TableRow>
-                                                                    <TableHead>{t('rank')}</TableHead>
-                                                                    <TableHead>{t('employee')}</TableHead>
-                                                                    <TableHead className="text-right">{t('total_score')}</TableHead>
-                                                                </TableRow>
-                                                            </TableHeader>
-                                                            <TableBody>
-                                                                {q.scores.map((s, rankIndex) => (
-                                                                    <TableRow key={s.name}>
-                                                                        <TableCell className="font-medium">{rankIndex + 1}</TableCell>
-                                                                        <TableCell>{s.name}</TableCell>
-                                                                        <TableCell className="text-right">{s.score}</TableCell>
+                        <TabsContent value="dashboard">
+                            <div className="flex justify-end mb-4 gap-2">
+                                <Button variant="outline" onClick={() => window.print()}><Printer className="mr-2 h-4 w-4"/> {t('print')}</Button>
+                            </div>
+                            <div className="space-y-8">
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>{t('employee_performance')}</CardTitle>
+                                        <CardDescription>{t('employee_performance_desc', { maxScore })}</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="max-h-[300px] overflow-y-auto">
+                                    {isLoading ? <Loader2 className="animate-spin" /> : (
+                                        <Table>
+                                            <TableHeader><TableRow><TableHead>{t('rank')}</TableHead><TableHead>{t('employee')}</TableHead><TableHead className="text-right">{t('total_score')}</TableHead></TableRow></TableHeader>
+                                            <TableBody>
+                                                {evaluationSummary.map((item, index) => (
+                                                    <TableRow key={item.employeeId} className={cn(getRowClass(index))}>
+                                                        <TableCell className="font-semibold">{index + 1}</TableCell>
+                                                        <TableCell>{item.name}</TableCell>
+                                                        <TableCell className="text-right font-medium">{item.score}</TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    )}
+                                    </CardContent>
+                                </Card>
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>{t('per_question_rankings')}</CardTitle>
+                                        <CardDescription>{t('per_question_rankings_desc')}</CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <Accordion type="single" collapsible className="w-full">
+                                            {perQuestionRankings && perQuestionRankings.map((q, index) => (
+                                                <AccordionItem value={`item-${index}`} key={q.questionId}>
+                                                    <AccordionTrigger>{q.questionText}</AccordionTrigger>
+                                                    <AccordionContent>
+                                                        <div className="overflow-x-auto">
+                                                            <Table>
+                                                                <TableHeader>
+                                                                    <TableRow>
+                                                                        <TableHead>{t('rank')}</TableHead>
+                                                                        <TableHead>{t('employee')}</TableHead>
+                                                                        <TableHead className="text-right">{t('total_score')}</TableHead>
                                                                     </TableRow>
-                                                                ))}
-                                                            </TableBody>
-                                                        </Table>
-                                                    </div>
-                                                </AccordionContent>
-                                            </AccordionItem>
-                                        ))}
-                                    </Accordion>
-                                </CardContent>
-                            </Card>
-                        </div>
-                    </TabsContent>
-                    
-                    <TabsContent value="form" className="space-y-6">
-                    <Card>
-                            <CardHeader>
-                                <CardTitle>{t('feedback_form')}</CardTitle>
-                                <CardDescription>{t('feedback_form_batch_desc')}</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-6">
-                                {isLoading ? (
-                                    <div className="flex justify-center items-center h-48"><Loader2 className="animate-spin" /></div>
-                                ) : marketingEmployees.length === 0 ? (
-                                    <div className="text-center py-10">
-                                        <p>{t('no_marketing_employees')}</p>
-                                        <Button onClick={() => setAddDialogOpen(true)} className="mt-4">
-                                            <Plus className="mr-2 h-4 w-4" /> {t('add_employee')}
+                                                                </TableHeader>
+                                                                <TableBody>
+                                                                    {q.scores.map((s, rankIndex) => (
+                                                                        <TableRow key={s.name}>
+                                                                            <TableCell className="font-medium">{rankIndex + 1}</TableCell>
+                                                                            <TableCell>{s.name}</TableCell>
+                                                                            <TableCell className="text-right">{s.score}</TableCell>
+                                                                        </TableRow>
+                                                                    ))}
+                                                                </TableBody>
+                                                            </Table>
+                                                        </div>
+                                                    </AccordionContent>
+                                                </AccordionItem>
+                                            ))}
+                                        </Accordion>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        </TabsContent>
+                        
+                        <TabsContent value="form" className="space-y-6">
+                        <Card>
+                                <CardHeader>
+                                    <CardTitle>{t('feedback_form')}</CardTitle>
+                                    <CardDescription>{t('feedback_form_batch_desc')}</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-6">
+                                    {isLoading ? (
+                                        <div className="flex justify-center items-center h-48"><Loader2 className="animate-spin" /></div>
+                                    ) : marketingEmployees.length === 0 ? (
+                                        <div className="text-center py-10">
+                                            <p>{t('no_marketing_employees')}</p>
+                                            <Button onClick={() => setAddDialogOpen(true)} className="mt-4">
+                                                <Plus className="mr-2 h-4 w-4" /> {t('add_employee')}
+                                            </Button>
+                                        </div>
+                                    ) : (
+                                    <div className="space-y-4">
+                                    <div className="p-4 border rounded-lg bg-muted/30 flex-col md:flex-row flex justify-between items-center">
+                                            <div className="space-y-2 mb-4 md:mb-0">
+                                                <Label htmlFor="employee-select">{t('select_an_employee')}</Label>
+                                                <Select onValueChange={setCurrentEmployeeId} value={currentEmployeeId || ''}>
+                                                    <SelectTrigger id="employee-select" className="w-[300px]">
+                                                        <SelectValue placeholder="Select an employee..." />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {marketingEmployees.map(emp => <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>)}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            {currentEmployee && <p className="text-sm text-muted-foreground">{t('showing_questions_for', { employeeName: currentEmployee.name })}</p>}
+                                        </div>
+                                        <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-4">
+                                            {evaluationQuestions.map((q) => (
+                                                <div key={q.id} className="p-4 border rounded-lg">
+                                                    <p className="font-medium mb-3">{t(q.text.toLowerCase().replace(/ /g, '_')) || q.text}</p>
+                                                    <RadioGroup 
+                                                        onValueChange={(value) => handleResponseChange(q.id, value)} 
+                                                        value={String(responses[q.id] || '')}
+                                                    >
+                                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                                            {q.answers.sort((a,b) => b.value - a.value).map(opt => (
+                                                                <Label key={opt.value} htmlFor={`${q.id}-${opt.value}-${currentEmployeeId}`} className="flex items-center space-x-2 p-3 rounded-md hover:bg-muted cursor-pointer flex-1 justify-center border has-[:checked]:bg-primary/10 has-[:checked]:border-primary transition-colors">
+                                                                    <RadioGroupItem value={String(opt.value)} id={`${q.id}-${opt.value}-${currentEmployeeId}`} />
+                                                                    <span>{t(opt.label.toLowerCase().replace(/ /g, '_')) || opt.label}</span>
+                                                                </Label>
+                                                            ))}
+                                                        </div>
+                                                    </RadioGroup>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <Button onClick={handleSaveSubmission} className="w-full">
+                                            <Save className="mr-2 h-4 w-4" /> Save Submission
                                         </Button>
                                     </div>
-                                ) : (
-                                <div className="space-y-4">
-                                <div className="p-4 border rounded-lg bg-muted/30 flex-col md:flex-row flex justify-between items-center">
-                                        <div className="space-y-2 mb-4 md:mb-0">
-                                            <Label htmlFor="employee-select">{t('select_an_employee')}</Label>
-                                            <Select onValueChange={setCurrentEmployeeId} value={currentEmployeeId || ''}>
-                                                <SelectTrigger id="employee-select" className="w-[300px]">
-                                                    <SelectValue placeholder="Select an employee..." />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {marketingEmployees.map(emp => <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>)}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        {currentEmployee && <p className="text-sm text-muted-foreground">{t('showing_questions_for', { employeeName: currentEmployee.name })}</p>}
+                                    )}
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>{t('historical_submissions')}</CardTitle>
+                                    <CardDescription>{t('historical_submissions_desc')}</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="mb-4">
+                                        <Select onValueChange={setSelectedEmployeeForHistory} value={selectedEmployeeForHistory || ''}>
+                                            <SelectTrigger className="w-[300px]">
+                                                <SelectValue placeholder="Select an employee to view history..." />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {marketingEmployees.map(emp => (
+                                                    <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                     </div>
-                                    <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-4">
-                                        {evaluationQuestions.map((q) => (
-                                            <div key={q.id} className="p-4 border rounded-lg">
-                                                <p className="font-medium mb-3">{t(q.text.toLowerCase().replace(/ /g, '_')) || q.text}</p>
-                                                <RadioGroup 
-                                                    onValueChange={(value) => handleResponseChange(q.id, value)} 
-                                                    value={String(responses[q.id] || '')}
-                                                >
-                                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                                                        {q.answers.sort((a,b) => b.value - a.value).map(opt => (
-                                                            <Label key={opt.value} htmlFor={`${q.id}-${opt.value}-${currentEmployeeId}`} className="flex items-center space-x-2 p-3 rounded-md hover:bg-muted cursor-pointer flex-1 justify-center border has-[:checked]:bg-primary/10 has-[:checked]:border-primary transition-colors">
-                                                                <RadioGroupItem value={String(opt.value)} id={`${q.id}-${opt.value}-${currentEmployeeId}`} />
-                                                                <span>{t(opt.label.toLowerCase().replace(/ /g, '_')) || opt.label}</span>
-                                                            </Label>
-                                                        ))}
-                                                    </div>
-                                                </RadioGroup>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <Button onClick={handleSaveSubmission} className="w-full">
-                                        <Save className="mr-2 h-4 w-4" /> Save Submission
-                                    </Button>
-                                </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>{t('historical_submissions')}</CardTitle>
-                                <CardDescription>{t('historical_submissions_desc')}</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="mb-4">
-                                    <Select onValueChange={setSelectedEmployeeForHistory} value={selectedEmployeeForHistory || ''}>
-                                        <SelectTrigger className="w-[300px]">
-                                            <SelectValue placeholder="Select an employee to view history..." />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {marketingEmployees.map(emp => (
-                                                <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                {selectedEmployeeForHistory && (
-                                <div className="max-h-[400px] overflow-y-auto">
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>{t('date')}</TableHead>
-                                                <TableHead className='text-right'>{t('total_score')}</TableHead>
-                                                <TableHead className="text-right"></TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {employeeHistory.length > 0 ? employeeHistory.map(fb => (
-                                                <TableRow key={fb.id}>
-                                                    <TableCell>{format(parseISO(fb.date), 'PPP')}</TableCell>
-                                                    <TableCell className="text-right">{fb.totalScore}</TableCell>
-                                                    <TableCell className="text-right">
-                                                    <div className="flex justify-end gap-2">
-                                                        <Button variant="ghost" size="icon" onClick={() => setEditingFeedback(fb)}><Edit className="h-4 w-4" /></Button>
-                                                        <AlertDialog>
-                                                            <AlertDialogTrigger asChild>
-                                                            <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                                            </AlertDialogTrigger>
-                                                            <AlertDialogContent>
-                                                                <AlertDialogHeader>
-                                                                <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
-                                                                <AlertDialogDescription>{t('confirm_delete_submission', {employeeName: employees.find(e => e.id === fb.employeeId)?.name, date: format(parseISO(fb.date), 'PPP')})}</AlertDialogDescription>
-                                                                </AlertDialogHeader>
-                                                                <AlertDialogFooter>
-                                                                <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-                                                                <AlertDialogAction onClick={() => handleDeleteSubmission(fb.id)}>{t('delete')}</AlertDialogAction>
-                                                                </AlertDialogFooter>
-                                                            </AlertDialogContent>
-                                                        </AlertDialog>
-                                                    </div>
-                                                    </TableCell>
-                                                </TableRow>
-                                            )) : (
+                                    {selectedEmployeeForHistory && (
+                                    <div className="max-h-[400px] overflow-y-auto">
+                                        <Table>
+                                            <TableHeader>
                                                 <TableRow>
-                                                    <TableCell colSpan={3} className="text-center h-24">{t('no_history_for_employee')}</TableCell>
+                                                    <TableHead>{t('date')}</TableHead>
+                                                    <TableHead className='text-right'>{t('total_score')}</TableHead>
+                                                    <TableHead className="text-right"></TableHead>
                                                 </TableRow>
-                                            )}
-                                        </TableBody>
-                                    </Table>
-                                </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-                </Tabs>
-            </main>
-        </div>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {employeeHistory.length > 0 ? employeeHistory.map(fb => (
+                                                    <TableRow key={fb.id}>
+                                                        <TableCell>{format(parseISO(fb.date), 'PPP')}</TableCell>
+                                                        <TableCell className="text-right">{fb.totalScore}</TableCell>
+                                                        <TableCell className="text-right">
+                                                        <div className="flex justify-end gap-2">
+                                                            <Button variant="ghost" size="icon" onClick={() => setEditingFeedback(fb)}><Edit className="h-4 w-4" /></Button>
+                                                            <AlertDialog>
+                                                                <AlertDialogTrigger asChild>
+                                                                <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                                                </AlertDialogTrigger>
+                                                                <AlertDialogContent>
+                                                                    <AlertDialogHeader>
+                                                                    <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
+                                                                    <AlertDialogDescription>{t('confirm_delete_submission', {employeeName: employees.find(e => e.id === fb.employeeId)?.name, date: format(parseISO(fb.date), 'PPP')})}</AlertDialogDescription>
+                                                                    </AlertDialogHeader>
+                                                                    <AlertDialogFooter>
+                                                                    <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                                                                    <AlertDialogAction onClick={() => handleDeleteSubmission(fb.id)}>{t('delete')}</AlertDialogAction>
+                                                                    </AlertDialogFooter>
+                                                                </AlertDialogContent>
+                                                            </AlertDialog>
+                                                        </div>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                )) : (
+                                                    <TableRow>
+                                                        <TableCell colSpan={3} className="text-center h-24">{t('no_history_for_employee')}</TableCell>
+                                                    </TableRow>
+                                                )}
+                                            </TableBody>
+                                        </Table>
+                                    </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                    </Tabs>
+                </main>
+            </div>
+        </>
     );
 }
 
