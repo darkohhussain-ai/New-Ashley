@@ -16,6 +16,9 @@ import { useTranslation } from '@/hooks/use-translation';
 import { useAuth } from '@/hooks/use-auth';
 import { FullMonthlyReportPdf } from '@/components/reports/FullMonthlyReportPdf';
 import { ReportWrapper } from '@/components/reports/ReportWrapper';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import { useToast } from '@/hooks/use-toast';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -30,6 +33,8 @@ export default function MonthlyReportPage() {
   const { employees, expenses, overtime, bonuses, withdrawals, settings } = useAppContext();
   const { user, hasPermission } = useAuth();
   const isReadOnly = !hasPermission('page:admin');
+  const { toast } = useToast();
+  const reportRef = useRef<HTMLDivElement>(null);
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   
@@ -104,6 +109,54 @@ export default function MonthlyReportPage() {
   const handlePrint = () => {
     window.print();
   };
+
+  const handleGeneratePdf = async () => {
+    const input = reportRef.current;
+    if (!input) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Could not find the report content to generate PDF.",
+      });
+      return;
+    }
+
+    const canvas = await html2canvas(input, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff'
+    });
+
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF({
+      orientation: 'l', // landscape
+      unit: 'px',
+      format: 'a4',
+    });
+
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+
+    const imgProps= pdf.getImageProperties(imgData);
+    const imgWidth = imgProps.width;
+    const imgHeight = imgProps.height;
+    
+    const ratio = imgWidth / imgHeight;
+    
+    let finalWidth = pdfWidth;
+    let finalHeight = pdfWidth / ratio;
+    
+    if (finalHeight > pdfHeight) {
+        finalHeight = pdfHeight;
+        finalWidth = finalHeight * ratio;
+    }
+    
+    const x = (pdfWidth - finalWidth) / 2;
+    const y = 0;
+
+    pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
+    pdf.output('dataurlnewwindow');
+  };
   
   const PageContent = () => (
       <>
@@ -169,6 +222,16 @@ export default function MonthlyReportPage() {
 
   return (
     <>
+      <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
+        <div ref={reportRef}>
+            {selectedDate && <FullMonthlyReportPdf
+                records={monthlyReportData.records}
+                date={selectedDate}
+                settings={settings}
+                getEmployeeName={getEmployeeName}
+            />}
+        </div>
+      </div>
       <div className="hidden print:block">
         <ReportWrapper>
           {selectedDate && <FullMonthlyReportPdf
@@ -200,7 +263,10 @@ export default function MonthlyReportPage() {
                 <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} captionLayout="dropdown-nav" fromYear={2020} toYear={2040} />
               </PopoverContent>
             </Popover>
-             <Button variant="outline" onClick={handlePrint} disabled={isLoading || monthlyReportData.records.length === 0}><Printer className="mr-2"/>{t('print')}</Button>
+            <Button variant="outline" onClick={handleGeneratePdf} disabled={isLoading || monthlyReportData.records.length === 0}>
+                <FileText className="mr-2"/>PDF
+            </Button>
+            <Button variant="outline" onClick={handlePrint} disabled={isLoading || monthlyReportData.records.length === 0}><Printer className="mr-2"/>{t('print')}</Button>
           </div>
         </header>
 
