@@ -19,6 +19,9 @@ import { useAuth } from '@/hooks/use-auth';
 import type { AllPdfSettings } from '@/lib/types';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { ReportWrapper } from '@/components/reports/ReportWrapper';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import { useToast } from '@/hooks/use-toast';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -33,11 +36,13 @@ export default function MonthlyExpenseReportPage() {
   const { expenses, employees, settings } = useAppContext();
   const { user, hasPermission } = useAuth();
   const isReadOnly = !hasPermission('page:admin');
+  const { toast } = useToast();
   
   const { pdfSettings, customFont } = settings;
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const reportRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
     // Only set date on client-side
@@ -107,6 +112,54 @@ export default function MonthlyExpenseReportPage() {
   const handlePrint = () => {
     window.print();
   };
+
+  const handleGeneratePdf = async () => {
+    const input = reportRef.current;
+    if (!input) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Could not find the report content to generate PDF.",
+      });
+      return;
+    }
+
+    const canvas = await html2canvas(input, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff'
+    });
+
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF({
+      orientation: 'p',
+      unit: 'px',
+      format: 'a4',
+    });
+
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+
+    const imgProps= pdf.getImageProperties(imgData);
+    const imgWidth = imgProps.width;
+    const imgHeight = imgProps.height;
+    
+    const ratio = imgWidth / imgHeight;
+    
+    let finalWidth = pdfWidth;
+    let finalHeight = pdfWidth / ratio;
+    
+    if (finalHeight > pdfHeight) {
+        finalHeight = pdfHeight;
+        finalWidth = finalHeight * ratio;
+    }
+    
+    const x = (pdfWidth - finalWidth) / 2;
+    const y = 0;
+
+    pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
+    pdf.output('dataurlnewwindow');
+  };
   
   if (isLoading) {
     return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -114,7 +167,7 @@ export default function MonthlyExpenseReportPage() {
   
   const PageContent = () => (
       <>
-        {isLoading ? (
+       {isLoading ? (
             <div className="space-y-6"><Skeleton className="h-64 w-full" /></div>
             ) : monthlyData.summary.length > 0 ? (
             <div className="space-y-8">
@@ -185,6 +238,13 @@ export default function MonthlyExpenseReportPage() {
 
   return (
     <>
+      <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
+        <div ref={reportRef}>
+            <ReportWrapper>
+              <PageContent />
+            </ReportWrapper>
+        </div>
+      </div>
       <div className="hidden print:block">
         <ReportWrapper>
           <PageContent />
@@ -218,6 +278,9 @@ export default function MonthlyExpenseReportPage() {
                 />
               </PopoverContent>
             </Popover>
+            <Button variant="outline" onClick={handleGeneratePdf} disabled={isLoading || monthlyData.summary.length === 0}>
+                <FileText className="mr-2 h-4 w-4" /> PDF
+            </Button>
             <Button variant="outline" onClick={handlePrint} disabled={isLoading || monthlyData.summary.length === 0}><Printer className="mr-2"/>{t('print')}</Button>
           </div>
         </header>
