@@ -20,7 +20,6 @@ import type { AllPdfSettings } from '@/lib/types';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { ReportWrapper } from '@/components/reports/ReportWrapper';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import * as XLSX from 'xlsx';
 import { useToast } from '@/hooks/use-toast';
 
@@ -124,49 +123,31 @@ export default function MonthlyExpenseReportPage() {
       });
       return;
     }
-
-    const canvas = await html2canvas(input, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        onclone: (document) => {
-            if (customFont) {
-                const style = document.createElement('style');
-                style.innerHTML = `@font-face { font-family: 'CustomAppFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3, span { font-family: 'CustomAppFont' !important; }`;
-                document.head.appendChild(style);
-            }
-        }
-    });
-
-    const imgData = canvas.toDataURL('image/png');
+    
     const pdf = new jsPDF({
       orientation: 'p',
-      unit: 'px',
-      format: 'a4',
+      unit: 'pt',
+      format: 'a4'
     });
 
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-
-    const imgProps= pdf.getImageProperties(imgData);
-    const imgWidth = imgProps.width;
-    const imgHeight = imgProps.height;
-    
-    const ratio = imgWidth / imgHeight;
-    
-    let finalWidth = pdfWidth;
-    let finalHeight = pdfWidth / ratio;
-    
-    if (finalHeight > pdfHeight) {
-        finalHeight = pdfHeight;
-        finalWidth = finalHeight * ratio;
-    }
-    
-    const x = (pdfWidth - finalWidth) / 2;
-    const y = 0;
-
-    pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
-    pdf.save('monthly-expense-report.pdf');
+    await pdf.html(input, {
+      callback: function(doc) {
+        doc.save('monthly-expense-report.pdf');
+      },
+      margin: [40, 30, 40, 30],
+      autoPaging: 'text',
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        onclone: (doc) => {
+            if (customFont && language === 'ku') {
+                const style = doc.createElement('style');
+                style.innerHTML = `@font-face { font-family: 'CustomAppFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3, span { font-family: 'CustomAppFont' !important; }`;
+                doc.head.appendChild(style);
+            }
+        }
+      }
+    });
   };
 
   const handleExportExcel = () => {

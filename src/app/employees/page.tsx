@@ -33,7 +33,6 @@ import { initialSettings } from "@/context/initial-data";
 import { EmployeeDashboardPrintView } from "@/components/employees/EmployeeDashboardPrintView";
 import { EmployeeReportPdf } from "@/components/employees/EmployeeReportPdf";
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import * as XLSX from 'xlsx';
 
 const employeeRoles: Exclude<Employee['role'], null | undefined>[] = [
@@ -187,7 +186,6 @@ function EmployeesPage() {
   
   const { customFont } = settings;
 
-  const [isPrinting, setIsPrinting] = useState<false | 'list' | 'detail'>(false);
   const detailReportRef = useRef<HTMLDivElement>(null);
   const dashboardReportRef = useRef<HTMLDivElement>(null);
   
@@ -253,14 +251,6 @@ function EmployeesPage() {
       }
     }
   }, [warehouseEmployees, marketingEmployees, selectedEmployeeId]);
-  
-  const runPrint = (printType: 'list' | 'detail') => {
-      setIsPrinting(printType);
-      setTimeout(() => {
-          window.print();
-          setIsPrinting(false);
-      }, 100);
-  };
   
   const addEmployee = (employeeData: Omit<Employee, 'id'>) => {
     const newEmployee: Employee = { id: crypto.randomUUID(), ...employeeData };
@@ -383,7 +373,7 @@ function EmployeesPage() {
       margin: [40, 30, 40, 30],
       autoPaging: 'text',
       html2canvas: {
-        scale: 0.65,
+        scale: 2,
         useCORS: true,
         onclone: (doc) => {
           if (customFont && language === 'ku') {
@@ -501,13 +491,13 @@ function EmployeesPage() {
         </div>
       </div>
 
-      {/* --- PRINT-ONLY CONTENT --- */}
-      <div className={cn('print-only-container', !isPrinting && 'hidden')}>
-        <div className="hidden print:block">
-            {isPrinting === 'list' && (
-                <EmployeeDashboardPrintView employees={[...warehouseEmployees, ...marketingEmployees]} settings={settings} />
-            )}
-            {isPrinting === 'detail' && selectedEmployee && (
+      {/* --- PRINT-ONLY VIEW (uses CSS to show) --- */}
+      <div className="hidden print:block">
+        <div id="print-dashboard-content">
+            <EmployeeDashboardPrintView employees={[...warehouseEmployees, ...marketingEmployees]} settings={settings} />
+        </div>
+        <div id="print-detail-content" style={{ display: 'none' }}>
+           {selectedEmployee && (
                  <EmployeeReportPdf 
                     employee={selectedEmployee}
                     settings={settings}
@@ -519,9 +509,19 @@ function EmployeesPage() {
             )}
         </div>
       </div>
+      <style jsx global>{`
+        @media print {
+            .print-only-dashboard #print-detail-content, .print-only-detail #print-dashboard-content {
+                display: none;
+            }
+            .print-only-dashboard #print-dashboard-content, .print-only-detail #print-detail-content {
+                display: block;
+            }
+        }
+      `}</style>
       
       {/* --- MAIN UI --- */}
-      <div className={cn("h-screen w-screen flex flex-col bg-background text-foreground print:hidden", isPrinting && "invisible")}>
+      <div className="h-screen w-screen flex flex-col bg-background text-foreground print:hidden">
           <AddEmployeeDialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen} addEmployee={addEmployee} />
           <header className="bg-card border-b p-4">
               <div className="container mx-auto flex items-center justify-between">
@@ -538,7 +538,7 @@ function EmployeesPage() {
                      <div className="flex items-center justify-between gap-2">
                           <h2 className="font-semibold text-lg">{t('employees_list')}</h2>
                           <div className="flex items-center gap-1">
-                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => runPrint('list')}><Printer className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {document.body.classList.add('print-only-dashboard'); window.print(); document.body.classList.remove('print-only-dashboard');}}><Printer className="h-4 w-4" /></Button>
                               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => generatePdf('list')}><FileText className="h-4 w-4" /></Button>
                               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleExportExcelForDashboard}><FileDown className="h-4 w-4" /></Button>
                           </div>
@@ -591,7 +591,7 @@ function EmployeesPage() {
                                 ) : (
                                     <>
                                         <Button onClick={() => setIsEditing(true)}><Edit className="mr-2 h-4 w-4"/> {t('edit')}</Button>
-                                        <Button variant="outline" onClick={() => runPrint('detail')}><Printer className="mr-2 h-4 w-4"/> {t('print')}</Button>
+                                        <Button variant="outline" onClick={() => {document.body.classList.add('print-only-detail'); window.print(); document.body.classList.remove('print-only-detail');}}><Printer className="mr-2 h-4 w-4"/> {t('print')}</Button>
                                         <Button variant="outline" onClick={() => generatePdf('detail')}><FileText className="mr-2 h-4 w-4"/> {t('pdf')}</Button>
                                         <Button variant="outline" onClick={handleExportExcelForDetail}><FileDown className="mr-2 h-4 w-4"/> {t('excel')}</Button>
                                         <AlertDialog>

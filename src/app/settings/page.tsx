@@ -101,6 +101,7 @@ import {
   getDownloadURL,
 } from 'firebase/storage';
 import { TransmitReportPdf } from '@/components/transmit/TransmitReportPdf';
+import jsPDF from 'jspdf';
 
 const reportTypes = [
   { value: 'general', label: 'General' },
@@ -478,7 +479,7 @@ function TranslationEditor({ onSave, draftSettings, setDraftSettings }: {
 function SettingsPage() {
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { settings, setSettings, setEmployees, setItems, setExcelFiles, setLocations, setExpenses, setExpenseReports, setOvertime, setBonuses, setWithdrawals, setReceipts, setItemCategories, setTransfers, setTransferItems, setMarketingFeedbacks, setEvaluationQuestions, setUsers, setRoles } = useAppContext();
   const storage = useStorage();
 
@@ -492,6 +493,7 @@ function SettingsPage() {
   const [importFile, setImportFile] = useState<File | null>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
   const [resetConfirmText, setResetConfirmText] = useState("");
+  const pdfPreviewRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (settings) {
@@ -836,6 +838,43 @@ function SettingsPage() {
       };
       reader.readAsText(importFile);
     }
+  };
+
+  const handleGeneratePdf = async () => {
+    const input = pdfPreviewRef.current;
+    if (!input) {
+      toast({
+        variant: 'destructive',
+        title: 'Error generating PDF',
+        description: 'Preview content not found.',
+      });
+      return;
+    }
+
+    const pdf = new jsPDF({
+      orientation: 'p',
+      unit: 'pt',
+      format: 'a4',
+    });
+
+    await pdf.html(input, {
+      callback: function (doc) {
+        doc.save('preview.pdf');
+      },
+      margin: [40, 30, 40, 30],
+      autoPaging: 'text',
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        onclone: (doc) => {
+          if (settings.customFont && language === 'ku') {
+            const style = doc.createElement('style');
+            style.innerHTML = `@font-face { font-family: 'CustomAppFont'; src: url(${settings.customFont}); } body, table, div, p, h1, h2, h3, h4, h5, h6, span, th, td { font-family: 'CustomAppFont' !important; }`;
+            doc.head.appendChild(style);
+          }
+        },
+      },
+    });
   };
 
   if (!settings || !draftSettings) {
@@ -1577,15 +1616,19 @@ function SettingsPage() {
               </div>
               <div className="lg:col-span-2">
                 <Card>
-                  <CardHeader>
-                    <CardTitle>{t('live_preview')}</CardTitle>
-                    <CardDescription>
-                      {t('live_preview_desc', { type: activePdfTab })}
-                    </CardDescription>
+                  <CardHeader className='flex-row items-center justify-between'>
+                    <div>
+                      <CardTitle>{t('live_preview')}</CardTitle>
+                      <CardDescription>
+                        {t('live_preview_desc', { type: activePdfTab })}
+                      </CardDescription>
+                    </div>
+                    <Button onClick={handleGeneratePdf}>{t('export_pdf')}</Button>
                   </CardHeader>
                   <CardContent className="bg-muted/50 p-6 rounded-b-lg flex justify-center items-start overflow-auto">
                     <div
                       className="w-full max-w-3xl bg-white shadow-lg transform origin-top overflow-hidden flex flex-col"
+                      ref={pdfPreviewRef}
                     >
                       {activePdfTab === 'report' && (
                         <ReportWrapper

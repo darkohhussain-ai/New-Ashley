@@ -8,7 +8,6 @@ import { ArrowLeft, Download, FileSpreadsheet, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
-import html2canvas from 'html2canvas';
 import { FilePdfCard } from '@/components/archive/file-pdf-card';
 import { useAppContext } from '@/context/app-provider';
 import { useTranslation } from '@/hooks/use-translation';
@@ -34,40 +33,32 @@ export default function PdfViewPage() {
   const handleDownloadPdf = async () => {
     if (!file || !pdfContentRef.current) return;
     
-    const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
+    const input = pdfContentRef.current;
     
-    const canvas = await html2canvas(pdfContentRef.current, { 
-      scale: 2, 
-      useCORS: true, 
-      backgroundColor: 'white',
-      onclone: (document) => {
-        if (customFont && language === 'ku') {
-            const style = document.createElement('style');
-            style.innerHTML = `@font-face { font-family: 'CustomAppFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomAppFont' !important; }`;
-            document.head.appendChild(style);
+    const pdf = new jsPDF({
+      orientation: 'p',
+      unit: 'pt',
+      format: 'a4'
+    });
+
+    await pdf.html(input, {
+      callback: function(doc) {
+        doc.save(`${file.storageName}.pdf`);
+      },
+      margin: [40, 30, 40, 30],
+      autoPaging: 'text',
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        onclone: (doc) => {
+            if (customFont && language === 'ku') {
+                const style = doc.createElement('style');
+                style.innerHTML = `@font-face { font-family: 'CustomAppFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3 { font-family: 'CustomAppFont' !important; }`;
+                doc.head.appendChild(style);
+            }
         }
       }
     });
-
-    const imgData = canvas.toDataURL('image/png');
-    const pdfWidth = doc.internal.pageSize.getWidth();
-    const pdfHeight = doc.internal.pageSize.getHeight();
-    const imgWidth = canvas.width;
-    const imgHeight = canvas.height;
-    const ratio = imgWidth / imgHeight;
-    
-    let finalImgWidth = pdfWidth;
-    let finalImgHeight = finalImgWidth / ratio;
-    
-    if (finalImgHeight > pdfHeight) {
-        finalImgHeight = pdfHeight;
-        finalImgWidth = finalImgHeight * ratio;
-    }
-
-    const x = (pdfWidth - finalImgWidth) / 2;
-    
-    doc.addImage(imgData, 'PNG', x, 0, finalImgWidth, finalImgHeight);
-    doc.save(`${file.storageName}.pdf`);
   };
 
   const handleDownloadExcel = () => {
@@ -119,16 +110,18 @@ export default function PdfViewPage() {
         </header>
 
         <div className="flex justify-center bg-gray-100 dark:bg-gray-900 p-8 rounded-lg">
-            <div ref={pdfContentRef} className="w-full max-w-4xl transform scale-100">
+            <div className="w-full max-w-4xl transform scale-100">
               {employeeForFile && (
-                <FilePdfCard
-                  file={file}
-                  items={fileItems}
-                  employee={employeeForFile}
-                  locations={locations}
-                  logoSrc={appLogo}
-                  themeColor={pdfSettings.report.reportColors?.general || '#22c55e'}
-                />
+                <div ref={pdfContentRef}>
+                  <FilePdfCard
+                    file={file}
+                    items={fileItems}
+                    employee={employeeForFile}
+                    locations={locations}
+                    logoSrc={appLogo}
+                    themeColor={pdfSettings.report.reportColors?.general || '#22c55e'}
+                  />
+                </div>
               )}
             </div>
         </div>
