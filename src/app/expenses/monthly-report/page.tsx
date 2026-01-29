@@ -4,7 +4,7 @@
 
 import { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Calendar as CalendarIcon, FileText, Printer, Loader2, BarChart } from 'lucide-react';
+import { ArrowLeft, Calendar as CalendarIcon, FileText, Printer, Loader2, BarChart, FileSpreadsheet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -21,6 +21,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { ReportWrapper } from '@/components/reports/ReportWrapper';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import * as XLSX from 'xlsx';
 import { useToast } from '@/hooks/use-toast';
 
 const formatCurrency = (amount: number) => {
@@ -167,6 +168,56 @@ export default function MonthlyExpenseReportPage() {
     pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
     pdf.save('monthly-expense-report.pdf');
   };
+
+  const handleExportExcel = () => {
+    if (!monthlyData || monthlyData.summary.length === 0 || !selectedDate) {
+      toast({
+        variant: "destructive",
+        title: t('no_data_to_export'),
+      });
+      return;
+    }
+
+    const allTaxiSubtypes = new Set<string>();
+    monthlyData.summary.forEach(item => {
+        Object.keys(item.taxiBreakdown).forEach(subType => allTaxiSubtypes.add(subType));
+    });
+    const sortedTaxiSubtypes = Array.from(allTaxiSubtypes).sort();
+
+    const dataToExport = monthlyData.summary.map(item => {
+        const row: {[key: string]: any} = {
+            [t('employee')]: item.employeeName,
+            [t('total_expenses')]: item.totalAmount,
+            [t('taxi_expenses')]: item.taxiTotal,
+            [t('purchases_buying_items')]: item.purchasesTotal,
+        };
+        
+        sortedTaxiSubtypes.forEach(subType => {
+            row[t(subType.toLowerCase().replace(/\s/g, '_'))] = item.taxiBreakdown[subType] || 0;
+        });
+
+        return row;
+    });
+    
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+
+    const totals: {[key: string]: any} = {
+        [t('employee')]: t('grand_total'),
+        [t('total_expenses')]: monthlyData.grandTotal,
+        [t('taxi_expenses')]: monthlyData.summary.reduce((sum, item) => sum + item.taxiTotal, 0),
+        [t('purchases_buying_items')]: monthlyData.summary.reduce((sum, item) => sum + item.purchasesTotal, 0),
+    };
+    sortedTaxiSubtypes.forEach(subType => {
+        totals[t(subType.toLowerCase().replace(/\s/g, '_'))] = monthlyData.summary.reduce((sum, item) => sum + (item.taxiBreakdown[subType] || 0), 0);
+    });
+
+    XLSX.utils.sheet_add_json(worksheet, [totals], { skipHeader: true, origin: -1 });
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Monthly Expenses');
+
+    XLSX.writeFile(workbook, `Monthly_Expenses_${format(selectedDate, 'yyyy-MM')}.xlsx`);
+  };
   
   if (isLoading) {
     return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -189,7 +240,7 @@ export default function MonthlyExpenseReportPage() {
                        <Accordion type="single" collapsible className="w-full">
                           {monthlyData.summary.map(item => (
                             <AccordionItem value={item.employeeId} key={item.employeeId}>
-                              <AccordionTrigger className="hover:no-underline">
+                              <AccordionTrigger className="hover:no-underline text-base">
                                 <div className="flex justify-between w-full pr-4">
                                   <span dir={language === 'ku' ? 'rtl' : 'ltr'}>{item.employeeName}</span>
                                   <span className="font-semibold">{isReadOnly ? '***' : formatCurrency(item.totalAmount)}</span>
@@ -285,10 +336,13 @@ export default function MonthlyExpenseReportPage() {
                 />
               </PopoverContent>
             </Popover>
+            <Button variant="outline" onClick={handlePrint} disabled={isLoading || monthlyData.summary.length === 0}><Printer className="mr-2 h-4 w-4"/>{t('print')}</Button>
             <Button variant="outline" onClick={handleGeneratePdf} disabled={isLoading || monthlyData.summary.length === 0}>
                 <FileText className="mr-2 h-4 w-4" /> PDF
             </Button>
-            <Button variant="outline" onClick={handlePrint} disabled={isLoading || monthlyData.summary.length === 0}><Printer className="mr-2"/>{t('print')}</Button>
+            <Button variant="outline" onClick={handleExportExcel} disabled={isLoading || monthlyData.summary.length === 0}>
+                <FileSpreadsheet className="mr-2 h-4 w-4"/> Excel
+            </Button>
           </div>
         </header>
 
