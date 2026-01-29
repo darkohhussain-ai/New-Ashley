@@ -14,11 +14,11 @@ import { Calendar } from "@/components/ui/calendar"
 import { format, parseISO } from "date-fns"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ArrowLeft, Edit, Trash2, Save, X, Upload, Mail, Phone, Cake, Calendar as CalendarIcon, DollarSign, Clock, Gift, Banknote, FileDown, Printer, UserX, User, Loader2 } from 'lucide-react'
+import { ArrowLeft, Edit, Trash2, Save, X, Upload, Mail, Phone, Cake, Calendar as CalendarIcon, DollarSign, Clock, Gift, Banknote, FileDown, Printer, UserX, User, Loader2, FileText } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from "@/hooks/use-toast"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
-import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { useAppContext } from "@/context/app-provider"
 import type { Employee, Expense, Overtime, Bonus, CashWithdrawal } from "@/lib/types"
@@ -28,6 +28,8 @@ import { useStorage } from "@/firebase";
 import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
 import { EmployeeReportPdf } from "@/components/employees/EmployeeReportPdf";
 import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const employeeRoles: Exclude<Employee['role'], null | undefined>[] = [
     'Super Manager', 
@@ -234,6 +236,107 @@ function EmployeeDetailPage() {
     }
   };
 
+  const handleGeneratePdf = () => {
+    if (!selectedEmployee) return;
+
+    const doc = new jsPDF({
+        orientation: 'p',
+        unit: 'pt',
+        format: 'a4'
+    });
+
+    const fontName = 'CustomAppFont';
+    if (settings.customFont) {
+        try {
+            const base64Font = settings.customFont.split(',')[1];
+            doc.addFileToVFS(`${fontName}.ttf`, base64Font);
+            doc.addFont(`${fontName}.ttf`, fontName, 'normal');
+            doc.setFont(fontName);
+        } catch (e) {
+            console.error("Error with custom font:", e);
+            doc.setFont('helvetica');
+        }
+    } else {
+        doc.setFont('helvetica');
+    }
+    
+    const displayName = language === 'ku' && selectedEmployee.kurdishName ? selectedEmployee.kurdishName : selectedEmployee.name;
+
+    doc.setFontSize(22);
+    doc.text(t('employee_report'), doc.internal.pageSize.getWidth() / 2, 40, { align: 'center' });
+    doc.setFontSize(14);
+    doc.setTextColor(100);
+    doc.text(displayName, doc.internal.pageSize.getWidth() / 2, 60, { align: 'center' });
+
+    let startY = 80;
+
+    autoTable(doc, {
+        body: [
+            [{ content: t('contact_information'), colSpan: 2, styles: { fontStyle: 'bold' } }],
+            [t('email_optional'), selectedEmployee.email || t('na')],
+            [t('phone_optional'), selectedEmployee.phone || t('na')],
+            [{ content: t('employment_details'), colSpan: 2, styles: { fontStyle: 'bold', paddingTop: 10 } }],
+            [t('id_no'), selectedEmployee.employeeId || t('na')],
+            [t('role_optional'), selectedEmployee.role || t('na')],
+            [t('joined_date'), selectedEmployee.employmentStartDate ? format(parseISO(selectedEmployee.employmentStartDate), 'PPP') : t('na')],
+            [t('dob'), selectedEmployee.dateOfBirth ? format(parseISO(selectedEmployee.dateOfBirth), 'PPP') : t('na')],
+        ],
+        startY: startY,
+        theme: 'plain',
+        styles: { font: fontName, fontSize: 9 }
+    });
+
+    startY = (doc as any).lastAutoTable.finalY + 20;
+
+    const addFinancialSection = (title: string, data: any[], columns: string[], rows: (item: any) => (string|number)[]) => {
+        if (data.length === 0) return;
+        if (startY > doc.internal.pageSize.getHeight() - 100) {
+            doc.addPage();
+            startY = 40;
+        }
+        doc.setFontSize(14);
+        doc.text(title, 40, startY);
+        startY += 15;
+
+        autoTable(doc, {
+            head: [columns],
+            body: data.map(rows),
+            startY: startY,
+            theme: 'striped',
+            styles: { font: fontName, fontSize: 9 },
+            headStyles: { fillColor: '#3B82F6' },
+        });
+        startY = (doc as any).lastAutoTable.finalY + 20;
+    };
+    
+    addFinancialSection(
+      t('expenses'), 
+      sortedExpenses, 
+      [t('date'), t('notes'), t('amount')], 
+      (item: Expense) => [format(parseISO(item.date), 'PPP'), item.notes || '', formatCurrency(item.amount)]
+    );
+    addFinancialSection(
+      t('overtime'), 
+      sortedOvertime, 
+      [t('date'), t('overtime_hours'), t('notes'), t('amount')], 
+      (item: Overtime) => [format(parseISO(item.date), 'PPP'), item.hours.toFixed(2), item.notes || '', formatCurrency(item.totalAmount)]
+    );
+    addFinancialSection(
+      t('bonuses'), 
+      sortedBonuses, 
+      [t('date'), t('number_of_loads'), t('notes'), t('amount')], 
+      (item: Bonus) => [format(parseISO(item.date), 'PPP'), item.loadCount, item.notes || '', formatCurrency(item.totalAmount)]
+    );
+    addFinancialSection(
+      t('cash_withdrawals'), 
+      sortedWithdrawals, 
+      [t('date'), t('notes'), t('amount')], 
+      (item: CashWithdrawal) => [format(parseISO(item.date), 'PPP'), item.notes || '', formatCurrency(item.amount)]
+    );
+
+    doc.save(`${selectedEmployee.name}_Report_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+  }
+
   const employeeIsActive = selectedEmployee?.isActive ?? true;
 
   if (isAppLoading) {
@@ -289,6 +392,7 @@ function EmployeeDetailPage() {
                         <>
                             <Button onClick={() => setIsEditing(true)}><Edit className="mr-2 h-4 w-4"/> {t('edit')}</Button>
                             <Button variant="outline" onClick={handlePrint}><Printer className="mr-2 h-4 w-4"/> {t('print')}</Button>
+                            <Button variant="outline" onClick={handleGeneratePdf}><FileText className="mr-2 h-4 w-4"/> {t('pdf')}</Button>
                             <Button variant="outline" onClick={handleExportExcelForDetail}><FileDown className="mr-2 h-4 w-4"/> {t('excel')}</Button>
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
@@ -396,3 +500,6 @@ function EmployeeDetailPage() {
 }
 
 export default withAuth(EmployeeDetailPage);
+
+
+    
