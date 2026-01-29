@@ -1,8 +1,7 @@
 
-
 "use client"
 
-import { useState, useMemo, useEffect, useRef, useCallback } from "react"
+import { useState, useMemo, useEffect, useRef } from "react"
 import withAuth from "@/hooks/withAuth";
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -23,7 +22,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { useAppContext } from "@/context/app-provider"
-import type { Employee, Expense, Overtime, Bonus, CashWithdrawal, AllPdfSettings } from "@/lib/types"
+import type { Employee, Expense, Overtime, Bonus, CashWithdrawal } from "@/lib/types"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { useTranslation } from "@/hooks/use-translation"
@@ -64,553 +63,6 @@ const safeDate = (dateValue: string | undefined | null): Date | null => {
     return null;
   }
 };
-
-
-function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, onDeselect: () => void }) {
-    const { t, language } = useTranslation();
-    const { toast } = useToast();
-    const { 
-        employees, setEmployees,
-        expenses,
-        overtime,
-        bonuses,
-        withdrawals,
-        settings,
-        isLoading,
-    } = useAppContext();
-    
-    const { pdfSettings, appLogo, customFont } = settings || { pdfSettings: initialSettings.pdfSettings, appLogo: null, customFont: null };
-
-    const storage = useStorage();
-    const reportRef = useRef<HTMLDivElement>(null);
-
-    const employee = useMemo(() => employees.find(e => e.id === employeeId), [employees, employeeId]);
-    const employeeExpenses = useMemo(() => expenses.filter(e => e.employeeId === employeeId), [expenses, employeeId]);
-    const employeeOvertime = useMemo(() => overtime.filter(e => e.employeeId === employeeId), [overtime, employeeId]);
-    const employeeBonuses = useMemo(() => bonuses.filter(b => b.employeeId === employeeId), [bonuses, employeeId]);
-    const employeeWithdrawals = useMemo(() => withdrawals.filter(w => w.employeeId === employeeId), [withdrawals, employeeId]);
-
-
-    const [isEditing, setIsEditing] = useState(false);
-    const [name, setName] = useState('');
-    const [kurdishName, setKurdishName] = useState('');
-    const [uniqueId, setUniqueId] = useState('');
-    const [role, setRole] = useState<Employee['role']>();
-    const [employmentStartDate, setEmploymentStartDate] = useState<Date | undefined>(undefined);
-    const [dateOfBirth, setDateOfBirth] = useState<Date | undefined>(undefined);
-    const [email, setEmail] = useState('');
-    const [phone, setPhone] = useState('');
-    const [photoUrl, setPhotoUrl] = useState<string | undefined>(undefined);
-    const [notes, setNotes] = useState('');
-    
-    const photoUploadRef = useRef<HTMLInputElement>(null);
-
-    useEffect(() => {
-        if (employee) {
-            setName(employee.name);
-            setKurdishName(employee.kurdishName || '');
-            setUniqueId(employee.employeeId || '');
-            setRole(employee.role);
-            setEmploymentStartDate(safeDate(employee.employmentStartDate) || undefined);
-            setDateOfBirth(safeDate(employee.dateOfBirth) || undefined);
-            setEmail(employee.email || '');
-            setPhone(employee.phone || '');
-            setPhotoUrl(employee.photoUrl || undefined);
-            setNotes(employee.notes || '');
-        }
-    }, [employee]);
-
-    const { totalExpenses, sortedExpenses } = useMemo(() => {
-        if (!employeeExpenses) return { totalExpenses: 0, sortedExpenses: [] };
-        const total = employeeExpenses.reduce((sum, exp) => sum + exp.amount, 0);
-        const sorted = [...employeeExpenses]
-            .filter(e => e.date && !isNaN(parseISO(e.date).getTime()))
-            .sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
-        return { totalExpenses: total, sortedExpenses: sorted };
-    }, [employeeExpenses]);
-
-    const { totalOvertimeAmount, totalOvertimeHours, sortedOvertime } = useMemo(() => {
-        if (!employeeOvertime) return { totalOvertimeAmount: 0, totalOvertimeHours: 0, sortedOvertime: [] };
-        const totals = employeeOvertime.reduce((acc, ot) => {
-            acc.totalAmount += ot.totalAmount;
-            acc.totalHours += ot.hours;
-            return acc;
-        }, { totalAmount: 0, totalHours: 0 });
-        const sorted = [...employeeOvertime]
-            .filter(o => o.date && !isNaN(parseISO(o.date).getTime()))
-            .sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
-        return { totalOvertimeAmount: totals.totalAmount, totalOvertimeHours: totals.totalHours, sortedOvertime: sorted };
-    }, [employeeOvertime]);
-
-    const { totalBonuses, sortedBonuses } = useMemo(() => {
-        if (!employeeBonuses) return { totalBonuses: 0, sortedBonuses: [] };
-        const total = employeeBonuses.reduce((sum, b) => sum + b.totalAmount, 0);
-        const sorted = [...employeeBonuses]
-            .filter(b => b.date && !isNaN(parseISO(b.date).getTime()))
-            .sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
-        return { totalBonuses: total, sortedBonuses: sorted };
-    }, [employeeBonuses]);
-
-    const { totalWithdrawals, sortedWithdrawals } = useMemo(() => {
-        if (!employeeWithdrawals) return { totalWithdrawals: 0, sortedWithdrawals: [] };
-        const total = employeeWithdrawals.reduce((sum, w) => sum + w.amount, 0);
-        const sorted = [...employeeWithdrawals]
-            .filter(w => w.date && !isNaN(parseISO(w.date).getTime()))
-            .sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
-        return { totalWithdrawals: total, sortedWithdrawals: sorted };
-    }, [employeeWithdrawals]);
-
-    const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file || !employee) return;
-
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const localUrl = event.target?.result as string;
-            if (localUrl) {
-                // Instant preview
-                setPhotoUrl(localUrl);
-
-                // Upload to storage
-                const filePath = `employees/${employee.id}/photo.png`;
-                const sRef = storageRef(storage, filePath);
-                
-                const uploadToast = toast({
-                    title: "Uploading...",
-                    description: "Your new photo is being uploaded.",
-                });
-
-                uploadString(sRef, localUrl, 'data_url').then(() => {
-                    getDownloadURL(sRef).then(downloadURL => {
-                        // Update the state with the permanent URL
-                        setPhotoUrl(downloadURL);
-                        uploadToast.update({ id: uploadToast.id, title: "Upload Complete", description: "Photo updated. Click Save to apply changes." });
-                    }).catch(err => {
-                        console.error("Error getting download URL", err);
-                        uploadToast.update({ id: uploadToast.id, variant: 'destructive', title: "Upload Failed", description: "Could not get the photo URL." });
-                    });
-                }).catch(err => {
-                    console.error("Error uploading file", err);
-                     uploadToast.update({ id: uploadToast.id, variant: 'destructive', title: "Upload Failed", description: "The photo could not be uploaded." });
-                });
-            }
-        };
-        reader.readAsDataURL(file);
-    };
-
-    const handleUpdate = () => {
-        if (!employeeId || !name) return;
-
-        const updatedData: Partial<Employee> = {
-            name: name,
-            kurdishName: kurdishName || null,
-            employeeId: uniqueId || null,
-            role: role || null,
-            employmentStartDate: employmentStartDate ? employmentStartDate.toISOString() : null,
-            dateOfBirth: dateOfBirth ? dateOfBirth.toISOString() : null,
-            email: email || null,
-            phone: phone || null,
-            photoUrl: photoUrl || null,
-            notes: notes || null,
-        };
-
-        setEmployees(employees.map(emp => 
-            emp.id === employeeId 
-                ? { ...emp, ...updatedData } 
-                : emp
-        ));
-        
-        toast({ title: t('save_changes'), description: t('employee_details_updated') });
-        setIsEditing(false);
-    };
-    
-    const handleDelete = () => {
-        if(!employeeId) return;
-        setEmployees(employees.filter(e => e.id !== employeeId));
-        toast({ title: t('employee_deleted'), description: t('employee_deleted_desc', {employeeName: employee?.name}) });
-        onDeselect();
-    }
-    
-    const handleToggleActiveStatus = () => {
-        if (!employee) return;
-        setEmployees(employees.map(e => e.id === employee.id ? { ...e, isActive: !e.isActive } : e));
-        toast({
-            title: employee.isActive ? 'Employee Deactivated' : 'Employee Reactivated',
-            description: `${employee.name} has been ${employee.isActive ? 'deactivated' : 'reactivated'}.`
-        })
-    };
-    
-    const handlePrint = () => {
-        window.print();
-    }
-
-    const handleGeneratePdf = async () => {
-        const input = reportRef.current;
-        if (!input || !employee) return;
-        
-        // Temporarily apply font for canvas rendering
-        if (customFont && language === 'ku') {
-            document.body.style.fontFamily = 'CustomAppFont';
-        }
-        
-        const canvas = await html2canvas(input, {
-            scale: 2,
-            useCORS: true,
-            backgroundColor: '#ffffff',
-        });
-        
-        // Revert font style
-        if (customFont && language === 'ku') {
-            document.body.style.fontFamily = '';
-        }
-    
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
-        
-        // Add custom font to PDF if available
-        if (customFont && language === 'ku') {
-            const fontData = customFont.split(',')[1];
-            pdf.addFileToVFS('CustomAppFont.ttf', fontData);
-            pdf.addFont('CustomAppFont.ttf', 'CustomAppFont', 'normal');
-            pdf.setFont('CustomAppFont');
-        }
-
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
-        const imgProps = pdf.getImageProperties(imgData);
-        const imgWidth = imgProps.width;
-        const imgHeight = imgProps.height;
-        const ratio = imgWidth / imgHeight;
-        
-        let finalWidth = pdfWidth;
-        let finalHeight = pdfWidth / ratio;
-    
-        if (finalHeight > pdfHeight) {
-            finalHeight = pdfHeight;
-            finalWidth = finalHeight * ratio;
-        }
-        
-        const x = (pdfWidth - finalWidth) / 2;
-        const y = 0;
-    
-        pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
-        pdf.save(`${employee.name}_Report_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
-    };
-    
-    const handleExportExcel = () => {
-        if (!employee) return;
-
-        const wb = XLSX.utils.book_new();
-
-        const profileData = [
-            { "Field": t('employee_name'), "Value": employee.name },
-            { "Field": t('kurdish_name'), "Value": employee.kurdishName || t('na') },
-            { "Field": t('id_colon'), "Value": employee.employeeId || t('na') },
-            { "Field": t('role_optional'), "Value": employee.role || t('na') },
-            { "Field": t('email_optional'), "Value": employee.email || t('na') },
-            { "Field": t('phone_optional'), "Value": employee.phone || t('na') },
-            { "Field": t('joined_date'), "Value": employee.employmentStartDate ? format(parseISO(employee.employmentStartDate), 'yyyy-MM-dd') : t('na') },
-            { "Field": t('dob'), "Value": employee.dateOfBirth ? format(parseISO(employee.dateOfBirth), 'yyyy-MM-dd') : t('na') },
-        ];
-        const wsProfile = XLSX.utils.json_to_sheet(profileData, { skipHeader: true });
-        XLSX.utils.book_append_sheet(wb, wsProfile, "Profile");
-
-        const expensesData = sortedExpenses.map(e => ({ [t('date')]: format(parseISO(e.date), 'yyyy-MM-dd'), [t('amount')]: e.amount, [t('notes')]: e.notes || '' }));
-        if (expensesData.length > 0) {
-            const wsExpenses = XLSX.utils.json_to_sheet(expensesData);
-            XLSX.utils.book_append_sheet(wb, wsExpenses, t('expenses'));
-        }
-
-        const overtimeData = sortedOvertime.map(o => ({ [t('date')]: format(parseISO(o.date), 'yyyy-MM-dd'), [t('overtime_hours')]: o.hours, [t('amount')]: o.totalAmount, [t('notes')]: o.notes || '' }));
-        if (overtimeData.length > 0) {
-            const wsOvertime = XLSX.utils.json_to_sheet(overtimeData);
-            XLSX.utils.book_append_sheet(wb, wsOvertime, t('overtime'));
-        }
-
-        const bonusesData = sortedBonuses.map(b => ({ [t('date')]: format(parseISO(b.date), 'yyyy-MM-dd'), [t('number_of_loads')]: b.loadCount, [t('amount')]: b.totalAmount, [t('notes')]: b.notes || '' }));
-        if (bonusesData.length > 0) {
-            const wsBonuses = XLSX.utils.json_to_sheet(bonusesData);
-            XLSX.utils.book_append_sheet(wb, wsBonuses, t('bonuses'));
-        }
-
-        const withdrawalsData = sortedWithdrawals.map(w => ({ [t('date')]: format(parseISO(w.date), 'yyyy-MM-dd'), [t('amount')]: w.amount, [t('notes')]: w.notes || '' }));
-        if (withdrawalsData.length > 0) {
-            const wsWithdrawals = XLSX.utils.json_to_sheet(withdrawalsData);
-            XLSX.utils.book_append_sheet(wb, wsWithdrawals, t('cash_withdrawals'));
-        }
-
-        if (wb.SheetNames.length > 0) {
-            XLSX.writeFile(wb, `${employee.name}_Financials_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
-        } else {
-            toast({
-                title: t('no_data_to_export'),
-                description: "This employee has no data to export."
-            })
-        }
-    };
-
-
-    if (isLoading) {
-        return (
-            <div className="flex items-center justify-center h-full">
-                <Loader2 className="h-8 w-8 animate-spin"/>
-            </div>
-        )
-    }
-
-    if (!employee) {
-        return (
-            <div className="flex flex-col items-center justify-center h-full text-center p-8">
-                <User className="w-16 h-16 text-muted-foreground mb-4" />
-                <h2 className="text-xl">{t('employee_not_found')}</h2>
-                <p className="text-muted-foreground">{t('employee_not_found_desc')}</p>
-            </div>
-        )
-    }
-
-    const safeEmploymentStartDate = safeDate(employee.employmentStartDate);
-    const safeDateOfBirth = safeDate(employee.dateOfBirth);
-    const displayName = language === 'ku' && employee.kurdishName ? employee.kurdishName : employee.name;
-
-    return (
-        <>
-             {customFont && language === 'ku' && <style>{`@font-face { font-family: 'CustomAppFont'; src: url(${customFont}); }`}</style>}
-            <div className="hidden print:block">
-                 <div ref={reportRef}>
-                    <EmployeeReportPdf 
-                        employee={employee}
-                        settings={settings}
-                        expenses={{items: sortedExpenses, total: totalExpenses}}
-                        overtime={{items: sortedOvertime, total: totalOvertimeAmount}}
-                        bonuses={{items: sortedBonuses, total: totalBonuses}}
-                        withdrawals={{items: sortedWithdrawals, total: totalWithdrawals}}
-                    />
-                 </div>
-            </div>
-            <div className="w-full h-full flex flex-col print:hidden">
-                <header className="flex items-center justify-between gap-2 p-4 border-b">
-                    <Button variant="outline" size="icon" className="md:hidden" onClick={onDeselect}>
-                        <ArrowLeft />
-                    </Button>
-                    <div className="flex-1 flex items-center justify-end gap-2 flex-wrap">
-                        {isEditing ? (
-                            <>
-                                <Button onClick={handleUpdate}><Save className="mr-2 h-4 w-4"/> {t('save_changes')}</Button>
-                                <Button variant="ghost" onClick={() => setIsEditing(false)}><X className="mr-2 h-4 w-4"/> {t('cancel')}</Button>
-                            </>
-                        ) : (
-                            <>
-                                <Button onClick={() => setIsEditing(true)}><Edit className="mr-2 h-4 w-4"/> {t('edit')}</Button>
-                                <Button variant="outline" onClick={handlePrint}><Printer className="mr-2 h-4 w-4"/> {t('print')}</Button>
-                                <Button variant="outline" onClick={handleGeneratePdf}><FileText className="mr-2 h-4 w-4"/> {t('pdf')}</Button>
-                                <Button variant="outline" onClick={handleExportExcel}><FileDown className="mr-2 h-4 w-4"/> {t('excel')}</Button>
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <Button variant="outline" className={cn(!employee.isActive && "text-destructive border-destructive/50")}>
-                                            <UserX className="mr-2 h-4 w-4"/> {employee.isActive ? 'Deactivate' : 'Reactivate'}
-                                        </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>Are you sure you want to {employee.isActive ? 'deactivate' : 'reactivate'} {employee.name}?</AlertDialogTitle>
-                                            <AlertDialogDescription>Deactivated employees will not appear in dropdown lists for new entries.</AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-                                            <AlertDialogAction onClick={handleToggleActiveStatus}>{employee.isActive ? 'Deactivate' : 'Reactivate'}</AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild><Button variant="destructive"><Trash2 className="mr-2 h-4 w-4"/> {t('delete')}</Button></AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>{t('are_you_sure_delete_employee')}</AlertDialogTitle>
-                                            <AlertDialogDescription>{t('confirm_delete_employee_record', {employeeName: employee.name})}</AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-                                            <AlertDialogAction onClick={handleDelete}>{t('continue')}</AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
-                            </>
-                        )}
-                    </div>
-                </header>
-                <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                    <Card className="border-0 shadow-none">
-                        <CardHeader className="flex-col md:flex-row gap-6 space-y-0 items-start">
-                             <div className="relative">
-                                <Avatar className="w-24 h-24 md:w-32 md:h-32 border-4 border-primary/20">
-                                    <AvatarImage src={(isEditing ? photoUrl : employee.photoUrl) || undefined} alt={employee.name} />
-                                    <AvatarFallback><User className="w-16 h-16"/></AvatarFallback>
-                                </Avatar>
-                                {isEditing && (
-                                    <Button size="icon" variant="outline" className="absolute -bottom-2 -right-2 rounded-full h-10 w-10" onClick={() => photoUploadRef.current?.click()}>
-                                        <Upload className="w-5 h-5"/>
-                                        <input ref={photoUploadRef} type="file" onChange={handlePhotoUpload} accept="image/*" className="hidden"/>
-                                    </Button>
-                                )}
-                            </div>
-                            <div className="w-full">
-                                {isEditing ? (
-                                    <div className='space-y-4'>
-                                        <Input className="text-2xl h-12" value={name} onChange={e => setName(e.target.value)} placeholder={t('employee_name')} />
-                                        <Input dir="rtl" className="text-2xl h-12" value={kurdishName} onChange={e => setKurdishName(e.target.value)} placeholder="ناو بە کوردی" />
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                            <Input value={uniqueId} onChange={e => setUniqueId(e.target.value)} placeholder={t('employee_id_optional')} />
-                                            <Select value={role || undefined} onValueChange={(v: Employee['role']) => setRole(v)}>
-                                                <SelectTrigger><SelectValue placeholder={t('select_a_role')} /></SelectTrigger>
-                                                <SelectContent>
-                                                    {employeeRoles.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                            <Popover>
-                                                <PopoverTrigger asChild>
-                                                    <Button variant="outline" className={cn("justify-start text-left", !employmentStartDate && "text-muted-foreground")}>
-                                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                                        {employmentStartDate ? `${t('start_date_optional')}: ${format(employmentStartDate, 'PPP')}` : <span>{t('pick_a_date')}</span>}
-                                                    </Button>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={employmentStartDate} onSelect={setEmploymentStartDate} initialFocus captionLayout="dropdown-nav" fromYear={1990} toYear={2040} /></PopoverContent>
-                                            </Popover>
-                                            <Popover>
-                                                <PopoverTrigger asChild>
-                                                    <Button variant="outline" className={cn("justify-start text-left", !dateOfBirth && "text-muted-foreground")}>
-                                                        <Cake className="mr-2 h-4 w-4" />
-                                                        {dateOfBirth ? `${t('dob_optional')}: ${format(dateOfBirth, 'PPP')}` : <span>{t('pick_a_date')}</span>}
-                                                    </Button>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={dateOfBirth} onSelect={setDateOfBirth} initialFocus captionLayout="dropdown-nav" fromYear={1950} toYear={new Date().getFullYear()} /></PopoverContent>
-                                            </Popover>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <div className="flex items-start justify-between">
-                                            <CardTitle className="text-3xl md:text-4xl" dir={language === 'ku' ? 'rtl': 'ltr'}>{displayName}</CardTitle>
-                                            {!employee.isActive && (
-                                                <Badge variant="destructive" className="text-sm">INACTIVE</Badge>
-                                            )}
-                                        </div>
-                                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-2">
-                                            {employee.role && <CardDescription className="text-lg md:text-xl flex items-center gap-2">{employee.role}</CardDescription>}
-                                        </div>
-                                        <div className="mt-4 space-y-2 text-muted-foreground">
-                                            {employee.employeeId && <p className="flex items-center gap-2 font-mono">{t('id_colon')} {employee.employeeId}</p>}
-                                            {safeEmploymentStartDate && <p className="flex items-center gap-2"><CalendarIcon className="w-4 h-4"/> {t('started_on', {date: format(safeEmploymentStartDate, 'MMMM d, yyyy')})}</p>}
-                                            {safeDateOfBirth && <p className="flex items-center gap-2"><Cake className="w-4 h-4"/> {t('born_on', {date: format(safeDateOfBirth, 'MMMM d, yyyy')})}</p>}
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-                        </CardHeader>
-                        <CardContent className="mt-6 space-y-6">
-                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <Label>{t('email_optional')}</Label>
-                                    {isEditing ? (
-                                        <div className="relative"><Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/><Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="employee@example.com" className="pl-10" /></div>
-                                    ) : ( <p className="flex items-center gap-2"><Mail className="w-4 h-4 text-muted-foreground"/> {employee.email || t('no_email')}</p>)}
-                                </div>
-                                 <div className="space-y-2">
-                                    <Label>{t('phone_optional')}</Label>
-                                    {isEditing ? (
-                                        <div className="relative"><Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/><Input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="0000-000-000" className="pl-10"/></div>
-                                    ) : (<p className="flex items-center gap-2"><Phone className="w-4 h-4 text-muted-foreground"/> {employee.phone || t('no_phone')}</p>)}
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label>{t('notes')}</Label>
-                                {isEditing ? (
-                                    <Textarea className="min-h-[120px]" value={notes} onChange={e => setNotes(e.target.value)} placeholder={t('notes_optional_long')} />
-                                ) : (<p className="whitespace-pre-wrap text-muted-foreground">{employee.notes || t('no_notes')}</p>)}
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Financial Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2"><DollarSign className="w-5 h-5 text-blue-500"/> {t('expenses')}</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                {sortedExpenses.length > 0 ? (
-                                    <Table>
-                                        <TableHeader><TableRow><TableHead>{t('date')}</TableHead><TableHead className="text-right">{t('amount')}</TableHead></TableRow></TableHeader>
-                                        <TableBody>{sortedExpenses.slice(0, 3).map(e => (<TableRow key={e.id}><TableCell>{format(parseISO(e.date), 'PP')}</TableCell><TableCell className="text-right">{formatCurrency(e.amount)}</TableCell></TableRow>))}</TableBody>
-                                    </Table>
-                                ) : <p className="text-sm text-center text-muted-foreground py-4">{t('no_expenses')}</p>}
-                            </CardContent>
-                            {sortedExpenses.length > 0 && <CardFooter className="justify-end gap-2 bg-muted/50 text-sm"><span className="text-muted-foreground">{t('total_colon')}</span><span className="text-blue-500">{formatCurrency(totalExpenses)}</span></CardFooter>}
-                        </Card>
-
-                        <Card>
-                            <CardHeader>
-                                <div className="flex justify-between items-center">
-                                    <CardTitle className="flex items-center gap-2">
-                                        <Clock className="w-5 h-5 text-orange-500"/> {t('overtime')}
-                                    </CardTitle>
-                                    <Badge variant="outline">{totalOvertimeHours.toFixed(2)} {t('hours_short')}</Badge>
-                                </div>
-                                <CardDescription>{t('this_month_colon', {month: format(new Date(), 'MMMM yyyy')})}</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                {sortedOvertime.length > 0 ? (
-                                    <Table>
-                                        <TableHeader><TableRow><TableHead>{t('date')}</TableHead><TableHead className="text-right">{t('amount')}</TableHead></TableRow></TableHeader>
-                                        <TableBody>{sortedOvertime.slice(0, 3).map(o => (<TableRow key={o.id}><TableCell>{format(parseISO(o.date), 'PP')}</TableCell><TableCell className="text-right">{formatCurrency(o.totalAmount)}</TableCell></TableRow>))}</TableBody>
-                                    </Table>
-                                ) : <p className="text-sm text-center text-muted-foreground py-4">{t('no_overtime_this_month')}</p>}
-                            </CardContent>
-                            {sortedOvertime.length > 0 && 
-                                <CardFooter className="justify-end gap-2 bg-muted/50 text-sm">
-                                    <span className="text-muted-foreground">{t('months_total_colon')}</span>
-                                    <span className="text-orange-500">{formatCurrency(totalOvertimeAmount)}</span>
-                                </CardFooter>
-                            }
-                        </Card>
-
-                         <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2"><Gift className="w-5 h-5 text-green-500"/> {t('bonuses')}</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                {sortedBonuses.length > 0 ? (
-                                    <Table>
-                                        <TableHeader><TableRow><TableHead>{t('date')}</TableHead><TableHead className="text-right">{t('amount')}</TableHead></TableRow></TableHeader>
-                                        <TableBody>{sortedBonuses.slice(0, 3).map(b => (<TableRow key={b.id}><TableCell>{format(parseISO(b.date), 'PP')}</TableCell><TableCell className="text-right">{formatCurrency(b.totalAmount)}</TableCell></TableRow>))}</TableBody>
-                                    </Table>
-                                ) : <p className="text-sm text-center text-muted-foreground py-4">{t('no_bonuses')}</p>}
-                            </CardContent>
-                            {sortedBonuses.length > 0 && <CardFooter className="justify-end gap-2 bg-muted/50 text-sm"><span className="text-muted-foreground">{t('total_colon')}</span><span className="text-green-500">{formatCurrency(totalBonuses)}</span></CardFooter>}
-                        </Card>
-
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2"><Banknote className="w-5 h-5 text-rose-500"/> {t('cash_withdrawals')}</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                {sortedWithdrawals.length > 0 ? (
-                                    <Table>
-                                        <TableHeader><TableRow><TableHead>{t('date')}</TableHead><TableHead className="text-right">{t('amount')}</TableHead></TableRow></TableHeader>
-                                        <TableBody>{sortedWithdrawals.slice(0, 3).map(w => (<TableRow key={w.id}><TableCell>{format(parseISO(w.date), 'PP')}</TableCell><TableCell className="text-right">{formatCurrency(w.amount)}</TableCell></TableRow>))}</TableBody>
-                                    </Table>
-                                ) : <p className="text-sm text-center text-muted-foreground py-4">{t('no_withdrawals')}</p>}
-                            </CardContent>
-                            {sortedWithdrawals.length > 0 && <CardFooter className="justify-end gap-2 bg-muted/50 text-sm"><span className="text-muted-foreground">{t('total_colon')}</span><span className="text-rose-500">{formatCurrency(totalWithdrawals)}</span></CardFooter>}
-                        </Card>
-                    </div>
-
-                </div>
-            </div>
-        </>
-    )
-}
 
 function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean, onOpenChange: (open: boolean) => void, addEmployee: (employee: Omit<Employee, 'id'>) => void }) {
     const { t } = useTranslation();
@@ -721,32 +173,45 @@ function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean,
 
 function EmployeesPage() {
   const { t, language } = useTranslation();
-  const { employees, setEmployees, isLoading, settings } = useAppContext();
+  const {
+    employees, setEmployees,
+    expenses, overtime, bonuses, withdrawals,
+    isLoading, settings
+  } = useAppContext();
+  
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
   const [isAddDialogOpen, setAddDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
-  const dashboardReportRef = useRef<HTMLDivElement>(null);
+  const storage = useStorage();
+  
   const { customFont } = settings;
 
-
-  const addEmployee = (employeeData: Omit<Employee, 'id'>) => {
-    const newEmployee: Employee = {
-      id: crypto.randomUUID(),
-      ...employeeData
-    };
-    setEmployees([...employees, newEmployee]);
-  };
+  const [isPrinting, setIsPrinting] = useState<false | 'list' | 'detail'>(false);
+  const detailReportRef = useRef<HTMLDivElement>(null);
+  const dashboardReportRef = useRef<HTMLDivElement>(null);
+  
+  const [isEditing, setIsEditing] = useState(false);
+  const [name, setName] = useState('');
+  const [kurdishName, setKurdishName] = useState('');
+  const [uniqueId, setUniqueId] = useState('');
+  const [role, setRole] = useState<Employee['role']>();
+  const [employmentStartDate, setEmploymentStartDate] = useState<Date | undefined>(undefined);
+  const [dateOfBirth, setDateOfBirth] = useState<Date | undefined>(undefined);
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [photoUrl, setPhotoUrl] = useState<string | undefined>(undefined);
+  const [notes, setNotes] = useState('');
+  
+  const photoUploadRef = useRef<HTMLInputElement>(null);
 
   const { warehouseEmployees, marketingEmployees } = useMemo(() => {
     if (!employees) return { warehouseEmployees: [], marketingEmployees: [] };
-
     const filtered = employees.filter(emp =>
         emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         emp.kurdishName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         emp.employeeId?.toLowerCase().includes(searchQuery.toLowerCase())
     );
-
     const sortEmployees = (a: Employee, b: Employee) => {
         if (a.employeeId === '01') return -1;
         if (b.employeeId === '01') return 1;
@@ -755,12 +220,28 @@ function EmployeesPage() {
         if (idA !== idB) return idA - idB;
         return a.name.localeCompare(b.name);
     };
-
     const warehouse = filtered.filter(e => e.role !== 'Marketing').sort(sortEmployees);
     const marketing = filtered.filter(e => e.role === 'Marketing').sort((a,b) => a.name.localeCompare(b.name));
     return { warehouseEmployees: warehouse, marketingEmployees: marketing };
   }, [employees, searchQuery]);
 
+  const selectedEmployee = useMemo(() => employees.find(e => e.id === selectedEmployeeId), [employees, selectedEmployeeId]);
+
+  useEffect(() => {
+    if (selectedEmployee) {
+        setName(selectedEmployee.name);
+        setKurdishName(selectedEmployee.kurdishName || '');
+        setUniqueId(selectedEmployee.employeeId || '');
+        setRole(selectedEmployee.role);
+        setEmploymentStartDate(safeDate(selectedEmployee.employmentStartDate) || undefined);
+        setDateOfBirth(safeDate(selectedEmployee.dateOfBirth) || undefined);
+        setEmail(selectedEmployee.email || '');
+        setPhone(selectedEmployee.phone || '');
+        setPhotoUrl(selectedEmployee.photoUrl || undefined);
+        setNotes(selectedEmployee.notes || '');
+        setIsEditing(false); // Reset editing state when selection changes
+    }
+  }, [selectedEmployee]);
 
   useEffect(() => {
     const allSorted = [...warehouseEmployees, ...marketingEmployees];
@@ -772,69 +253,139 @@ function EmployeesPage() {
       }
     }
   }, [warehouseEmployees, marketingEmployees, selectedEmployeeId]);
+  
+  const runPrint = (printType: 'list' | 'detail') => {
+      setIsPrinting(printType);
+      setTimeout(() => {
+          window.print();
+          setIsPrinting(false);
+      }, 100);
+  };
+  
+  const addEmployee = (employeeData: Omit<Employee, 'id'>) => {
+    const newEmployee: Employee = { id: crypto.randomUUID(), ...employeeData };
+    setEmployees([...employees, newEmployee]);
+  };
+  
+  // --- Individual Employee Logic ---
+  const { totalExpenses, sortedExpenses } = useMemo(() => {
+    if (!selectedEmployeeId) return { totalExpenses: 0, sortedExpenses: [] };
+    const empExpenses = expenses.filter(e => e.employeeId === selectedEmployeeId);
+    const total = empExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+    const sorted = [...empExpenses].filter(e => e.date && !isNaN(parseISO(e.date).getTime())).sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
+    return { totalExpenses: total, sortedExpenses: sorted };
+  }, [expenses, selectedEmployeeId]);
 
-  const handlePrintDashboard = () => window.print();
+  const { totalOvertimeAmount, totalOvertimeHours, sortedOvertime } = useMemo(() => {
+    if (!selectedEmployeeId) return { totalOvertimeAmount: 0, totalOvertimeHours: 0, sortedOvertime: [] };
+    const empOvertime = overtime.filter(e => e.employeeId === selectedEmployeeId);
+    const totals = empOvertime.reduce((acc, ot) => { acc.totalAmount += ot.totalAmount; acc.totalHours += ot.hours; return acc; }, { totalAmount: 0, totalHours: 0 });
+    const sorted = [...empOvertime].filter(o => o.date && !isNaN(parseISO(o.date).getTime())).sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
+    return { totalOvertimeAmount: totals.totalAmount, totalOvertimeHours: totals.totalHours, sortedOvertime: sorted };
+  }, [overtime, selectedEmployeeId]);
 
-  const handleGeneratePdfForDashboard = async () => {
-    const input = dashboardReportRef.current;
-    if (!input) return;
-    
-    const canvas = await html2canvas(input, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        onclone: (document) => {
-            if (customFont && language === 'ku') {
-                const style = document.createElement('style');
-                style.innerHTML = `@font-face { font-family: 'CustomAppFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3, span { font-family: 'CustomAppFont' !important; }`;
-                document.head.appendChild(style);
+  const { totalBonuses, sortedBonuses } = useMemo(() => {
+    if (!selectedEmployeeId) return { totalBonuses: 0, sortedBonuses: [] };
+    const empBonuses = bonuses.filter(b => b.employeeId === selectedEmployeeId);
+    const total = empBonuses.reduce((sum, b) => sum + b.totalAmount, 0);
+    const sorted = [...empBonuses].filter(b => b.date && !isNaN(parseISO(b.date).getTime())).sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
+    return { totalBonuses: total, sortedBonuses: sorted };
+  }, [bonuses, selectedEmployeeId]);
+
+  const { totalWithdrawals, sortedWithdrawals } = useMemo(() => {
+    if (!selectedEmployeeId) return { totalWithdrawals: 0, sortedWithdrawals: [] };
+    const empWithdrawals = withdrawals.filter(w => w.employeeId === selectedEmployeeId);
+    const total = empWithdrawals.reduce((sum, w) => sum + w.amount, 0);
+    const sorted = [...empWithdrawals].filter(w => w.date && !isNaN(parseISO(w.date).getTime())).sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
+    return { totalWithdrawals: total, sortedWithdrawals: sorted };
+  }, [withdrawals, selectedEmployeeId]);
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !selectedEmployee) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const localUrl = event.target?.result as string;
+            if (localUrl) {
+                setPhotoUrl(localUrl);
+                const filePath = `employees/${selectedEmployee.id}/photo.png`;
+                const sRef = storageRef(storage, filePath);
+                
+                const uploadToast = toast({ title: "Uploading...", description: "Your new photo is being uploaded." });
+                uploadString(sRef, localUrl, 'data_url').then(() => getDownloadURL(sRef)).then(downloadURL => {
+                    setPhotoUrl(downloadURL);
+                    uploadToast.update({ id: uploadToast.id, title: "Upload Complete", description: "Photo updated. Click Save to apply changes." });
+                }).catch(err => {
+                    console.error("Error uploading/getting URL", err);
+                    uploadToast.update({ id: uploadToast.id, variant: 'destructive', title: "Upload Failed", description: "Could not save the photo." });
+                });
             }
-        }
-    });
+        };
+        reader.readAsDataURL(file);
+  };
+  
+  const handleUpdate = () => {
+    if (!selectedEmployeeId || !name) return;
+    const updatedData: Partial<Employee> = {
+        name, kurdishName: kurdishName || null, employeeId: uniqueId || null, role: role || null,
+        employmentStartDate: employmentStartDate ? employmentStartDate.toISOString() : null,
+        dateOfBirth: dateOfBirth ? dateOfBirth.toISOString() : null,
+        email: email || null, phone: phone || null, photoUrl: photoUrl || null, notes: notes || null,
+    };
+    setEmployees(employees.map(emp => emp.id === selectedEmployeeId ? { ...emp, ...updatedData } : emp));
+    toast({ title: t('save_changes'), description: t('employee_details_updated') });
+    setIsEditing(false);
+  };
+  
+  const handleDelete = () => {
+    if(!selectedEmployeeId) return;
+    setEmployees(employees.filter(e => e.id !== selectedEmployeeId));
+    toast({ title: t('employee_deleted'), description: t('employee_deleted_desc', {employeeName: selectedEmployee?.name}) });
+    setSelectedEmployeeId(null);
+  };
+  
+  const handleToggleActiveStatus = () => {
+    if (!selectedEmployee) return;
+    setEmployees(employees.map(e => e.id === selectedEmployee.id ? { ...e, isActive: !e.isActive } : e));
+    toast({ title: employeeIsActive ? 'Employee Deactivated' : 'Employee Reactivated', description: `${selectedEmployee.name} has been ${employeeIsActive ? 'deactivated' : 'reactivated'}.` })
+  };
 
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-    const imgProps= pdf.getImageProperties(imgData);
-    const imgWidth = imgProps.width;
-    const imgHeight = imgProps.height;
-    
-    let pageHeight = pdfHeight;
-    let position = 0;
-    
-    while (position < imgHeight) {
-        const remainingHeight = imgHeight - position;
-        const pageCanvas = document.createElement('canvas');
-        pageCanvas.width = imgWidth;
-        pageCanvas.height = Math.min(imgHeight - position, pageHeight * (imgWidth / pdfWidth));
-
-        const pageCtx = pageCanvas.getContext('2d');
-        pageCtx?.drawImage(canvas, 0, position, imgWidth, pageCanvas.height, 0, 0, imgWidth, pageCanvas.height);
-        
-        const imgDataPage = pageCanvas.toDataURL('image/png');
-        if (position > 0) pdf.addPage();
-        pdf.addImage(imgDataPage, 'PNG', 0, 0, pdfWidth, pdfWidth * (pageCanvas.height / imgWidth));
-        position += pageCanvas.height;
-    }
-
-    pdf.save(`${t('employees_dashboard')}_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+  const generatePdf = async (type: 'list' | 'detail') => {
+      const targetRef = type === 'list' ? dashboardReportRef : detailReportRef;
+      const input = targetRef.current;
+      if (!input) return;
+      
+      const canvas = await html2canvas(input, { scale: 2, useCORS: true, backgroundColor: '#ffffff', onclone: (doc) => {
+          if (customFont) {
+            const style = doc.createElement('style');
+            style.innerHTML = `@font-face { font-family: 'CustomAppFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3, span { font-family: 'CustomAppFont' !important; }`;
+            doc.head.appendChild(style);
+          }
+      }});
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({ orientation: type === 'list' ? 'p' : 'p', unit: 'px', format: 'a4' });
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgProps = pdf.getImageProperties(imgData);
+      const ratio = imgProps.width / imgProps.height;
+      let finalWidth = pdfWidth;
+      let finalHeight = pdfWidth / ratio;
+      if (finalHeight > pdfHeight) { finalHeight = pdfHeight; finalWidth = finalHeight * ratio; }
+      const x = (pdfWidth - finalWidth) / 2;
+      
+      pdf.addImage(imgData, 'PNG', x, 0, finalWidth, finalHeight);
+      const fileName = type === 'list' ? `${t('employees_dashboard')}_${format(new Date(), 'yyyy-MM-dd')}.pdf` : `${selectedEmployee?.name}_Report_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+      pdf.save(fileName);
   };
 
   const handleExportExcelForDashboard = () => {
     const allEmployees = [...warehouseEmployees, ...marketingEmployees];
-    if (allEmployees.length === 0) {
-      toast({ title: t('no_data_to_export'), description: "There are no employees to export." });
-      return;
-    }
+    if (allEmployees.length === 0) { toast({ title: t('no_data_to_export'), description: "There are no employees to export." }); return; }
     const workbook = XLSX.utils.book_new();
     const dataToExport = allEmployees.map(emp => ({
-      [t('employee_name')]: emp.name,
-      [t('kurdish_name')]: emp.kurdishName || '',
-      [t('id_colon')]: emp.employeeId || '',
-      [t('role_optional')]: emp.role || '',
-      [t('email_optional')]: emp.email || '',
-      [t('phone_optional')]: emp.phone || '',
+      [t('employee_name')]: emp.name, [t('kurdish_name')]: emp.kurdishName || '', [t('id_colon')]: emp.employeeId || '',
+      [t('role_optional')]: emp.role || '', [t('email_optional')]: emp.email || '', [t('phone_optional')]: emp.phone || '',
       [t('joined_date')]: emp.employmentStartDate ? format(parseISO(emp.employmentStartDate), 'yyyy-MM-dd') : '',
       [t('dob')]: emp.dateOfBirth ? format(parseISO(emp.dateOfBirth), 'yyyy-MM-dd') : '',
     }));
@@ -842,7 +393,41 @@ function EmployeesPage() {
     XLSX.utils.book_append_sheet(workbook, worksheet, t('employees_list'));
     XLSX.writeFile(workbook, `${t('employees_dashboard')}_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
   };
-  
+
+  const handleExportExcelForDetail = () => {
+    if (!selectedEmployee) return;
+
+    const wb = XLSX.utils.book_new();
+
+    const profileData = [
+        { "Field": t('employee_name'), "Value": selectedEmployee.name }, { "Field": t('kurdish_name'), "Value": selectedEmployee.kurdishName || t('na') },
+        { "Field": t('id_colon'), "Value": selectedEmployee.employeeId || t('na') }, { "Field": t('role_optional'), "Value": selectedEmployee.role || t('na') },
+        { "Field": t('email_optional'), "Value": selectedEmployee.email || t('na') }, { "Field": t('phone_optional'), "Value": selectedEmployee.phone || t('na') },
+        { "Field": t('joined_date'), "Value": selectedEmployee.employmentStartDate ? format(parseISO(selectedEmployee.employmentStartDate), 'yyyy-MM-dd') : t('na') },
+        { "Field": t('dob'), "Value": selectedEmployee.dateOfBirth ? format(parseISO(selectedEmployee.dateOfBirth), 'yyyy-MM-dd') : t('na') },
+    ];
+    const wsProfile = XLSX.utils.json_to_sheet(profileData, { skipHeader: true });
+    XLSX.utils.book_append_sheet(wb, wsProfile, "Profile");
+
+    const expensesData = sortedExpenses.map(e => ({ [t('date')]: format(parseISO(e.date), 'yyyy-MM-dd'), [t('amount')]: e.amount, [t('notes')]: e.notes || '' }));
+    if (expensesData.length > 0) { XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(expensesData), t('expenses')); }
+
+    const overtimeData = sortedOvertime.map(o => ({ [t('date')]: format(parseISO(o.date), 'yyyy-MM-dd'), [t('overtime_hours')]: o.hours, [t('amount')]: o.totalAmount, [t('notes')]: o.notes || '' }));
+    if (overtimeData.length > 0) { XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(overtimeData), t('overtime')); }
+
+    const bonusesData = sortedBonuses.map(b => ({ [t('date')]: format(parseISO(b.date), 'yyyy-MM-dd'), [t('number_of_loads')]: b.loadCount, [t('amount')]: b.totalAmount, [t('notes')]: b.notes || '' }));
+    if (bonusesData.length > 0) { XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(bonusesData), t('bonuses')); }
+
+    const withdrawalsData = sortedWithdrawals.map(w => ({ [t('date')]: format(parseISO(w.date), 'yyyy-MM-dd'), [t('amount')]: w.amount, [t('notes')]: w.notes || '' }));
+    if (withdrawalsData.length > 0) { XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(withdrawalsData), t('cash_withdrawals')); }
+    
+    if (wb.SheetNames.length > 0) {
+        XLSX.writeFile(wb, `${selectedEmployee.name}_Financials_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+    } else {
+        toast({ title: t('no_data_to_export'), description: "This employee has no data to export." });
+    }
+  };
+
   const renderEmployeeList = (list: Employee[], title: string) => (
     <>
       <div className="px-3 py-2">
@@ -870,17 +455,33 @@ function EmployeesPage() {
         )
       })}
     </>
-  )
+  );
+  
+  const employeeIsActive = selectedEmployee?.isActive ?? true;
 
   return (
     <>
-      <div className="hidden print:block">
-        <div ref={dashboardReportRef}>
-          <EmployeeDashboardPrintView employees={[...warehouseEmployees, ...marketingEmployees]} settings={settings} />
+      {/* --- PRINT-ONLY CONTENT --- */}
+      <div className={cn('print-only-container', !isPrinting && 'hidden')}>
+        <div className="hidden print:block" ref={isPrinting === 'list' ? dashboardReportRef : detailReportRef}>
+            {isPrinting === 'list' && (
+                <EmployeeDashboardPrintView employees={[...warehouseEmployees, ...marketingEmployees]} settings={settings} />
+            )}
+            {isPrinting === 'detail' && selectedEmployee && (
+                 <EmployeeReportPdf 
+                    employee={selectedEmployee}
+                    settings={settings}
+                    expenses={{items: sortedExpenses, total: totalExpenses}}
+                    overtime={{items: sortedOvertime, total: totalOvertimeAmount}}
+                    bonuses={{items: sortedBonuses, total: totalBonuses}}
+                    withdrawals={{items: sortedWithdrawals, total: totalWithdrawals}}
+                />
+            )}
         </div>
       </div>
       
-      <div className="h-screen w-screen flex flex-col bg-background text-foreground print:hidden">
+      {/* --- MAIN UI --- */}
+      <div className={cn("h-screen w-screen flex flex-col bg-background text-foreground print:hidden", isPrinting && "invisible")}>
           <AddEmployeeDialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen} addEmployee={addEmployee} />
           <header className="bg-card border-b p-4">
               <div className="container mx-auto flex items-center justify-between">
@@ -892,16 +493,13 @@ function EmployeesPage() {
           </header>
 
           <div className="flex flex-1 overflow-hidden">
-              <aside className={cn(
-                  "w-full flex-col border-r md:w-auto md:max-w-xs",
-                  selectedEmployeeId ? "hidden md:flex" : "flex"
-              )}>
+              <aside className={cn( "w-full flex-col border-r md:w-auto md:max-w-xs", selectedEmployeeId ? "hidden md:flex" : "flex" )}>
                   <div className="p-4 space-y-4 border-b">
                      <div className="flex items-center justify-between gap-2">
                           <h2 className="font-semibold text-lg">{t('employees_list')}</h2>
                           <div className="flex items-center gap-1">
-                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handlePrintDashboard}><Printer className="h-4 w-4" /></Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleGeneratePdfForDashboard}><FileText className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => runPrint('list')}><Printer className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => generatePdf('list')}><FileText className="h-4 w-4" /></Button>
                               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleExportExcelForDashboard}><FileDown className="h-4 w-4" /></Button>
                           </div>
                       </div>
@@ -930,20 +528,134 @@ function EmployeesPage() {
                   </div>
               </aside>
               
-              <main className={cn(
-                  "flex-1 overflow-y-auto",
-                  selectedEmployeeId ? "block" : "hidden md:flex md:items-center md:justify-center"
-              )}>
-                  {selectedEmployeeId ? (
-                      <EmployeeDetailView employeeId={selectedEmployeeId} onDeselect={() => setSelectedEmployeeId(null)}/>
-                  ) : (
-                      !isLoading && (
-                          <div className="text-center">
-                              <Building className="mx-auto h-16 w-16 text-muted-foreground" />
-                              <h2 className="mt-2 text-2xl">{t('employees')}</h2>
-                              <p className="text-muted-foreground">{t('select_an_employee_to_view')}</p>
-                          </div>
-                      )
+              <main className={cn( "flex-1 overflow-y-auto", selectedEmployeeId ? "block" : "hidden md:flex md:items-center md:justify-center" )}>
+                  {isLoading ? <div className="flex items-center justify-center h-full"><Loader2 className="h-8 w-8 animate-spin"/></div>
+                    : !selectedEmployee ? (
+                      <div className="text-center p-8">
+                        <Building className="mx-auto h-16 w-16 text-muted-foreground" />
+                        <h2 className="mt-2 text-2xl">{t('employees')}</h2>
+                        <p className="text-muted-foreground">{t('select_an_employee_to_view')}</p>
+                      </div>
+                    ) : (
+                    <div className="w-full h-full flex flex-col">
+                        <header className="flex items-center justify-between gap-2 p-4 border-b">
+                            <Button variant="outline" size="icon" className="md:hidden" onClick={() => setSelectedEmployeeId(null)}>
+                                <ArrowLeft />
+                            </Button>
+                            <div className="flex-1 flex items-center justify-end gap-2 flex-wrap">
+                                {isEditing ? (
+                                    <>
+                                        <Button onClick={handleUpdate}><Save className="mr-2 h-4 w-4"/> {t('save_changes')}</Button>
+                                        <Button variant="ghost" onClick={() => setIsEditing(false)}><X className="mr-2 h-4 w-4"/> {t('cancel')}</Button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Button onClick={() => setIsEditing(true)}><Edit className="mr-2 h-4 w-4"/> {t('edit')}</Button>
+                                        <Button variant="outline" onClick={() => runPrint('detail')}><Printer className="mr-2 h-4 w-4"/> {t('print')}</Button>
+                                        <Button variant="outline" onClick={() => generatePdf('detail')}><FileText className="mr-2 h-4 w-4"/> {t('pdf')}</Button>
+                                        <Button variant="outline" onClick={handleExportExcelForDetail}><FileDown className="mr-2 h-4 w-4"/> {t('excel')}</Button>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="outline" className={cn(!employeeIsActive && "text-destructive border-destructive/50")}>
+                                                    <UserX className="mr-2 h-4 w-4"/> {employeeIsActive ? 'Deactivate' : 'Reactivate'}
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Are you sure you want to {employeeIsActive ? 'deactivate' : 'reactivate'} {selectedEmployee.name}?</AlertDialogTitle>
+                                                    <AlertDialogDescription>Deactivated employees will not appear in dropdown lists for new entries.</AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={handleToggleActiveStatus}>{employeeIsActive ? 'Deactivate' : 'Reactivate'}</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild><Button variant="destructive"><Trash2 className="mr-2 h-4 w-4"/> {t('delete')}</Button></AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>{t('are_you_sure_delete_employee')}</AlertDialogTitle>
+                                                    <AlertDialogDescription>{t('confirm_delete_employee_record', {employeeName: selectedEmployee.name})}</AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={handleDelete}>{t('continue')}</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    </>
+                                )}
+                            </div>
+                        </header>
+                        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                             {/* Employee Detail Content Here */}
+                             <Card className="border-0 shadow-none">
+                                <CardHeader className="flex-col md:flex-row gap-6 space-y-0 items-start">
+                                    <div className="relative">
+                                        <Avatar className="w-24 h-24 md:w-32 md:h-32 border-4 border-primary/20">
+                                            <AvatarImage src={photoUrl || undefined} alt={name} />
+                                            <AvatarFallback><User className="w-16 h-16"/></AvatarFallback>
+                                        </Avatar>
+                                        {isEditing && (
+                                            <Button size="icon" variant="outline" className="absolute -bottom-2 -right-2 rounded-full h-10 w-10" onClick={() => photoUploadRef.current?.click()}>
+                                                <Upload className="w-5 h-5"/>
+                                                <input ref={photoUploadRef} type="file" onChange={handlePhotoUpload} accept="image/*" className="hidden"/>
+                                            </Button>
+                                        )}
+                                    </div>
+                                    <div className="w-full">
+                                        {isEditing ? (
+                                            <div className='space-y-4'>
+                                                <Input className="text-2xl h-12" value={name} onChange={e => setName(e.target.value)} placeholder={t('employee_name')} />
+                                                <Input dir="rtl" className="text-2xl h-12" value={kurdishName} onChange={e => setKurdishName(e.target.value)} placeholder="ناو بە کوردی" />
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                    <Input value={uniqueId} onChange={e => setUniqueId(e.target.value)} placeholder={t('employee_id_optional')} />
+                                                    <Select value={role || undefined} onValueChange={(v: Employee['role']) => setRole(v)}>
+                                                        <SelectTrigger><SelectValue placeholder={t('select_a_role')} /></SelectTrigger>
+                                                        <SelectContent>{employeeRoles.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                    <Popover><PopoverTrigger asChild><Button variant="outline" className={cn("justify-start text-left", !employmentStartDate && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{employmentStartDate ? `${t('start_date_optional')}: ${format(employmentStartDate, 'PPP')}` : <span>{t('pick_a_date')}</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={employmentStartDate} onSelect={setEmploymentStartDate} initialFocus captionLayout="dropdown-nav" fromYear={1990} toYear={2040} /></PopoverContent></Popover>
+                                                    <Popover><PopoverTrigger asChild><Button variant="outline" className={cn("justify-start text-left", !dateOfBirth && "text-muted-foreground")}><Cake className="mr-2 h-4 w-4" />{dateOfBirth ? `${t('dob_optional')}: ${format(dateOfBirth, 'PPP')}` : <span>{t('pick_a_date')}</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={dateOfBirth} onSelect={setDateOfBirth} initialFocus captionLayout="dropdown-nav" fromYear={1950} toYear={new Date().getFullYear()} /></PopoverContent></Popover>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div className="flex items-start justify-between">
+                                                    <CardTitle className="text-3xl md:text-4xl" dir={language === 'ku' ? 'rtl': 'ltr'}>{language === 'ku' && kurdishName ? kurdishName : name}</CardTitle>
+                                                    {!employeeIsActive && <Badge variant="destructive" className="text-sm">INACTIVE</Badge>}
+                                                </div>
+                                                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-2">
+                                                    {role && <CardDescription className="text-lg md:text-xl flex items-center gap-2">{role}</CardDescription>}
+                                                </div>
+                                                <div className="mt-4 space-y-2 text-muted-foreground">
+                                                    {uniqueId && <p className="flex items-center gap-2 font-mono">{t('id_colon')} {uniqueId}</p>}
+                                                    {employmentStartDate && <p className="flex items-center gap-2"><CalendarIcon className="w-4 h-4"/> {t('started_on', {date: format(employmentStartDate, 'MMMM d, yyyy')})}</p>}
+                                                    {dateOfBirth && <p className="flex items-center gap-2"><Cake className="w-4 h-4"/> {t('born_on', {date: format(dateOfBirth, 'MMMM d, yyyy')})}</p>}
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="mt-6 space-y-6">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                        <div className="space-y-2"><Label>{t('email_optional')}</Label>{isEditing ? <div className="relative"><Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/><Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="employee@example.com" className="pl-10" /></div> : <p className="flex items-center gap-2"><Mail className="w-4 h-4 text-muted-foreground"/> {email || t('no_email')}</p>}</div>
+                                        <div className="space-y-2"><Label>{t('phone_optional')}</Label>{isEditing ? <div className="relative"><Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/><Input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="0000-000-000" className="pl-10"/></div> : <p className="flex items-center gap-2"><Phone className="w-4 h-4 text-muted-foreground"/> {phone || t('no_phone')}</p>}</div>
+                                    </div>
+                                    <div className="space-y-2"><Label>{t('notes')}</Label>{isEditing ? <Textarea className="min-h-[120px]" value={notes} onChange={e => setNotes(e.target.value)} placeholder={t('notes_optional_long')} /> : <p className="whitespace-pre-wrap text-muted-foreground">{notes || t('no_notes')}</p>}</div>
+                                </CardContent>
+                            </Card>
+
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <Card><CardHeader><CardTitle className="flex items-center gap-2"><DollarSign className="w-5 h-5 text-blue-500"/> {t('expenses')}</CardTitle></CardHeader><CardContent>{sortedExpenses.length > 0 ? <Table><TableHeader><TableRow><TableHead>{t('date')}</TableHead><TableHead className="text-right">{t('amount')}</TableHead></TableRow></TableHeader><TableBody>{sortedExpenses.slice(0, 3).map(e => (<TableRow key={e.id}><TableCell>{format(parseISO(e.date), 'PP')}</TableCell><TableCell className="text-right">{formatCurrency(e.amount)}</TableCell></TableRow>))}</TableBody></Table> : <p className="text-sm text-center text-muted-foreground py-4">{t('no_expenses')}</p>}</CardContent>{sortedExpenses.length > 0 && <CardFooter className="justify-end gap-2 bg-muted/50 text-sm"><span className="text-muted-foreground">{t('total_colon')}</span><span className="text-blue-500">{formatCurrency(totalExpenses)}</span></CardFooter>}</Card>
+                                <Card><CardHeader><div className="flex justify-between items-center"><CardTitle className="flex items-center gap-2"><Clock className="w-5 h-5 text-orange-500"/> {t('overtime')}</CardTitle><Badge variant="outline">{totalOvertimeHours.toFixed(2)} {t('hours_short')}</Badge></div></CardHeader><CardContent>{sortedOvertime.length > 0 ? <Table><TableHeader><TableRow><TableHead>{t('date')}</TableHead><TableHead className="text-right">{t('amount')}</TableHead></TableRow></TableHeader><TableBody>{sortedOvertime.slice(0, 3).map(o => (<TableRow key={o.id}><TableCell>{format(parseISO(o.date), 'PP')}</TableCell><TableCell className="text-right">{formatCurrency(o.totalAmount)}</TableCell></TableRow>))}</TableBody></Table> : <p className="text-sm text-center text-muted-foreground py-4">{t('no_overtime_this_month')}</p>}</CardContent>{sortedOvertime.length > 0 && <CardFooter className="justify-end gap-2 bg-muted/50 text-sm"><span className="text-muted-foreground">{t('months_total_colon')}</span><span className="text-orange-500">{formatCurrency(totalOvertimeAmount)}</span></CardFooter>}</Card>
+                                <Card><CardHeader><CardTitle className="flex items-center gap-2"><Gift className="w-5 h-5 text-green-500"/> {t('bonuses')}</CardTitle></CardHeader><CardContent>{sortedBonuses.length > 0 ? <Table><TableHeader><TableRow><TableHead>{t('date')}</TableHead><TableHead className="text-right">{t('amount')}</TableHead></TableRow></TableHeader><TableBody>{sortedBonuses.slice(0, 3).map(b => (<TableRow key={b.id}><TableCell>{format(parseISO(b.date), 'PP')}</TableCell><TableCell className="text-right">{formatCurrency(b.totalAmount)}</TableCell></TableRow>))}</TableBody></Table> : <p className="text-sm text-center text-muted-foreground py-4">{t('no_bonuses')}</p>}</CardContent>{sortedBonuses.length > 0 && <CardFooter className="justify-end gap-2 bg-muted/50 text-sm"><span className="text-muted-foreground">{t('total_colon')}</span><span className="text-green-500">{formatCurrency(totalBonuses)}</span></CardFooter>}</Card>
+                                <Card><CardHeader><CardTitle className="flex items-center gap-2"><Banknote className="w-5 h-5 text-rose-500"/> {t('cash_withdrawals')}</CardTitle></CardHeader><CardContent>{sortedWithdrawals.length > 0 ? <Table><TableHeader><TableRow><TableHead>{t('date')}</TableHead><TableHead className="text-right">{t('amount')}</TableHead></TableRow></TableHeader><TableBody>{sortedWithdrawals.slice(0, 3).map(w => (<TableRow key={w.id}><TableCell>{format(parseISO(w.date), 'PP')}</TableCell><TableCell className="text-right">{formatCurrency(w.amount)}</TableCell></TableRow>))}</TableBody></Table> : <p className="text-sm text-center text-muted-foreground py-4">{t('no_withdrawals')}</p>}</CardContent>{sortedWithdrawals.length > 0 && <CardFooter className="justify-end gap-2 bg-muted/50 text-sm"><span className="text-muted-foreground">{t('total_colon')}</span><span className="text-rose-500">{formatCurrency(totalWithdrawals)}</span></CardFooter>}</Card>
+                            </div>
+                        </div>
+                    </div>
                   )}
               </main>
           </div>
@@ -953,4 +665,3 @@ function EmployeesPage() {
 }
 
 export default withAuth(EmployeesPage);
-
