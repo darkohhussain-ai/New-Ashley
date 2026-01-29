@@ -246,8 +246,21 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
 
     const handleGeneratePdf = async () => {
         const input = reportRef.current;
-        if (!input) return;
-        const canvas = await html2canvas(input, { scale: 2, useCORS: true });
+        if (!input || !employee) return;
+        
+        const canvas = await html2canvas(input, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            onclone: (document) => {
+                if (settings.customFont && language === 'ku') {
+                    const style = document.createElement('style');
+                    style.innerHTML = `@font-face { font-family: 'CustomAppFont'; src: url(${settings.customFont}); } body, table, div, p, h1, h2, h3, span { font-family: 'CustomAppFont' !important; }`;
+                    document.head.appendChild(style);
+                }
+            }
+        });
+    
         const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
         const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -256,15 +269,20 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
         const imgWidth = imgProps.width;
         const imgHeight = imgProps.height;
         const ratio = imgWidth / imgHeight;
+        
         let finalWidth = pdfWidth;
         let finalHeight = pdfWidth / ratio;
+    
         if (finalHeight > pdfHeight) {
             finalHeight = pdfHeight;
             finalWidth = finalHeight * ratio;
         }
+        
         const x = (pdfWidth - finalWidth) / 2;
-        pdf.addImage(imgData, 'PNG', x, 0, finalWidth, finalHeight);
-        pdf.output('dataurlnewwindow');
+        const y = 0;
+    
+        pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
+        pdf.save(`${employee.name}_Report.pdf`);
     };
     
     const handleExportExcel = () => {
@@ -808,14 +826,18 @@ function EmployeesPage() {
 
   return (
     <>
-      <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
-        <div ref={dashboardReportRef}>
+      {!selectedEmployeeId && (
+        <>
+          <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
+            <div ref={dashboardReportRef}>
+              <EmployeeDashboardPrintView employees={[...warehouseEmployees, ...marketingEmployees]} settings={settings} />
+            </div>
+          </div>
+          <div className="hidden print:block">
             <EmployeeDashboardPrintView employees={[...warehouseEmployees, ...marketingEmployees]} settings={settings} />
-        </div>
-      </div>
-      <div className="hidden print:block">
-        <EmployeeDashboardPrintView employees={[...warehouseEmployees, ...marketingEmployees]} settings={settings} />
-      </div>
+          </div>
+        </>
+      )}
       <div className="h-screen w-screen flex flex-col bg-background text-foreground print:hidden">
           <AddEmployeeDialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen} addEmployee={addEmployee} />
           <header className="bg-card border-b p-4">
