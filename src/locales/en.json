@@ -698,5 +698,9 @@
   "daily_overtime_summary": "Daily Overtime Summary",
   "overtime_summary_desc": "A daily breakdown of overtime records for {month}.",
   "excel": "Excel",
-  "pdf": "PDF"
+  "pdf": "PDF",
+  "photo": "Photo",
+  "id": "ID",
+  "role": "Role",
+  "phone": "Phone"
 }

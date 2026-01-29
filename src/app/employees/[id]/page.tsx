@@ -106,8 +106,8 @@ function EmployeeDetailPage() {
   
   // --- Individual Employee Logic ---
   const { totalExpenses, sortedExpenses } = useMemo(() => {
-    if (!selectedEmployeeId) return { totalExpenses: 0, sortedExpenses: [] };
-    const empExpenses = expenses.filter(e => e.employeeId === selectedEmployeeId);
+    if (!employeeId) return { totalExpenses: 0, sortedExpenses: [] };
+    const empExpenses = expenses.filter(e => e.employeeId === employeeId);
     const total = empExpenses.reduce((sum, exp) => sum + exp.amount, 0);
     const sorted = [...empExpenses].filter(e => e.date && !isNaN(parseISO(e.date).getTime())).sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
     return { totalExpenses: total, sortedExpenses: sorted };

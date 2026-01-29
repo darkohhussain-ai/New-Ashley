@@ -127,7 +127,7 @@ function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean,
 }
 
 function EmployeesPage() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { employees, setEmployees, isLoading, settings } = useAppContext();
   const [isAddDialogOpen, setAddDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -221,12 +221,12 @@ function EmployeesPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="w-[80px]">Photo</TableHead>
-                                    <TableHead>Name</TableHead>
-                                    <TableHead>ID</TableHead>
-                                    <TableHead>Role</TableHead>
-                                    <TableHead>Phone</TableHead>
-                                    <TableHead>Status</TableHead>
+                                    <TableHead>{t('photo')}</TableHead>
+                                    <TableHead>{t('name')}</TableHead>
+                                    <TableHead>{t('id')}</TableHead>
+                                    <TableHead>{t('role')}</TableHead>
+                                    <TableHead>{t('phone')}</TableHead>
+                                    <TableHead>{t('status')}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -242,21 +242,24 @@ function EmployeesPage() {
                                         </TableRow>
                                     ))
                                 ) : filteredEmployees.length > 0 ? (
-                                    filteredEmployees.map(emp => (
-                                        <TableRow key={emp.id} onClick={() => router.push(`/employees/${emp.id}`)} className="cursor-pointer">
+                                    filteredEmployees.map(emp => {
+                                      const displayName = language === 'ku' && emp.kurdishName ? emp.kurdishName : emp.name;
+                                      return (
+                                        <TableRow key={emp.id} onClick={() => router.push(`/employees/${emp.id}`)} className="cursor-pointer hover:bg-accent/50">
                                             <TableCell>
                                                 <Avatar className="h-10 w-10">
                                                     <AvatarImage src={emp.photoUrl || ''} alt={emp.name} />
                                                     <AvatarFallback>{emp.name.charAt(0)}</AvatarFallback>
                                                 </Avatar>
                                             </TableCell>
-                                            <TableCell>{emp.name}</TableCell>
+                                            <TableCell>{displayName}</TableCell>
                                             <TableCell>{emp.employeeId || 'N/A'}</TableCell>
                                             <TableCell>{emp.role || 'N/A'}</TableCell>
                                             <TableCell>{emp.phone || 'N/A'}</TableCell>
                                             <TableCell>{emp.isActive ? 'Active' : 'Inactive'}</TableCell>
                                         </TableRow>
-                                    ))
+                                      )
+                                    })
                                 ) : (
                                     <TableRow>
                                         <TableCell colSpan={6} className="h-24 text-center">
