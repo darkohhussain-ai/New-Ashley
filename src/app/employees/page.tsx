@@ -354,7 +354,10 @@ function EmployeesPage() {
   const generatePdf = async (type: 'list' | 'detail') => {
       const targetRef = type === 'list' ? dashboardReportRef : detailReportRef;
       const input = targetRef.current;
-      if (!input) return;
+      if (!input) {
+        toast({variant: 'destructive', title: 'PDF Error', description: 'Could not find content to generate PDF.'});
+        return;
+      }
       
       const canvas = await html2canvas(input, { scale: 2, useCORS: true, backgroundColor: '#ffffff', onclone: (doc) => {
           if (customFont) {
@@ -382,7 +385,6 @@ function EmployeesPage() {
   const handleExportExcelForDashboard = () => {
     const allEmployees = [...warehouseEmployees, ...marketingEmployees];
     if (allEmployees.length === 0) { toast({ title: t('no_data_to_export'), description: "There are no employees to export." }); return; }
-    const workbook = XLSX.utils.book_new();
     const dataToExport = allEmployees.map(emp => ({
       [t('employee_name')]: emp.name, [t('kurdish_name')]: emp.kurdishName || '', [t('id_colon')]: emp.employeeId || '',
       [t('role_optional')]: emp.role || '', [t('email_optional')]: emp.email || '', [t('phone_optional')]: emp.phone || '',
@@ -390,6 +392,7 @@ function EmployeesPage() {
       [t('dob')]: emp.dateOfBirth ? format(parseISO(emp.dateOfBirth), 'yyyy-MM-dd') : '',
     }));
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, t('employees_list'));
     XLSX.writeFile(workbook, `${t('employees_dashboard')}_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
   };
@@ -461,9 +464,28 @@ function EmployeesPage() {
 
   return (
     <>
+      {/* --- OFF-SCREEN PDF CONTENT --- */}
+      <div style={{ position: 'absolute', left: '-9999px', top: 0, zIndex: -100, opacity: 0 }}>
+        <div ref={dashboardReportRef}>
+            <EmployeeDashboardPrintView employees={[...warehouseEmployees, ...marketingEmployees]} settings={settings} />
+        </div>
+        <div ref={detailReportRef}>
+            {selectedEmployee && (
+                 <EmployeeReportPdf 
+                    employee={selectedEmployee}
+                    settings={settings}
+                    expenses={{items: sortedExpenses, total: totalExpenses}}
+                    overtime={{items: sortedOvertime, total: totalOvertimeAmount}}
+                    bonuses={{items: sortedBonuses, total: totalBonuses}}
+                    withdrawals={{items: sortedWithdrawals, total: totalWithdrawals}}
+                />
+            )}
+        </div>
+      </div>
+
       {/* --- PRINT-ONLY CONTENT --- */}
       <div className={cn('print-only-container', !isPrinting && 'hidden')}>
-        <div className="hidden print:block" ref={isPrinting === 'list' ? dashboardReportRef : detailReportRef}>
+        <div className="hidden print:block">
             {isPrinting === 'list' && (
                 <EmployeeDashboardPrintView employees={[...warehouseEmployees, ...marketingEmployees]} settings={settings} />
             )}
@@ -665,3 +687,5 @@ function EmployeesPage() {
 }
 
 export default withAuth(EmployeesPage);
+
+    
