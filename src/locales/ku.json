@@ -693,10 +693,10 @@
   "general": "گشتی",
   "generated_by_ashley_system": "لەلایەن سیستەمی ئاشلییەوە دروستکراوە",
   "employees_dashboard": "داشبۆردی کارمەندان",
+  "employees_list": "لیستی کارمەندان",
   "daily_expense_report": "ڕاپۆرتی ڕۆژانەی خەرجی",
   "daily_overtime_summary": "پوختەی ڕۆژانەی کاتی زیادە",
   "overtime_summary_desc": "شیکردنەوەیەکی ڕۆژانەی تۆمارەکانی کاتی زیادە بۆ مانگی {month}.",
-  "employees_list": "لیستی کارمەندان",
   "excel": "ئێکسڵ",
   "pdf": "پی دی ئێف"
 }

@@ -302,7 +302,6 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
 
         const wb = XLSX.utils.book_new();
 
-        // 1. Employee Profile Sheet
         const profileData = [
             { "Field": t('employee_name'), "Value": employee.name },
             { "Field": t('kurdish_name'), "Value": employee.kurdishName || t('na') },
@@ -316,7 +315,6 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
         const wsProfile = XLSX.utils.json_to_sheet(profileData, { skipHeader: true });
         XLSX.utils.book_append_sheet(wb, wsProfile, "Profile");
 
-        // 2. Financial Sheets
         const expensesData = sortedExpenses.map(e => ({ [t('date')]: format(parseISO(e.date), 'yyyy-MM-dd'), [t('amount')]: e.amount, [t('notes')]: e.notes || '' }));
         if (expensesData.length > 0) {
             const wsExpenses = XLSX.utils.json_to_sheet(expensesData);
@@ -404,8 +402,8 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                             <>
                                 <Button onClick={() => setIsEditing(true)}><Edit className="mr-2 h-4 w-4"/> {t('edit')}</Button>
                                 <Button variant="outline" onClick={handlePrint}><Printer className="mr-2 h-4 w-4"/> {t('print')}</Button>
-                                <Button variant="outline" onClick={handleGeneratePdf}><FileText className="mr-2 h-4 w-4"/> PDF</Button>
-                                <Button variant="outline" onClick={handleExportExcel}><FileDown className="mr-2 h-4 w-4"/> Excel</Button>
+                                <Button variant="outline" onClick={handleGeneratePdf}><FileText className="mr-2 h-4 w-4"/> {t('pdf')}</Button>
+                                <Button variant="outline" onClick={handleExportExcel}><FileDown className="mr-2 h-4 w-4"/> {t('excel')}</Button>
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
                                         <Button variant="outline" className={cn(!employee.isActive && "text-destructive border-destructive/50")}>
@@ -829,6 +827,7 @@ function EmployeesPage() {
       toast({ title: t('no_data_to_export'), description: "There are no employees to export." });
       return;
     }
+    const workbook = XLSX.utils.book_new();
     const dataToExport = allEmployees.map(emp => ({
       [t('employee_name')]: emp.name,
       [t('kurdish_name')]: emp.kurdishName || '',
@@ -840,8 +839,7 @@ function EmployeesPage() {
       [t('dob')]: emp.dateOfBirth ? format(parseISO(emp.dateOfBirth), 'yyyy-MM-dd') : '',
     }));
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, t('employees'));
+    XLSX.utils.book_append_sheet(workbook, worksheet, t('employees_list'));
     XLSX.writeFile(workbook, `${t('employees_dashboard')}_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
   };
   
@@ -876,8 +874,8 @@ function EmployeesPage() {
 
   return (
     <>
-      <div className="hidden">
-        <div ref={dashboardReportRef} className="print-only">
+      <div className="hidden print:block">
+        <div ref={dashboardReportRef}>
           <EmployeeDashboardPrintView employees={[...warehouseEmployees, ...marketingEmployees]} settings={settings} />
         </div>
       </div>
@@ -955,3 +953,4 @@ function EmployeesPage() {
 }
 
 export default withAuth(EmployeesPage);
+
