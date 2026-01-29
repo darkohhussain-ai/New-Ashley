@@ -172,7 +172,7 @@ export default function MonthlyOvertimeReportPage() {
                 />
               </PopoverContent>
             </Popover>
-            <Button variant="outline" onClick={handlePrint} disabled={isLoading || monthlyData.records.length === 0}><Printer className="mr-2"/>{t('print')}</Button>
+            <Button variant="outline" size="icon" onClick={handlePrint} disabled={isLoading || monthlyData.records.length === 0}><Printer className="h-4 w-4"/></Button>
           </div>
         </header>
 

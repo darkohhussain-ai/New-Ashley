@@ -19,8 +19,7 @@ import { useAppContext } from '@/context/app-provider';
 import type { Overtime, AllPdfSettings } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
-import { OvertimeReportPdf } from '@/components/reports/OvertimeReportPdf';
-
+import { ReportWrapper } from '@/components/reports/ReportWrapper';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -171,63 +170,10 @@ export default function AddOvertimePage() {
   const handlePrint = () => {
     window.print();
   };
-
-  if (!selectedDate) {
-    return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
-  }
-
-  return (
-    <>
-      <div className="hidden print:block">
-        {selectedDate && (
-            <OvertimeReportPdf
-                records={overtimeRecords}
-                date={selectedDate}
-                settings={settings}
-                getEmployeeName={getEmployeeName}
-            />
-        )}
-      </div>
-    <div className="h-[calc(100vh-80px)] flex flex-col print:hidden">
-      <header className="bg-card border-b p-4">
-        <div className="container mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="icon" asChild>
-              <Link href="/overtime">
-                <ArrowLeft />
-              </Link>
-            </Button>
-            <h1 className="text-xl">{t('daily_overtime')}</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-              <PopoverTrigger asChild>
-                <Button variant={"outline"} className={cn("w-48 justify-start text-left", !selectedDate && "text-muted-foreground")}>
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {selectedDate ? format(selectedDate, "PPP") : <span>{t('pick_a_date')}</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="end">
-                <Calendar 
-                    mode="single" 
-                    selected={selectedDate} 
-                    onSelect={(date) => {
-                        if(date) setSelectedDate(date);
-                        setIsCalendarOpen(false);
-                    }}
-                    initialFocus 
-                    captionLayout="dropdown-nav" fromYear={2020} toYear={2040} 
-                />
-              </PopoverContent>
-            </Popover>
-             <Button variant="outline" onClick={handlePrint} disabled={isLoading || overtimeRecords.length === 0}><Printer className="mr-2"/>{t('print')}</Button>
-          </div>
-        </div>
-      </header>
-
-      <main className="container mx-auto p-4 md:p-8 flex-1 overflow-y-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-1">
+  
+  const PageContent = () => (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-1 print:hidden">
                 <Card>
                 <CardHeader>
                     <CardTitle>{t('add_overtime_record')}</CardTitle>
@@ -379,6 +325,58 @@ export default function AddOvertimePage() {
                 </Card>
             </div>
             </div>
+  );
+
+  if (!selectedDate) {
+    return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
+
+  return (
+    <>
+      <div className="hidden print:block">
+        <ReportWrapper>
+          <PageContent />
+        </ReportWrapper>
+      </div>
+    <div className="h-[calc(100vh-80px)] flex flex-col print:hidden">
+      <header className="bg-card border-b p-4">
+        <div className="container mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="outline" size="icon" asChild>
+              <Link href="/overtime">
+                <ArrowLeft />
+              </Link>
+            </Button>
+            <h1 className="text-xl">{t('daily_overtime')}</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+              <PopoverTrigger asChild>
+                <Button variant={"outline"} className={cn("w-48 justify-start text-left", !selectedDate && "text-muted-foreground")}>
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {selectedDate ? format(selectedDate, "PPP") : <span>{t('pick_a_date')}</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar 
+                    mode="single" 
+                    selected={selectedDate} 
+                    onSelect={(date) => {
+                        if(date) setSelectedDate(date);
+                        setIsCalendarOpen(false);
+                    }}
+                    initialFocus 
+                    captionLayout="dropdown-nav" fromYear={2020} toYear={2040} 
+                />
+              </PopoverContent>
+            </Popover>
+             <Button variant="outline" size="icon" onClick={handlePrint} disabled={isLoading || overtimeRecords.length === 0}><Printer className="h-4 w-4"/></Button>
+          </div>
+        </div>
+      </header>
+
+      <main className="container mx-auto p-4 md:p-8 flex-1 overflow-y-auto">
+        <PageContent />
       </main>
     </div>
     </>

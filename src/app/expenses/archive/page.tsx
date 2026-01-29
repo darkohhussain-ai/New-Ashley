@@ -92,7 +92,7 @@ export default function ExpenseArchivePage() {
             <h1 className="text-2xl md:text-3xl">{t('expense_report_archive')}</h1>
           </div>
           <div className="flex items-center gap-2">
-            <Button onClick={handlePrint} variant="outline"><Printer className="mr-2 h-4 w-4"/> {t('print')}</Button>
+            <Button onClick={handlePrint} variant="outline" size="icon"><Printer className="h-4 w-4"/></Button>
             <Button asChild>
               <Link href="/expenses/add"><Plus className="mr-2" /> {t('create_report')}</Link>
             </Button>

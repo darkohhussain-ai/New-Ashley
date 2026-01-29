@@ -302,12 +302,60 @@ export default function AddExpensePage() {
         </Card>
         </div>
         <div className="lg:col-span-2">
-            <DailyExpenseReportPdf
-              records={dailyExpenses}
-              date={date!}
-              settings={settings}
-              getEmployeeName={getEmployeeName}
-            />
+             <Card>
+                <CardHeader>
+                    <CardTitle className="text-center text-2xl">{t('daily_expense_report')}</CardTitle>
+                    <CardDescription className="text-center">{date ? format(date, 'PPPP') : '...'}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {isLoading ? <div className="text-center py-8"><Loader2 className="h-6 w-6 animate-spin mx-auto"/></div> : (
+                        groupedExpenses.length > 0 ? (
+                           groupedExpenses.map(group => (
+                                <div key={group.employeeName} className="mb-6 last:mb-0 break-inside-avoid">
+                                    <h3 className="text-lg font-semibold mb-2 pb-1 border-b" dir={language === 'ku' ? 'rtl' : 'ltr'}>{group.employeeName}</h3>
+                                    <div className="divide-y">
+                                        {group.expenses.map(exp => (
+                                            <div key={exp.id} className="flex justify-between items-start py-2 gap-2">
+                                                <div className="flex-1">
+                                                    <p>{t(exp.expenseType.toLowerCase().replace(/[\s()]/g, '_'))}{exp.expenseSubType ? ` (${t(exp.expenseSubType.toLowerCase().replace(/\s/g, '_'))})` : ''}</p>
+                                                    {exp.notes && <p className="text-xs text-muted-foreground">{exp.notes}</p>}
+                                                </div>
+                                                <p className="font-medium text-right">{formatCurrency(exp.amount)}</p>
+                                                 {!editingExpense && (
+                                                <div className="flex gap-1 print:hidden">
+                                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEditing(exp)}><Edit className="h-4 w-4"/></Button>
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"><Trash2 className="h-4 w-4"/></Button></AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
+                                                                <AlertDialogDescription>{t('confirm_delete_expense', {amount: exp.amount})}</AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter><AlertDialogCancel>{t('cancel')}</AlertDialogCancel><AlertDialogAction onClick={() => handleDelete(exp)}>{t('delete')}</AlertDialogAction></AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="text-right font-semibold mt-2 pt-2 border-t">{t('total')}: {formatCurrency(group.total)}</div>
+                                </div>
+                           ))
+                        ) : (
+                            <p className="text-center text-muted-foreground py-8">{t('no_expense_items_added')}</p>
+                        )
+                    )}
+                </CardContent>
+                {groupedExpenses.length > 0 && (
+                    <CardFooter className="bg-muted/50 p-4 justify-end">
+                        <div className="text-lg font-bold">
+                            <span>{t('grand_total')}: </span>
+                            <span className="text-primary">{formatCurrency(grandTotal)}</span>
+                        </div>
+                    </CardFooter>
+                )}
+            </Card>
         </div>
     </div>
   );
@@ -320,7 +368,7 @@ export default function AddExpensePage() {
     <>
         <div className="hidden print:block">
            <ReportWrapper>
-            {date && <DailyExpenseReportPdf records={dailyExpenses} date={date} settings={settings} getEmployeeName={getEmployeeName} />}
+            <PageContent />
            </ReportWrapper>
         </div>
         <div className="min-h-screen bg-background text-foreground print:hidden">
@@ -368,7 +416,7 @@ export default function AddExpensePage() {
                             </div>
                         </PopoverContent>
                         </Popover>
-                        <Button variant="outline" onClick={handlePrint} disabled={isLoading || dailyExpenses.length === 0}><Printer className="mr-2"/>{t('print')}</Button>
+                        <Button variant="outline" size="icon" onClick={handlePrint} disabled={isLoading || dailyExpenses.length === 0}><Printer className="h-4 w-4"/></Button>
                     </div>
                 </div>
             </header>

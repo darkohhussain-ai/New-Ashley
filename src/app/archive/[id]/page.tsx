@@ -464,7 +464,7 @@ export default function FileDetailPage() {
                 ) : (
                     <>
                     <Button onClick={() => setIsEditing(true)}><Edit className="mr-2"/>{t('edit')}</Button>
-                    <Button variant="outline" onClick={handlePrint}><Printer className="mr-2 h-4 w-4" /> {t('print')}</Button>
+                    <Button variant="outline" size="icon" onClick={handlePrint}><Printer className="h-4 w-4" /></Button>
                     <AlertDialog>
                         <AlertDialogTrigger asChild><Button variant="destructive"><Trash2 className="mr-2"/>{t('delete')}</Button></AlertDialogTrigger>
                         <AlertDialogContent>

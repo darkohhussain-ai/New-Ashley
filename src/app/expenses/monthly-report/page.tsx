@@ -4,23 +4,20 @@
 
 import { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Calendar as CalendarIcon, FileText, Printer, Loader2, BarChart, FileSpreadsheet } from 'lucide-react';
+import { ArrowLeft, Calendar as CalendarIcon, FileSpreadsheet, Printer, Loader2, BarChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter as ShadcnTableFooter } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAppContext } from '@/context/app-provider';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslation } from '@/hooks/use-translation';
 import { useAuth } from '@/hooks/use-auth';
-import type { AllPdfSettings } from '@/lib/types';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { ReportWrapper } from '@/components/reports/ReportWrapper';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { useToast } from '@/hooks/use-toast';
 
@@ -111,97 +108,6 @@ export default function MonthlyExpenseReportPage() {
 
   const handlePrint = () => {
     window.print();
-  };
-
-  const handleGeneratePdf = async () => {
-    if (!selectedDate || monthlyData.summary.length === 0) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "No data to generate PDF.",
-      });
-      return;
-    }
-
-    const doc = new jsPDF({
-      orientation: 'p',
-      unit: 'pt',
-      format: 'a4',
-    });
-
-    const fontName = 'CustomAppFont';
-
-    if (customFont) {
-        try {
-            const base64Font = customFont.split(',')[1];
-            doc.addFileToVFS(`${fontName}.ttf`, base64Font);
-            doc.addFont(`${fontName}.ttf`, fontName, 'normal');
-            doc.setFont(fontName);
-        } catch (e) {
-            console.error("Error with custom font:", e);
-            doc.setFont('helvetica');
-        }
-    } else {
-        doc.setFont('helvetica');
-    }
-
-    const headerTitle = t('monthly_expense_report');
-    const headerDate = format(selectedDate, 'MMMM yyyy');
-    
-    doc.setFontSize(18);
-    doc.text(headerTitle, doc.internal.pageSize.getWidth() / 2, 40, { align: 'center' });
-    doc.setFontSize(12);
-    doc.setTextColor(100);
-    doc.text(headerDate, doc.internal.pageSize.getWidth() / 2, 60, { align: 'center' });
-
-    let startY = 80;
-
-    monthlyData.summary.forEach((item) => {
-        if (startY > doc.internal.pageSize.getHeight() - 100) {
-            doc.addPage();
-            startY = 40;
-        }
-        
-        autoTable(doc, {
-            head: [[item.employeeName, isReadOnly ? '***' : formatCurrency(item.totalAmount)]],
-            startY: startY,
-            theme: 'plain',
-            headStyles: { fontStyle: 'bold', fontSize: 12, fillColor: false, textColor: 20 },
-        });
-
-        const body = [
-          [t('taxi_expenses'), isReadOnly ? '***' : formatCurrency(item.taxiTotal)],
-          ...Object.entries(item.taxiBreakdown).map(([subType, amount]) => ([
-            `- ${t(subType.toLowerCase().replace(/\s/g, '_'))}`,
-            isReadOnly ? '***' : formatCurrency(amount)
-          ])),
-          [t('purchases_buying_items'), isReadOnly ? '***' : formatCurrency(item.purchasesTotal)],
-        ].filter(row => (row[1] as string) !== formatCurrency(0));
-
-        autoTable(doc, {
-            body: body,
-            startY: (doc as any).lastAutoTable.finalY,
-            theme: 'grid',
-            styles: {
-                font: fontName,
-                fontSize: 9,
-                cellPadding: 4,
-            },
-            columnStyles: {
-                0: { halign: 'left' },
-                1: { halign: 'right' },
-            }
-        });
-        startY = (doc as any).lastAutoTable.finalY + 20;
-    });
-
-    const finalY = (doc as any).lastAutoTable.finalY + 30;
-    doc.setFontSize(14);
-    doc.setFont(fontName, 'bold');
-    doc.text(`${t('grand_total')}: ${isReadOnly ? '***' : formatCurrency(monthlyData.grandTotal)}`, doc.internal.pageSize.getWidth() - 30, finalY, { align: 'right' });
-
-
-    doc.save(`monthly-expenses-${format(selectedDate, 'yyyy-MM')}.pdf`);
   };
 
   const handleExportExcel = () => {
@@ -363,12 +269,9 @@ export default function MonthlyExpenseReportPage() {
                 />
               </PopoverContent>
             </Popover>
-            <Button variant="outline" onClick={handlePrint} disabled={isLoading || monthlyData.summary.length === 0}><Printer className="mr-2 h-4 w-4"/>{t('print')}</Button>
-            <Button variant="outline" onClick={handleGeneratePdf} disabled={isLoading || monthlyData.summary.length === 0}>
-                <FileText className="mr-2 h-4 w-4" /> PDF
-            </Button>
-            <Button variant="outline" onClick={handleExportExcel} disabled={isLoading || monthlyData.summary.length === 0}>
-                <FileSpreadsheet className="mr-2 h-4 w-4"/> Excel
+            <Button variant="outline" size="icon" onClick={handlePrint} disabled={isLoading || monthlyData.summary.length === 0}><Printer className="h-4 w-4"/></Button>
+            <Button variant="outline" size="icon" onClick={handleExportExcel} disabled={isLoading || monthlyData.summary.length === 0}>
+                <FileSpreadsheet className="h-4 w-4"/>
             </Button>
           </div>
         </header>

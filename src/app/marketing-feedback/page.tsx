@@ -454,7 +454,7 @@ function MarketingFeedbackPage() {
 
                         <TabsContent value="dashboard">
                             <div className="flex justify-end mb-4 gap-2">
-                                <Button variant="outline" onClick={() => window.print()}><Printer className="mr-2 h-4 w-4"/> {t('print')}</Button>
+                                <Button variant="outline" size="icon" onClick={() => window.print()}><Printer className="h-4 w-4"/></Button>
                             </div>
                             <div className="space-y-8">
                                 <Card>

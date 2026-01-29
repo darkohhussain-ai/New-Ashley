@@ -130,7 +130,7 @@ function AshleyExpensesDashboard() {
             <h1 className="text-xl">{t('ashley_employees_management')}</h1>
           </div>
             <div className='flex items-center gap-2'>
-                <Button onClick={handlePrint} variant="outline"><Printer className="mr-2 h-4 w-4"/> {t('print')}</Button>
+                <Button onClick={handlePrint} variant="outline" size="icon"><Printer className="h-4 w-4"/></Button>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant={"outline"} className={cn("w-48 justify-start text-left font-normal", !selectedDate && "text-muted-foreground")}>

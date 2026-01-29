@@ -679,8 +679,8 @@ function AccountPage() {
       <div className="min-h-screen bg-background text-foreground print:hidden">
         <main className="container mx-auto p-4 md:p-8">
           <div className="flex justify-end gap-2 mb-4">
-            <Button variant="outline" onClick={handlePrint}>
-              <Printer className="mr-2" /> {t('print')}
+            <Button variant="outline" size="icon" onClick={handlePrint}>
+              <Printer className="h-4 w-4" />
             </Button>
           </div>
           <PageContent />

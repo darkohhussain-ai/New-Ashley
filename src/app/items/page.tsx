@@ -42,13 +42,6 @@ function ItemsPage() {
       href: "/archive",
       color: "bg-yellow-500",
       permission: 'page:items:archive',
-    },
-    {
-      title: t("pdf_archive"),
-      icon: FileText,
-      href: "/pdf-archive",
-      color: "bg-purple-500",
-      permission: 'page:items:pdf',
     }
   ];
 

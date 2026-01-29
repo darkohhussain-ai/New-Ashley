@@ -155,7 +155,7 @@ export default function NewFilePage() {
           <h1 className="text-2xl md:text-3xl font-bold">{t('new_excel_file')}</h1>
         </div>
         <div className="flex items-center gap-2">
-            <Button onClick={handlePrint} variant="outline" disabled={items.length === 0}><Printer className="mr-2"/> {t('print')}</Button>
+            <Button onClick={handlePrint} variant="outline" size="icon" disabled={items.length === 0}><Printer className="h-4 w-4"/></Button>
             <Button onClick={handleSave} disabled={isSaving}>
                 {isSaving ? <Loader2 className="animate-spin mr-2"/> : <Save className="mr-2" />}
                 {t('save_report')}

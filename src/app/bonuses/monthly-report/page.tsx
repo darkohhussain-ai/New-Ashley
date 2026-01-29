@@ -261,11 +261,11 @@ export default function MonthlyBonusReportPage() {
             </Popover>
             <Button
               variant="outline"
+              size="icon"
               onClick={handlePrint}
               disabled={isLoading || monthlyData.records.length === 0}
             >
-              <Printer className="mr-2" />
-              {t('print')}
+              <Printer className="h-4 w-4" />
             </Button>
           </div>
         </header>

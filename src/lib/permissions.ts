@@ -33,7 +33,6 @@ export const allPermissions: Permission[] = [
     { id: 'page:items:new', description: 'Create new files manually' },
     { id: 'page:items:import', description: 'Import items from Excel' },
     { id: 'page:items:archive', description: 'View Excel file archive' },
-    { id: 'page:items:pdf', description: 'View PDF archive' },
     
     // Marketing
     { id: 'page:marketing-feedback:view', description: 'Access Marketing Feedback dashboard' },
@@ -55,7 +54,6 @@ export const employeePermissions = [
     'page:items:view',
     'page:items:locations',
     'page:items:archive',
-    'page:items:pdf',
 ];
 
 export const financeManagerPermissions = [
@@ -76,7 +74,6 @@ export const inventoryManagerPermissions = [
     'page:items:new',
     'page:items:import',
     'page:items:archive',
-    'page:items:pdf',
     'page:items:sold',
     'page:transmit:view',
     'page:transmit:add',

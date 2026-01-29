@@ -333,7 +333,7 @@ export default function AddBonusPage() {
     <>
       <div className="hidden print:block">
         <ReportWrapper>
-          {selectedDate && <BonusReportPdf records={dailyBonuses} date={selectedDate} settings={settings} getEmployeeName={getEmployeeName} />}
+          <PageContent />
         </ReportWrapper>
       </div>
       <div className="min-h-screen bg-background text-foreground print:hidden">
@@ -383,7 +383,7 @@ export default function AddBonusPage() {
                   </div>
                 </PopoverContent>
               </Popover>
-              <Button variant="outline" onClick={handlePrint} disabled={isLoading || dailyBonuses.length === 0}><Printer className="mr-2"/>{t('print')}</Button>
+              <Button variant="outline" size="icon" onClick={handlePrint} disabled={isLoading || dailyBonuses.length === 0}><Printer className="h-4 w-4"/></Button>
             </div>
           </div>
         </header>

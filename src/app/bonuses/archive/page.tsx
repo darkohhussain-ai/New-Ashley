@@ -115,7 +115,7 @@ export default function BonusArchivePage() {
             <h1 className="text-2xl md:text-3xl">{t('bonuses_archive')}</h1>
           </div>
            <div className="flex items-center gap-2">
-              <Button onClick={handlePrint} variant="outline"><Printer className="mr-2 h-4 w-4"/> {t('print')}</Button>
+              <Button onClick={handlePrint} variant="outline" size="icon"><Printer className="h-4 w-4"/></Button>
               <Button asChild>
                   <Link href="/bonuses/add"><Plus className="mr-2"/> {t('add_bonus')}</Link>
               </Button>

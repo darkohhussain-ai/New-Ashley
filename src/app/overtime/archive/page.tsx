@@ -147,7 +147,7 @@ export default function OvertimeArchivePage() {
                   />
                 </PopoverContent>
               </Popover>
-              <Button onClick={handlePrint} variant="outline" disabled={isLoading || monthlyReports.length === 0}><Printer className="mr-2"/>{t('print')}</Button>
+              <Button onClick={handlePrint} variant="outline" size="icon" disabled={isLoading || monthlyReports.length === 0}><Printer className="h-4 w-4"/></Button>
               <Button asChild>
                   <Link href="/overtime/add"><Plus className="mr-2"/> {t('add_overtime')}</Link>
               </Button>
