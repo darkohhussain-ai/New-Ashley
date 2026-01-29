@@ -32,7 +32,6 @@ import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storag
 import { initialSettings } from "@/context/initial-data";
 import { EmployeeDashboardPrintView } from "@/components/employees/EmployeeDashboardPrintView";
 import { EmployeeReportPdf } from "@/components/employees/EmployeeReportPdf";
-import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
 
 const employeeRoles: Exclude<Employee['role'], null | undefined>[] = [
@@ -186,9 +185,6 @@ function EmployeesPage() {
   
   const { customFont } = settings;
 
-  const detailReportRef = useRef<HTMLDivElement>(null);
-  const dashboardReportRef = useRef<HTMLDivElement>(null);
-  
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState('');
   const [kurdishName, setKurdishName] = useState('');
@@ -341,51 +337,6 @@ function EmployeesPage() {
     toast({ title: employeeIsActive ? 'Employee Deactivated' : 'Employee Reactivated', description: `${selectedEmployee.name} has been ${employeeIsActive ? 'deactivated' : 'reactivated'}.` })
   };
 
-  const generatePdf = async (type: 'list' | 'detail') => {
-    const targetRef = type === 'list' ? dashboardReportRef : detailReportRef;
-    const input = targetRef.current;
-    if (!input) {
-      toast({
-        variant: 'destructive',
-        title: 'PDF Error',
-        description: 'Could not find content to generate PDF.',
-      });
-      return;
-    }
-
-    const fileName =
-      type === 'list'
-        ? `${t('employees_dashboard')}_${format(new Date(), 'yyyy-MM-dd')}.pdf`
-        : `${selectedEmployee?.name}_Report_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
-
-    const orientation = type === 'list' ? 'p' : 'l';
-
-    const pdf = new jsPDF({
-      orientation,
-      unit: 'pt',
-      format: 'a4',
-    });
-
-    await pdf.html(input, {
-      callback: function (doc) {
-        doc.save(fileName);
-      },
-      margin: [40, 30, 40, 30],
-      autoPaging: 'text',
-      html2canvas: {
-        scale: 2,
-        useCORS: true,
-        onclone: (doc) => {
-          if (customFont && language === 'ku') {
-            const style = doc.createElement('style');
-            style.innerHTML = `@font-face { font-family: 'CustomAppFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3, h4, h5, h6, span, th, td { font-family: 'CustomAppFont' !important; }`;
-            doc.head.appendChild(style);
-          }
-        },
-      },
-    });
-  };
-
   const handleExportExcelForDashboard = () => {
     const allEmployees = [...warehouseEmployees, ...marketingEmployees];
     if (allEmployees.length === 0) { toast({ title: t('no_data_to_export'), description: "There are no employees to export." }); return; }
@@ -472,25 +423,6 @@ function EmployeesPage() {
 
   return (
     <>
-      {/* --- OFF-SCREEN PDF CONTENT --- */}
-      <div className="absolute left-[-9999px] top-0 opacity-0">
-        <div ref={dashboardReportRef}>
-            <EmployeeDashboardPrintView employees={[...warehouseEmployees, ...marketingEmployees]} settings={settings} />
-        </div>
-        <div ref={detailReportRef}>
-            {selectedEmployee && (
-                 <EmployeeReportPdf 
-                    employee={selectedEmployee}
-                    settings={settings}
-                    expenses={{items: sortedExpenses, total: totalExpenses}}
-                    overtime={{items: sortedOvertime, total: totalOvertimeAmount}}
-                    bonuses={{items: sortedBonuses, total: totalBonuses}}
-                    withdrawals={{items: sortedWithdrawals, total: totalWithdrawals}}
-                />
-            )}
-        </div>
-      </div>
-
       {/* --- PRINT-ONLY VIEW (uses CSS to show) --- */}
       <div className="hidden print:block">
         <div id="print-dashboard-content">
@@ -539,7 +471,6 @@ function EmployeesPage() {
                           <h2 className="font-semibold text-lg">{t('employees_list')}</h2>
                           <div className="flex items-center gap-1">
                               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {document.body.classList.add('print-only-dashboard'); window.print(); document.body.classList.remove('print-only-dashboard');}}><Printer className="h-4 w-4" /></Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => generatePdf('list')}><FileText className="h-4 w-4" /></Button>
                               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleExportExcelForDashboard}><FileDown className="h-4 w-4" /></Button>
                           </div>
                       </div>
@@ -592,7 +523,6 @@ function EmployeesPage() {
                                     <>
                                         <Button onClick={() => setIsEditing(true)}><Edit className="mr-2 h-4 w-4"/> {t('edit')}</Button>
                                         <Button variant="outline" onClick={() => {document.body.classList.add('print-only-detail'); window.print(); document.body.classList.remove('print-only-detail');}}><Printer className="mr-2 h-4 w-4"/> {t('print')}</Button>
-                                        <Button variant="outline" onClick={() => generatePdf('detail')}><FileText className="mr-2 h-4 w-4"/> {t('pdf')}</Button>
                                         <Button variant="outline" onClick={handleExportExcelForDetail}><FileDown className="mr-2 h-4 w-4"/> {t('excel')}</Button>
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
