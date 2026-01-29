@@ -363,52 +363,37 @@ function EmployeesPage() {
       return;
     }
 
-    const canvas = await html2canvas(input, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: '#ffffff',
-      onclone: (doc) => {
-        if (customFont) {
-          const style = doc.createElement('style');
-          style.innerHTML = `@font-face { font-family: 'CustomAppFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3, span { font-family: 'CustomAppFont' !important; }`;
-          doc.head.appendChild(style);
-        }
-      },
-    });
-
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF({
-      orientation: type === 'list' ? 'p' : 'l',
-      unit: 'px',
-      format: 'a4',
-    });
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-    const imgProps = pdf.getImageProperties(imgData);
-    const imgWidth = imgProps.width;
-    const imgHeight = imgProps.height;
-    const ratio = imgHeight / imgWidth;
-    
-    let canvasPdfHeight = pdfWidth * ratio;
-
-    let heightLeft = canvasPdfHeight;
-    let position = 0;
-
-    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, canvasPdfHeight);
-    heightLeft -= pdfHeight;
-
-    while (heightLeft > 0) {
-      position -= pdfHeight;
-      pdf.addPage();
-      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, canvasPdfHeight);
-      heightLeft -= pdfHeight;
-    }
-    
     const fileName =
       type === 'list'
         ? `${t('employees_dashboard')}_${format(new Date(), 'yyyy-MM-dd')}.pdf`
         : `${selectedEmployee?.name}_Report_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
-    pdf.save(fileName);
+
+    const orientation = type === 'list' ? 'p' : 'l';
+
+    const pdf = new jsPDF({
+      orientation,
+      unit: 'pt',
+      format: 'a4',
+    });
+
+    await pdf.html(input, {
+      callback: function (doc) {
+        doc.save(fileName);
+      },
+      margin: [40, 30, 40, 30],
+      autoPaging: 'text',
+      html2canvas: {
+        scale: 0.65,
+        useCORS: true,
+        onclone: (doc) => {
+          if (customFont && language === 'ku') {
+            const style = doc.createElement('style');
+            style.innerHTML = `@font-face { font-family: 'CustomAppFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3, h4, h5, h6, span, th, td { font-family: 'CustomAppFont' !important; }`;
+            doc.head.appendChild(style);
+          }
+        },
+      },
+    });
   };
 
   const handleExportExcelForDashboard = () => {
@@ -498,7 +483,7 @@ function EmployeesPage() {
   return (
     <>
       {/* --- OFF-SCREEN PDF CONTENT --- */}
-      <div style={{ position: 'absolute', left: '-9999px', top: 0, zIndex: -100, opacity: 0, width: '210mm' }}>
+      <div className="absolute left-[-9999px] top-0 opacity-0">
         <div ref={dashboardReportRef}>
             <EmployeeDashboardPrintView employees={[...warehouseEmployees, ...marketingEmployees]} settings={settings} />
         </div>
