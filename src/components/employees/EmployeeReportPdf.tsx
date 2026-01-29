@@ -16,14 +16,14 @@ const FinancialTablePdf = ({ title, data, total }: { title: string, data: any[],
     return (
         <div className="mb-6 break-inside-avoid">
             <h3 className="text-lg font-medium mb-2 pb-1 border-b-2">{title}</h3>
-            <Table className="pdf-table">
+            <Table className="pdf-table text-xs">
                 <TableHeader><TableRow><TableHead>{t('date')}</TableHead><TableHead>{t('notes')}</TableHead><TableHead className="text-right">{t('amount')}</TableHead></TableRow></TableHeader>
                 <TableBody>
                     {data.map((item: any) => (
                         <TableRow key={item.id}>
-                            <TableCell className="py-2">{item.date && !isNaN(parseISO(item.date).getTime()) ? format(parseISO(item.date), 'PP') : 'Invalid Date'}</TableCell>
-                            <TableCell className="text-gray-600 py-2">{item.notes || 'N/A'}</TableCell>
-                            <TableCell className="text-right py-2">{formatCurrency(item.amount || item.totalAmount)}</TableCell>
+                            <TableCell className="py-1">{item.date && !isNaN(parseISO(item.date).getTime()) ? format(parseISO(item.date), 'PP') : 'Invalid Date'}</TableCell>
+                            <TableCell className="text-gray-600 py-1">{item.notes || 'N/A'}</TableCell>
+                            <TableCell className="text-right py-1">{formatCurrency(item.amount || item.totalAmount)}</TableCell>
                         </TableRow>
                     ))}
                 </TableBody>
@@ -39,7 +39,7 @@ const OvertimeTablePdf = ({ title, data, total }: { title: string, data: Overtim
     return (
         <div className="mb-6 break-inside-avoid">
             <h3 className="text-lg font-medium mb-2 pb-1 border-b-2">{title}</h3>
-            <Table className="pdf-table">
+            <Table className="pdf-table text-xs">
                 <TableHeader><TableRow>
                     <TableHead>{t('date')}</TableHead>
                     <TableHead>{t('overtime_hours')}</TableHead>
@@ -49,10 +49,10 @@ const OvertimeTablePdf = ({ title, data, total }: { title: string, data: Overtim
                 <TableBody>
                     {data.map((item) => (
                         <TableRow key={item.id}>
-                            <TableCell className="py-2">{item.date && !isNaN(parseISO(item.date).getTime()) ? format(parseISO(item.date), 'PP') : 'Invalid Date'}</TableCell>
-                            <TableCell className="py-2">{item.hours.toFixed(2)}</TableCell>
-                            <TableCell className="text-gray-600 py-2">{item.notes || 'N/A'}</TableCell>
-                            <TableCell className="text-right py-2">{formatCurrency(item.totalAmount)}</TableCell>
+                            <TableCell className="py-1">{item.date && !isNaN(parseISO(item.date).getTime()) ? format(parseISO(item.date), 'PP') : 'Invalid Date'}</TableCell>
+                            <TableCell className="py-1">{item.hours.toFixed(2)}</TableCell>
+                            <TableCell className="text-gray-600 py-1">{item.notes || 'N/A'}</TableCell>
+                            <TableCell className="text-right py-1">{formatCurrency(item.totalAmount)}</TableCell>
                         </TableRow>
                     ))}
                 </TableBody>

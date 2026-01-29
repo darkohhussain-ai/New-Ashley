@@ -50,31 +50,6 @@ function MainBackground() {
     )
 }
 
-function SystemCornerLogo() {
-    const { settings } = useAppContext();
-    const pathname = usePathname();
-    const isLoginPage = pathname === '/login';
-
-    if (isLoginPage || !settings.appLogo) {
-        return null;
-    }
-
-    return (
-        <div className="fixed bottom-4 left-4 z-50 w-20 h-20 bg-background/50 backdrop-blur-sm p-2 rounded-full shadow-lg pointer-events-none">
-            <div className="relative w-full h-full">
-                <Image 
-                    key={settings.appLogo}
-                    src={settings.appLogo}
-                    alt="System Logo"
-                    fill
-                    className="object-contain"
-                    unoptimized
-                />
-            </div>
-        </div>
-    )
-}
-
 function AppContent({ children }: { children: React.ReactNode }) {
     const { isLoading, settings } = useAppContext();
     const { language } = useTranslation();
@@ -119,7 +94,6 @@ function AppContent({ children }: { children: React.ReactNode }) {
             <CustomFontInjector />
 
             {!isLoginPage && <MainBackground />}
-            {!isLoginPage && <SystemCornerLogo />}
             
             {!isLoginPage && <AppHeader />}
             <div key={pathname} className="animate-fade-in-down">
