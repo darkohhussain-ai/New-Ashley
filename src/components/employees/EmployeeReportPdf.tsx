@@ -89,7 +89,7 @@ export const EmployeeReportPdf = ({
             title={t('employee_report')}
             date={reportDate}
        >
-            <div dir={language === 'ku' ? 'rtl' : 'ltr'}>
+            <div dir={language === 'ku' ? 'rtl' : 'ltr'} style={{ fontFamily: settings.customFont ? 'CustomAppFont' : 'inherit' }}>
                 <div className="flex items-start gap-6 p-4 rounded-lg bg-gray-50 border break-inside-avoid">
                     <Avatar className="w-28 h-28 border-4 border-white shadow-md">
                         <AvatarImage src={employee.photoUrl || undefined} alt={employee.name} />

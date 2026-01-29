@@ -79,7 +79,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
         isLoading,
     } = useAppContext();
     
-    const { pdfSettings, appLogo } = settings || { pdfSettings: initialSettings.pdfSettings, appLogo: null };
+    const { pdfSettings, appLogo, customFont } = settings || { pdfSettings: initialSettings.pdfSettings, appLogo: null, customFont: null };
 
     const storage = useStorage();
     const reportRef = useRef<HTMLDivElement>(null);
@@ -253,9 +253,9 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
             useCORS: true,
             backgroundColor: '#ffffff',
             onclone: (document) => {
-                if (settings.customFont && language === 'ku') {
+                if (customFont && language === 'ku') {
                     const style = document.createElement('style');
-                    style.innerHTML = `@font-face { font-family: 'CustomAppFont'; src: url(${settings.customFont}); } body, table, div, p, h1, h2, h3, span { font-family: 'CustomAppFont' !important; }`;
+                    style.innerHTML = `@font-face { font-family: 'CustomAppFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3, span { font-family: 'CustomAppFont' !important; }`;
                     document.head.appendChild(style);
                 }
             }
@@ -349,8 +349,8 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
 
     return (
         <>
-            <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
-                <div ref={reportRef}>
+            <div className="hidden">
+                 <div ref={reportRef} className="print-only">
                     <EmployeeReportPdf 
                         employee={employee}
                         settings={settings}
@@ -359,17 +359,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                         bonuses={{items: sortedBonuses, total: totalBonuses}}
                         withdrawals={{items: sortedWithdrawals, total: totalWithdrawals}}
                     />
-                </div>
-            </div>
-            <div className="hidden print:block">
-                 <EmployeeReportPdf 
-                    employee={employee}
-                    settings={settings}
-                    expenses={{items: sortedExpenses, total: totalExpenses}}
-                    overtime={{items: sortedOvertime, total: totalOvertimeAmount}}
-                    bonuses={{items: sortedBonuses, total: totalBonuses}}
-                    withdrawals={{items: sortedWithdrawals, total: totalWithdrawals}}
-                />
+                 </div>
             </div>
             <div className="w-full h-full flex flex-col print:hidden">
                 <header className="flex items-center justify-between gap-2 p-4 border-b">
@@ -711,6 +701,7 @@ function EmployeesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
   const dashboardReportRef = useRef<HTMLDivElement>(null);
+  const { customFont } = settings;
 
 
   const addEmployee = (employeeData: Omit<Employee, 'id'>) => {
@@ -761,16 +752,47 @@ function EmployeesPage() {
   const handleGeneratePdfForDashboard = async () => {
     const input = dashboardReportRef.current;
     if (!input) return;
-    const canvas = await html2canvas(input, { scale: 2, useCORS: true });
+    
+    const canvas = await html2canvas(input, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        onclone: (document) => {
+            if (customFont && language === 'ku') {
+                const style = document.createElement('style');
+                style.innerHTML = `@font-face { font-family: 'CustomAppFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3, span { font-family: 'CustomAppFont' !important; }`;
+                document.head.appendChild(style);
+            }
+        }
+    });
+
     const imgData = canvas.toDataURL('image/png');
     const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = pdf.internal.pageSize.getHeight();
-    const ratio = canvas.width / canvas.height;
-    let finalHeight = pdfWidth / ratio;
-    if (finalHeight > pdfHeight) finalHeight = pdfHeight;
-    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, finalHeight);
-    pdf.output('dataurlnewwindow');
+    const imgProps= pdf.getImageProperties(imgData);
+    const imgWidth = imgProps.width;
+    const imgHeight = imgProps.height;
+    
+    let pageHeight = pdfHeight;
+    let position = 0;
+    
+    while (position < imgHeight) {
+        const remainingHeight = imgHeight - position;
+        const pageCanvas = document.createElement('canvas');
+        pageCanvas.width = imgWidth;
+        pageCanvas.height = Math.min(imgHeight - position, pageHeight * (imgWidth / pdfWidth));
+
+        const pageCtx = pageCanvas.getContext('2d');
+        pageCtx?.drawImage(canvas, 0, position, imgWidth, pageCanvas.height, 0, 0, imgWidth, pageCanvas.height);
+        
+        const imgDataPage = pageCanvas.toDataURL('image/png');
+        if (position > 0) pdf.addPage();
+        pdf.addImage(imgDataPage, 'PNG', 0, 0, pdfWidth, pdfWidth * (pageCanvas.height / imgWidth));
+        position += pageCanvas.height;
+    }
+
+    pdf.save(`${t('employees_dashboard')}_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
   };
 
   const handleExportExcelForDashboard = () => {
@@ -826,18 +848,12 @@ function EmployeesPage() {
 
   return (
     <>
-      {!selectedEmployeeId && (
-        <>
-          <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
-            <div ref={dashboardReportRef}>
-              <EmployeeDashboardPrintView employees={[...warehouseEmployees, ...marketingEmployees]} settings={settings} />
-            </div>
-          </div>
-          <div className="hidden print:block">
-            <EmployeeDashboardPrintView employees={[...warehouseEmployees, ...marketingEmployees]} settings={settings} />
-          </div>
-        </>
-      )}
+      <div className="hidden">
+        <div ref={dashboardReportRef} className="print-only">
+          <EmployeeDashboardPrintView employees={[...warehouseEmployees, ...marketingEmployees]} settings={settings} />
+        </div>
+      </div>
+      
       <div className="h-screen w-screen flex flex-col bg-background text-foreground print:hidden">
           <AddEmployeeDialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen} addEmployee={addEmployee} />
           <header className="bg-card border-b p-4">
