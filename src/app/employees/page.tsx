@@ -14,7 +14,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { format, formatISO, parseISO } from "date-fns"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ArrowLeft, Plus, User, Calendar as CalendarIcon, Edit, Trash2, Save, X, Upload, Download, Mail, Phone, Cake, Briefcase, Search, Building, DollarSign, Clock, Gift, Banknote, FileDown, Printer, Wand2, UserX } from 'lucide-react'
+import { ArrowLeft, Plus, User, Calendar as CalendarIcon, Edit, Trash2, Save, X, Upload, Download, Mail, Phone, Cake, Briefcase, Search, Building, DollarSign, Clock, Gift, Banknote, FileDown, Printer, Wand2, UserX, FileText } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
@@ -32,7 +32,10 @@ import { useStorage } from "@/firebase";
 import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
 import { initialSettings } from "@/context/initial-data";
 import { EmployeeDashboardPrintView } from "@/components/employees/EmployeeDashboardPrintView";
-
+import { EmployeeReportPdf } from "@/components/employees/EmployeeReportPdf";
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import * as XLSX from 'xlsx';
 
 const employeeRoles: Exclude<Employee['role'], null | undefined>[] = [
     'Super Manager', 
@@ -79,7 +82,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
     const { pdfSettings, appLogo } = settings || { pdfSettings: initialSettings.pdfSettings, appLogo: null };
 
     const storage = useStorage();
-
+    const reportRef = useRef<HTMLDivElement>(null);
 
     const employee = useMemo(() => employees.find(e => e.id === employeeId), [employees, employeeId]);
     const employeeExpenses = useMemo(() => expenses.filter(e => e.employeeId === employeeId), [expenses, employeeId]);
@@ -236,6 +239,73 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
             description: `${employee.name} has been ${employee.isActive ? 'deactivated' : 'reactivated'}.`
         })
     };
+    
+    const handlePrint = () => {
+        window.print();
+    }
+
+    const handleGeneratePdf = async () => {
+        const input = reportRef.current;
+        if (!input) return;
+        const canvas = await html2canvas(input, { scale: 2, useCORS: true });
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        const imgProps = pdf.getImageProperties(imgData);
+        const imgWidth = imgProps.width;
+        const imgHeight = imgProps.height;
+        const ratio = imgWidth / imgHeight;
+        let finalWidth = pdfWidth;
+        let finalHeight = pdfWidth / ratio;
+        if (finalHeight > pdfHeight) {
+            finalHeight = pdfHeight;
+            finalWidth = finalHeight * ratio;
+        }
+        const x = (pdfWidth - finalWidth) / 2;
+        pdf.addImage(imgData, 'PNG', x, 0, finalWidth, finalHeight);
+        pdf.output('dataurlnewwindow');
+    };
+    
+    const handleExportExcel = () => {
+        if (!employee) return;
+
+        const wb = XLSX.utils.book_new();
+
+        const expensesData = sortedExpenses.map(e => ({ Date: format(parseISO(e.date), 'yyyy-MM-dd'), Amount: e.amount, Notes: e.notes || '' }));
+        if (expensesData.length > 0) {
+            const wsExpenses = XLSX.utils.json_to_sheet(expensesData);
+            XLSX.utils.book_append_sheet(wb, wsExpenses, "Expenses");
+        }
+
+        const overtimeData = sortedOvertime.map(o => ({ Date: format(parseISO(o.date), 'yyyy-MM-dd'), Hours: o.hours, Amount: o.totalAmount, Notes: o.notes || '' }));
+        if (overtimeData.length > 0) {
+            const wsOvertime = XLSX.utils.json_to_sheet(overtimeData);
+            XLSX.utils.book_append_sheet(wb, wsOvertime, "Overtime");
+        }
+
+        const bonusesData = sortedBonuses.map(b => ({ Date: format(parseISO(b.date), 'yyyy-MM-dd'), Loads: b.loadCount, Amount: b.totalAmount, Notes: b.notes || '' }));
+        if (bonusesData.length > 0) {
+            const wsBonuses = XLSX.utils.json_to_sheet(bonusesData);
+            XLSX.utils.book_append_sheet(wb, wsBonuses, "Bonuses");
+        }
+
+        const withdrawalsData = sortedWithdrawals.map(w => ({ Date: format(parseISO(w.date), 'yyyy-MM-dd'), Amount: w.amount, Notes: w.notes || '' }));
+        if (withdrawalsData.length > 0) {
+            const wsWithdrawals = XLSX.utils.json_to_sheet(withdrawalsData);
+            XLSX.utils.book_append_sheet(wb, wsWithdrawals, "Withdrawals");
+        }
+
+        if (wb.SheetNames.length > 0) {
+            XLSX.writeFile(wb, `${employee.name}_Financials_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+        } else {
+            toast({
+                title: t('no_data_to_export'),
+                description: "This employee has no financial records to export."
+            })
+        }
+    };
+
 
     if (isLoading) {
         return (
@@ -261,7 +331,29 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
 
     return (
         <>
-            <div className="w-full h-full flex flex-col">
+            <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
+                <div ref={reportRef}>
+                    <EmployeeReportPdf 
+                        employee={employee}
+                        settings={settings}
+                        expenses={{items: sortedExpenses, total: totalExpenses}}
+                        overtime={{items: sortedOvertime, total: totalOvertimeAmount}}
+                        bonuses={{items: sortedBonuses, total: totalBonuses}}
+                        withdrawals={{items: sortedWithdrawals, total: totalWithdrawals}}
+                    />
+                </div>
+            </div>
+            <div className="hidden print:block">
+                 <EmployeeReportPdf 
+                    employee={employee}
+                    settings={settings}
+                    expenses={{items: sortedExpenses, total: totalExpenses}}
+                    overtime={{items: sortedOvertime, total: totalOvertimeAmount}}
+                    bonuses={{items: sortedBonuses, total: totalBonuses}}
+                    withdrawals={{items: sortedWithdrawals, total: totalWithdrawals}}
+                />
+            </div>
+            <div className="w-full h-full flex flex-col print:hidden">
                 <header className="flex items-center justify-between gap-2 p-4 border-b">
                     <Button variant="outline" size="icon" className="md:hidden" onClick={onDeselect}>
                         <ArrowLeft />
@@ -275,6 +367,9 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
                         ) : (
                             <>
                                 <Button onClick={() => setIsEditing(true)}><Edit className="mr-2 h-4 w-4"/> {t('edit')}</Button>
+                                <Button variant="outline" onClick={handlePrint}><Printer className="mr-2 h-4 w-4"/> {t('print')}</Button>
+                                <Button variant="outline" onClick={handleGeneratePdf}><FileText className="mr-2 h-4 w-4"/> PDF</Button>
+                                <Button variant="outline" onClick={handleExportExcel}><FileDown className="mr-2 h-4 w-4"/> Excel</Button>
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
                                         <Button variant="outline" className={cn(!employee.isActive && "text-destructive border-destructive/50")}>
@@ -596,6 +691,9 @@ function EmployeesPage() {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
   const [isAddDialogOpen, setAddDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const { toast } = useToast();
+  const dashboardReportRef = useRef<HTMLDivElement>(null);
+
 
   const addEmployee = (employeeData: Omit<Employee, 'id'>) => {
     const newEmployee: Employee = {
@@ -615,32 +713,18 @@ function EmployeesPage() {
     );
 
     const sortEmployees = (a: Employee, b: Employee) => {
-        // Employee with ID '01' always comes first
         if (a.employeeId === '01') return -1;
         if (b.employeeId === '01') return 1;
-
-        // Then sort by employee ID numerically
         const idA = a.employeeId ? parseInt(a.employeeId, 10) : Infinity;
         const idB = b.employeeId ? parseInt(b.employeeId, 10) : Infinity;
-
-        if (idA !== idB) {
-            return idA - idB;
-        }
-
-        // Fallback to alphabetical sorting by name
+        if (idA !== idB) return idA - idB;
         return a.name.localeCompare(b.name);
     };
 
-    const warehouse = filtered
-        .filter(e => e.role !== 'Marketing')
-        .sort(sortEmployees);
-
-    const marketing = filtered
-        .filter(e => e.role === 'Marketing')
-        .sort((a,b) => a.name.localeCompare(b.name));
-
+    const warehouse = filtered.filter(e => e.role !== 'Marketing').sort(sortEmployees);
+    const marketing = filtered.filter(e => e.role === 'Marketing').sort((a,b) => a.name.localeCompare(b.name));
     return { warehouseEmployees: warehouse, marketingEmployees: marketing };
-}, [employees, searchQuery]);
+  }, [employees, searchQuery]);
 
 
   useEffect(() => {
@@ -654,8 +738,43 @@ function EmployeesPage() {
     }
   }, [warehouseEmployees, marketingEmployees, selectedEmployeeId]);
 
-  const handlePrintDashboard = () => {
-    window.print();
+  const handlePrintDashboard = () => window.print();
+
+  const handleGeneratePdfForDashboard = async () => {
+    const input = dashboardReportRef.current;
+    if (!input) return;
+    const canvas = await html2canvas(input, { scale: 2, useCORS: true });
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+    const ratio = canvas.width / canvas.height;
+    let finalHeight = pdfWidth / ratio;
+    if (finalHeight > pdfHeight) finalHeight = pdfHeight;
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, finalHeight);
+    pdf.output('dataurlnewwindow');
+  };
+
+  const handleExportExcelForDashboard = () => {
+    const allEmployees = [...warehouseEmployees, ...marketingEmployees];
+    if (allEmployees.length === 0) {
+      toast({ title: t('no_data_to_export'), description: "There are no employees to export." });
+      return;
+    }
+    const dataToExport = allEmployees.map(emp => ({
+      [t('employee_name')]: emp.name,
+      [t('kurdish_name')]: emp.kurdishName || '',
+      [t('id_colon')]: emp.employeeId || '',
+      [t('role_optional')]: emp.role || '',
+      [t('email_optional')]: emp.email || '',
+      [t('phone_optional')]: emp.phone || '',
+      [t('joined_date')]: emp.employmentStartDate ? format(parseISO(emp.employmentStartDate), 'yyyy-MM-dd') : '',
+      [t('dob')]: emp.dateOfBirth ? format(parseISO(emp.dateOfBirth), 'yyyy-MM-dd') : '',
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, t('employees'));
+    XLSX.writeFile(workbook, `${t('employees_dashboard')}_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
   };
   
   const renderEmployeeList = (list: Employee[], title: string) => (
@@ -689,6 +808,11 @@ function EmployeesPage() {
 
   return (
     <>
+      <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
+        <div ref={dashboardReportRef}>
+            <EmployeeDashboardPrintView employees={[...warehouseEmployees, ...marketingEmployees]} settings={settings} />
+        </div>
+      </div>
       <div className="hidden print:block">
         <EmployeeDashboardPrintView employees={[...warehouseEmployees, ...marketingEmployees]} settings={settings} />
       </div>
@@ -701,9 +825,9 @@ function EmployeesPage() {
                       <h1 className="text-xl">{t('employees')}</h1>
                   </div>
                   <div className="flex items-center gap-2">
-                      <Button variant="outline" onClick={handlePrintDashboard}>
-                          <Printer className="mr-2 h-4 w-4" /> Print Dashboard
-                      </Button>
+                      <Button variant="outline" onClick={handlePrintDashboard}><Printer className="mr-2 h-4 w-4" /> {t('print')}</Button>
+                      <Button variant="outline" onClick={handleGeneratePdfForDashboard}><FileText className="mr-2 h-4 w-4" /> {t('pdf')}</Button>
+                      <Button variant="outline" onClick={handleExportExcelForDashboard}><FileDown className="mr-2 h-4 w-4" /> {t('excel')}</Button>
                   </div>
               </div>
           </header>
