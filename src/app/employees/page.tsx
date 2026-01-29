@@ -352,42 +352,75 @@ function EmployeesPage() {
   };
 
   const generatePdf = async (type: 'list' | 'detail') => {
-      const targetRef = type === 'list' ? dashboardReportRef : detailReportRef;
-      const input = targetRef.current;
-      if (!input) {
-        toast({variant: 'destructive', title: 'PDF Error', description: 'Could not find content to generate PDF.'});
-        return;
-      }
-      
-      const canvas = await html2canvas(input, { scale: 2, useCORS: true, backgroundColor: '#ffffff', onclone: (doc) => {
-          if (customFont) {
-            const style = doc.createElement('style');
-            style.innerHTML = `@font-face { font-family: 'CustomAppFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3, span { font-family: 'CustomAppFont' !important; }`;
-            doc.head.appendChild(style);
-          }
-      }});
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({ orientation: type === 'list' ? 'p' : 'p', unit: 'px', format: 'a4' });
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgProps = pdf.getImageProperties(imgData);
-      const ratio = imgProps.width / imgProps.height;
-      let finalWidth = pdfWidth;
-      let finalHeight = pdfWidth / ratio;
-      if (finalHeight > pdfHeight) { finalHeight = pdfHeight; finalWidth = finalHeight * ratio; }
-      const x = (pdfWidth - finalWidth) / 2;
-      
-      pdf.addImage(imgData, 'PNG', x, 0, finalWidth, finalHeight);
-      const fileName = type === 'list' ? `${t('employees_dashboard')}_${format(new Date(), 'yyyy-MM-dd')}.pdf` : `${selectedEmployee?.name}_Report_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
-      pdf.save(fileName);
+    const targetRef = type === 'list' ? dashboardReportRef : detailReportRef;
+    const input = targetRef.current;
+    if (!input) {
+      toast({
+        variant: 'destructive',
+        title: 'PDF Error',
+        description: 'Could not find content to generate PDF.',
+      });
+      return;
+    }
+
+    const canvas = await html2canvas(input, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      onclone: (doc) => {
+        if (customFont) {
+          const style = doc.createElement('style');
+          style.innerHTML = `@font-face { font-family: 'CustomAppFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3, span { font-family: 'CustomAppFont' !important; }`;
+          doc.head.appendChild(style);
+        }
+      },
+    });
+
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF({
+      orientation: type === 'list' ? 'p' : 'l',
+      unit: 'px',
+      format: 'a4',
+    });
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+    const imgProps = pdf.getImageProperties(imgData);
+    const imgWidth = imgProps.width;
+    const imgHeight = imgProps.height;
+    const ratio = imgHeight / imgWidth;
+    
+    let canvasPdfHeight = pdfWidth * ratio;
+
+    let heightLeft = canvasPdfHeight;
+    let position = 0;
+
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, canvasPdfHeight);
+    heightLeft -= pdfHeight;
+
+    while (heightLeft > 0) {
+      position -= pdfHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, canvasPdfHeight);
+      heightLeft -= pdfHeight;
+    }
+    
+    const fileName =
+      type === 'list'
+        ? `${t('employees_dashboard')}_${format(new Date(), 'yyyy-MM-dd')}.pdf`
+        : `${selectedEmployee?.name}_Report_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+    pdf.save(fileName);
   };
 
   const handleExportExcelForDashboard = () => {
     const allEmployees = [...warehouseEmployees, ...marketingEmployees];
     if (allEmployees.length === 0) { toast({ title: t('no_data_to_export'), description: "There are no employees to export." }); return; }
     const dataToExport = allEmployees.map(emp => ({
-      [t('employee_name')]: emp.name, [t('kurdish_name')]: emp.kurdishName || '', [t('id_colon')]: emp.employeeId || '',
-      [t('role_optional')]: emp.role || '', [t('email_optional')]: emp.email || '', [t('phone_optional')]: emp.phone || '',
+      [t('employee_name')]: emp.name,
+      [t('kurdish_name')]: emp.kurdishName || '',
+      [t('id_colon')]: emp.employeeId || '',
+      [t('role_optional')]: emp.role || '',
+      [t('email_optional')]: emp.email || '',
+      [t('phone_optional')]: emp.phone || '',
       [t('joined_date')]: emp.employmentStartDate ? format(parseISO(emp.employmentStartDate), 'yyyy-MM-dd') : '',
       [t('dob')]: emp.dateOfBirth ? format(parseISO(emp.dateOfBirth), 'yyyy-MM-dd') : '',
     }));
@@ -465,7 +498,7 @@ function EmployeesPage() {
   return (
     <>
       {/* --- OFF-SCREEN PDF CONTENT --- */}
-      <div style={{ position: 'absolute', left: '-9999px', top: 0, zIndex: -100, opacity: 0 }}>
+      <div style={{ position: 'absolute', left: '-9999px', top: 0, zIndex: -100, opacity: 0, width: '210mm' }}>
         <div ref={dashboardReportRef}>
             <EmployeeDashboardPrintView employees={[...warehouseEmployees, ...marketingEmployees]} settings={settings} />
         </div>
@@ -687,5 +720,3 @@ function EmployeesPage() {
 }
 
 export default withAuth(EmployeesPage);
-
-    
