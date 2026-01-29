@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter as ShadcnTableFooter } from '@/components/ui/table';
 import { useAppContext } from '@/context/app-provider';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslation } from '@/hooks/use-translation';
@@ -127,7 +127,14 @@ export default function MonthlyExpenseReportPage() {
     const canvas = await html2canvas(input, {
         scale: 2,
         useCORS: true,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        onclone: (document) => {
+            if (customFont) {
+                const style = document.createElement('style');
+                style.innerHTML = `@font-face { font-family: 'CustomAppFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3, span { font-family: 'CustomAppFont' !important; }`;
+                document.head.appendChild(style);
+            }
+        }
     });
 
     const imgData = canvas.toDataURL('image/png');
@@ -158,7 +165,7 @@ export default function MonthlyExpenseReportPage() {
     const y = 0;
 
     pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
-    pdf.output('dataurlnewwindow');
+    pdf.save('monthly-expense-report.pdf');
   };
   
   if (isLoading) {
