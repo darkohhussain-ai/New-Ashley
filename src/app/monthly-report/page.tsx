@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -17,7 +18,6 @@ import { useAuth } from '@/hooks/use-auth';
 import { FullMonthlyReportPdf } from '@/components/reports/FullMonthlyReportPdf';
 import { ReportWrapper } from '@/components/reports/ReportWrapper';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import { useToast } from '@/hooks/use-toast';
 
 const formatCurrency = (amount: number) => {
@@ -121,41 +121,32 @@ export default function MonthlyReportPage() {
       return;
     }
 
-    const canvas = await html2canvas(input, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#ffffff'
-    });
+    const { customFont } = settings;
 
-    const imgData = canvas.toDataURL('image/png');
     const pdf = new jsPDF({
-      orientation: 'l', // landscape
-      unit: 'px',
+      orientation: 'l',
+      unit: 'pt',
       format: 'a4',
     });
 
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-
-    const imgProps= pdf.getImageProperties(imgData);
-    const imgWidth = imgProps.width;
-    const imgHeight = imgProps.height;
-    
-    const ratio = imgWidth / imgHeight;
-    
-    let finalWidth = pdfWidth;
-    let finalHeight = pdfWidth / ratio;
-    
-    if (finalHeight > pdfHeight) {
-        finalHeight = pdfHeight;
-        finalWidth = finalHeight * ratio;
-    }
-    
-    const x = (pdfWidth - finalWidth) / 2;
-    const y = 0;
-
-    pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
-    pdf.output('dataurlnewwindow');
+    await pdf.html(input, {
+      callback: function (doc) {
+        doc.save(`monthly-report-${selectedDate ? format(selectedDate, 'yyyy-MM') : 'export'}.pdf`);
+      },
+      margin: [40, 30, 40, 30],
+      autoPaging: 'text',
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        onclone: (doc) => {
+          if (customFont && language === 'ku') {
+            const style = doc.createElement('style');
+            style.innerHTML = `@font-face { font-family: 'CustomAppFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3, span { font-family: 'CustomAppFont' !important; }`;
+            doc.head.appendChild(style);
+          }
+        },
+      },
+    });
   };
   
   const PageContent = () => (
