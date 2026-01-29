@@ -248,21 +248,33 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
         const input = reportRef.current;
         if (!input || !employee) return;
         
+        // Temporarily apply font for canvas rendering
+        if (customFont && language === 'ku') {
+            document.body.style.fontFamily = 'CustomAppFont';
+        }
+        
         const canvas = await html2canvas(input, {
             scale: 2,
             useCORS: true,
             backgroundColor: '#ffffff',
-            onclone: (document) => {
-                if (customFont && language === 'ku') {
-                    const style = document.createElement('style');
-                    style.innerHTML = `@font-face { font-family: 'CustomAppFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3, span { font-family: 'CustomAppFont' !important; }`;
-                    document.head.appendChild(style);
-                }
-            }
         });
+        
+        // Revert font style
+        if (customFont && language === 'ku') {
+            document.body.style.fontFamily = '';
+        }
     
         const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
+        
+        // Add custom font to PDF if available
+        if (customFont && language === 'ku') {
+            const fontData = customFont.split(',')[1];
+            pdf.addFileToVFS('CustomAppFont.ttf', fontData);
+            pdf.addFont('CustomAppFont.ttf', 'CustomAppFont', 'normal');
+            pdf.setFont('CustomAppFont');
+        }
+
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = pdf.internal.pageSize.getHeight();
         const imgProps = pdf.getImageProperties(imgData);
@@ -282,7 +294,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
         const y = 0;
     
         pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
-        pdf.save(`${employee.name}_Report.pdf`);
+        pdf.save(`${employee.name}_Report_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
     };
     
     const handleExportExcel = () => {
@@ -290,28 +302,43 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
 
         const wb = XLSX.utils.book_new();
 
-        const expensesData = sortedExpenses.map(e => ({ Date: format(parseISO(e.date), 'yyyy-MM-dd'), Amount: e.amount, Notes: e.notes || '' }));
+        // 1. Employee Profile Sheet
+        const profileData = [
+            { "Field": t('employee_name'), "Value": employee.name },
+            { "Field": t('kurdish_name'), "Value": employee.kurdishName || t('na') },
+            { "Field": t('id_colon'), "Value": employee.employeeId || t('na') },
+            { "Field": t('role_optional'), "Value": employee.role || t('na') },
+            { "Field": t('email_optional'), "Value": employee.email || t('na') },
+            { "Field": t('phone_optional'), "Value": employee.phone || t('na') },
+            { "Field": t('joined_date'), "Value": employee.employmentStartDate ? format(parseISO(employee.employmentStartDate), 'yyyy-MM-dd') : t('na') },
+            { "Field": t('dob'), "Value": employee.dateOfBirth ? format(parseISO(employee.dateOfBirth), 'yyyy-MM-dd') : t('na') },
+        ];
+        const wsProfile = XLSX.utils.json_to_sheet(profileData, { skipHeader: true });
+        XLSX.utils.book_append_sheet(wb, wsProfile, "Profile");
+
+        // 2. Financial Sheets
+        const expensesData = sortedExpenses.map(e => ({ [t('date')]: format(parseISO(e.date), 'yyyy-MM-dd'), [t('amount')]: e.amount, [t('notes')]: e.notes || '' }));
         if (expensesData.length > 0) {
             const wsExpenses = XLSX.utils.json_to_sheet(expensesData);
-            XLSX.utils.book_append_sheet(wb, wsExpenses, "Expenses");
+            XLSX.utils.book_append_sheet(wb, wsExpenses, t('expenses'));
         }
 
-        const overtimeData = sortedOvertime.map(o => ({ Date: format(parseISO(o.date), 'yyyy-MM-dd'), Hours: o.hours, Amount: o.totalAmount, Notes: o.notes || '' }));
+        const overtimeData = sortedOvertime.map(o => ({ [t('date')]: format(parseISO(o.date), 'yyyy-MM-dd'), [t('overtime_hours')]: o.hours, [t('amount')]: o.totalAmount, [t('notes')]: o.notes || '' }));
         if (overtimeData.length > 0) {
             const wsOvertime = XLSX.utils.json_to_sheet(overtimeData);
-            XLSX.utils.book_append_sheet(wb, wsOvertime, "Overtime");
+            XLSX.utils.book_append_sheet(wb, wsOvertime, t('overtime'));
         }
 
-        const bonusesData = sortedBonuses.map(b => ({ Date: format(parseISO(b.date), 'yyyy-MM-dd'), Loads: b.loadCount, Amount: b.totalAmount, Notes: b.notes || '' }));
+        const bonusesData = sortedBonuses.map(b => ({ [t('date')]: format(parseISO(b.date), 'yyyy-MM-dd'), [t('number_of_loads')]: b.loadCount, [t('amount')]: b.totalAmount, [t('notes')]: b.notes || '' }));
         if (bonusesData.length > 0) {
             const wsBonuses = XLSX.utils.json_to_sheet(bonusesData);
-            XLSX.utils.book_append_sheet(wb, wsBonuses, "Bonuses");
+            XLSX.utils.book_append_sheet(wb, wsBonuses, t('bonuses'));
         }
 
-        const withdrawalsData = sortedWithdrawals.map(w => ({ Date: format(parseISO(w.date), 'yyyy-MM-dd'), Amount: w.amount, Notes: w.notes || '' }));
+        const withdrawalsData = sortedWithdrawals.map(w => ({ [t('date')]: format(parseISO(w.date), 'yyyy-MM-dd'), [t('amount')]: w.amount, [t('notes')]: w.notes || '' }));
         if (withdrawalsData.length > 0) {
             const wsWithdrawals = XLSX.utils.json_to_sheet(withdrawalsData);
-            XLSX.utils.book_append_sheet(wb, wsWithdrawals, "Withdrawals");
+            XLSX.utils.book_append_sheet(wb, wsWithdrawals, t('cash_withdrawals'));
         }
 
         if (wb.SheetNames.length > 0) {
@@ -319,7 +346,7 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
         } else {
             toast({
                 title: t('no_data_to_export'),
-                description: "This employee has no financial records to export."
+                description: "This employee has no data to export."
             })
         }
     };
@@ -349,8 +376,9 @@ function EmployeeDetailView({ employeeId, onDeselect }: { employeeId: string, on
 
     return (
         <>
-            <div className="hidden">
-                 <div ref={reportRef} className="print-only">
+             {customFont && language === 'ku' && <style>{`@font-face { font-family: 'CustomAppFont'; src: url(${customFont}); }`}</style>}
+            <div className="hidden print:block">
+                 <div ref={reportRef}>
                     <EmployeeReportPdf 
                         employee={employee}
                         settings={settings}
@@ -862,11 +890,6 @@ function EmployeesPage() {
                       <Button variant="outline" size="icon" asChild><Link href="/"><ArrowLeft /></Link></Button>
                       <h1 className="text-xl">{t('employees')}</h1>
                   </div>
-                  <div className="flex items-center gap-2">
-                      <Button variant="outline" onClick={handlePrintDashboard}><Printer className="mr-2 h-4 w-4" /> {t('print')}</Button>
-                      <Button variant="outline" onClick={handleGeneratePdfForDashboard}><FileText className="mr-2 h-4 w-4" /> {t('pdf')}</Button>
-                      <Button variant="outline" onClick={handleExportExcelForDashboard}><FileDown className="mr-2 h-4 w-4" /> {t('excel')}</Button>
-                  </div>
               </div>
           </header>
 
@@ -876,6 +899,15 @@ function EmployeesPage() {
                   selectedEmployeeId ? "hidden md:flex" : "flex"
               )}>
                   <div className="p-4 space-y-4 border-b">
+                     <div className="flex items-center justify-between gap-2">
+                          <h2 className="font-semibold text-lg">{t('employees_list')}</h2>
+                          <div className="flex items-center gap-1">
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handlePrintDashboard}><Printer className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleGeneratePdfForDashboard}><FileText className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleExportExcelForDashboard}><FileDown className="h-4 w-4" /></Button>
+                          </div>
+                      </div>
+                      <Separator />
                       <div className="relative">
                           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                           <Input placeholder={t('search_name_or_id')} className="pl-10" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />

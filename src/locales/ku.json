@@ -324,7 +324,7 @@
   "receipt_number": "ژمارەی پسوولە",
   "receipt_date_optional": "بەرواری پسوولە (ئارەزوومەندانە)",
   "customer_name_optional": "ناوی کڕیار (ئارەزوومەندانە)",
-  "enter_customer_name": "ناوی کڕیار بنووسە",
+  "enter_customer_name": "ناوی کڕیar بنووسە",
   "item_categories": "پۆلێنەکانی کاڵا",
   "item_categories_placeholder": "بۆ نموونە، 'قاپی'، پاشان ئینتەر دابگرە",
   "save_receipt": "پاشەکەوتکردنی پسوولە",
@@ -695,5 +695,8 @@
   "employees_dashboard": "داشبۆردی کارمەندان",
   "daily_expense_report": "ڕاپۆرتی ڕۆژانەی خەرجی",
   "daily_overtime_summary": "پوختەی ڕۆژانەی کاتی زیادە",
-  "overtime_summary_desc": "شیکردنەوەیەکی ڕۆژانەی تۆمارەکانی کاتی زیادە بۆ مانگی {month}."
+  "overtime_summary_desc": "شیکردنەوەیەکی ڕۆژانەی تۆمارەکانی کاتی زیادە بۆ مانگی {month}.",
+  "employees_list": "لیستی کارمەندان",
+  "excel": "ئێکسڵ",
+  "pdf": "پی دی ئێف"
 }
