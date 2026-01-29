@@ -15,7 +15,7 @@ import { format, parseISO } from "date-fns"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ArrowLeft, Edit, Trash2, Save, X, Upload, Mail, Phone, Cake, Calendar as CalendarIcon, DollarSign, Clock, Gift, Banknote, FileDown, Printer, UserX, User, Loader2, FileText } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { useToast } from "@/hooks/use-toast"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -500,6 +500,5 @@ function EmployeeDetailPage() {
 }
 
 export default withAuth(EmployeeDetailPage);
-
 
     
