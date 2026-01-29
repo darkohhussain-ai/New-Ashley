@@ -692,12 +692,10 @@
   "page": "پەڕە",
   "general": "گشتی",
   "generated_by_ashley_system": "لەلایەن سیستەمی ئاشلییەوە دروستکراوە",
-  "daily_bonus_report": "ڕاپۆرتی ڕۆژانەی پاداشت",
-  "daily_withdrawal_report": "ڕاپۆرتی ڕۆژانەی ڕاکێشانی نەختینە"
+  "employees_dashboard": "داشبۆردی کارمەندان",
+  "daily_expense_report": "ڕاپۆرتی ڕۆژانەی خەرجی",
+  "daily_overtime_summary": "پوختەی ڕۆژانەی کاتی زیادە",
+  "overtime_summary_desc": "شیکردنەوەیەکی ڕۆژانەی تۆمارەکانی کاتی زیادە بۆ مانگی {month}.",
+  "excel": "ئێکسڵ",
+  "pdf": "پی دی ئێف"
 }
-
-
-
-
-
-

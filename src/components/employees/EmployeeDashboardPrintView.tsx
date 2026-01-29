@@ -1,3 +1,4 @@
+
 'use client';
 import { Employee, AppSettings } from '@/lib/types';
 import { format, parseISO } from 'date-fns';
@@ -24,7 +25,7 @@ export const EmployeeDashboardPrintView = ({ employees, settings }: { employees:
     const { t, language } = useTranslation();
 
     return (
-        <ReportWrapper title={t('employees_dashboard')}>
+        <ReportWrapper title={t('employees')}>
             <div className="space-y-4">
                 {employees.map(employee => {
                      const displayName = language === 'ku' && employee.kurdishName ? employee.kurdishName : employee.name;

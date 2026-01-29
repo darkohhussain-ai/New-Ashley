@@ -1,3 +1,4 @@
+
 'use client';
 import { Employee, AppSettings } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
@@ -59,9 +60,9 @@ export const FullMonthlyReportPdf = ({ records, date, settings, getEmployeeName 
                             <TableCell className="text-right">{formatCurrency(record.salary)}</TableCell>
                             <TableCell className="text-right">{formatCurrency(record.totalOvertime)}</TableCell>
                             <TableCell className="text-right">{formatCurrency(record.totalBonuses)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(record.totalExpenses)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(record.totalWithdrawals)}</TableCell>
-                            <TableCell className="text-right font-bold">{formatCurrency(record.netSalary)}</TableCell>
+                            <TableCell className="text-right text-red-500">{formatCurrency(record.totalExpenses)}</TableCell>
+                            <TableCell className="text-right text-red-500">{formatCurrency(record.totalWithdrawals)}</TableCell>
+                            <TableCell className="text-right font-bold text-primary">{formatCurrency(record.netSalary)}</TableCell>
                         </TableRow>
                     ))}
                 </TableBody>

@@ -17,7 +17,6 @@ import { useAppContext } from '@/context/app-provider';
 import { useTranslation } from '@/hooks/use-translation';
 import { DashboardCard } from './dashboard-card';
 import { useAuth } from '@/hooks/use-auth';
-import { Skeleton } from '@/components/ui/skeleton';
 
 const allMenuItems = [
     {
@@ -86,12 +85,12 @@ const NewsTicker = () => {
     }
     
     return (
-        <div className="relative flex overflow-x-hidden bg-primary/80 text-primary-foreground py-2">
+        <div className="relative flex items-center overflow-x-hidden bg-primary/80 text-primary-foreground py-2">
             <div className="animate-marquee whitespace-nowrap">
                 <span className="mx-4">{settings.newsTickerText}</span>
             </div>
 
-            <div className="absolute top-0 animate-marquee2 whitespace-nowrap">
+            <div className="absolute inset-y-0 flex items-center animate-marquee2 whitespace-nowrap">
                  <span className="mx-4">{settings.newsTickerText}</span>
             </div>
         </div>
@@ -102,27 +101,21 @@ const NewsTicker = () => {
 export function DashboardClient() {
   const { t } = useTranslation();
   const { hasPermission } = useAuth();
-  const { settings, isLoading } = useAppContext();
+  const { settings } = useAppContext();
+
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const menuItems = allMenuItems.filter(item => hasPermission(item.permission));
   
-  if (isLoading) {
-      return (
-        <div className="container mx-auto p-4 md:p-8">
-            <Skeleton className="h-8 w-64 mb-2" />
-            <Skeleton className="h-5 w-48 mb-8" />
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {[...Array(8)].map((_, i) => (
-                    <Skeleton key={i} className="h-48 w-full" />
-                ))}
-            </div>
-        </div>
-      );
+  if (!isMounted) {
+      return null;
   }
 
   return (
     <>
-      <NewsTicker />
       {settings.dashboardBanner && (
         <div className="container mx-auto px-4">
             <div
@@ -157,6 +150,7 @@ export function DashboardClient() {
           ))}
         </div>
       </main>
+      <NewsTicker />
     </>
   );
 }

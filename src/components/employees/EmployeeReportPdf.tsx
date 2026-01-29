@@ -14,7 +14,7 @@ const FinancialTablePdf = ({ title, data, total }: { title: string, data: any[],
     const { t } = useTranslation();
     if (data.length === 0) return null;
     return (
-        <div className="mb-6">
+        <div className="mb-6 break-inside-avoid">
             <h3 className="text-lg font-medium mb-2 pb-1 border-b-2">{title}</h3>
             <Table className="pdf-table">
                 <TableHeader><TableRow><TableHead>{t('date')}</TableHead><TableHead>{t('notes')}</TableHead><TableHead className="text-right">{t('amount')}</TableHead></TableRow></TableHeader>
@@ -37,7 +37,7 @@ const OvertimeTablePdf = ({ title, data, total }: { title: string, data: Overtim
     const { t } = useTranslation();
     if (data.length === 0) return null;
     return (
-        <div className="mb-6">
+        <div className="mb-6 break-inside-avoid">
             <h3 className="text-lg font-medium mb-2 pb-1 border-b-2">{title}</h3>
             <Table className="pdf-table">
                 <TableHeader><TableRow>
@@ -88,11 +88,9 @@ export const EmployeeReportPdf = ({
        <ReportWrapper
             title={t('employee_report')}
             date={reportDate}
-            logoSrc={settings.appLogo}
-            themeColor={settings.pdfSettings.report.reportColors?.general || '#22c55e'}
        >
             <div dir={language === 'ku' ? 'rtl' : 'ltr'}>
-                <div className="flex items-start gap-6 p-4 rounded-lg bg-gray-50 border">
+                <div className="flex items-start gap-6 p-4 rounded-lg bg-gray-50 border break-inside-avoid">
                     <Avatar className="w-28 h-28 border-4 border-white shadow-md">
                         <AvatarImage src={employee.photoUrl || undefined} alt={employee.name} />
                         <AvatarFallback><User /></AvatarFallback>
