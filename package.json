@@ -59,6 +59,7 @@
     "zod": "latest",
     "html2canvas": "latest",
     "jspdf": "latest",
+    "jspdf-autotable": "latest",
     "xlsx": "latest"
   },
   "devDependencies": {

@@ -20,6 +20,7 @@ import type { AllPdfSettings } from '@/lib/types';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { ReportWrapper } from '@/components/reports/ReportWrapper';
 import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { useToast } from '@/hooks/use-toast';
 
@@ -42,7 +43,6 @@ export default function MonthlyExpenseReportPage() {
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const reportRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
     // Only set date on client-side
@@ -114,40 +114,94 @@ export default function MonthlyExpenseReportPage() {
   };
 
   const handleGeneratePdf = async () => {
-    const input = reportRef.current;
-    if (!input) {
+    if (!selectedDate || monthlyData.summary.length === 0) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Could not find the report content to generate PDF.",
+        description: "No data to generate PDF.",
       });
       return;
     }
-    
-    const pdf = new jsPDF({
+
+    const doc = new jsPDF({
       orientation: 'p',
       unit: 'pt',
-      format: 'a4'
+      format: 'a4',
     });
 
-    await pdf.html(input, {
-      callback: function(doc) {
-        doc.save('monthly-expense-report.pdf');
-      },
-      margin: [40, 30, 40, 30],
-      autoPaging: 'text',
-      html2canvas: {
-        scale: 2,
-        useCORS: true,
-        onclone: (doc) => {
-            if (customFont && language === 'ku') {
-                const style = doc.createElement('style');
-                style.innerHTML = `@font-face { font-family: 'CustomAppFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3, span { font-family: 'CustomAppFont' !important; }`;
-                doc.head.appendChild(style);
-            }
+    const fontName = 'CustomAppFont';
+
+    if (customFont) {
+        try {
+            const base64Font = customFont.split(',')[1];
+            doc.addFileToVFS(`${fontName}.ttf`, base64Font);
+            doc.addFont(`${fontName}.ttf`, fontName, 'normal');
+            doc.setFont(fontName);
+        } catch (e) {
+            console.error("Error with custom font:", e);
+            doc.setFont('helvetica');
         }
-      }
+    } else {
+        doc.setFont('helvetica');
+    }
+
+    const headerTitle = t('monthly_expense_report');
+    const headerDate = format(selectedDate, 'MMMM yyyy');
+    
+    doc.setFontSize(18);
+    doc.text(headerTitle, doc.internal.pageSize.getWidth() / 2, 40, { align: 'center' });
+    doc.setFontSize(12);
+    doc.setTextColor(100);
+    doc.text(headerDate, doc.internal.pageSize.getWidth() / 2, 60, { align: 'center' });
+
+    let startY = 80;
+
+    monthlyData.summary.forEach((item) => {
+        if (startY > doc.internal.pageSize.getHeight() - 100) {
+            doc.addPage();
+            startY = 40;
+        }
+        
+        autoTable(doc, {
+            head: [[item.employeeName, isReadOnly ? '***' : formatCurrency(item.totalAmount)]],
+            startY: startY,
+            theme: 'plain',
+            headStyles: { fontStyle: 'bold', fontSize: 12, fillColor: false, textColor: 20 },
+        });
+
+        const body = [
+          [t('taxi_expenses'), isReadOnly ? '***' : formatCurrency(item.taxiTotal)],
+          ...Object.entries(item.taxiBreakdown).map(([subType, amount]) => ([
+            `- ${t(subType.toLowerCase().replace(/\s/g, '_'))}`,
+            isReadOnly ? '***' : formatCurrency(amount)
+          ])),
+          [t('purchases_buying_items'), isReadOnly ? '***' : formatCurrency(item.purchasesTotal)],
+        ].filter(row => (row[1] as string) !== formatCurrency(0));
+
+        autoTable(doc, {
+            body: body,
+            startY: (doc as any).lastAutoTable.finalY,
+            theme: 'grid',
+            styles: {
+                font: fontName,
+                fontSize: 9,
+                cellPadding: 4,
+            },
+            columnStyles: {
+                0: { halign: 'left' },
+                1: { halign: 'right' },
+            }
+        });
+        startY = (doc as any).lastAutoTable.finalY + 20;
     });
+
+    const finalY = (doc as any).lastAutoTable.finalY + 30;
+    doc.setFontSize(14);
+    doc.setFont(fontName, 'bold');
+    doc.text(`${t('grand_total')}: ${isReadOnly ? '***' : formatCurrency(monthlyData.grandTotal)}`, doc.internal.pageSize.getWidth() - 30, finalY, { align: 'right' });
+
+
+    doc.save(`monthly-expenses-${format(selectedDate, 'yyyy-MM')}.pdf`);
   };
 
   const handleExportExcel = () => {
@@ -277,13 +331,6 @@ export default function MonthlyExpenseReportPage() {
 
   return (
     <>
-      <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
-        <div ref={reportRef}>
-            <ReportWrapper>
-              <PageContent />
-            </ReportWrapper>
-        </div>
-      </div>
       <div className="hidden print:block">
         <ReportWrapper>
           <PageContent />
@@ -298,7 +345,7 @@ export default function MonthlyExpenseReportPage() {
             <h1 className="text-2xl">{t('monthly_expense_report')}</h1>
           </div>
           <div className="flex items-center gap-2">
-            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+            <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" className={cn("w-[280px] justify-start text-left", !selectedDate && "text-muted-foreground")}>
                   <CalendarIcon className="mr-2 h-4 w-4" />
@@ -311,7 +358,6 @@ export default function MonthlyExpenseReportPage() {
                   selected={selectedDate}
                   onSelect={(date) => {
                     setSelectedDate(date);
-                    setIsCalendarOpen(false);
                   }}
                   captionLayout="dropdown-nav" fromYear={2020} toYear={2040}
                 />

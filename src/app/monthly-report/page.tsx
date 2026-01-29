@@ -18,6 +18,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { FullMonthlyReportPdf } from '@/components/reports/FullMonthlyReportPdf';
 import { ReportWrapper } from '@/components/reports/ReportWrapper';
 import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { useToast } from '@/hooks/use-toast';
 
 const formatCurrency = (amount: number) => {
@@ -111,42 +112,111 @@ export default function MonthlyReportPage() {
   };
 
   const handleGeneratePdf = async () => {
-    const input = reportRef.current;
-    if (!input) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Could not find the report content to generate PDF.",
-      });
-      return;
-    }
-
-    const { customFont } = settings;
-
-    const pdf = new jsPDF({
+    if (!selectedDate) return;
+    const doc = new jsPDF({
       orientation: 'l',
       unit: 'pt',
       format: 'a4',
     });
 
-    await pdf.html(input, {
-      callback: function (doc) {
-        doc.save(`monthly-report-${selectedDate ? format(selectedDate, 'yyyy-MM') : 'export'}.pdf`);
-      },
-      margin: [40, 30, 40, 30],
-      autoPaging: 'text',
-      html2canvas: {
-        scale: 2,
-        useCORS: true,
-        onclone: (doc) => {
-          if (customFont && language === 'ku') {
-            const style = doc.createElement('style');
-            style.innerHTML = `@font-face { font-family: 'CustomAppFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3, span { font-family: 'CustomAppFont' !important; }`;
-            doc.head.appendChild(style);
-          }
+    const fontName = 'CustomAppFont';
+
+    if (settings.customFont) {
+        try {
+            const base64Font = settings.customFont.split(',')[1];
+            const fontFileName = `${fontName}.ttf`;
+            doc.addFileToVFS(fontFileName, base64Font);
+            doc.addFont(fontFileName, fontName, 'normal');
+            doc.setFont(fontName);
+        } catch (e) {
+            console.error("Error with custom font:", e);
+            toast({
+                variant: "destructive",
+                title: "Font Error",
+                description: "Could not apply the custom font. Using default.",
+            });
+            doc.setFont('helvetica');
+        }
+    } else {
+        doc.setFont('helvetica');
+    }
+
+    const headerTitle = t('monthly_reports');
+    const headerDate = format(selectedDate, 'MMMM yyyy');
+
+    doc.setFontSize(18);
+    doc.text(headerTitle, doc.internal.pageSize.getWidth() / 2, 40, { align: 'center' });
+    doc.setFontSize(12);
+    doc.setTextColor(100);
+    doc.text(headerDate, doc.internal.pageSize.getWidth() / 2, 60, { align: 'center' });
+
+    const head = [[
+        t('employee'),
+        t('salary'),
+        t('overtime'),
+        t('bonuses'),
+        t('expenses'),
+        t('cash_withdrawals'),
+        t('net_salary'),
+    ]];
+
+    const body = monthlyReportData.records.map(record => [
+        getEmployeeName(record.employeeId, language === 'ku'),
+        isReadOnly ? '***' : formatCurrency(record.salary),
+        isReadOnly ? '***' : formatCurrency(record.totalOvertime),
+        isReadOnly ? '***' : formatCurrency(record.totalBonuses),
+        isReadOnly ? '***' : formatCurrency(record.totalExpenses),
+        isReadOnly ? '***' : formatCurrency(record.totalWithdrawals),
+        isReadOnly ? '***' : formatCurrency(record.netSalary),
+    ]);
+    
+    body.push([
+        { content: t('grand_total'), styles: { fontStyle: 'bold' } },
+        { content: isReadOnly ? '***' : formatCurrency(grandTotals.salary), styles: { fontStyle: 'bold' } },
+        { content: isReadOnly ? '***' : formatCurrency(grandTotals.totalOvertime), styles: { fontStyle: 'bold' } },
+        { content: isReadOnly ? '***' : formatCurrency(grandTotals.totalBonuses), styles: { fontStyle: 'bold' } },
+        { content: isReadOnly ? '***' : formatCurrency(grandTotals.totalExpenses), styles: { fontStyle: 'bold', textColor: [239, 68, 68] } },
+        { content: isReadOnly ? '***' : formatCurrency(grandTotals.totalWithdrawals), styles: { fontStyle: 'bold', textColor: [239, 68, 68] } },
+        { content: isReadOnly ? '***' : formatCurrency(grandTotals.netSalary), styles: { fontStyle: 'bold' } },
+    ]);
+    
+    autoTable(doc, {
+        head: head,
+        body: body,
+        startY: 80,
+        styles: {
+            font: fontName,
+            fontSize: 8,
+            cellPadding: 4,
+            overflow: 'linebreak'
         },
-      },
+        headStyles: {
+            fillColor: '#3B82F6',
+            textColor: 255,
+            fontStyle: 'bold',
+            halign: 'center',
+            fontSize: 9,
+        },
+        columnStyles: {
+            0: { halign: language === 'ku' ? 'right' : 'left' },
+            1: { halign: 'right' },
+            2: { halign: 'right' },
+            3: { halign: 'right' },
+            4: { halign: 'right' },
+            5: { halign: 'right' },
+            6: { halign: 'right' },
+        },
+        didDrawPage: (data) => {
+          doc.setFontSize(8);
+          doc.text(
+            `${t('page')} ${doc.internal.pages.length}`,
+            data.settings.margin.left,
+            doc.internal.pageSize.getHeight() - 10
+          );
+        },
     });
+
+    doc.save(`monthly-report-${format(selectedDate, 'yyyy-MM')}.pdf`);
   };
   
   const PageContent = () => (
@@ -213,16 +283,6 @@ export default function MonthlyReportPage() {
 
   return (
     <>
-      <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
-        <div ref={reportRef}>
-            {selectedDate && <FullMonthlyReportPdf
-                records={monthlyReportData.records}
-                date={selectedDate}
-                settings={settings}
-                getEmployeeName={getEmployeeName}
-            />}
-        </div>
-      </div>
       <div className="hidden print:block">
         <ReportWrapper>
           {selectedDate && <FullMonthlyReportPdf
