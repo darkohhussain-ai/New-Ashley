@@ -24,7 +24,7 @@ export const EmployeeDashboardPrintView = ({ employees, settings }: { employees:
     const { t, language } = useTranslation();
 
     return (
-        <ReportWrapper>
+        <ReportWrapper title={t('employees_dashboard')}>
             <div className="space-y-4">
                 {employees.map(employee => {
                      const displayName = language === 'ku' && employee.kurdishName ? employee.kurdishName : employee.name;

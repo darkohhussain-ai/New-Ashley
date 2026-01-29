@@ -20,7 +20,6 @@ export const CashWithdrawalReportPdf = ({ records, date, settings, getEmployeeNa
         <ReportWrapper
             title={t('daily_cash_withdrawals')}
             date={format(date, 'PPPP')}
-            themeColor={settings.pdfSettings.report.reportColors?.withdrawal || '#ef4444'}
         >
             <Table>
                 <TableHeader>

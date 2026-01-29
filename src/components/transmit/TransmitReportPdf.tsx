@@ -23,13 +23,10 @@ export const TransmitReportPdf = ({ transfer, items, settings, invoiceNumber, to
         .replace('{city}', transfer.destinationCity || '')
         .replace('{invoiceNumber}', invoiceNumber ? String(invoiceNumber).padStart(6, '0') : 'N/A');
 
-    const themeColor = (transfer.destinationCity && (settings.branchColors as BranchColors)?.[transfer.destinationCity as keyof BranchColors]) || settings.themeColor;
-
     return (
         <ReportWrapper
             title={finalTitle}
             date={formattedDate}
-            themeColor={themeColor}
         >
             <section className="grid grid-cols-2 gap-4 my-4 text-[10px] leading-snug">
                  <div>

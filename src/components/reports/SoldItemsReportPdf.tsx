@@ -17,7 +17,6 @@ export const SoldItemsReportPdf = ({ list, categories, settings }: { list: SoldI
         <ReportWrapper
             title={list.name}
             date={format(parseISO(list.date), 'PPPP')}
-            themeColor={settings.pdfSettings.report.reportColors?.general || '#22c55e'}
         >
             <Table>
                 <TableHeader>

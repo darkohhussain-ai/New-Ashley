@@ -42,7 +42,6 @@ export function DailyExpenseReportPdf({ records, date, settings, getEmployeeName
     <ReportWrapper
       title={t('daily_expense_report')}
       date={format(date, 'PPPP')}
-      themeColor={settings.pdfSettings.report.reportColors?.expense || '#3b82f6'}
     >
       <Table className="text-xs border">
         <TableHeader>

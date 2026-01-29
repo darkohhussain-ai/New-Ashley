@@ -11,6 +11,7 @@ type FileReportPdfProps = {
   items: Item[];
   employee: Employee;
   locations: StorageLocation[];
+  logoSrc: string | null;
   themeColor: string;
 };
 
@@ -23,7 +24,6 @@ export function FilePdfCard({ file, items, employee, locations, themeColor }: Fi
         <ReportWrapper
             title={file.storageName}
             date={file.date ? format(parseISO(file.date), 'PPP') : 'N/A'}
-            themeColor={themeColor}
         >
             <div className="grid grid-cols-2 gap-4 mb-6 text-xs">
                 <div><p className="text-gray-500">{t('employee')}</p><p className="font-medium">{employee.name}</p></div>

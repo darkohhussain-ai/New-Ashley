@@ -25,7 +25,6 @@ export const BonusReportPdf = ({ records, date, settings, getEmployeeName }: { r
         <ReportWrapper
             title={t('daily_bonus_report')}
             date={format(date, 'PPPP')}
-            themeColor={settings.pdfSettings.report.reportColors?.bonus || '#8b5cf6'}
         >
             <Table>
                 <TableHeader>

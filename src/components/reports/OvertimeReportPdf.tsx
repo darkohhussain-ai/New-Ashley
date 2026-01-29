@@ -26,7 +26,6 @@ export const OvertimeReportPdf = ({ records, date, settings, getEmployeeName }: 
         <ReportWrapper
             title={t('daily_overtime_report')}
             date={format(date, 'PPPP')}
-            themeColor={settings.pdfSettings.report.reportColors?.overtime || '#f97316'}
         >
             <Table>
                 <TableHeader>

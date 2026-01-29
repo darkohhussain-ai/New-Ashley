@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Employee, Expense, ExpenseReport, AllPdfSettings } from '@/lib/types';
@@ -50,8 +49,6 @@ export function ExpenseReportPdf({ report, items, employees, settings }: Expense
     <ReportWrapper
       title={report.reportName}
       date={format(parseISO(report.reportDate), 'PPP')}
-      logoSrc={settings.report.logo}
-      themeColor={settings.report.reportColors?.expense || '#3b82f6'}
     >
       <div className="space-y-6">
         <div>
