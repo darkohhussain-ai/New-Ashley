@@ -124,9 +124,8 @@ export default function MonthlyReportPage() {
     if (settings.customFont) {
         try {
             const base64Font = settings.customFont.split(',')[1];
-            const fontFileName = `${fontName}.ttf`;
-            doc.addFileToVFS(fontFileName, base64Font);
-            doc.addFont(fontFileName, fontName, 'normal');
+            doc.addFileToVFS(`${fontName}.ttf`, base64Font);
+            doc.addFont(`${fontName}.ttf`, fontName, 'normal');
             doc.setFont(fontName);
         } catch (e) {
             console.error("Error with custom font:", e);
@@ -193,7 +192,7 @@ export default function MonthlyReportPage() {
         headStyles: {
             fillColor: '#3B82F6',
             textColor: 255,
-            fontStyle: 'bold',
+            fontStyle: 'normal',
             halign: 'center',
             fontSize: 9,
         },
@@ -284,11 +283,13 @@ export default function MonthlyReportPage() {
   return (
     <>
       <div className="hidden print:block">
-        <ReportWrapper>
+        <ReportWrapper
+          title={t('monthly_reports')}
+          date={selectedDate ? format(selectedDate, 'MMMM yyyy') : ''}
+        >
           {selectedDate && <FullMonthlyReportPdf
               records={monthlyReportData.records}
-              date={selectedDate}
-              settings={settings}
+              grandTotals={grandTotals}
               getEmployeeName={getEmployeeName}
           />}
         </ReportWrapper>

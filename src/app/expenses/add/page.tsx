@@ -309,8 +309,8 @@ export default function AddExpensePage() {
                 </CardHeader>
                 <CardContent>
                     {isLoading ? <div className="text-center py-8"><Loader2 className="h-6 w-6 animate-spin mx-auto"/></div> : (
-                        groupedExpenses.length > 0 ? (
-                           groupedExpenses.map(group => (
+                        groupedDailyExpenses.length > 0 ? (
+                           groupedDailyExpenses.map(group => (
                                 <div key={group.employeeName} className="mb-6 last:mb-0 break-inside-avoid">
                                     <h3 className="text-lg font-semibold mb-2 pb-1 border-b" dir={language === 'ku' ? 'rtl' : 'ltr'}>{group.employeeName}</h3>
                                     <div className="divide-y">
@@ -347,7 +347,7 @@ export default function AddExpensePage() {
                         )
                     )}
                 </CardContent>
-                {groupedExpenses.length > 0 && (
+                {groupedDailyExpenses.length > 0 && (
                     <CardFooter className="bg-muted/50 p-4 justify-end">
                         <div className="text-lg font-bold">
                             <span>{t('grand_total')}: </span>
