@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useRef, useEffect, useState } from 'react';
@@ -209,15 +210,13 @@ export default function ViewTransferPage() {
   return (
     <>
       <div className="hidden print:block">
-        <ReportWrapper>
-          <TransmitReportPdf
-            transfer={transfer}
-            items={items || []}
-            settings={{...pdfSettings.invoice, logo: pdfSettings.invoice.logo ?? appLogo}}
-            invoiceNumber={transfer.invoiceNumber}
-            totalYearlyInvoices={totalYearlyInvoices}
-          />
-        </ReportWrapper>
+        <TransmitReportPdf
+          transfer={transfer}
+          items={items || []}
+          settings={{...pdfSettings.invoice, logo: pdfSettings.invoice.logo ?? appLogo}}
+          invoiceNumber={transfer.invoiceNumber}
+          totalYearlyInvoices={totalYearlyInvoices}
+        />
       </div>
       <div className="min-h-screen bg-background text-foreground p-4 md:p-8 print:hidden">
         <header className="flex items-center justify-between gap-4 mb-8">
@@ -264,3 +263,5 @@ export default function ViewTransferPage() {
     </>
   );
 }
+
+    
