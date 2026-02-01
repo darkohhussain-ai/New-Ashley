@@ -1,3 +1,4 @@
+
 'use client';
     
 import {
@@ -12,18 +13,19 @@ import {
 import { toast } from '@/hooks/use-toast';
 
 export function setDocumentNonBlocking(docRef: DocumentReference, data: any, options: SetOptions) {
-  setDoc(docRef, data, options).catch(error => {
+  return setDoc(docRef, data, options).catch(error => {
     console.error("Firestore Error (setDoc):", error);
     toast({
       variant: "destructive",
       title: "Error Saving Data",
       description: `Could not save changes for document. Please try again.`,
     });
+    throw error;
   });
 }
 
 export function addDocumentNonBlocking(colRef: CollectionReference, data: any) {
-  const promise = addDoc(colRef, data)
+  return addDoc(colRef, data)
     .catch(error => {
       console.error("Firestore Error (addDoc):", error);
       toast({
@@ -31,12 +33,12 @@ export function addDocumentNonBlocking(colRef: CollectionReference, data: any) {
         title: "Error Adding Data",
         description: `Could not add new document. Please try again.`,
       });
+      throw error;
     });
-  return promise;
 }
 
 export function updateDocumentNonBlocking(docRef: DocumentReference, data: any) {
-  updateDoc(docRef, data)
+  return updateDoc(docRef, data)
     .catch(error => {
       console.error("Firestore Error (updateDoc):", error);
       toast({
@@ -44,11 +46,12 @@ export function updateDocumentNonBlocking(docRef: DocumentReference, data: any) 
         title: "Error Updating Data",
         description: `Could not update document. Please try again.`,
       });
+      throw error;
     });
 }
 
 export function deleteDocumentNonBlocking(docRef: DocumentReference) {
-  deleteDoc(docRef)
+  return deleteDoc(docRef)
     .catch(error => {
       console.error("Firestore Error (deleteDoc):", error);
       toast({
@@ -56,5 +59,6 @@ export function deleteDocumentNonBlocking(docRef: DocumentReference) {
         title: "Error Deleting Data",
         description: `Could not delete document. Please try again.`,
       });
+      throw error;
     });
 }

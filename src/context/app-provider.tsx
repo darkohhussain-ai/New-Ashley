@@ -66,7 +66,7 @@ interface AppState {
     soldItemsLists: SoldItemsList[];
     setSoldItemsLists: React.Dispatch<React.SetStateAction<SoldItemsList[]>>;
     settings: AppSettings;
-    setSettings: (value: React.SetStateAction<AppSettings>) => void;
+    setSettings: (value: React.SetStateAction<AppSettings>) => Promise<void>;
     isLoading: boolean;
 }
 
@@ -182,15 +182,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
     }, [firestoreSettings, isSettingsLoading, isInitialSettingsLoaded]);
 
-    const setSettings = useCallback((value: React.SetStateAction<AppSettings>) => {
+    const setSettings = useCallback(async (value: React.SetStateAction<AppSettings>) => {
         // Optimistically update local state for immediate UI feedback.
         const newSettings = value instanceof Function ? value(settings) : value;
         setLocalSettings(newSettings);
         
-        // Persist to Firestore non-blockingly.
+        // Persist to Firestore and wait for it to complete.
         if (settingsDocRef) {
-            // Using a deep copy of newSettings to avoid potential issues with object mutation
-            setDocumentNonBlocking(settingsDocRef, JSON.parse(JSON.stringify(newSettings)), { merge: true });
+            await setDocumentNonBlocking(settingsDocRef, JSON.parse(JSON.stringify(newSettings)), { merge: true });
         }
     }, [settingsDocRef, settings]);
     

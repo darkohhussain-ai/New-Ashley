@@ -699,8 +699,12 @@ function SettingsPage() {
     reader.readAsDataURL(file);
   };
 
-  const handleSave = () => {
-    setSettings(draftSettings);
+  const handleSave = async () => {
+    toast({
+      title: 'Saving Settings...',
+      description: 'Please wait while changes are applied.',
+    });
+    await setSettings(draftSettings);
     toast({
       title: 'Settings Saved',
       description: 'Applying changes...',
@@ -716,7 +720,7 @@ function SettingsPage() {
 
     setTimeout(() => {
         window.location.reload();
-    }, 1000);
+    }, 500);
   };
 
   const handleCancel = () => {

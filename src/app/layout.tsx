@@ -21,13 +21,28 @@ import { Skeleton } from '@/components/ui/skeleton';
 function CustomFontInjector() {
     const { settings } = useAppContext();
     const fontBody = settings.fontFamily || 'Arial';
+    const customFont = settings.customFont;
+
+    let fontStyles = `
+        :root {
+            --font-body: "${fontBody}", sans-serif;
+        }
+    `;
+
+    if (customFont) {
+        fontStyles = `
+            @font-face {
+                font-family: 'CustomAppFont';
+                src: url(${customFont});
+            }
+            :root {
+                --font-body: 'CustomAppFont', "${fontBody}", sans-serif;
+            }
+        `;
+    }
 
     return (
-        <style>{`
-            :root {
-                --font-body: "${fontBody}";
-            }
-        `}</style>
+        <style>{fontStyles}</style>
     );
 }
 
