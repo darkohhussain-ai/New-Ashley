@@ -487,6 +487,8 @@ function SettingsPage() {
   const [draftSettings, setDraftSettings] =
     useState<AppSettings>(initialSettings);
   const [isDirty, setIsDirty] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+
 
   const [activePdfTab, setActivePdfTab] = useState<'report' | 'invoice' | 'card' | 'datasheet'>('report');
   const [selectedReportType, setSelectedReportType] =
@@ -647,6 +649,13 @@ function SettingsPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setIsUploading(true);
+    const uploadToast = toast({
+      title: 'Uploading image...',
+      description: 'Please wait until the upload is complete before saving.',
+    });
+
+
     const reader = new FileReader();
     reader.onload = event => {
       const localUrl = event.target?.result as string;
@@ -666,49 +675,51 @@ function SettingsPage() {
         // Upload to storage
         const sRef = storageRef(storage, filePath);
         uploadString(sRef, localUrl, 'data_url')
-          .then(() => {
-            getDownloadURL(sRef)
-              .then(downloadURL => {
-                // Silently update draft with permanent URL
-                setDraftSettings(prev => {
-                    const newSettings = JSON.parse(JSON.stringify(prev));
-                    const keys = settingKeyPath.split('.');
-                    let current: any = newSettings;
-                    for (let i = 0; i < keys.length - 1; i++) {
-                        current = current[keys[i]];
-                    }
-                    // Only update if the preview URL is still there
-                    if (current[keys[keys.length - 1]] === localUrl) {
-                      current[keys[keys.length - 1]] = downloadURL;
-                    }
-                    return newSettings;
-                });
-              })
-              .catch(err => console.error('Error getting download URL', err));
+          .then(() => getDownloadURL(sRef))
+          .then(downloadURL => {
+            // Silently update draft with permanent URL
+            setDraftSettings(prev => {
+              const newSettings = JSON.parse(JSON.stringify(prev));
+              const keys = settingKeyPath.split('.');
+              let current: any = newSettings;
+              for (let i = 0; i < keys.length - 1; i++) {
+                current = current[keys[i]];
+              }
+              // Only update if the preview URL is still there
+              if (current[keys[keys.length - 1]] === localUrl) {
+                current[keys[keys.length - 1]] = downloadURL;
+              }
+              return newSettings;
+            });
+            uploadToast.update({ id: uploadToast.id, title: "Upload Complete!", description: "You can now save your changes." });
+            setIsUploading(false);
           })
           .catch(err => {
             console.error('Error uploading file', err);
             toast({
               variant: 'destructive',
               title: 'Upload Failed',
-              description: 'Could not upload the image.',
+              description: 'Could not upload the image. Please check storage rules and network connection.',
             });
+            setDraftSettings(settings); // Revert changes on fail
+            setIsUploading(false);
           });
+      } else {
+        setIsUploading(false);
+        uploadToast.update({id: uploadToast.id, variant: 'destructive', title: 'Upload Failed', description: 'Could not read the file.'});
       }
     };
     reader.readAsDataURL(file);
   };
 
   const handleSave = async () => {
-    toast({
+    const savingToast = toast({
       title: 'Saving Settings...',
-      description: 'Please wait while changes are applied.',
+      description: 'Please wait. The application will reload once finished.',
     });
     await setSettings(draftSettings);
-    toast({
-      title: 'Settings Saved',
-      description: 'Applying changes...',
-    });
+    
+    savingToast.update({ id: savingToast.id, title: 'Settings Saved', description: 'Applying changes and reloading...' });
     
     try {
         const channel = new BroadcastChannel('settings-update');
@@ -720,7 +731,7 @@ function SettingsPage() {
 
     setTimeout(() => {
         window.location.reload();
-    }, 500);
+    }, 1000);
   };
 
   const handleCancel = () => {
@@ -766,7 +777,7 @@ function SettingsPage() {
             await new Promise(resolve => setTimeout(resolve, 200)); // Throttle writes
         }
         
-        setSettings(initialSettings);
+        await setSettings(initialSettings);
         setDraftSettings(initialSettings);
 
         toast({
@@ -931,8 +942,9 @@ function SettingsPage() {
             <h1 className="text-xl">{t('settings')}</h1>
           </div>
           <div className="ml-auto flex items-center gap-4">
-            <Button onClick={handleSave} disabled={!isDirty}>
-              <Save className="mr-2 h-4 w-4" /> {t('save_all_changes')}
+            <Button onClick={handleSave} disabled={!isDirty || isUploading}>
+              {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+              {t('save_all_changes')}
             </Button>
             <Button onClick={handleCancel} disabled={!isDirty} variant="ghost">
               <X className="mr-2 h-4 w-4" /> {t('cancel')}
@@ -1811,5 +1823,3 @@ function SettingsPage() {
 }
 
 export default withAuth(SettingsPage);
-
-    
