@@ -14,7 +14,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { format, parseISO } from "date-fns"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ArrowLeft, Edit, Trash2, Save, X, Upload, Mail, Phone, Cake, Calendar as CalendarIcon, DollarSign, Clock, Gift, Banknote, FileDown, Printer, UserX, User, Loader2, FileText } from 'lucide-react'
+import { ArrowLeft, Edit, Trash2, Save, X, Upload, Mail, Phone, Cake, Calendar as CalendarIcon, DollarSign, Clock, Gift, Banknote, FileDown, Printer, UserX, User, Loader2 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { useToast } from "@/hooks/use-toast"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
@@ -245,20 +245,27 @@ function EmployeeDetailPage() {
         format: 'a4'
     });
 
-    const fontName = 'CustomAppFont';
+    let activeFont = 'helvetica'; // Default PDF font
+
+    // Handle Custom Font
     if (settings.customFont) {
         try {
             const base64Font = settings.customFont.split(',')[1];
-            doc.addFileToVFS(`${fontName}.ttf`, base64Font);
-            doc.addFont(`${fontName}.ttf`, fontName, 'normal');
-            doc.setFont(fontName);
+            doc.addFileToVFS(`CustomAppFont.ttf`, base64Font);
+            doc.addFont(`CustomAppFont.ttf`, 'CustomAppFont', 'normal');
+            activeFont = 'CustomAppFont';
         } catch (e) {
             console.error("Error with custom font:", e);
-            doc.setFont('helvetica');
         }
-    } else {
-        doc.setFont('helvetica');
+    } else if (settings.fontFamily) {
+        const fontToUse = settings.fontFamily.toLowerCase().split(',')[0].trim();
+        if (fontToUse.includes('times')) {
+            activeFont = 'times';
+        } else if (fontToUse.includes('courier')) {
+            activeFont = 'courier';
+        }
     }
+    doc.setFont(activeFont);
     
     const displayName = language === 'ku' && selectedEmployee.kurdishName ? selectedEmployee.kurdishName : selectedEmployee.name;
 
@@ -283,7 +290,7 @@ function EmployeeDetailPage() {
         ],
         startY: startY,
         theme: 'plain',
-        styles: { font: fontName, fontSize: 9 }
+        styles: { font: activeFont, fontSize: 9 }
     });
 
     startY = (doc as any).lastAutoTable.finalY + 20;
@@ -303,8 +310,8 @@ function EmployeeDetailPage() {
             body: data.map(rows),
             startY: startY,
             theme: 'striped',
-            styles: { font: fontName, fontSize: 9 },
-            headStyles: { fillColor: '#3B82F6' },
+            styles: { font: activeFont, fontSize: 9 },
+            headStyles: { fillColor: '#3B82F6', font: activeFont },
         });
         startY = (doc as any).lastAutoTable.finalY + 20;
     };
@@ -391,9 +398,8 @@ function EmployeeDetailPage() {
                     ) : (
                         <>
                             <Button onClick={() => setIsEditing(true)}><Edit className="mr-2 h-4 w-4"/> {t('edit')}</Button>
-                            <Button variant="outline" onClick={handlePrint}><Printer className="mr-2 h-4 w-4"/> {t('print')}</Button>
-                            <Button variant="outline" onClick={handleGeneratePdf}><FileText className="mr-2 h-4 w-4"/> {t('pdf')}</Button>
-                            <Button variant="outline" onClick={handleExportExcelForDetail}><FileDown className="mr-2 h-4 w-4"/> {t('excel')}</Button>
+                            <Button variant="outline" size="icon" onClick={handlePrint}><Printer className="h-4 w-4" /></Button>
+                            <Button variant="outline" size="icon" onClick={handleExportExcelForDetail}><FileDown className="h-4 w-4" /></Button>
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                     <Button variant="outline" className={cn(!employeeIsActive && "text-destructive border-destructive/50")}>

@@ -102,6 +102,7 @@ import {
 } from 'firebase/storage';
 import { TransmitReportPdf } from '@/components/transmit/TransmitReportPdf';
 import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const reportTypes = [
   { value: 'general', label: 'General' },
@@ -702,15 +703,20 @@ function SettingsPage() {
     setSettings(draftSettings);
     toast({
       title: 'Settings Saved',
-      description: 'Your changes have been saved.',
+      description: 'Applying changes...',
     });
-     try {
+    
+    try {
         const channel = new BroadcastChannel('settings-update');
         channel.postMessage('reload');
         channel.close();
     } catch(e) {
         console.error("Could not broadcast settings update", e);
     }
+
+    setTimeout(() => {
+        window.location.reload();
+    }, 1000);
   };
 
   const handleCancel = () => {
@@ -866,12 +872,19 @@ function SettingsPage() {
       html2canvas: {
         scale: 2,
         useCORS: true,
-        onclone: (doc) => {
-          if (settings.customFont && language === 'ku') {
-            const style = doc.createElement('style');
-            style.innerHTML = `@font-face { font-family: 'CustomAppFont'; src: url(${settings.customFont}); } body, table, div, p, h1, h2, h3, h4, h5, h6, span, th, td { font-family: 'CustomAppFont' !important; }`;
-            doc.head.appendChild(style);
+        onclone: (document) => {
+          const style = document.createElement('style');
+          let fontStyles = '';
+          // Prioritize custom font if it exists
+          if (settings.customFont) {
+              fontStyles = `@font-face { font-family: 'CustomAppFont'; src: url(${settings.customFont}); } * { font-family: 'CustomAppFont' !important; }`;
+          } 
+          // Fallback to selected default font
+          else if (settings.fontFamily) {
+              fontStyles = `* { font-family: '${settings.fontFamily}', sans-serif !important; }`;
           }
+          style.innerHTML = fontStyles;
+          document.head.appendChild(style);
         },
       },
     });
@@ -1794,3 +1807,5 @@ function SettingsPage() {
 }
 
 export default withAuth(SettingsPage);
+
+    

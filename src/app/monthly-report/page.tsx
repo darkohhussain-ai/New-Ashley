@@ -3,7 +3,7 @@
 
 import { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Calendar as CalendarIcon, FileText, Printer, Loader2 } from 'lucide-react';
+import { ArrowLeft, Calendar as CalendarIcon, FileDown, Printer, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -119,14 +119,14 @@ export default function MonthlyReportPage() {
       format: 'a4',
     });
 
-    const fontName = 'CustomAppFont';
+    let activeFont = 'helvetica'; // Default PDF font
 
     if (settings.customFont) {
         try {
             const base64Font = settings.customFont.split(',')[1];
-            doc.addFileToVFS(`${fontName}.ttf`, base64Font);
-            doc.addFont(`${fontName}.ttf`, fontName, 'normal');
-            doc.setFont(fontName);
+            doc.addFileToVFS(`CustomAppFont.ttf`, base64Font);
+            doc.addFont(`CustomAppFont.ttf`, 'CustomAppFont', 'normal');
+            activeFont = 'CustomAppFont';
         } catch (e) {
             console.error("Error with custom font:", e);
             toast({
@@ -134,11 +134,16 @@ export default function MonthlyReportPage() {
                 title: "Font Error",
                 description: "Could not apply the custom font. Using default.",
             });
-            doc.setFont('helvetica');
         }
-    } else {
-        doc.setFont('helvetica');
+    } else if (settings.fontFamily) {
+        const fontToUse = settings.fontFamily.toLowerCase().split(',')[0].trim();
+        if (fontToUse.includes('times')) {
+            activeFont = 'times';
+        } else if (fontToUse.includes('courier')) {
+            activeFont = 'courier';
+        }
     }
+    doc.setFont(activeFont);
 
     const headerTitle = t('monthly_reports');
     const headerDate = format(selectedDate, 'MMMM yyyy');
@@ -184,7 +189,7 @@ export default function MonthlyReportPage() {
         body: body,
         startY: 80,
         styles: {
-            font: fontName,
+            font: activeFont,
             fontSize: 8,
             cellPadding: 4,
             overflow: 'linebreak'
@@ -195,6 +200,7 @@ export default function MonthlyReportPage() {
             fontStyle: 'normal',
             halign: 'center',
             fontSize: 9,
+            font: activeFont,
         },
         columnStyles: {
             0: { halign: language === 'ku' ? 'right' : 'left' },
@@ -315,10 +321,10 @@ export default function MonthlyReportPage() {
                 <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} captionLayout="dropdown-nav" fromYear={2020} toYear={2040} />
               </PopoverContent>
             </Popover>
-            <Button variant="outline" onClick={handleGeneratePdf} disabled={isLoading || monthlyReportData.records.length === 0}>
-                <FileText className="mr-2"/>PDF
+            <Button variant="outline" size="icon" onClick={handleGeneratePdf} disabled={isLoading || monthlyReportData.records.length === 0}>
+                <FileDown className="h-4 w-4"/>
             </Button>
-            <Button variant="outline" onClick={handlePrint} disabled={isLoading || monthlyReportData.records.length === 0}><Printer className="mr-2"/>{t('print')}</Button>
+            <Button variant="outline" size="icon" onClick={handlePrint} disabled={isLoading || monthlyReportData.records.length === 0}><Printer className="h-4 w-4"/></Button>
           </div>
         </header>
 
@@ -329,3 +335,5 @@ export default function MonthlyReportPage() {
     </>
   );
 }
+
+    
