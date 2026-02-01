@@ -34,6 +34,8 @@
     /* Custom Added Colors */
     --tab-active-background: hsl(var(--background));
     --tab-active-foreground: hsl(var(--foreground));
+    --table-row-primary: hsl(var(--background));
+    --table-row-secondary: hsl(var(--secondary));
     --huana-highlight: 54 90% 92%;
     --location-occupied-border: 210 100% 70%;
     --location-occupied-bg: 210 100% 96%;
@@ -77,6 +79,8 @@
     /* Custom Added Colors */
     --tab-active-background: hsl(var(--background));
     --tab-active-foreground: hsl(var(--foreground));
+    --table-row-primary: hsl(var(--background));
+    --table-row-secondary: hsl(var(--secondary));
     --huana-highlight: 54 92% 15%;
     --location-occupied-border: 217.2 91.2% 50%;
     --location-occupied-bg: 217.2 91.2% 15%;
@@ -98,8 +102,7 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
-    font-family: var(--font-body), sans-serif;
+    @apply bg-background text-foreground font-sans;
     word-spacing: normal;
   }
   @keyframes highlight {
@@ -112,12 +115,6 @@
 }
 
 @layer utilities {
-  .break-inside-avoid {
-    break-inside: avoid;
-  }
-  .break-inside-avoid-page {
-    break-inside: avoid-page;
-  }
   .bg-status-correct { @apply bg-[hsl(var(--status-correct-bg))]; }
   .bg-status-less { @apply bg-[hsl(var(--status-less-bg))]; }
   .bg-status-more { @apply bg-[hsl(var(--status-more-bg))]; }
@@ -128,6 +125,8 @@
   .bg-status-updated { @apply bg-[hsl(var(--status-updated-bg))]; }
 
   /* Custom row/item colors */
+  .bg-table-row-primary { @apply bg-[hsl(var(--table-row-primary))]; }
+  .bg-table-row-secondary { @apply bg-[hsl(var(--table-row-secondary))]; }
   .bg-huana-highlight { @apply bg-[hsl(var(--huana-highlight))]; }
   .border-location-occupied-border { @apply border-[hsl(var(--location-occupied-border))]; }
   .bg-location-occupied-bg { @apply bg-[hsl(var(--location-occupied-bg))]; }
@@ -137,6 +136,7 @@
   body {
     background-color: white;
     color: black;
+    font-size: 10pt;
   }
   .print-hidden {
     display: none;
@@ -152,5 +152,11 @@
   }
   .print\\:block {
       display: block;
+  }
+  .pdf-table {
+    font-size: 8pt !important;
+  }
+  .pdf-table th, .pdf-table td {
+    padding: 2px 4px !important;
   }
 }

@@ -91,13 +91,13 @@ function AddEmployeeDialog({ open, onOpenChange, addEmployee }: { open: boolean,
                 <DialogHeader>
                     <DialogTitle>{t('add_new_employee')}</DialogTitle>
                     <DialogDescription>
-                        Fill in the details below to add a new employee to the system.
+                        {t('add_new_employee_desc')}
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 pt-4 max-h-[80vh] overflow-y-auto p-1 pr-4">
                     <div className="space-y-2"><Label htmlFor="name">{t('employee_name')}</Label><Input id="name" value={name} onChange={e => setName(e.target.value)} required placeholder="e.g. John Doe" /></div>
                     <div className="space-y-2 relative">
-                        <Label htmlFor="kurdishName">ناو بە کوردی</Label>
+                        <Label htmlFor="kurdishName">{t('kurdish_name')} ({t('notes_optional')})</Label>
                         <Input id="kurdishName" value={kurdishName} onChange={e => setKurdishName(e.target.value)} dir="rtl" placeholder="بۆ نموونە، جۆن دۆ"/>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -204,15 +204,15 @@ function EmployeesPage() {
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                         <div className="flex-1">
                             <CardTitle>{t('employees_list')}</CardTitle>
-                            <CardDescription>Select an employee to view their detailed profile and activities.</CardDescription>
+                            <CardDescription>{t('employees_list_desc')}</CardDescription>
                         </div>
                         <div className="flex items-center gap-2">
                             <div className="relative">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                 <Input placeholder={t('search_name_or_id')} className="pl-10" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
                             </div>
-                            <Button variant="outline" onClick={handlePrint}><Printer className="h-4 w-4" /></Button>
-                            <Button variant="outline" onClick={handleExportExcel}><FileDown className="h-4 w-4" /></Button>
+                            <Button variant="outline" size="icon" onClick={handlePrint}><Printer className="h-4 w-4" /></Button>
+                            <Button variant="outline" size="icon" onClick={handleExportExcel}><FileDown className="h-4 w-4" /></Button>
                         </div>
                     </div>
                 </CardHeader>

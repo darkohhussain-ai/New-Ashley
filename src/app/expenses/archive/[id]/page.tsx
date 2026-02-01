@@ -4,7 +4,7 @@
 import { useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Calendar as CalendarIcon, DollarSign, User, Printer, Trash2 } from 'lucide-react';
+import { ArrowLeft, Calendar as CalendarIcon, DollarSign, User, Printer, Trash2, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { format, parseISO } from 'date-fns';
@@ -16,6 +16,7 @@ import { useTranslation } from '@/hooks/use-translation';
 import { ExpenseReportPdf } from '@/components/expenses/ExpenseReportPdf';
 import type { Expense } from '@/lib/types';
 import { ReportWrapper } from '@/components/reports/ReportWrapper';
+import * as XLSX from 'xlsx';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'IQD', maximumFractionDigits: 0 }).format(amount);
 
@@ -55,7 +56,7 @@ export default function ViewExpenseReportPage() {
     });
 
     return Object.values(groups).sort((a,b) => a.employeeName.localeCompare(b.employeeName));
-  }, [reportItems, employees, language, getEmployeeName]);
+  }, [reportItems, employees, language, getEmployeeName, t]);
 
   const handleDeleteReport = () => {
     if (!reportId || !report) return;
@@ -67,6 +68,24 @@ export default function ViewExpenseReportPage() {
   
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleExportExcel = () => {
+    if (!report || reportItems.length === 0) {
+      toast({ title: t('no_data_to_export') });
+      return;
+    }
+    const dataToExport = reportItems.map(item => ({
+      [t('employee')]: getEmployeeName(item.employeeId, language === 'ku'),
+      [t('expense_type')]: t(item.expenseType.toLowerCase().replace(/[\s()]/g, '_')),
+      [t('taxi_sub_type')]: item.expenseSubType ? t(item.expenseSubType.toLowerCase().replace(/\s/g, '_')) : '',
+      [t('notes')]: item.notes || '',
+      [t('amount')]: item.amount,
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Expenses');
+    XLSX.writeFile(workbook, `${report.reportName}.xlsx`);
   };
 
   if (isLoading) {
@@ -109,7 +128,7 @@ export default function ViewExpenseReportPage() {
             <CardContent>
               <div className="divide-y">
                 {groupedExpenses.length > 0 ? groupedExpenses.map(group => (
-                  <div key={group.employeeName} className="py-3 first:pt-0 last:pb-0">
+                  <div key={group.employeeName} className="py-3 first:pt-0 last:pb-0 break-inside-avoid">
                     {group.expenses.map(item => (
                       <div key={item.id} className="flex justify-between items-start gap-4 py-2">
                         <div className="flex-1">
@@ -164,10 +183,11 @@ export default function ViewExpenseReportPage() {
             <h1 className="text-2xl md:text-3xl">{t('expense_report_details')}</h1>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handlePrint}><Printer className="mr-2 h-4 w-4" /> {t('print')}</Button>
+            <Button variant="outline" size="icon" onClick={handlePrint}><Printer className="h-4 w-4" /></Button>
+            <Button variant="outline" size="icon" onClick={handleExportExcel}><FileDown className="h-4 w-4" /></Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive"><Trash2 className="mr-2"/>{t('delete_report')}</Button>
+                <Button variant="destructive" size="icon"><Trash2 className="h-4 w-4"/></Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
