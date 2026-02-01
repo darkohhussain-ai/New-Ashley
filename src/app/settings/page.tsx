@@ -487,8 +487,6 @@ function SettingsPage() {
   const [draftSettings, setDraftSettings] =
     useState<AppSettings>(initialSettings);
   const [isDirty, setIsDirty] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-
 
   const [activePdfTab, setActivePdfTab] = useState<'report' | 'invoice' | 'card' | 'datasheet'>('report');
   const [selectedReportType, setSelectedReportType] =
@@ -640,103 +638,116 @@ function SettingsPage() {
     }));
   };
 
-
   const handleFileUpload = (
     e: React.ChangeEvent<HTMLInputElement>,
-    filePath: string,
     settingKeyPath: string
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setIsUploading(true);
-    const uploadToast = toast({
-      title: 'Uploading image...',
-      description: 'Please wait until the upload is complete before saving.',
-    });
-
-
     const reader = new FileReader();
     reader.onload = event => {
       const localUrl = event.target?.result as string;
       if (localUrl) {
-        // Set state for instant preview
         setDraftSettings(prev => {
-          const newSettings = JSON.parse(JSON.stringify(prev)); // Deep copy to avoid mutation
+          const newSettings = JSON.parse(JSON.stringify(prev));
           const keys = settingKeyPath.split('.');
           let current: any = newSettings;
           for (let i = 0; i < keys.length - 1; i++) {
+            if (!current[keys[i]]) current[keys[i]] = {};
             current = current[keys[i]];
           }
           current[keys[keys.length - 1]] = localUrl;
           return newSettings;
         });
-
-        // Upload to storage
-        const sRef = storageRef(storage, filePath);
-        uploadString(sRef, localUrl, 'data_url')
-          .then(() => getDownloadURL(sRef))
-          .then(downloadURL => {
-            // Silently update draft with permanent URL
-            setDraftSettings(prev => {
-              const newSettings = JSON.parse(JSON.stringify(prev));
-              const keys = settingKeyPath.split('.');
-              let current: any = newSettings;
-              for (let i = 0; i < keys.length - 1; i++) {
-                current = current[keys[i]];
-              }
-              // Only update if the preview URL is still there
-              if (current[keys[keys.length - 1]] === localUrl) {
-                current[keys[keys.length - 1]] = downloadURL;
-              }
-              return newSettings;
-            });
-            uploadToast.update({ id: uploadToast.id, title: "Upload Complete!", description: "You can now save your changes." });
-          })
-          .catch((err: any) => {
-            console.error('Error uploading file:', err);
-            let description = 'Could not upload the image. Please check your network connection.';
-            if (err.code === 'storage/unauthorized') {
-                description = "Upload failed due to a permissions error. This is likely a CORS configuration issue on your Firebase Storage bucket. Please ensure your app's domain is allowed."
-            }
-            toast({
-              variant: 'destructive',
-              title: 'Upload Failed',
-              description: description,
-            });
-            setDraftSettings(settings); // Revert changes on fail
-          })
-          .finally(() => {
-            setIsUploading(false);
-          });
-      } else {
-        setIsUploading(false);
-        uploadToast.update({id: uploadToast.id, variant: 'destructive', title: 'Upload Failed', description: 'Could not read the file.'});
       }
+    };
+    reader.onerror = () => {
+      toast({
+        variant: 'destructive',
+        title: 'File Read Error',
+        description: 'Could not read the selected file.',
+      });
     };
     reader.readAsDataURL(file);
   };
 
+
   const handleSave = async () => {
     const savingToast = toast({
       title: 'Saving Settings...',
-      description: 'Please wait. The application will reload once finished.',
+      description: 'Please wait. This may take a moment if you uploaded new images.',
     });
-    await setSettings(draftSettings);
-    
-    savingToast.update({ id: savingToast.id, title: 'Settings Saved', description: 'Applying changes and reloading...' });
-    
-    try {
-        const channel = new BroadcastChannel('settings-update');
-        channel.postMessage('reload');
-        channel.close();
-    } catch(e) {
-        console.error("Could not broadcast settings update", e);
-    }
 
-    setTimeout(() => {
-        window.location.reload();
-    }, 1000);
+    try {
+      let finalSettings = JSON.parse(JSON.stringify(draftSettings));
+
+      const getProperty = (obj: any, path: string) => path.split('.').reduce((o, i) => o?.[i], obj);
+      const setProperty = (obj: any, path: string, value: any) => {
+          const keys = path.split('.');
+          let current = obj;
+          for (let i = 0; i < keys.length - 1; i++) {
+              if (!current[keys[i]]) current[keys[i]] = {};
+              current = current[keys[i]];
+          }
+          current[keys[keys.length - 1]] = value;
+      };
+
+      const imagePaths = [
+          'appLogo', 'mainBackground', 'loginBackground', 'dashboardBanner',
+          'printHeaderImage', 'printFooterImage',
+          'pdfSettings.report.logo', 'pdfSettings.invoice.logo', 
+          'pdfSettings.card.logo', 'pdfSettings.datasheet.logo'
+      ];
+
+      const uploadPromises: Promise<void>[] = [];
+
+      for (const path of imagePaths) {
+          const value = getProperty(finalSettings, path);
+          
+          if (typeof value === 'string' && value.startsWith('data:image')) {
+              const filePath = `settings/${path.replace(/\./g, '_')}_${Date.now()}.png`;
+              const sRef = storageRef(storage, filePath);
+
+              const uploadPromise = uploadString(sRef, value, 'data_url')
+                  .then(() => getDownloadURL(sRef))
+                  .then(downloadURL => {
+                      setProperty(finalSettings, path, downloadURL);
+                  });
+              
+              uploadPromises.push(uploadPromise);
+          }
+      }
+
+      await Promise.all(uploadPromises);
+      
+      await setSettings(finalSettings);
+      
+      savingToast.update({ id: savingToast.id, title: 'Settings Saved', description: 'Applying changes and reloading...' });
+
+      try {
+          const channel = new BroadcastChannel('settings-update');
+          channel.postMessage('reload');
+          channel.close();
+      } catch(e) {
+          console.error("Could not broadcast settings update", e);
+      }
+
+      setTimeout(() => {
+          window.location.reload();
+      }, 1000);
+
+    } catch (err: any) {
+      console.error("Error saving settings:", err);
+      let description = 'An error occurred while saving.';
+      if (err.code === 'storage/unauthorized') {
+          description = "Image upload failed due to a permissions error. This is likely a CORS configuration issue on your Firebase Storage bucket. Please ensure your app's domain is allowed."
+      } else if (err.message?.includes('exceeds the maximum allowed size')) {
+           description = "A setting value is too large. This can happen with very large text inputs."
+      }
+      
+      savingToast.update({ id: savingToast.id, variant: 'destructive', title: 'Save Failed', description });
+    }
   };
 
   const handleCancel = () => {
@@ -947,8 +958,8 @@ function SettingsPage() {
             <h1 className="text-xl">{t('settings')}</h1>
           </div>
           <div className="ml-auto flex items-center gap-4">
-            <Button onClick={handleSave} disabled={!isDirty || isUploading}>
-              {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+            <Button onClick={handleSave} disabled={!isDirty}>
+              <Save className="mr-2 h-4 w-4" />
               {t('save_all_changes')}
             </Button>
             <Button onClick={handleCancel} disabled={!isDirty} variant="ghost">
@@ -1186,7 +1197,7 @@ function SettingsPage() {
                     type="file"
                     accept="image/*"
                     onChange={e =>
-                      handleFileUpload(e, `settings/appLogo.png`, 'appLogo')
+                      handleFileUpload(e, 'appLogo')
                     }
                   />
                 </CardContent>
@@ -1221,7 +1232,6 @@ function SettingsPage() {
                     onChange={e =>
                       handleFileUpload(
                         e,
-                        `settings/loginBackground.png`,
                         'loginBackground'
                       )
                     }
@@ -1258,7 +1268,6 @@ function SettingsPage() {
                     onChange={e =>
                       handleFileUpload(
                         e,
-                        `settings/mainBackground.png`,
                         'mainBackground'
                       )
                     }
@@ -1295,7 +1304,6 @@ function SettingsPage() {
                     onChange={e =>
                       handleFileUpload(
                         e,
-                        `settings/dashboardBanner.png`,
                         'dashboardBanner'
                       )
                     }
@@ -1330,7 +1338,7 @@ function SettingsPage() {
                         <Input
                             type="file"
                             accept="image/*"
-                            onChange={e => handleFileUpload(e, 'settings/printHeader.png', 'printHeaderImage')}
+                            onChange={e => handleFileUpload(e, 'printHeaderImage')}
                         />
                     </div>
                      <div className="space-y-2">
@@ -1351,7 +1359,7 @@ function SettingsPage() {
                         <Input
                             type="file"
                             accept="image/*"
-                            onChange={e => handleFileUpload(e, 'settings/printFooter.png', 'printFooterImage')}
+                            onChange={e => handleFileUpload(e, 'printFooterImage')}
                         />
                     </div>
                 </CardContent>
@@ -1452,7 +1460,6 @@ function SettingsPage() {
                         onChange={e =>
                           handleFileUpload(
                             e,
-                            `settings/pdf/${activePdfTab}_logo.png`,
                             `pdfSettings.${activePdfTab}.logo`
                           )
                         }
