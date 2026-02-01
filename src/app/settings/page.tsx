@@ -692,16 +692,21 @@ function SettingsPage() {
               return newSettings;
             });
             uploadToast.update({ id: uploadToast.id, title: "Upload Complete!", description: "You can now save your changes." });
-            setIsUploading(false);
           })
-          .catch(err => {
-            console.error('Error uploading file', err);
+          .catch((err: any) => {
+            console.error('Error uploading file:', err);
+            let description = 'Could not upload the image. Please check your network connection.';
+            if (err.code === 'storage/unauthorized') {
+                description = "Upload failed due to a permissions error. This is likely a CORS configuration issue on your Firebase Storage bucket. Please ensure your app's domain is allowed."
+            }
             toast({
               variant: 'destructive',
               title: 'Upload Failed',
-              description: 'Could not upload the image. Please check storage rules and network connection.',
+              description: description,
             });
             setDraftSettings(settings); // Revert changes on fail
+          })
+          .finally(() => {
             setIsUploading(false);
           });
       } else {
