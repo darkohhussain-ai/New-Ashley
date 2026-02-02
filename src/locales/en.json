@@ -566,6 +566,7 @@
   "reactivate": "Reactivate",
   "deactivate_desc": "Deactivated employees will not appear in dropdown lists for new entries.",
   "report_date": "Report Date",
+  "taxi_rent": "Taxi Rent",
   "taxi_expenses": "Taxi Expenses",
   "purchases_buying_items": "Purchases (Buying Items)",
   "taxi_for_warehouse_organization": "Taxi for warehouse organization",
@@ -702,5 +703,8 @@
   "photo": "Photo",
   "id": "ID",
   "role": "Role",
-  "phone": "Phone"
+  "phone": "Phone",
+  "view_transfer": "View Transfer",
+  "confirm_delete_item": "This will permanently delete {model} from the staging list.",
+  "confirm_delete_transfer": "This will delete the transfer slip and return all its items to the staging list. This action cannot be undone."
 }

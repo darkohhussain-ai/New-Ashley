@@ -20,6 +20,7 @@ import { format, formatISO, parseISO } from 'date-fns';
 import { useTranslation } from '@/hooks/use-translation';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 const destinations = ["Erbil", "Baghdad", "Diwan", "Dohuk"];
 const storageOptions = ["Ashley", "Huana", "Showroom"];
@@ -91,6 +92,7 @@ export default function AddItemsPage() {
         invoiceNo,
         storage,
         notes,
+        status: 'Pending',
         requestDate: requestDate ? formatISO(requestDate) : undefined,
         transferId: null,
         createdAt: formatISO(new Date())
@@ -249,7 +251,7 @@ export default function AddItemsPage() {
                                     <TableHead>{t('quantity')}</TableHead>
                                     <TableHead>{t('destination')}</TableHead>
                                     <TableHead>{t('invoice_no')}</TableHead>
-                                    <TableHead>{t('storage')}</TableHead>
+                                    <TableHead>{t('status')}</TableHead>
                                     <TableHead>{t('notes')}</TableHead>
                                     <TableHead className="text-right">{t('actions')}</TableHead>
                                 </TableRow>
@@ -265,11 +267,27 @@ export default function AddItemsPage() {
                                         <TableCell>{item.quantity}</TableCell>
                                         <TableCell>{item.destination}</TableCell>
                                         <TableCell>{item.invoiceNo || 'N/A'}</TableCell>
-                                        <TableCell>{item.storage || 'N/A'}</TableCell>
+                                        <TableCell>{item.status || 'N/A'}</TableCell>
                                         <TableCell className="text-sm text-muted-foreground">{item.notes || 'N/A'}</TableCell>
                                         <TableCell className="text-right">
                                             <Button variant="ghost" size="icon" onClick={() => startEditing(item)}><Edit className="w-4 h-4"/></Button>
-                                            <Button variant="ghost" size="icon" onClick={() => handleDeleteItem(item)}><Trash2 className="w-4 h-4 text-destructive"/></Button>
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button variant="ghost" size="icon"><Trash2 className="w-4 h-4 text-destructive"/></Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                          {t('confirm_delete_item', { model: item.model })}
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={() => handleDeleteItem(item)}>{t('delete')}</AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
                                         </TableCell>
                                     </TableRow>
                                 )) : (

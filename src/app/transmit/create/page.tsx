@@ -1,7 +1,9 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ArrowLeft, Plus, Truck, Calendar as CalendarIcon, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -13,19 +15,21 @@ import { format, formatISO, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
-import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { useAppContext } from '@/context/app-provider';
 import type { Transfer, ItemForTransfer } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
+import { TransmitReportPdf } from '@/components/transmit/TransmitReportPdf';
 
 const destinations = ["Erbil", "Baghdad", "Diwan", "Dohuk"];
 
 export default function CreateTransferPage() {
   const { toast } = useToast();
   const { t } = useTranslation();
-  const { transferItems, setTransferItems, transfers, setTransfers, isLoading: isAppLoading } = useAppContext();
+  const router = useRouter();
+  const { transferItems, setTransferItems, transfers, setTransfers, isLoading: isAppLoading, settings } = useAppContext();
 
   const [isSaving, setIsSaving] = useState(false);
   const [destinationCity, setDestinationCity] = useState('');
@@ -42,7 +46,6 @@ export default function CreateTransferPage() {
   }, [isAppLoading]);
 
   const [lastTransfer, setLastTransfer] = useState<Transfer | null>(null);
-  const [lastTransferItems, setLastTransferItems] = useState<ItemForTransfer[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   
   const stagedItems = useMemo(() => transferItems.filter(item => !item.transferId), [transferItems]);
@@ -96,16 +99,13 @@ export default function CreateTransferPage() {
             itemIds: selectedItemIds,
             invoiceNumber
         };
-        
-        const itemsForThisTransfer = stagedItems?.filter(item => selectedItemIds.includes(item.id)) || [];
 
         setTransfers(prev => [...prev, transferData]);
         setTransferItems(prevItems => prevItems.map(item => selectedItemIds.includes(item.id) ? { ...item, transferId } : item));
         
         setLastTransfer(transferData);
-        setLastTransferItems(itemsForThisTransfer);
         setIsModalOpen(true);
-        toast({ title: t('success'), description: t('transfer_slip_created') });
+        toast({ title: t('transfer_slip_created_title'), description: t('transfer_slip_created_desc', { cargoName }) });
 
         setDestinationCity('');
         setDriverName('');
@@ -121,12 +121,26 @@ export default function CreateTransferPage() {
     }
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
-
   return (
     <>
+    <AlertDialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>{t('transfer_slip_created_title')}</AlertDialogTitle>
+                <AlertDialogDescription>
+                    {t('transfer_slip_created_desc', { cargoName: lastTransfer?.cargoName })}
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+                    {t('close')}
+                </Button>
+                <Button onClick={() => router.push(`/transmit/archive/${lastTransfer?.id}`)}>
+                    {t('view_transfer')}
+                </Button>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
     <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
       <header className="flex items-center gap-4 mb-8">
           <Button variant="outline" size="icon" asChild>

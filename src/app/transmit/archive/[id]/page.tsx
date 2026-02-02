@@ -1,10 +1,11 @@
 
+
 'use client';
 
 import { useMemo, useRef, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Calendar, Truck, User, Warehouse, Printer, Edit, Trash2, Save, X, Search } from 'lucide-react';
+import { ArrowLeft, Calendar, Truck, User, Warehouse, Printer, Edit, Trash2, Save, X, Search, FileText, FileSpreadsheet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { format, parseISO } from 'date-fns';
@@ -22,6 +23,9 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { ReportWrapper } from '@/components/reports/ReportWrapper';
+import jsPDF from 'jspdf';
+import * as XLSX from 'xlsx';
+import html2canvas from 'html2canvas';
 
 export default function ViewTransferPage() {
   const { id: transferId } = useParams();
@@ -36,6 +40,7 @@ export default function ViewTransferPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editableTransfer, setEditableTransfer] = useState<Transfer | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const pdfRef = useRef<HTMLDivElement>(null);
 
   const filteredItems = useMemo(() => {
     if (!items) return [];
@@ -80,6 +85,33 @@ export default function ViewTransferPage() {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!pdfRef.current || !transfer) return;
+    const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
+    const canvas = await html2canvas(pdfRef.current, { scale: 2, useCORS: true });
+    const imgData = canvas.toDataURL('image/png');
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    pdf.save(`${transfer.cargoName}.pdf`);
+  };
+
+  const handleDownloadExcel = () => {
+    if (!transfer || !items) return;
+    const dataToExport = items.map(item => ({
+      'Model': item.model,
+      'Quantity': item.quantity,
+      'Invoice No': item.invoiceNo || 'N/A',
+      'Storage': item.storage || 'N/A',
+      'Notes': item.notes || 'N/A',
+      'Request Date': item.requestDate ? format(parseISO(item.requestDate), 'yyyy-MM-dd') : 'N/A',
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Items');
+    XLSX.writeFile(workbook, `${transfer.cargoName}.xlsx`);
   };
 
   if (isAppLoading) {
@@ -177,6 +209,7 @@ export default function ViewTransferPage() {
                                     <TableHead>{t('quantity')}</TableHead>
                                     <TableHead>{t('invoice_no')}</TableHead>
                                     <TableHead>{t('storage')}</TableHead>
+                                    <TableHead>{t('status')}</TableHead>
                                     <TableHead>{t('notes')}</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -187,6 +220,7 @@ export default function ViewTransferPage() {
                                         <TableCell>{item.quantity}</TableCell>
                                         <TableCell>{item.invoiceNo || 'N/A'}</TableCell>
                                         <TableCell>{item.storage || 'N/A'}</TableCell>
+                                        <TableCell>{item.status || 'N/A'}</TableCell>
                                         <TableCell className="text-muted-foreground">{item.notes || t('na')}</TableCell>
                                     </TableRow>
                                 ))}
@@ -210,13 +244,15 @@ export default function ViewTransferPage() {
   return (
     <>
       <div className="hidden print:block">
-        <TransmitReportPdf
-          transfer={transfer}
-          items={items || []}
-          settings={{...pdfSettings.invoice, logo: pdfSettings.invoice.logo ?? appLogo}}
-          invoiceNumber={transfer.invoiceNumber}
-          totalYearlyInvoices={totalYearlyInvoices}
-        />
+        <div ref={pdfRef}>
+            <TransmitReportPdf
+                transfer={transfer}
+                items={items || []}
+                settings={{...pdfSettings.invoice, logo: pdfSettings.invoice.logo ?? appLogo}}
+                invoiceNumber={transfer.invoiceNumber}
+                totalYearlyInvoices={totalYearlyInvoices}
+            />
+        </div>
       </div>
       <div className="min-h-screen bg-background text-foreground p-4 md:p-8 print:hidden">
         <header className="flex items-center justify-between gap-4 mb-8">
@@ -234,18 +270,18 @@ export default function ViewTransferPage() {
                   </>
               ) : (
                   <>
-                      <Button variant="outline" onClick={() => setIsEditing(true)}><Edit className="mr-2 h-4 w-4" /> {t('edit')}</Button>
-                      <Button variant="outline" onClick={handlePrint}>
-                          <Printer className="mr-2"/> {t('print')}
-                      </Button>
-                       <AlertDialog>
+                      <Button variant="outline" size="icon" onClick={() => setIsEditing(true)}><Edit className="h-4 w-4" /></Button>
+                      <Button variant="outline" size="icon" onClick={handlePrint}><Printer className="h-4 w-4" /></Button>
+                      <Button variant="outline" size="icon" onClick={handleDownloadPdf}><FileText className="h-4 w-4"/></Button>
+                      <Button variant="outline" size="icon" onClick={handleDownloadExcel}><FileSpreadsheet className="h-4 w-4"/></Button>
+                      <AlertDialog>
                           <AlertDialogTrigger asChild>
-                              <Button variant="destructive"><Trash2 className="mr-2 h-4 w-4"/> {t('delete')}</Button>
+                              <Button variant="destructive" size="icon"><Trash2 className="h-4 w-4"/></Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                               <AlertDialogHeader>
                               <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
-                              <AlertDialogDescription>This will delete the transfer slip and return all its items to the staging list. This action cannot be undone.</AlertDialogDescription>
+                              <AlertDialogDescription>{t('confirm_delete_transfer')}</AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                               <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
@@ -6,7 +7,7 @@ import Link from 'next/link';
 import { ArrowLeft, Archive, Calendar as CalendarIcon, Truck, User, Eye, Search, Inbox, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { format, parseISO, isSameMonth } from 'date-fns';
+import { format, parseISO, isSameMonth, subMonths, startOfMonth } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAppContext } from '@/context/app-provider';
 import { useTranslation } from '@/hooks/use-translation';
@@ -20,9 +21,13 @@ import { ReportWrapper } from '@/components/reports/ReportWrapper';
 export default function TransferArchivePage() {
   const { transfers, transferItems } = useAppContext();
   const { t } = useTranslation();
-  const [selectedMonth, setSelectedMonth] = useState<Date | undefined>(new Date());
+  const [selectedMonth, setSelectedMonth] = useState<Date | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState('');
   
+  useEffect(() => {
+    setSelectedMonth(startOfMonth(subMonths(new Date(), 1))); // Default to the start of last month
+  }, []);
+
   const isLoading = !transfers || !transferItems;
 
   const sortedTransfers = useMemo(() => {
@@ -221,7 +226,7 @@ export default function TransferArchivePage() {
             <h1 className="text-2xl md:text-3xl font-bold">{t('view_transfers')}</h1>
           </div>
           <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={handlePrint}><Printer className="mr-2 h-4 w-4"/> {t('print')}</Button>
+              <Button variant="outline" size="icon" onClick={handlePrint}><Printer className="h-4 w-4"/></Button>
               <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input 
