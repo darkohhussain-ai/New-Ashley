@@ -21,12 +21,21 @@ import type { Expense } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { DailyExpenseReportPdf } from '@/components/expenses/DailyExpenseReportPdf';
-import { ReportWrapper } from '@/components/reports/ReportWrapper';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'IQD', maximumFractionDigits: 0 }).format(amount);
 
-const mainExpenseTypes = ["Taxi Rent", "Purchases (Buying Items)"];
+const mainExpenseTypes = ["Taxi Expenses", "Purchases (Buying Items)"];
+
+const taxiSubTypes = [
+  "Taxi for warehouse organization",
+  "Taxi for loading items",
+  "Taxi to driver",
+  "Taxi return from driver",
+  "Taxi to technician for fixing defective items",
+  "Taxi for transporting furniture parts",
+];
+
 
 export default function AddExpensePage() {
   const { t, language } = useTranslation();
@@ -40,6 +49,7 @@ export default function AddExpensePage() {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [expenseType, setExpenseType] = useState('');
+  const [expenseSubType, setExpenseSubType] = useState('');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   
@@ -85,6 +95,7 @@ export default function AddExpensePage() {
   const resetForm = () => {
     setSelectedEmployee('');
     setExpenseType('');
+    setExpenseSubType('');
     setAmount('');
     setDescription('');
   }
@@ -104,7 +115,7 @@ export default function AddExpensePage() {
       amount: parsedAmount,
       notes: description,
       expenseType: expenseType,
-      expenseSubType: '', // Subtype removed
+      expenseSubType: expenseType === 'Taxi Expenses' ? expenseSubType : '',
     };
 
     if (editingExpense) {
@@ -116,7 +127,7 @@ export default function AddExpensePage() {
       const newExpense: Expense = {
         id: crypto.randomUUID(),
         ...expensePayload,
-        expenseReportId: '' // Simplified: No longer tied to reports
+        expenseReportId: '' 
       };
       setExpenses([...expenses, newExpense]);
       toast({ title: t('expense_added'), description: t('expense_added_desc', {amount: formatCurrency(newExpense.amount)})});
@@ -130,6 +141,7 @@ export default function AddExpensePage() {
     setEditingExpense(expense);
     setSelectedEmployee(expense.employeeId);
     setExpenseType(expense.expenseType || '');
+    setExpenseSubType(expense.expenseSubType || '');
     setAmount(String(expense.amount));
     setDescription(expense.notes || '');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -174,6 +186,17 @@ export default function AddExpensePage() {
                     </SelectContent>
                 </Select>
             </div>
+            {expenseType === 'Taxi Expenses' && (
+                <div className="space-y-2">
+                    <Label htmlFor="taxi-subtype">{t('taxi_sub_type')}</Label>
+                     <Select value={expenseSubType} onValueChange={setExpenseSubType} disabled={isSaving}>
+                        <SelectTrigger><SelectValue placeholder={t('select_taxi_sub_type')} /></SelectTrigger>
+                        <SelectContent>
+                            {taxiSubTypes.map(type => <SelectItem key={type} value={type}>{t(type.toLowerCase().replace(/\s/g, '_'))}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
+            )}
             <div className="space-y-2">
                 <Label htmlFor="amount">{t('amount_iqd')}</Label>
                 <Input id="amount" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="e.g., 25000" disabled={isSaving}/>
@@ -195,7 +218,7 @@ export default function AddExpensePage() {
         <div className="lg:col-span-2">
              <Card>
                 <CardHeader>
-                    <CardTitle className="text-center text-2xl" style={{color: settings.reportHeaderColors?.ashleyExpenses}}>
+                    <CardTitle className="text-center text-2xl">
                       {t('daily_expense_report')}
                     </CardTitle>
                     <CardDescription className="text-center">{date ? format(date, 'PPPP') : '...'}</CardDescription>
@@ -218,6 +241,7 @@ export default function AddExpensePage() {
                                       <TableCell>{getEmployeeName(exp.employeeId, language === 'ku')}</TableCell>
                                       <TableCell>
                                         <p>{t(exp.expenseType.toLowerCase().replace(/[\s()]/g, '_'))}</p>
+                                        {exp.expenseSubType && <p className="text-xs text-muted-foreground">{t(exp.expenseSubType.toLowerCase().replace(/\s/g, '_'))}</p>}
                                         {exp.notes && <p className="text-xs text-muted-foreground">{exp.notes}</p>}
                                       </TableCell>
                                       <TableCell className="text-right font-medium">{formatCurrency(exp.amount)}</TableCell>
