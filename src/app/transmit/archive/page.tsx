@@ -4,7 +4,7 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Archive, Calendar as CalendarIcon, Truck, User, Eye, Search, Inbox, Printer } from 'lucide-react';
+import { ArrowLeft, Archive, Calendar as CalendarIcon, Truck, User, Eye, Search, Inbox, Printer, FileSpreadsheet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { format, parseISO, isSameMonth, subMonths, startOfMonth } from 'date-fns';
@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ReportWrapper } from '@/components/reports/ReportWrapper';
+import * as XLSX from 'xlsx';
 
 export default function TransferArchivePage() {
   const { transfers, transferItems } = useAppContext();
@@ -98,6 +99,25 @@ export default function TransferArchivePage() {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleExportExcel = () => {
+    if (!sortedTransfers || sortedTransfers.length === 0) return;
+
+    const dataToExport = sortedTransfers.map(t => ({
+      [t('invoice_no')]: t.invoiceNumber ? t.invoiceNumber.toString().padStart(6, '0') : 'N/A',
+      [t('cargo_name')]: t.cargoName,
+      [t('destination')]: t.destinationCity,
+      [t('date')]: t.transferDate ? format(parseISO(t.transferDate), 'yyyy-MM-dd') : 'N/A',
+      [t('driver')]: t.driverName,
+      [t('manager')]: t.warehouseManagerName,
+      [t('items_count')]: t.itemIds.length
+    }));
+    
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Transfers');
+    XLSX.writeFile(workbook, `Transfers_${selectedMonth ? format(selectedMonth, 'yyyy-MM') : 'archive'}.xlsx`);
   };
 
   const PageContent = () => (
@@ -227,6 +247,7 @@ export default function TransferArchivePage() {
           </div>
           <div className="flex items-center gap-2">
               <Button variant="outline" size="icon" onClick={handlePrint}><Printer className="h-4 w-4"/></Button>
+              <Button variant="outline" size="icon" onClick={handleExportExcel}><FileSpreadsheet className="h-4 w-4"/></Button>
               <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input 

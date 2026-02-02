@@ -92,6 +92,7 @@ import {
 import { cn } from '@/lib/utils';
 import withAuth from '@/hooks/withAuth';
 import { useAppContext } from '@/context/app-provider';
+import { useAuth } from '@/hooks/use-auth';
 import { initialSettings, initialData } from '@/context/initial-data';
 import { getAllDataForExport, importData } from '@/hooks/use-local-storage';
 import { TransmitReportPdf } from '@/components/transmit/TransmitReportPdf';
@@ -475,12 +476,14 @@ function SettingsPage() {
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
   const { t } = useTranslation();
-  const { settings, setSettings, setEmployees, setItems, setExcelFiles, setLocations, setExpenses, setExpenseReports, setOvertime, setBonuses, setWithdrawals, setReceipts, setItemCategories, setTransfers, setTransferItems, setMarketingFeedbacks, setEvaluationQuestions, setUsers, setRoles, hasPermission } = useAppContext();
+  const { settings, setSettings, setEmployees, setItems, setExcelFiles, setLocations, setExpenses, setExpenseReports, setOvertime, setBonuses, setWithdrawals, setReceipts, setItemCategories, setTransfers, setTransferItems, setMarketingFeedbacks, setEvaluationQuestions, setUsers, setRoles } = useAppContext();
+  const { hasPermission } = useAuth();
 
   const [draftSettings, setDraftSettings] =
     useState<AppSettings>(initialSettings);
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const [activePdfTab, setActivePdfTab] = useState<'report' | 'invoice' | 'card' | 'datasheet'>('report');
   const [selectedReportType, setSelectedReportType] =
@@ -531,41 +534,39 @@ function SettingsPage() {
     setDraftSettings(prev => ({ ...prev, [key]: value }));
   };
   
-  const handleFontUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    settingKeyPath: string
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.name.endsWith('.ttf')) {
-        toast({
-            variant: 'destructive',
-            title: 'Invalid Font Type',
-            description: 'Please upload a TrueType Font (.ttf) file for PDF embedding.',
-        });
-        return;
-    }
-
     const reader = new FileReader();
-    reader.onload = (event) => {
-        const dataUrl = event.target?.result as string;
-        if (dataUrl) {
-            handleDraftChange('customFont', dataUrl);
-            toast({
-                title: "Font Ready",
-                description: "Custom font is loaded. Save changes to apply it to PDF reports.",
-            });
-        }
-    };
-    reader.onerror = (error) => {
-        console.error("Error reading font file:", error);
-        toast({
-            variant: 'destructive',
-            title: 'File Read Error',
-            description: 'Could not read the selected font file.',
+    reader.onload = event => {
+      const localUrl = event.target?.result as string;
+      if (localUrl) {
+        setDraftSettings(prev => {
+          const newSettings = JSON.parse(JSON.stringify(prev));
+          const keys = settingKeyPath.split('.');
+          let current: any = newSettings;
+          for (let i = 0; i < keys.length - 1; i++) {
+            if (!current[keys[i]]) current[keys[i]] = {};
+            current = current[keys[i]];
+          }
+          current[keys[keys.length - 1]] = localUrl;
+          return newSettings;
         });
+      }
+    };
+    reader.onerror = () => {
+      toast({
+        variant: 'destructive',
+        title: 'File Read Error',
+        description: 'Could not read the selected file.',
+      });
     };
     reader.readAsDataURL(file);
   };
-
 
   const handleThemeColorChange = (
     mode: 'light' | 'dark',
@@ -634,69 +635,36 @@ function SettingsPage() {
     }));
   };
 
-  const handleFileUpload = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    settingKeyPath: string
-  ) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = event => {
-      const localUrl = event.target?.result as string;
-      if (localUrl) {
-        setDraftSettings(prev => {
-          const newSettings = JSON.parse(JSON.stringify(prev));
-          const keys = settingKeyPath.split('.');
-          let current: any = newSettings;
-          for (let i = 0; i < keys.length - 1; i++) {
-            if (!current[keys[i]]) current[keys[i]] = {};
-            current = current[keys[i]];
-          }
-          current[keys[keys.length - 1]] = localUrl;
-          return newSettings;
-        });
-      }
-    };
-    reader.onerror = () => {
-      toast({
-        variant: 'destructive',
-        title: 'File Read Error',
-        description: 'Could not read the selected file.',
-      });
-    };
-    reader.readAsDataURL(file);
-  };
-
 
   const handleSave = async () => {
     if (!isAdmin) return;
     setIsSaving(true);
+    
     const savingToast = toast({
       title: 'Saving Settings...',
-      description: 'Please wait, this might take a moment.',
+      description: 'Please wait. This may take a moment.',
+      duration: Infinity,
     });
 
     try {
         await setSettings(draftSettings);
         
-        savingToast.update({ id: savingToast.id, title: 'Settings Saved', description: 'Applying changes and reloading...' });
+        savingToast.update({ id: savingToast.id, title: 'Settings Saved', description: 'Applying changes and reloading...', duration: 5000 });
 
-        // Notify other tabs to reload
         const channel = new BroadcastChannel('settings-update');
         channel.postMessage('reload');
         channel.close();
 
-        // Reload current tab after a short delay
         setTimeout(() => {
             window.location.reload();
         }, 1000);
     } catch (err: any) {
         console.error("Error saving settings:", err);
-        let description = 'An error occurred while saving.';
-        
+        let description = 'An error occurred while saving. Check the console for details.';
         if (err.message?.includes('exceeds the maximum allowed size')) {
-           description = "An uploaded image or font file is too large. Please use smaller files.";
+           description = "A file is too large. Please use smaller images/fonts and try again.";
+        } else if (err.code === 'permission-denied') {
+            description = "Permission denied. Ensure Firebase Storage CORS rules are configured correctly."
         }
         
         savingToast.update({ id: savingToast.id, variant: 'destructive', title: 'Save Failed', description });
@@ -735,7 +703,6 @@ function SettingsPage() {
             () => setOvertime(initialData.overtime),
             () => setBonuses(initialData.bonuses),
             () => setWithdrawals(initialData.withdrawals),
-            () => setReceipts(initialData.receipts),
             () => setItemCategories(initialData.itemCategories),
             () => setTransfers(initialData.transfers),
             () => setTransferItems(initialData.transferItems),
@@ -1289,34 +1256,6 @@ function SettingsPage() {
           </TabsContent>
 
           <TabsContent value="language" className="pt-6 space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Type /> {t('custom_app_font')}
-                </CardTitle>
-                <CardDescription>
-                  {t('upload_font_file')}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Input
-                  id="font-upload"
-                  type="file"
-                  accept=".ttf"
-                  onChange={handleFontUpload}
-                />
-                {draftSettings.customFont && (
-                  <div className="mt-4 space-y-2">
-                    <Label>{t('font_preview')}</Label>
-                    <div className="p-4 border rounded-lg" style={{ fontFamily: 'CustomAppFont' }}>
-                      <style>{`@font-face { font-family: 'CustomAppFont'; src: url(${draftSettings.customFont}); }`}</style>
-                      <p className="text-lg">The quick brown fox jumps over the lazy dog.</p>
-                      <p className="text-lg" dir="rtl">چۆنی باشی؟ سوپاس بۆ تۆ، من باشم.</p>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
             <LoginTextEditor
               draftSettings={draftSettings}
               setDraftSettings={setDraftSettings}
@@ -1731,5 +1670,3 @@ function SettingsPage() {
 }
 
 export default withAuth(SettingsPage);
-
-    

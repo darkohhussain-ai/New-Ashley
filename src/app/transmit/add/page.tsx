@@ -4,7 +4,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Plus, Trash2, Edit, Save, X, Loader2, ListPlus, Calendar as CalendarIcon } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Edit, Save, X, Loader2, ListPlus, Calendar as CalendarIcon, Printer, FileSpreadsheet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -21,6 +21,7 @@ import { useTranslation } from '@/hooks/use-translation';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import * as XLSX from 'xlsx';
 
 const destinations = ["Erbil", "Baghdad", "Diwan", "Dohuk"];
 const storageOptions = ["Ashley", "Huana", "Showroom"];
@@ -127,19 +128,54 @@ export default function AddItemsPage() {
     setEditingItem(JSON.parse(JSON.stringify(item))); // Deep copy
   }
   
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleExportExcel = () => {
+    const dataToExport = sortedItems.map(item => ({
+      [t('model')]: item.model,
+      [t('quantity')]: item.quantity,
+      [t('destination')]: item.destination,
+      [t('invoice_no')]: item.invoiceNo || 'N/A',
+      [t('status')]: item.status || 'N/A',
+      [t('notes')]: item.notes || 'N/A',
+    }));
+
+    if(dataToExport.length === 0){
+        toast({
+            variant: "destructive",
+            title: t('no_data_to_export'),
+            description: t('no_items_staged_yet'),
+        });
+        return;
+    }
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Staged Items');
+    XLSX.writeFile(workbook, 'staged_items.xlsx');
+  };
+
   if (isAppLoading) {
       return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
   return (
     <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
-      <header className="flex items-center gap-4 mb-8">
-        <Button variant="outline" size="icon" asChild>
-          <Link href="/transmit">
-            <ArrowLeft />
-          </Link>
-        </Button>
-        <h1 className="text-2xl md:text-3xl font-bold">{t('add_manage_items')}</h1>
+      <header className="flex items-center justify-between gap-4 mb-8">
+        <div className="flex items-center gap-4">
+          <Button variant="outline" size="icon" asChild>
+            <Link href="/transmit">
+              <ArrowLeft />
+            </Link>
+          </Button>
+          <h1 className="text-2xl md:text-3xl font-bold">{t('add_manage_items')}</h1>
+        </div>
+        <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={handlePrint}><Printer className="h-4 w-4" /></Button>
+            <Button variant="outline" size="icon" onClick={handleExportExcel}><FileSpreadsheet className="h-4 w-4" /></Button>
+        </div>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
