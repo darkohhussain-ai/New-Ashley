@@ -114,7 +114,7 @@ export default function ViewExpenseReportPage() {
      <div className="space-y-8">
           <Card>
             <CardHeader>
-              <CardTitle>{report.reportName}</CardTitle>
+              <CardTitle>{t('daily_expense_report')}</CardTitle>
               <CardDescription className="flex items-center gap-4 text-sm">
                 <span className="flex items-center gap-2"><CalendarIcon className="w-4 h-4"/>{format(parseISO(report.reportDate), 'PPP')}</span>
               </CardDescription>

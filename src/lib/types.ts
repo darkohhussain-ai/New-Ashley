@@ -235,6 +235,14 @@ export type ThemeColors = {
   locationOccupiedBg: string;
 }
 
+export type ReportHeaderColors = {
+    ashleyExpenses: string;
+    transmitCargo: string;
+    placementStorage: string;
+    marketingFeedback: string;
+    employees: string;
+}
+
 export type SalarySettings = {
     overtimeRate: number;
     bonusRate: number;
@@ -259,6 +267,7 @@ export type AppSettings = {
   lightThemeColors: ThemeColors;
   darkThemeColors: ThemeColors;
   salarySettings: SalarySettings;
+  reportHeaderColors: ReportHeaderColors;
   theme: 'light' | 'dark';
   language: Language;
 };

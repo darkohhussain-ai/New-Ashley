@@ -17,9 +17,6 @@ import { useTranslation } from '@/hooks/use-translation';
 import { useAuth } from '@/hooks/use-auth';
 import { FullMonthlyReportPdf } from '@/components/reports/FullMonthlyReportPdf';
 import { ReportWrapper } from '@/components/reports/ReportWrapper';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import { useToast } from '@/hooks/use-toast';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -34,9 +31,7 @@ export default function MonthlyReportPage() {
   const { employees, expenses, overtime, bonuses, withdrawals, settings } = useAppContext();
   const { user, hasPermission } = useAuth();
   const isReadOnly = !hasPermission('page:admin');
-  const { toast } = useToast();
-  const reportRef = useRef<HTMLDivElement>(null);
-
+  
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   
   useEffect(() => {
@@ -110,119 +105,6 @@ export default function MonthlyReportPage() {
   const handlePrint = () => {
     window.print();
   };
-
-  const handleGeneratePdf = async () => {
-    if (!selectedDate) return;
-    const doc = new jsPDF({
-      orientation: 'l',
-      unit: 'pt',
-      format: 'a4',
-    });
-
-    let activeFont = 'helvetica'; // Default PDF font
-
-    if (settings.customFont) {
-        try {
-            const base64Font = settings.customFont.split(',')[1];
-            doc.addFileToVFS(`CustomAppFont.ttf`, base64Font);
-            doc.addFont(`CustomAppFont.ttf`, 'CustomAppFont', 'normal');
-            activeFont = 'CustomAppFont';
-        } catch (e) {
-            console.error("Error with custom font:", e);
-            toast({
-                variant: "destructive",
-                title: "Font Error",
-                description: "Could not apply the custom font. Using default.",
-            });
-        }
-    } else if (settings.fontFamily) {
-        const fontToUse = settings.fontFamily.toLowerCase().split(',')[0].trim();
-        if (fontToUse.includes('times')) {
-            activeFont = 'times';
-        } else if (fontToUse.includes('courier')) {
-            activeFont = 'courier';
-        }
-    }
-    doc.setFont(activeFont);
-
-    const headerTitle = t('monthly_reports');
-    const headerDate = format(selectedDate, 'MMMM yyyy');
-
-    doc.setFontSize(18);
-    doc.text(headerTitle, doc.internal.pageSize.getWidth() / 2, 40, { align: 'center' });
-    doc.setFontSize(12);
-    doc.setTextColor(100);
-    doc.text(headerDate, doc.internal.pageSize.getWidth() / 2, 60, { align: 'center' });
-
-    const head = [[
-        t('employee'),
-        t('salary'),
-        t('overtime'),
-        t('bonuses'),
-        t('expenses'),
-        t('cash_withdrawals'),
-        t('net_salary'),
-    ]];
-
-    const body = monthlyReportData.records.map(record => [
-        getEmployeeName(record.employeeId, language === 'ku'),
-        isReadOnly ? '***' : formatCurrency(record.salary),
-        isReadOnly ? '***' : formatCurrency(record.totalOvertime),
-        isReadOnly ? '***' : formatCurrency(record.totalBonuses),
-        isReadOnly ? '***' : formatCurrency(record.totalExpenses),
-        isReadOnly ? '***' : formatCurrency(record.totalWithdrawals),
-        isReadOnly ? '***' : formatCurrency(record.netSalary),
-    ]);
-    
-    body.push([
-        { content: t('grand_total'), styles: { fontStyle: 'bold' } },
-        { content: isReadOnly ? '***' : formatCurrency(grandTotals.salary), styles: { fontStyle: 'bold' } },
-        { content: isReadOnly ? '***' : formatCurrency(grandTotals.totalOvertime), styles: { fontStyle: 'bold' } },
-        { content: isReadOnly ? '***' : formatCurrency(grandTotals.totalBonuses), styles: { fontStyle: 'bold' } },
-        { content: isReadOnly ? '***' : formatCurrency(grandTotals.totalExpenses), styles: { fontStyle: 'bold', textColor: [239, 68, 68] } },
-        { content: isReadOnly ? '***' : formatCurrency(grandTotals.totalWithdrawals), styles: { fontStyle: 'bold', textColor: [239, 68, 68] } },
-        { content: isReadOnly ? '***' : formatCurrency(grandTotals.netSalary), styles: { fontStyle: 'bold' } },
-    ]);
-    
-    autoTable(doc, {
-        head: head,
-        body: body,
-        startY: 80,
-        styles: {
-            font: activeFont,
-            fontSize: 8,
-            cellPadding: 4,
-            overflow: 'linebreak'
-        },
-        headStyles: {
-            fillColor: '#3B82F6',
-            textColor: 255,
-            fontStyle: 'normal',
-            halign: 'center',
-            fontSize: 9,
-            font: activeFont,
-        },
-        columnStyles: {
-            0: { halign: language === 'ku' ? 'right' : 'left' },
-            1: { halign: 'right' },
-            2: { halign: 'right' },
-            3: { halign: 'right' },
-            4: { halign: 'right' },
-            5: { halign: 'right' },
-            6: { halign: 'right' },
-        },
-        didDrawPage: (data) => {
-          doc.setFontSize(8);
-          doc.text(
-            `${t('page')} ${doc.internal.pages.length}`,
-            data.settings.margin.left,
-            doc.internal.pageSize.getHeight() - 10
-          );
-        },
-    });
-
-    doc.save(`monthly-report-${format(selectedDate, 'yyyy-MM')}.pdf`);
-  };
   
   const PageContent = () => (
       <>
@@ -235,49 +117,15 @@ export default function MonthlyReportPage() {
                 <CardDescription>{t('summary_for_month_desc')}</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>{t('employee')}</TableHead>
-                                <TableHead className="text-right">{t('salary')}</TableHead>
-                                <TableHead className="text-right">{t('overtime')}</TableHead>
-                                <TableHead className="text-right">{t('bonuses')}</TableHead>
-                                <TableHead className="text-right">{t('expenses')}</TableHead>
-                                <TableHead className="text-right">{t('cash_withdrawals')}</TableHead>
-                                <TableHead className="text-right font-bold">{t('net_salary')}</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {monthlyReportData.records.map(record => (
-                                <TableRow key={record.employeeId}>
-                                    <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{record.employeeName}</TableCell>
-                                    <TableCell className="text-right">{formatCurrency(record.salary)}</TableCell>
-                                    <TableCell className="text-right">{formatCurrency(record.totalOvertime)}</TableCell>
-                                    <TableCell className="text-right">{formatCurrency(record.totalBonuses)}</TableCell>
-                                    <TableCell className="text-right text-red-500">{formatCurrency(record.totalExpenses)}</TableCell>
-                                    <TableCell className="text-right text-red-500">{formatCurrency(record.totalWithdrawals)}</TableCell>
-                                    <TableCell className="text-right font-bold text-primary">{isReadOnly ? '***' : formatCurrency(record.netSalary)}</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                         <TableFooter>
-                            <TableRow>
-                                <TableCell className="font-bold">{t('grand_total')}</TableCell>
-                                <TableCell className="text-right font-bold">{formatCurrency(grandTotals.salary)}</TableCell>
-                                <TableCell className="text-right font-bold">{formatCurrency(grandTotals.totalOvertime)}</TableCell>
-                                <TableCell className="text-right font-bold">{formatCurrency(grandTotals.totalBonuses)}</TableCell>
-                                <TableCell className="text-right font-bold text-red-500">{formatCurrency(grandTotals.totalExpenses)}</TableCell>
-                                <TableCell className="text-right font-bold text-red-500">{formatCurrency(grandTotals.totalWithdrawals)}</TableCell>
-                                <TableCell className="text-right font-bold text-primary">{isReadOnly ? '***' : formatCurrency(grandTotals.netSalary)}</TableCell>
-                            </TableRow>
-                        </TableFooter>
-                    </Table>
-                </div>
+                <FullMonthlyReportPdf
+                  records={monthlyReportData.records}
+                  grandTotals={grandTotals}
+                  getEmployeeName={getEmployeeName}
+                />
               </CardContent>
             </Card>
           ) : (
-            <div className="text-center py-16 border-2 border-dashed rounded-lg">
+            <div className="text-center py-16 border-2 border-dashed rounded-lg print:hidden">
                 <CalendarIcon className="mx-auto h-12 w-12 text-muted-foreground" />
                 <h3 className="mt-4 text-lg font-medium">{t('no_records_found')}</h3>
                 <p className="mt-2 text-sm text-muted-foreground">{t('no_records_found_for_month', {month: selectedDate ? format(selectedDate, 'MMMM yyyy') : t('the_selected_month')})}</p>
@@ -293,11 +141,7 @@ export default function MonthlyReportPage() {
           title={t('monthly_reports')}
           date={selectedDate ? format(selectedDate, 'MMMM yyyy') : ''}
         >
-          {selectedDate && <FullMonthlyReportPdf
-              records={monthlyReportData.records}
-              grandTotals={grandTotals}
-              getEmployeeName={getEmployeeName}
-          />}
+          <PageContent />
         </ReportWrapper>
       </div>
 
@@ -321,9 +165,6 @@ export default function MonthlyReportPage() {
                 <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} captionLayout="dropdown-nav" fromYear={2020} toYear={2040} />
               </PopoverContent>
             </Popover>
-            <Button variant="outline" size="icon" onClick={handleGeneratePdf} disabled={isLoading || monthlyReportData.records.length === 0}>
-                <FileDown className="h-4 w-4"/>
-            </Button>
             <Button variant="outline" size="icon" onClick={handlePrint} disabled={isLoading || monthlyReportData.records.length === 0}><Printer className="h-4 w-4"/></Button>
           </div>
         </header>

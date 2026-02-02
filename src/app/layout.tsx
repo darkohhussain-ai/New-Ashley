@@ -59,6 +59,8 @@ function MainBackground() {
                 alt="Main background"
                 fill
                 className="object-cover"
+                unoptimized
+                crossOrigin="anonymous"
             />
             <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
         </div>
@@ -75,11 +77,9 @@ function AppContent({ children }: { children: React.ReactNode }) {
         document.documentElement.lang = language;
         document.documentElement.dir = language === 'ku' ? 'rtl' : 'ltr';
 
-        // Listen for settings updates from other tabs
         const channel = new BroadcastChannel('settings-update');
         const handleMessage = (event: MessageEvent) => {
             if (event.data === 'reload') {
-                // Add a small delay to allow data to sync, then reload
                 setTimeout(() => {
                     window.location.reload();
                 }, 500);

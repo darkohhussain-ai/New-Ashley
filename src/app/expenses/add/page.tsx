@@ -1,10 +1,10 @@
 
 'use client';
 
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { useSearchParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, Save, Trash2, Calendar as CalendarIcon, Loader2, User, Edit, X, Printer, RefreshCw } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { ArrowLeft, Plus, Save, Trash2, Calendar as CalendarIcon, Loader2, User, Edit, X, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,34 +13,26 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { format, formatISO, startOfDay, endOfDay, isWithinInterval, parseISO } from 'date-fns';
+import { format, startOfDay, endOfDay, isWithinInterval, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/context/app-provider';
-import type { Employee, Expense, ExpenseReport, AllPdfSettings } from '@/lib/types';
+import type { Expense } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { DailyExpenseReportPdf } from '@/components/expenses/DailyExpenseReportPdf';
 import { ReportWrapper } from '@/components/reports/ReportWrapper';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'IQD', maximumFractionDigits: 0 }).format(amount);
 
-const mainExpenseTypes = ["Taxi Expenses", "Purchases (Buying Items)"];
-const taxiSubTypes = [
-  "Taxi for warehouse organization",
-  "Taxi for loading items",
-  "Taxi to driver",
-  "Taxi return from driver",
-  "Taxi to technician for fixing defective items",
-  "Taxi for transporting furniture parts"
-];
+const mainExpenseTypes = ["Taxi Rent", "Purchases (Buying Items)"];
 
 export default function AddExpensePage() {
   const { t, language } = useTranslation();
   const { toast } = useToast();
-  const { employees, expenses, setExpenses, expenseReports, setExpenseReports, settings } = useAppContext();
+  const { employees, expenses, setExpenses, settings } = useAppContext();
 
-  const router = useRouter();
   const searchParams = useSearchParams();
   const dateParam = searchParams.get('date');
 
@@ -48,7 +40,6 @@ export default function AddExpensePage() {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [expenseType, setExpenseType] = useState('');
-  const [expenseSubType, setExpenseSubType] = useState('');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   
@@ -73,17 +64,15 @@ export default function AddExpensePage() {
     return employees.filter(e => e.role !== 'Marketing').sort((a, b) => a.name.localeCompare(b.name));
   }, [employees]);
 
-  const dailyReport = useMemo(() => {
-    if (!expenseReports || !date) return null;
-    const reportDateStr = format(date, 'yyyy-MM-dd');
-    return expenseReports.find(r => format(parseISO(r.reportDate), 'yyyy-MM-dd') === reportDateStr);
-  }, [expenseReports, date]);
-
   const dailyExpenses = useMemo(() => {
-    if (!dailyReport) return [];
-    return expenses.filter(exp => exp.expenseReportId === dailyReport.id)
-                   .sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
-  }, [expenses, dailyReport]);
+    if (!expenses || !date) return [];
+    const start = startOfDay(date);
+    const end = endOfDay(date);
+    return expenses.filter(exp => {
+      const expDate = parseISO(exp.date);
+      return isWithinInterval(expDate, { start, end });
+    }).sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
+  }, [expenses, date]);
   
   const getEmployeeName = (id: string, useKurdish: boolean = false) => {
     const employee = employees?.find(e => e.id === id);
@@ -91,32 +80,11 @@ export default function AddExpensePage() {
     return useKurdish && employee.kurdishName ? employee.kurdishName : employee.name;
   };
 
-  const groupedDailyExpenses = useMemo(() => {
-    if (!dailyExpenses || !employees) return [];
-    
-    const groups: Record<string, { employeeName: string; expenses: Expense[]; total: number }> = {};
-    
-    dailyExpenses.forEach(exp => {
-      if (!groups[exp.employeeId]) {
-        groups[exp.employeeId] = {
-          employeeName: getEmployeeName(exp.employeeId, language === 'ku'),
-          expenses: [],
-          total: 0
-        };
-      }
-      groups[exp.employeeId].expenses.push(exp);
-      groups[exp.employeeId].total += exp.amount;
-    });
-
-    return Object.values(groups);
-  }, [dailyExpenses, employees, language, getEmployeeName]);
-
   const grandTotal = useMemo(() => dailyExpenses.reduce((sum, exp) => sum + exp.amount, 0), [dailyExpenses]);
 
   const resetForm = () => {
     setSelectedEmployee('');
     setExpenseType('');
-    setExpenseSubType('');
     setAmount('');
     setDescription('');
   }
@@ -124,61 +92,34 @@ export default function AddExpensePage() {
   const handleAddOrUpdateExpense = () => {
     const parsedAmount = parseFloat(amount);
     if (!selectedEmployee || !amount || !date || isNaN(parsedAmount) || parsedAmount <= 0 || !expenseType) {
-      toast({ variant: 'destructive', title: t('missing_information'), description: "Please select an employee, type, and enter a valid positive amount." });
+      toast({ variant: 'destructive', title: t('missing_information'), description: t('add_expense_validation_error') });
       return;
     }
 
     setIsSaving(true);
     
-    const reportDateStr = format(date, 'yyyy-MM-dd');
-    let report = expenseReports.find(r => format(parseISO(r.reportDate), 'yyyy-MM-dd') === reportDateStr);
-    let newReportCreated = false;
-    if (!report) {
-        report = {
-            id: `report-${reportDateStr}`,
-            reportName: `Daily Expenses - ${format(date, 'PPP')}`,
-            reportDate: date.toISOString(),
-            totalAmount: 0
-        };
-        newReportCreated = true;
-    }
-
     const expensePayload = {
       employeeId: selectedEmployee,
       date: date.toISOString(),
       amount: parsedAmount,
       notes: description,
       expenseType: expenseType,
-      expenseSubType: expenseType === 'Taxi Expenses' ? expenseSubType : '',
+      expenseSubType: '', // Subtype removed
     };
 
     if (editingExpense) {
       const updatedExpense: Expense = { ...editingExpense, ...expensePayload };
-      const updatedExpenses = expenses.map(e => e.id === editingExpense.id ? updatedExpense : e);
-      setExpenses(updatedExpenses);
-      
-      const newTotalForReport = updatedExpenses.filter(e => e.expenseReportId === report!.id).reduce((sum, e) => sum + e.amount, 0);
-      setExpenseReports(expenseReports.map(r => r.id === report!.id ? {...r, totalAmount: newTotalForReport } : r));
-
-      toast({ title: "Expense Updated", description: "The expense record has been successfully updated."});
+      setExpenses(expenses.map(e => e.id === editingExpense.id ? updatedExpense : e));
+      toast({ title: t('expense_updated'), description: t('expense_updated_desc') });
       setEditingExpense(null);
     } else {
       const newExpense: Expense = {
         id: crypto.randomUUID(),
         ...expensePayload,
-        expenseReportId: report.id
+        expenseReportId: '' // Simplified: No longer tied to reports
       };
-      const updatedExpenses = [...expenses, newExpense];
-      setExpenses(updatedExpenses);
-      
-      const newTotalForReport = updatedExpenses.filter(e => e.expenseReportId === report!.id).reduce((sum, e) => sum + e.amount, 0);
-      if(newReportCreated){
-        setExpenseReports([...expenseReports, {...report, totalAmount: newTotalForReport}]);
-      } else {
-        setExpenseReports(expenseReports.map(r => r.id === report!.id ? {...r, totalAmount: newTotalForReport } : r));
-      }
-
-      toast({ title: "Expense Added", description: `An expense of ${formatCurrency(newExpense.amount)} has been added.`});
+      setExpenses([...expenses, newExpense]);
+      toast({ title: t('expense_added'), description: t('expense_added_desc', {amount: formatCurrency(newExpense.amount)})});
     }
 
     resetForm();
@@ -189,7 +130,6 @@ export default function AddExpensePage() {
     setEditingExpense(expense);
     setSelectedEmployee(expense.employeeId);
     setExpenseType(expense.expenseType || '');
-    setExpenseSubType(expense.expenseSubType || '');
     setAmount(String(expense.amount));
     setDescription(expense.notes || '');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -201,36 +141,13 @@ export default function AddExpensePage() {
   };
 
   const handleDelete = (expenseToDelete: Expense) => {
-    const updatedExpenses = expenses.filter(e => e.id !== expenseToDelete.id);
-    setExpenses(updatedExpenses);
-
-    const reportToUpdate = expenseReports.find(r => r.id === expenseToDelete.expenseReportId);
-    if (reportToUpdate) {
-        const newTotal = updatedExpenses.filter(e => e.expenseReportId === reportToUpdate.id).reduce((sum, e) => sum + e.amount, 0);
-        if (newTotal > 0) {
-            setExpenseReports(expenseReports.map(r => r.id === reportToUpdate.id ? {...r, totalAmount: newTotal} : r));
-        } else {
-            setExpenseReports(expenseReports.filter(r => r.id !== reportToUpdate.id));
-        }
-    }
-    toast({ title: "Expense Deleted", description: "The expense record has been removed." });
+    setExpenses(expenses.filter(e => e.id !== expenseToDelete.id));
+    toast({ title: t('expense_deleted'), description: t('expense_deleted_desc') });
   };
   
   const handlePrint = () => {
     window.print();
   }
-
-  const sortedExpenseReports = useMemo(() => {
-    if (!expenseReports) return [];
-    return [...expenseReports].sort((a, b) => parseISO(b.reportDate).getTime() - parseISO(a.reportDate).getTime());
-  }, [expenseReports]);
-
-  const handleReportSelect = (reportId: string) => {
-      const selectedReport = expenseReports.find(r => r.id === reportId);
-      if (selectedReport) {
-          setDate(parseISO(selectedReport.reportDate));
-      }
-  };
 
   const PageContent = () => (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -242,21 +159,6 @@ export default function AddExpensePage() {
             </CardHeader>
             <CardContent className="space-y-4">
             <div className="space-y-2">
-                <Label htmlFor="report-select">{t('or_load_from_report')}</Label>
-                <Select onValueChange={handleReportSelect}>
-                    <SelectTrigger id="report-select">
-                        <SelectValue placeholder={t('select_existing_report')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {sortedExpenseReports.map(report => (
-                            <SelectItem key={report.id} value={report.id}>
-                                {report.reportName}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-            </div>
-            <div className="space-y-2">
                 <Label htmlFor="employee">{t('employee')}</Label>
                 <Select value={selectedEmployee} onValueChange={setSelectedEmployee} disabled={isSaving}>
                 <SelectTrigger><SelectValue placeholder={t('select_an_employee')} /></SelectTrigger>
@@ -265,24 +167,13 @@ export default function AddExpensePage() {
             </div>
             <div className="space-y-2">
                 <Label htmlFor="expense-type">{t('expense_type')}</Label>
-                <Select value={expenseType} onValueChange={(v) => { setExpenseType(v); setExpenseSubType(''); }} disabled={isSaving}>
+                <Select value={expenseType} onValueChange={setExpenseType} disabled={isSaving}>
                     <SelectTrigger><SelectValue placeholder={t('select_expense_type')} /></SelectTrigger>
                     <SelectContent>
                         {mainExpenseTypes.map(type => <SelectItem key={type} value={type}>{t(type.toLowerCase().replace(/[\s()]/g, '_'))}</SelectItem>)}
                     </SelectContent>
                 </Select>
             </div>
-            {expenseType === 'Taxi Expenses' && (
-                <div className="space-y-2">
-                    <Label htmlFor="expense-sub-type">{t('taxi_sub_type')}</Label>
-                    <Select value={expenseSubType} onValueChange={setExpenseSubType} disabled={isSaving}>
-                        <SelectTrigger id="expense-sub-type"><SelectValue placeholder={t('select_taxi_sub_type')} /></SelectTrigger>
-                        <SelectContent>
-                            {taxiSubTypes.map(type => <SelectItem key={type} value={type}>{t(type.toLowerCase().replace(/\s/g, '_'))}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                </div>
-            )}
             <div className="space-y-2">
                 <Label htmlFor="amount">{t('amount_iqd')}</Label>
                 <Input id="amount" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="e.g., 25000" disabled={isSaving}/>
@@ -304,50 +195,59 @@ export default function AddExpensePage() {
         <div className="lg:col-span-2">
              <Card>
                 <CardHeader>
-                    <CardTitle className="text-center text-2xl">{t('daily_expense_report')}</CardTitle>
+                    <CardTitle className="text-center text-2xl" style={{color: settings.reportHeaderColors?.ashleyExpenses}}>
+                      {t('daily_expense_report')}
+                    </CardTitle>
                     <CardDescription className="text-center">{date ? format(date, 'PPPP') : '...'}</CardDescription>
                 </CardHeader>
                 <CardContent>
                     {isLoading ? <div className="text-center py-8"><Loader2 className="h-6 w-6 animate-spin mx-auto"/></div> : (
-                        groupedDailyExpenses.length > 0 ? (
-                           groupedDailyExpenses.map(group => (
-                                <div key={group.employeeName} className="mb-6 last:mb-0 break-inside-avoid">
-                                    <h3 className="text-lg font-semibold mb-2 pb-1 border-b" dir={language === 'ku' ? 'rtl' : 'ltr'}>{group.employeeName}</h3>
-                                    <div className="divide-y">
-                                        {group.expenses.map(exp => (
-                                            <div key={exp.id} className="flex justify-between items-start py-2 gap-2">
-                                                <div className="flex-1">
-                                                    <p>{t(exp.expenseType.toLowerCase().replace(/[\s()]/g, '_'))}{exp.expenseSubType ? ` (${t(exp.expenseSubType.toLowerCase().replace(/\s/g, '_'))})` : ''}</p>
-                                                    {exp.notes && <p className="text-xs text-muted-foreground">{exp.notes}</p>}
-                                                </div>
-                                                <p className="font-medium text-right">{formatCurrency(exp.amount)}</p>
-                                                 {!editingExpense && (
-                                                <div className="flex gap-1 print:hidden">
-                                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEditing(exp)}><Edit className="h-4 w-4"/></Button>
-                                                    <AlertDialog>
-                                                        <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"><Trash2 className="h-4 w-4"/></Button></AlertDialogTrigger>
-                                                        <AlertDialogContent>
-                                                            <AlertDialogHeader>
-                                                                <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
-                                                                <AlertDialogDescription>{t('confirm_delete_expense', {amount: exp.amount})}</AlertDialogDescription>
-                                                            </AlertDialogHeader>
-                                                            <AlertDialogFooter><AlertDialogCancel>{t('cancel')}</AlertDialogCancel><AlertDialogAction onClick={() => handleDelete(exp)}>{t('delete')}</AlertDialogAction></AlertDialogFooter>
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
-                                                </div>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div className="text-right font-semibold mt-2 pt-2 border-t">{t('total')}: {formatCurrency(group.total)}</div>
-                                </div>
-                           ))
+                        dailyExpenses.length > 0 ? (
+                            <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead>{t('employee')}</TableHead>
+                                    <TableHead>{t('details')}</TableHead>
+                                    <TableHead className="text-right">{t('amount')}</TableHead>
+                                    <TableHead className="print:hidden w-24"></TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {dailyExpenses.map(exp => (
+                                    <TableRow key={exp.id}>
+                                      <TableCell>{getEmployeeName(exp.employeeId, language === 'ku')}</TableCell>
+                                      <TableCell>
+                                        <p>{t(exp.expenseType.toLowerCase().replace(/[\s()]/g, '_'))}</p>
+                                        {exp.notes && <p className="text-xs text-muted-foreground">{exp.notes}</p>}
+                                      </TableCell>
+                                      <TableCell className="text-right font-medium">{formatCurrency(exp.amount)}</TableCell>
+                                      <TableCell className="print:hidden">
+                                        {!editingExpense && (
+                                          <div className="flex gap-1">
+                                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEditing(exp)}><Edit className="h-4 w-4"/></Button>
+                                              <AlertDialog>
+                                                  <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"><Trash2 className="h-4 w-4"/></Button></AlertDialogTrigger>
+                                                  <AlertDialogContent>
+                                                      <AlertDialogHeader>
+                                                          <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
+                                                          <AlertDialogDescription>{t('confirm_delete_expense', {amount: exp.amount})}</AlertDialogDescription>
+                                                      </AlertDialogHeader>
+                                                      <AlertDialogFooter><AlertDialogCancel>{t('cancel')}</AlertDialogCancel><AlertDialogAction onClick={() => handleDelete(exp)}>{t('delete')}</AlertDialogAction></AlertDialogFooter>
+                                                  </AlertDialogContent>
+                                              </AlertDialog>
+                                          </div>
+                                        )}
+                                      </TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                            </Table>
                         ) : (
                             <p className="text-center text-muted-foreground py-8">{t('no_expense_items_added')}</p>
                         )
                     )}
                 </CardContent>
-                {groupedDailyExpenses.length > 0 && (
+                {dailyExpenses.length > 0 && (
                     <CardFooter className="bg-muted/50 p-4 justify-end">
                         <div className="text-lg font-bold">
                             <span>{t('grand_total')}: </span>
@@ -367,9 +267,12 @@ export default function AddExpensePage() {
   return (
     <>
         <div className="hidden print:block">
-           <ReportWrapper>
-            <PageContent />
-           </ReportWrapper>
+           <DailyExpenseReportPdf
+              records={dailyExpenses}
+              date={date}
+              settings={settings}
+              getEmployeeName={getEmployeeName}
+           />
         </div>
         <div className="min-h-screen bg-background text-foreground print:hidden">
             <header className="bg-card border-b p-4">
@@ -399,21 +302,6 @@ export default function AddExpensePage() {
                                 }}
                                 captionLayout="dropdown-nav" fromYear={2020} toYear={2040} initialFocus 
                             />
-                            <div className="p-2 border-t">
-                                <Input 
-                                    type="text"
-                                    placeholder="yyyy-mm-dd"
-                                    value={date ? format(date, 'yyyy-MM-dd') : ''}
-                                    onChange={(e) => {
-                                        try {
-                                            const newDate = parseISO(e.target.value);
-                                            if (!isNaN(newDate.getTime())) {
-                                                setDate(newDate);
-                                            }
-                                        } catch {}
-                                    }}
-                                />
-                            </div>
                         </PopoverContent>
                         </Popover>
                         <Button variant="outline" size="icon" onClick={handlePrint} disabled={isLoading || dailyExpenses.length === 0}><Printer className="h-4 w-4"/></Button>

@@ -15,9 +15,9 @@ export const ReportWrapper = ({
   const { settings } = useAppContext();
 
   return (
-    <div className="p-4 bg-white text-black text-xs font-sans">
+    <div className="p-4 bg-white text-black font-sans">
       {settings?.printHeaderImage && (
-        <header className="mb-4 text-center">
+        <header className="mb-4 text-center break-inside-avoid">
           <img
             src={settings.printHeaderImage}
             alt="Report Header"
@@ -28,7 +28,7 @@ export const ReportWrapper = ({
       )}
 
       {title && (
-        <div className="text-center mb-4">
+        <div className="text-center mb-4 break-after-avoid">
           <h1 className="text-lg font-bold">{title}</h1>
           {date && <p className="text-gray-500 mt-1">{date}</p>}
         </div>
@@ -39,7 +39,7 @@ export const ReportWrapper = ({
       </main>
 
       {settings?.printFooterImage && (
-        <footer className="mt-4 pt-4 border-t">
+        <footer className="mt-4 pt-4 border-t break-before-avoid">
           <img
             src={settings.printFooterImage}
             alt="Report Footer"

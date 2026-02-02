@@ -17,7 +17,7 @@ export const FullMonthlyReportPdf = ({ records, grandTotals, getEmployeeName }: 
     const useKurdish = language === 'ku';
 
     return (
-        <Table>
+        <Table className="pdf-table">
             <TableHeader>
                 <TableRow>
                     <TableHead>{t('employee')}</TableHead>

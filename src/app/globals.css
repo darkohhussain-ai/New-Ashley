@@ -136,22 +136,8 @@
   body {
     background-color: white;
     color: black;
-    font-size: 10pt;
-  }
-  .print-hidden {
-    display: none;
-  }
-  .print\\:p-8 {
-      padding: 2rem;
-  }
-  .print\\:shadow-none {
-      box-shadow: none;
-  }
-  .print\\:border-none {
-      border: none;
-  }
-  .print\\:block {
-      display: block;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
   .pdf-table {
     font-size: 8pt !important;
