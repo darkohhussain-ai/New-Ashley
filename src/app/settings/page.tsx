@@ -31,6 +31,7 @@ import {
   Loader2,
   ClipboardList,
   Printer,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -89,17 +90,10 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
-import { LanguageContext, Translations } from '@/context/language-provider';
 import withAuth from '@/hooks/withAuth';
 import { useAppContext } from '@/context/app-provider';
 import { initialSettings, initialData } from '@/context/initial-data';
 import { getAllDataForExport, importData } from '@/hooks/use-local-storage';
-import { useStorage } from '@/firebase';
-import {
-  ref as storageRef,
-  uploadString,
-  getDownloadURL,
-} from 'firebase/storage';
 import { TransmitReportPdf } from '@/components/transmit/TransmitReportPdf';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -140,9 +134,9 @@ const mockTransfer: Transfer = {
 };
 
 const mockTransferItems: ItemForTransfer[] = [
-  { id: '1', model: 'Sofa Model X', quantity: 1, notes: 'Handle with care', destination: 'Erbil', createdAt: new Date().toISOString() },
-  { id: '2', model: 'Dining Table', quantity: 1, notes: '', destination: 'Erbil', createdAt: new Date().toISOString() },
-  { id: '3', model: 'Chair Model Y', quantity: 4, notes: 'Packed separately', destination: 'Erbil', createdAt: new Date().toISOString(), storage: 'Huana' },
+  { id: '1', model: 'Sofa Model X', quantity: 1, notes: 'Handle with care', destination: 'Erbil', createdAt: new Date().toISOString(), status: 'Pending' },
+  { id: '2', model: 'Dining Table', quantity: 1, notes: '', destination: 'Erbil', createdAt: new Date().toISOString(), status: 'Prepared' },
+  { id: '3', model: 'Chair Model Y', quantity: 4, notes: 'Packed separately', destination: 'Erbil', createdAt: new Date().toISOString(), storage: 'Huana', status: 'Approved' },
 ];
 
 function parseHsl(hsl: string): { h: string; s: string; l: string } {
@@ -480,13 +474,13 @@ function TranslationEditor({ onSave, draftSettings, setDraftSettings }: {
 function SettingsPage() {
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
-  const { t, language } = useTranslation();
-  const { settings, setSettings, setEmployees, setItems, setExcelFiles, setLocations, setExpenses, setExpenseReports, setOvertime, setBonuses, setWithdrawals, setReceipts, setItemCategories, setTransfers, setTransferItems, setMarketingFeedbacks, setEvaluationQuestions, setUsers, setRoles } = useAppContext();
-  const storage = useStorage();
+  const { t } = useTranslation();
+  const { settings, setSettings, setEmployees, setItems, setExcelFiles, setLocations, setExpenses, setExpenseReports, setOvertime, setBonuses, setWithdrawals, setReceipts, setItemCategories, setTransfers, setTransferItems, setMarketingFeedbacks, setEvaluationQuestions, setUsers, setRoles, hasPermission } = useAppContext();
 
   const [draftSettings, setDraftSettings] =
     useState<AppSettings>(initialSettings);
   const [isDirty, setIsDirty] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [activePdfTab, setActivePdfTab] = useState<'report' | 'invoice' | 'card' | 'datasheet'>('report');
   const [selectedReportType, setSelectedReportType] =
@@ -495,6 +489,8 @@ function SettingsPage() {
   const importInputRef = useRef<HTMLInputElement>(null);
   const [resetConfirmText, setResetConfirmText] = useState("");
   const pdfPreviewRef = useRef<HTMLDivElement>(null);
+  
+  const isAdmin = hasPermission('admin:all');
 
   useEffect(() => {
     if (settings) {
@@ -674,81 +670,40 @@ function SettingsPage() {
 
 
   const handleSave = async () => {
+    if (!isAdmin) return;
+    setIsSaving(true);
     const savingToast = toast({
       title: 'Saving Settings...',
-      description: 'Please wait. This may take a moment if you uploaded new images.',
+      description: 'Please wait, this might take a moment.',
     });
 
     try {
-      let finalSettings = JSON.parse(JSON.stringify(draftSettings));
+        await setSettings(draftSettings);
+        
+        savingToast.update({ id: savingToast.id, title: 'Settings Saved', description: 'Applying changes and reloading...' });
 
-      const getProperty = (obj: any, path: string) => path.split('.').reduce((o, i) => o?.[i], obj);
-      const setProperty = (obj: any, path: string, value: any) => {
-          const keys = path.split('.');
-          let current = obj;
-          for (let i = 0; i < keys.length - 1; i++) {
-              if (!current[keys[i]]) current[keys[i]] = {};
-              current = current[keys[i]];
-          }
-          current[keys[keys.length - 1]] = value;
-      };
+        // Notify other tabs to reload
+        const channel = new BroadcastChannel('settings-update');
+        channel.postMessage('reload');
+        channel.close();
 
-      const imagePaths = [
-          'appLogo', 'mainBackground', 'loginBackground', 'dashboardBanner',
-          'printHeaderImage', 'printFooterImage',
-          'pdfSettings.report.logo', 'pdfSettings.invoice.logo', 
-          'pdfSettings.card.logo', 'pdfSettings.datasheet.logo'
-      ];
-
-      const uploadPromises: Promise<void>[] = [];
-
-      for (const path of imagePaths) {
-          const value = getProperty(finalSettings, path);
-          
-          if (typeof value === 'string' && value.startsWith('data:image')) {
-              const filePath = `settings/${path.replace(/\./g, '_')}_${Date.now()}.png`;
-              const sRef = storageRef(storage, filePath);
-
-              const uploadPromise = uploadString(sRef, value, 'data_url')
-                  .then(() => getDownloadURL(sRef))
-                  .then(downloadURL => {
-                      setProperty(finalSettings, path, downloadURL);
-                  });
-              
-              uploadPromises.push(uploadPromise);
-          }
-      }
-
-      await Promise.all(uploadPromises);
-      
-      await setSettings(finalSettings);
-      
-      savingToast.update({ id: savingToast.id, title: 'Settings Saved', description: 'Applying changes and reloading...' });
-
-      try {
-          const channel = new BroadcastChannel('settings-update');
-          channel.postMessage('reload');
-          channel.close();
-      } catch(e) {
-          console.error("Could not broadcast settings update", e);
-      }
-
-      setTimeout(() => {
-          window.location.reload();
-      }, 1000);
-
+        // Reload current tab after a short delay
+        setTimeout(() => {
+            window.location.reload();
+        }, 1000);
     } catch (err: any) {
-      console.error("Error saving settings:", err);
-      let description = 'An error occurred while saving.';
-      if (err.code === 'storage/unauthorized') {
-          description = "Image upload failed due to a permissions error. This is likely a CORS configuration issue on your Firebase Storage bucket. Please ensure your app's domain is allowed."
-      } else if (err.message?.includes('exceeds the maximum allowed size')) {
-           description = "A setting value is too large. This can happen with very large text inputs."
-      }
-      
-      savingToast.update({ id: savingToast.id, variant: 'destructive', title: 'Save Failed', description });
+        console.error("Error saving settings:", err);
+        let description = 'An error occurred while saving.';
+        
+        if (err.message?.includes('exceeds the maximum allowed size')) {
+           description = "An uploaded image or font file is too large. Please use smaller files.";
+        }
+        
+        savingToast.update({ id: savingToast.id, variant: 'destructive', title: 'Save Failed', description });
+        setIsSaving(false);
     }
   };
+
 
   const handleCancel = () => {
     setDraftSettings(settings);
@@ -877,50 +832,6 @@ function SettingsPage() {
     }
   };
 
-  const handleGeneratePdf = async () => {
-    const input = pdfPreviewRef.current;
-    if (!input) {
-      toast({
-        variant: 'destructive',
-        title: 'Error generating PDF',
-        description: 'Preview content not found.',
-      });
-      return;
-    }
-
-    const pdf = new jsPDF({
-      orientation: 'p',
-      unit: 'pt',
-      format: 'a4',
-    });
-
-    await pdf.html(input, {
-      callback: function (doc) {
-        doc.save('preview.pdf');
-      },
-      margin: [40, 30, 40, 30],
-      autoPaging: 'text',
-      html2canvas: {
-        scale: 2,
-        useCORS: true,
-        onclone: (document) => {
-          const style = document.createElement('style');
-          let fontStyles = '';
-          // Prioritize custom font if it exists
-          if (settings.customFont) {
-              fontStyles = `@font-face { font-family: 'CustomAppFont'; src: url(${settings.customFont}); } * { font-family: 'CustomAppFont' !important; }`;
-          } 
-          // Fallback to selected default font
-          else if (settings.fontFamily) {
-              fontStyles = `* { font-family: '${settings.fontFamily}', sans-serif !important; }`;
-          }
-          style.innerHTML = fontStyles;
-          document.head.appendChild(style);
-        },
-      },
-    });
-  };
-
   if (!settings || !draftSettings) {
     return (
       <div className="h-screen bg-background text-foreground flex flex-col">
@@ -940,11 +851,11 @@ function SettingsPage() {
   const currentPdfSettings = draftSettings.pdfSettings[activePdfTab];
 
   return (
-    <div className="h-screen bg-background text-foreground flex flex-col">
-      <style>{`
+    <div className={cn("h-screen bg-background text-foreground flex flex-col", !isAdmin && "pointer-events-none opacity-60")}>
+       <style>{`
             @font-face {
-              font-family: '${draftSettings.fontFamily}';
-              src: local('${draftSettings.fontFamily}');
+              font-family: 'CustomAppFont';
+              src: ${draftSettings.customFont ? `url(${draftSettings.customFont})` : ''};
             }
         `}</style>
       <header className="bg-card border-b p-4">
@@ -958,17 +869,27 @@ function SettingsPage() {
             <h1 className="text-xl">{t('settings')}</h1>
           </div>
           <div className="ml-auto flex items-center gap-4">
-            <Button onClick={handleSave} disabled={!isDirty}>
-              <Save className="mr-2 h-4 w-4" />
+            <Button onClick={handleSave} disabled={!isDirty || isSaving || !isAdmin}>
+              {isSaving ? <Loader2 className="animate-spin mr-2"/> : <Save className="mr-2 h-4 w-4" />}
               {t('save_all_changes')}
             </Button>
-            <Button onClick={handleCancel} disabled={!isDirty} variant="ghost">
+            <Button onClick={handleCancel} disabled={!isDirty || isSaving} variant="ghost">
               <X className="mr-2 h-4 w-4" /> {t('cancel')}
             </Button>
           </div>
         </div>
       </header>
       <main className="flex-1 overflow-y-auto p-4 md:p-6 container mx-auto">
+        {!isAdmin && (
+             <div className="absolute inset-0 bg-background/50 backdrop-blur-sm z-10 flex items-center justify-center">
+                <Card className="max-w-md text-center">
+                    <CardHeader>
+                        <CardTitle>Permissions Required</CardTitle>
+                        <CardDescription>You must be an administrator to change these settings.</CardDescription>
+                    </CardHeader>
+                </Card>
+            </div>
+        )}
         <Tabs defaultValue="design" className="w-full">
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="design">
@@ -1512,28 +1433,6 @@ function SettingsPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    <div className="space-y-2">
-                        <Label htmlFor="pdf-scale">PDF Content Scale: {currentPdfSettings.scale ?? 2}</Label>
-                        <Slider
-                            id="pdf-scale"
-                            min={1}
-                            max={4}
-                            step={0.1}
-                            value={[currentPdfSettings.scale ?? 2]}
-                            onValueChange={(value) => handlePdfSettingChange('scale', value[0])}
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="pdf-width">PDF Content Width: {currentPdfSettings.width ?? 800}px</Label>
-                        <Slider
-                            id="pdf-width"
-                            min={500}
-                            max={1200}
-                            step={10}
-                            value={[currentPdfSettings.width ?? 800]}
-                            onValueChange={(value) => handlePdfSettingChange('width', value[0])}
-                        />
-                    </div>
                     {activePdfTab === 'report' ? (
                       <div className="space-y-4">
                         <CardDescription>
@@ -1636,8 +1535,8 @@ function SettingsPage() {
                 {activePdfTab === 'invoice' && (
                   <Card>
                     <CardHeader>
-                      <CardTitle>Branch Colors</CardTitle>
-                      <CardDescription>Set a unique color for each destination branch report.</CardDescription>
+                      <CardTitle>{t('branch_colors')}</CardTitle>
+                      <CardDescription>{t('branch_colors_desc')}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       {destinations.map(dest => (
@@ -1664,7 +1563,6 @@ function SettingsPage() {
                         {t('live_preview_desc', { type: activePdfTab })}
                       </CardDescription>
                     </div>
-                    <Button onClick={handleGeneratePdf}>{t('export_pdf')}</Button>
                   </CardHeader>
                   <CardContent className="bg-muted/50 p-6 rounded-b-lg flex justify-center items-start overflow-auto">
                     <div
@@ -1676,7 +1574,6 @@ function SettingsPage() {
                             title="Example Report Title"
                             date="This is an example subtitle"
                             logoSrc={currentPdfSettings.logo ?? draftSettings.appLogo}
-                            themeColor={draftSettings.pdfSettings.report.reportColors?.[selectedReportType] || '#22c55e'}
                         >
                             <div className="p-6 flex-grow" style={{fontFamily: `${draftSettings.fontFamily}, sans-serif`}}>
                                 <h3 className="mb-2">{t('sample_section')}</h3>
@@ -1718,7 +1615,6 @@ function SettingsPage() {
                             title="Product Datasheet"
                             date={format(new Date(), 'PPP')}
                             logoSrc={currentPdfSettings.logo ?? draftSettings.appLogo}
-                            themeColor={draftSettings.pdfSettings.datasheet.themeColor || '#059669'}
                         >
                             <div className="p-6" style={{fontFamily: `${draftSettings.fontFamily}, sans-serif`}}>
                                 <h3 className="text-lg font-bold mb-2">Sample Product: Ergonomic Chair</h3>
@@ -1835,3 +1731,5 @@ function SettingsPage() {
 }
 
 export default withAuth(SettingsPage);
+
+    
