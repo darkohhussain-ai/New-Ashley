@@ -53,6 +53,8 @@ export function MonthlyFinancialChart() {
       { name: t('cash_withdrawals'), total: monthlyTotals.withdrawals, fill: settings.pdfSettings.report.reportColors?.withdrawal || 'hsl(var(--chart-4))' },
   ], [t, monthlyTotals, settings.pdfSettings.report.reportColors]);
 
+  const hasData = useMemo(() => chartData.some(d => d.total > 0), [chartData]);
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -73,25 +75,31 @@ export function MonthlyFinancialChart() {
         </Popover>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={350}>
-            <BarChart data={chartData}>
-                <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => formatCurrency(value)} />
-                <Tooltip 
-                    formatter={(value: number) => formatCurrency(value)} 
-                    cursor={{ fill: 'hsl(var(--accent))' }} 
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--background))',
-                      borderColor: 'hsl(var(--border))'
-                    }}
-                />
-                <Bar dataKey="total" name={t('total_amount')} radius={[4, 4, 0, 0]}>
-                    {chartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                </Bar>
-            </BarChart>
-        </ResponsiveContainer>
+        {hasData ? (
+            <ResponsiveContainer width="100%" height={350}>
+                <BarChart data={chartData}>
+                    <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => formatCurrency(value)} />
+                    <Tooltip 
+                        formatter={(value: number) => formatCurrency(value)} 
+                        cursor={{ fill: 'hsl(var(--accent))' }} 
+                        contentStyle={{
+                          backgroundColor: 'hsl(var(--background))',
+                          borderColor: 'hsl(var(--border))'
+                        }}
+                    />
+                    <Bar dataKey="total" name={t('total_amount')} radius={[4, 4, 0, 0]}>
+                        {chartData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.fill} />
+                        ))}
+                    </Bar>
+                </BarChart>
+            </ResponsiveContainer>
+        ) : (
+            <div className="flex h-[350px] items-center justify-center">
+                <p className="text-muted-foreground">{t('no_records_found_for_month', { month: selectedDate ? format(selectedDate, 'MMMM yyyy') : t('the_selected_month') })}</p>
+            </div>
+        )}
       </CardContent>
     </Card>
   );

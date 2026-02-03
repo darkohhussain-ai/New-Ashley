@@ -17,11 +17,11 @@ type DashboardCardProps = {
 export function DashboardCard({ title, icon: Icon, href, color }: DashboardCardProps) {
   return (
     <Link href={href} className="group block -mx-2 rounded-lg transition-colors hover:bg-accent">
-      <div className="flex items-center p-3">
-        <div className={cn("p-3 rounded-lg text-white", color)}>
-          <Icon className="w-5 h-5" />
+      <div className="flex items-center p-4">
+        <div className={cn("p-4 rounded-lg text-white", color)}>
+          <Icon className="w-6 h-6" />
         </div>
-        <span className="ml-4 font-medium text-foreground/90">{title}</span>
+        <span className="ml-5 text-base font-semibold text-foreground/90">{title}</span>
         <ChevronRight className="ml-auto h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1" />
       </div>
     </Link>

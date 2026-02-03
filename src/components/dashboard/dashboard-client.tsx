@@ -15,8 +15,11 @@ import {
 } from 'lucide-react';
 import { useAppContext } from '@/context/app-provider';
 import { useTranslation } from '@/hooks/use-translation';
-import { DashboardCard } from './dashboard-card';
+import { DashboardCard } from '@/components/dashboard/dashboard-card';
 import { useAuth } from '@/hooks/use-auth';
+import { MonthlyFinancialChart } from '@/components/dashboard/MonthlyFinancialChart';
+import { StorageSummaryChart } from '@/components/dashboard/StorageSummaryChart';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 
 const allMenuItems = [
     {
@@ -119,7 +122,7 @@ export function DashboardClient() {
       {settings.dashboardBanner && (
         <div className="container mx-auto px-4">
             <div
-            className="relative w-full mx-auto my-4 max-w-6xl rounded-lg overflow-hidden"
+            className="relative w-full mx-auto my-4 max-w-6xl rounded-lg overflow-hidden animate-fade-in-down"
             style={{ height: `${settings.dashboardBannerHeight}px` }}
             >
             <Image
@@ -133,23 +136,37 @@ export function DashboardClient() {
             </div>
         </div>
       )}
-      <main className="container mx-auto p-4 md:p-8">
-        <div className="mb-8">
-          <h2 className="text-2xl">{t('welcome_back')}</h2>
-          <p className="text-muted-foreground">{t('select_service')}</p>
+      <div className="container mx-auto p-4 md:p-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-1 space-y-2">
+                 <Card className="animate-fade-in-down">
+                    <CardHeader>
+                        <CardTitle>{t('welcome_back')}</CardTitle>
+                        <CardDescription>{t('select_service')}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-1">
+                        {menuItems.map((item) => (
+                            <DashboardCard
+                            key={item.title}
+                            title={t(item.title)}
+                            icon={item.icon}
+                            href={item.href}
+                            color={item.color}
+                            />
+                        ))}
+                    </CardContent>
+                </Card>
+            </div>
+            <div className="lg:col-span-2 grid grid-cols-1 xl:grid-cols-2 gap-8">
+                <div className="animate-fade-in-down" style={{ animationDelay: '200ms' }}>
+                    <MonthlyFinancialChart />
+                </div>
+                <div className="animate-fade-in-down" style={{ animationDelay: '400ms' }}>
+                    <StorageSummaryChart />
+                </div>
+            </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {menuItems.map((item) => (
-            <DashboardCard
-              key={item.title}
-              title={t(item.title)}
-              icon={item.icon}
-              href={item.href}
-              color={item.color}
-            />
-          ))}
-        </div>
-      </main>
+      </div>
       <NewsTicker />
     </>
   );

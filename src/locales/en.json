@@ -722,5 +722,6 @@
   "no_storage_data_available": "No storage status data is available to display.",
   "not_set": "Not Set",
   "yearly_activity_overview": "Yearly Activity Overview",
-  "yearly_activity_overview_desc": "A summary of financial activities for the selected year."
+  "yearly_activity_overview_desc": "A summary of financial activities for the selected year.",
+  "no_activity_for_year": "No activity recorded for {year}."
 }

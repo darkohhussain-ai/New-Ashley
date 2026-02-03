@@ -722,6 +722,6 @@
   "no_storage_data_available": "هیچ داتایەکی دۆخی کۆگا بۆ پیشاندان بەردەست نییە.",
   "not_set": "دانەنراوە",
   "yearly_activity_overview": "پوختەی چالاکی ساڵانە",
-  "yearly_activity_overview_desc": "پوختەی چالاکییە داراییەکان بۆ ساڵی هەڵبژێردراو."
+  "yearly_activity_overview_desc": "پوختەی چالاکییە داراییەکان بۆ ساڵی هەڵبژێردراو.",
+  "no_activity_for_year": "هیچ چالاکییەک بۆ ساڵی {year} تۆمار نەکراوە."
 }
-

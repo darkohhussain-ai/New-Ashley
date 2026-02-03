@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useState } from 'react';
@@ -28,7 +29,7 @@ export function EmployeeActivityChart({ activityData }: { activityData: Activity
     const { t } = useTranslation();
     const [selectedYear, setSelectedYear] = useState<string>(String(getYear(new Date())));
 
-    const { chartData, availableYears } = useMemo(() => {
+    const { chartData, availableYears, hasData } = useMemo(() => {
         const allData = [
             ...activityData.expenses,
             ...activityData.overtime,
@@ -37,6 +38,8 @@ export function EmployeeActivityChart({ activityData }: { activityData: Activity
         ];
         
         const years = [...new Set(allData.map(d => getYear(parseISO(d.date))))].sort((a,b) => b-a);
+        if(years.length === 0) years.push(getYear(new Date()));
+        
         const currentYear = parseInt(selectedYear);
 
         const monthlyTotals = Array.from({ length: 12 }, (_, i) => ({
@@ -72,7 +75,9 @@ export function EmployeeActivityChart({ activityData }: { activityData: Activity
             }
         });
 
-        return { chartData: monthlyTotals, availableYears: years.map(String) };
+        const dataExists = monthlyTotals.some(m => m.Expenses > 0 || m.Overtime > 0 || m.Bonuses > 0 || m.Withdrawals < 0);
+
+        return { chartData: monthlyTotals, availableYears: years.map(String), hasData: dataExists };
     }, [activityData, selectedYear]);
 
     return (
@@ -92,23 +97,29 @@ export function EmployeeActivityChart({ activityData }: { activityData: Activity
                 </Select>
             </CardHeader>
             <CardContent>
-                <ResponsiveContainer width="100%" height={350}>
-                    <BarChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                        <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => formatCurrency(value)} />
-                        <Tooltip
-                            formatter={(value: number) => formatCurrency(value)}
-                            cursor={{ fill: 'hsl(var(--accent))' }}
-                            contentStyle={{ backgroundColor: 'hsl(var(--background))', borderColor: 'hsl(var(--border))' }}
-                        />
-                        <Legend />
-                        <Bar dataKey="Expenses" name={t('expenses')} stackId="a" fill="hsl(var(--chart-4))" />
-                        <Bar dataKey="Overtime" name={t('overtime')} stackId="a" fill="hsl(var(--chart-2))" />
-                        <Bar dataKey="Bonuses" name={t('bonuses')} stackId="a" fill="hsl(var(--chart-1))" />
-                        <Bar dataKey="Withdrawals" name={t('cash_withdrawals')} stackId="a" fill="hsl(var(--chart-5))" />
-                    </BarChart>
-                </ResponsiveContainer>
+                {hasData ? (
+                    <ResponsiveContainer width="100%" height={350}>
+                        <BarChart data={chartData}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                            <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => formatCurrency(value)} />
+                            <Tooltip
+                                formatter={(value: number) => formatCurrency(value)}
+                                cursor={{ fill: 'hsl(var(--accent))' }}
+                                contentStyle={{ backgroundColor: 'hsl(var(--background))', borderColor: 'hsl(var(--border))' }}
+                            />
+                            <Legend />
+                            <Bar dataKey="Expenses" name={t('expenses')} stackId="a" fill="hsl(var(--chart-4))" />
+                            <Bar dataKey="Overtime" name={t('overtime')} stackId="a" fill="hsl(var(--chart-2))" />
+                            <Bar dataKey="Bonuses" name={t('bonuses')} stackId="a" fill="hsl(var(--chart-1))" />
+                            <Bar dataKey="Withdrawals" name={t('cash_withdrawals')} stackId="a" fill="hsl(var(--chart-5))" />
+                        </BarChart>
+                    </ResponsiveContainer>
+                ) : (
+                    <div className="flex h-[350px] items-center justify-center">
+                        <p className="text-muted-foreground">{t('no_activity_for_year', { year: selectedYear })}</p>
+                    </div>
+                )}
             </CardContent>
         </Card>
     );
