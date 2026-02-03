@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -14,28 +15,42 @@ import type { Item, StorageLocation } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
 
 
-const SectionButton = ({ id, code, items, onClick, className, isHighlighted }: { id: string, code: string; items: Item[]; onClick: () => void, className?: string, isHighlighted?: boolean }) => {
-  const itemCount = items.length;
-  return (
-    <Button
-      id={id}
-      variant="outline"
-      className={cn(`h-14 w-14 flex flex-col items-center justify-center p-1 border-2 transition-all duration-200 text-xs`,
-        itemCount > 0 ? 'border-location-occupied-border bg-location-occupied-bg hover:bg-location-occupied-bg/80' : 'hover:border-muted-foreground/50',
-        isHighlighted && 'ring-2 ring-offset-2 ring-primary',
-        className
-      )}
-      onClick={onClick}
-    >
-      <span className="font-mono">{code}</span>
-      {itemCount > 0 && (
-        <span className="text-primary flex items-center gap-1 mt-1">
-          <Box className="w-3 h-3" />
-          {itemCount}
-        </span>
-      )}
-    </Button>
-  );
+const Shelf = ({ loc, items, onClick, isHighlighted }: { loc: StorageLocation, items: Item[], onClick: (loc: StorageLocation) => void, isHighlighted: boolean }) => {
+    const itemCount = items.length;
+    const isOccupied = itemCount > 0;
+    const locationCode = loc.name.split('-').pop();
+    
+    return (
+        <div 
+            id={loc.id}
+            className="flex-shrink-0"
+            title={`${loc.name}: ${itemCount} items`}
+        >
+            <button 
+                onClick={() => onClick(loc)}
+                className={cn(
+                    "relative w-12 h-16 bg-gray-300/70 dark:bg-gray-700/70 border border-gray-400/70 dark:border-gray-600/70 rounded-sm flex items-end justify-center pb-1 transition-all group focus:outline-none focus:ring-2 focus:ring-primary focus:z-10",
+                    isOccupied && "bg-location-occupied-bg/70 border-location-occupied-border/70",
+                    isHighlighted && "ring-2 ring-primary z-10"
+                )}
+            >
+                <div className={cn(
+                    "absolute -top-3 left-0 w-full h-3 bg-gray-200/70 dark:bg-gray-800/70 border-t border-x border-gray-400/70 dark:border-gray-500/70 rounded-t-sm transform -skew-x-[45deg]",
+                    isOccupied && "bg-location-occupied-bg border-location-occupied-border",
+                    "group-hover:bg-primary/20 group-hover:border-primary"
+                )} />
+
+                <div className={cn(
+                     "absolute top-0 right-0 w-3 h-full bg-gray-200/70 dark:bg-gray-800/70 border-y border-r border-gray-400/70 dark:border-gray-500/70 rounded-r-sm transform -skew-y-[45deg] origin-top-right",
+                     isOccupied && "bg-location-occupied-bg/50 border-location-occupied-border/50",
+                     "group-hover:bg-primary/10 group-hover:border-primary/50"
+                 )} />
+
+                <span className="relative text-xs font-mono text-muted-foreground group-hover:text-primary">{locationCode}</span>
+                {isOccupied && <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary/80" />}
+            </button>
+        </div>
+    );
 };
 
 export default function AshleyMapPage() {
@@ -69,7 +84,6 @@ export default function AshleyMapPage() {
     }
   }, [ashleyLocations]);
 
-
   const handleSectionClick = (location: StorageLocation) => {
     setSelectedLocation(location);
     setIsDialogOpen(true);
@@ -77,38 +91,41 @@ export default function AshleyMapPage() {
     setItemsInLocation(foundItems);
   };
 
-  const { floor4, floor3 } = useMemo(() => {
-    if (!ashleyLocations) return { floor4: [], floor3: { area1: [], office: [] } };
+  const { floor4, floor3area1Units, floor3office } = useMemo(() => {
+    if (!ashleyLocations) return { floor4: [], floor3area1Units: {}, floor3office: [] };
     
     const floor4 = ashleyLocations
       .filter(l => l.name.startsWith('A-4-'))
-      .sort((a,b) => a.name.localeCompare(b.name, undefined, {numeric: true}));
+      .sort((a,b) => {
+        const numA = parseInt(a.name.split('-')[2]);
+        const numB = parseInt(b.name.split('-')[2]);
+        return numA - numB;
+      });
     
-    const area1Units: Record<string, StorageLocation[]> = {};
-    const office = ashleyLocations
-      .filter(l => l.name.startsWith('A-3-O-'))
-      .sort((a,b) => a.name.localeCompare(b.name));
-
+    const floor3area1Units: Record<string, StorageLocation[]> = {};
     ashleyLocations.filter(l => l.name.startsWith('A-3-1-')).forEach(loc => {
       const parts = loc.name.split('-');
       if (parts.length !== 5) return;
       const unit = parts[3];
-      if (!area1Units[unit]) area1Units[unit] = [];
-      area1Units[unit].push(loc);
+      if (!floor3area1Units[unit]) floor3area1Units[unit] = [];
+      floor3area1Units[unit].push(loc);
     });
 
-    Object.values(area1Units).forEach(unitSections => 
-      unitSections.sort((a,b) => a.name.localeCompare(b.name, undefined, {numeric: true}))
+    Object.values(floor3area1Units).forEach(unitSections => 
+      unitSections.sort((a,b) => {
+          const numA = parseInt(a.name.split('-')[4]);
+          const numB = parseInt(b.name.split('-')[4]);
+          return numA - numB;
+      })
     );
     
-    const area1 = Object.keys(area1Units).sort().map(unitKey => ({
-      name: `${t('unit')} ${unitKey}`,
-      sections: area1Units[unitKey]
-    }));
+    const floor3office = ashleyLocations
+      .filter(l => l.name.startsWith('A-3-O-'))
+      .sort((a,b) => a.name.localeCompare(b.name));
+    
+    return { floor4, floor3area1Units, floor3office };
+  }, [ashleyLocations]);
 
-    return { floor4, floor3: { area1, office } };
-  }, [ashleyLocations, t]);
-  
   const itemsByLocationId = useMemo(() => {
     if (!allItems) return new Map<string, Item[]>();
     return allItems.reduce((acc, item) => {
@@ -134,11 +151,11 @@ export default function AshleyMapPage() {
         </header>
         <main className="space-y-8">
           {isLoading ? (
-            <div className="space-y-6">
+             <div className="space-y-6">
                 {[...Array(2)].map((_, i) => (
                     <Card key={i} className="animate-pulse">
                         <CardHeader><Skeleton className="h-7 w-48" /></CardHeader>
-                        <CardContent><Skeleton className="h-40 w-full" /></CardContent>
+                        <CardContent><Skeleton className="h-64 w-full" /></CardContent>
                     </Card>
                 ))}
             </div>
@@ -148,18 +165,19 @@ export default function AshleyMapPage() {
                 <CardHeader>
                   <CardTitle>{t('floor_4')}</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
-                    {floor4.map(loc => (
-                      <SectionButton 
-                        key={loc.id} 
-                        id={loc.id}
-                        code={loc.name.replace('A-4-', '')} 
-                        items={itemsByLocationId.get(loc.id) || []}
-                        isHighlighted={loc.id === highlightId}
-                        onClick={() => handleSectionClick(loc)} />
-                    ))}
-                  </div>
+                <CardContent className="p-8 flex justify-center bg-gray-100 dark:bg-gray-900/30 rounded-xl overflow-x-auto">
+                    <div className="flex flex-col gap-12">
+                        <div className="flex flex-nowrap gap-2">
+                             {floor4.slice(0, 8).map(loc => (
+                                <Shelf key={loc.id} loc={loc} items={itemsByLocationId.get(loc.id) || []} onClick={handleSectionClick} isHighlighted={highlightId === loc.id} />
+                            ))}
+                        </div>
+                        <div className="flex flex-nowrap gap-2">
+                             {floor4.slice(8, 16).map(loc => (
+                                <Shelf key={loc.id} loc={loc} items={itemsByLocationId.get(loc.id) || []} onClick={handleSectionClick} isHighlighted={highlightId === loc.id} />
+                            ))}
+                        </div>
+                    </div>
                 </CardContent>
               </Card>
 
@@ -167,49 +185,36 @@ export default function AshleyMapPage() {
                 <CardHeader>
                   <CardTitle>{t('floor_3')}</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-8">
-                  <div>
-                    <h3 className="mb-4">{t('area_1')}</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {floor3.area1.map(unit => (
-                        <Card key={unit.name} className="p-3">
-                           <CardDescription className="text-center mb-2">{unit.name}</CardDescription>
-                           <div className="grid grid-cols-2 gap-2">
-                              {unit.sections.map(loc => (
-                                <SectionButton 
-                                  key={loc.id}
-                                  id={loc.id}
-                                  code={loc.name.split('-').slice(4).join('-')}
-                                  items={itemsByLocationId.get(loc.id) || []}
-                                  isHighlighted={loc.id === highlightId}
-                                  onClick={() => handleSectionClick(loc)}
-                                />
-                              ))}
-                           </div>
-                        </Card>
-                      ))}
+                <CardContent className="p-8 flex flex-wrap gap-12 justify-center items-start bg-gray-100 dark:bg-gray-900/30 rounded-xl">
+                    <div className="space-y-6">
+                        <CardTitle className="text-center">{t('area_1')}</CardTitle>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-12">
+                            {Object.keys(floor3area1Units).sort((a,b) => parseInt(a) - parseInt(b)).map(unitKey => (
+                                <div key={unitKey} className="flex flex-col items-center gap-2">
+                                    <CardDescription>{t('unit')} {unitKey}</CardDescription>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {floor3area1Units[unitKey].map(loc => (
+                                            <Shelf key={loc.id} loc={loc} items={itemsByLocationId.get(loc.id) || []} onClick={handleSectionClick} isHighlighted={highlightId === loc.id} />
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
-                  </div>
-                  <div>
-                    <h3 className="mb-4">{t('area_2_office')}</h3>
-                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                       {floor3.office.map(loc => (
-                        <SectionButton 
-                          key={loc.id}
-                          id={loc.id} 
-                          code={loc.name.replace('A-3-O-', '')} 
-                          items={itemsByLocationId.get(loc.id) || []}
-                          isHighlighted={loc.id === highlightId}
-                          onClick={() => handleSectionClick(loc)} 
-                        />
-                      ))}
+
+                    <div className="space-y-6 pt-2">
+                         <CardTitle className="text-center">{t('area_2_office')}</CardTitle>
+                         <div className="grid grid-cols-3 gap-2">
+                            {floor3office.map(loc => (
+                                <Shelf key={loc.id} loc={loc} items={itemsByLocationId.get(loc.id) || []} onClick={handleSectionClick} isHighlighted={highlightId === loc.id} />
+                            ))}
+                        </div>
                     </div>
-                  </div>
                 </CardContent>
               </Card>
             </>
           )}
-           {(!isLoading && floor4.length === 0 && floor3.area1.length === 0 && floor3.office.length === 0) && (
+           {(!isLoading && ashleyLocations.length === 0) && (
              <div className="text-center py-16 border-2 border-dashed rounded-lg">
                 <Box className="mx-auto h-12 w-12 text-muted-foreground" />
                 <h3 className="mt-4 text-lg">{t('no_ashley_locations_found')}</h3>
@@ -230,7 +235,7 @@ export default function AshleyMapPage() {
                 <TableHeader>
                     <TableRow>
                         <TableHead>{t('model')}</TableHead>
-                        <TableHead className="text-right">{t('quantity_short')}</TableHead>
+                        <TableHead className="text-right">{t('quantity')}</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -250,3 +255,4 @@ export default function AshleyMapPage() {
     </Dialog>
   );
 }
+    
