@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -201,7 +200,6 @@ export default function HuanaMapPage() {
                 </div>
             </div>
           )}
-           <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 bg-red-500 text-white px-8 py-2 rounded-md font-bold shadow-lg">DOOR</div>
         </main>
       </div>
       <DialogContent className="max-w-lg">

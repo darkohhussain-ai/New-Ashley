@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -126,7 +125,7 @@ export default function AshleyMapPage() {
       <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
         <header className="flex items-center gap-4 mb-8">
           <Button variant="outline" size="icon" asChild>
-            <Link href="/">
+            <Link href="/items">
               <ArrowLeft />
               <span className="sr-only">{t('back_to_dashboard')}</span>
             </Link>
