@@ -716,5 +716,9 @@
   "available_quantity": "بەردەستە: {qty}",
   "transfer_quantity": "بڕی گواستنەوە",
   "create_transfer_validation_step1": "تکایە پێش بەردەوامبوون هەموو وردەکارییەکانی گواستنەوە پڕبکەرەوە.",
-  "no_items_to_transfer": "هیچ کاڵایەک بۆ گواستنەوە هەڵنەبژێردراوە."
+  "no_items_to_transfer": "هیچ کاڵایەک بۆ گواستنەوە هەڵنەبژێردراوە.",
+  "branch_colors": "ڕەنگی لقەکان",
+  "branch_colors_desc": "ڕەنگێکی تایبەت بۆ هەر لقێکی مەبەست دابنێ.",
+  "confirm_remove_item": "دڵنیایت دەتەوێت {model} لەم گواستنەوەیە بسڕیتەوە؟ دەگەڕێتەوە بۆ لیستی کاڵا ئامادەکراوەکان.",
+  "remove_from_transfer": "سڕینەوە لە گواستنەوە"
 }

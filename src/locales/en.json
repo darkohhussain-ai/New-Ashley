@@ -716,5 +716,9 @@
   "available_quantity": "Available: {qty}",
   "transfer_quantity": "Transfer Qty",
   "create_transfer_validation_step1": "Please fill out all transfer details before proceeding.",
-  "no_items_to_transfer": "No items selected for transfer."
+  "no_items_to_transfer": "No items selected for transfer.",
+  "branch_colors": "Branch Colors",
+  "branch_colors_desc": "Set a unique color for each destination branch.",
+  "confirm_remove_item": "Are you sure you want to remove {model} from this transfer? It will be returned to the staged items list.",
+  "remove_from_transfer": "Remove from Transfer"
 }

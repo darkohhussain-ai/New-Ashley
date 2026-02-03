@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useMemo, useRef, useEffect, useState } from 'react';
@@ -39,10 +38,12 @@ export default function ViewTransferPage() {
   
   const [isEditing, setIsEditing] = useState(false);
   const [editableTransfer, setEditableTransfer] = useState<Transfer | null>(null);
+  const [editableItems, setEditableItems] = useState<ItemForTransfer[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const pdfRef = useRef<HTMLDivElement>(null);
 
   const filteredItems = useMemo(() => {
+    if (isEditing) return editableItems;
     if (!items) return [];
     if (!searchQuery.trim()) return items;
     const queryLower = searchQuery.toLowerCase();
@@ -50,13 +51,16 @@ export default function ViewTransferPage() {
       item.model.toLowerCase().includes(queryLower) ||
       (item.invoiceNo && item.invoiceNo.toLowerCase().includes(queryLower))
     );
-  }, [items, searchQuery]);
+  }, [items, searchQuery, isEditing, editableItems]);
 
   useEffect(() => {
     if (transfer) {
         setEditableTransfer(JSON.parse(JSON.stringify(transfer)));
     }
-  }, [transfer]);
+    if (items) {
+        setEditableItems(JSON.parse(JSON.stringify(items)));
+    }
+  }, [transfer, items]);
   
   const totalYearlyInvoices = useMemo(() => {
       if (!transfer || !transfers) return 0;
@@ -64,10 +68,28 @@ export default function ViewTransferPage() {
       return transfers.filter(t => t.transferDate && new Date(t.transferDate).getFullYear() === currentYear).length;
   }, [transfers, transfer]);
   
+  const handleRemoveItemFromTransfer = (itemId: string) => {
+    setEditableItems(current => current.filter(item => item.id !== itemId));
+  };
+
   const handleSave = () => {
-    if (!editableTransfer || !transfers) return;
-    setTransfers(prev => prev.map(t => t.id === editableTransfer.id ? editableTransfer : t));
-    toast({ title: "Transfer Updated", description: "The transfer details have been saved." });
+    if (!editableTransfer || !transfers || !transferItems) return;
+    
+    const originalItemIds = new Set(items?.map(i => i.id));
+    const finalItemIds = new Set(editableItems.map(i => i.id));
+    const removedItemIds = Array.from(originalItemIds).filter(id => !finalItemIds.has(id));
+
+    const updatedTransfer = { ...editableTransfer, itemIds: Array.from(finalItemIds) };
+    setTransfers(prev => prev.map(t => t.id === updatedTransfer.id ? updatedTransfer : t));
+
+    setTransferItems(prev => prev.map(item => {
+      if (removedItemIds.includes(item.id)) {
+        return { ...item, transferId: null };
+      }
+      return item;
+    }));
+
+    toast({ title: "Transfer Updated", description: "The transfer details and item list have been saved." });
     setIsEditing(false);
   };
 
@@ -196,6 +218,7 @@ export default function ViewTransferPage() {
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="pl-10"
+                                disabled={isEditing}
                             />
                         </div>
                     </div>
@@ -211,6 +234,7 @@ export default function ViewTransferPage() {
                                     <TableHead>{t('storage')}</TableHead>
                                     <TableHead>{t('status')}</TableHead>
                                     <TableHead>{t('notes')}</TableHead>
+                                    {isEditing && <TableHead className="text-right">{t('actions')}</TableHead>}
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -222,6 +246,27 @@ export default function ViewTransferPage() {
                                         <TableCell>{item.storage || 'N/A'}</TableCell>
                                         <TableCell>{item.status || 'N/A'}</TableCell>
                                         <TableCell className="text-muted-foreground">{item.notes || t('na')}</TableCell>
+                                        {isEditing && (
+                                            <TableCell className="text-right">
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                        <AlertDialogTitle>{t('remove_from_transfer')}</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            {t('confirm_remove_item', {model: item.model})}
+                                                        </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                        <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={() => handleRemoveItemFromTransfer(item.id)}>{t('delete')}</AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            </TableCell>
+                                        )}
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -300,4 +345,3 @@ export default function ViewTransferPage() {
   );
 }
 
-    

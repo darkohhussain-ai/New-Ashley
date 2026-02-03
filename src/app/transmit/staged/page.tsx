@@ -1,11 +1,10 @@
 
-
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { ArrowLeft, Loader2, ListPlus, FileDown, Building, Calendar } from 'lucide-react';
+import { ArrowLeft, Loader2, ListPlus, FileDown, Building, Calendar, Printer, FileSpreadsheet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -15,6 +14,7 @@ import { useAppContext } from '@/context/app-provider';
 import { useTranslation } from '@/hooks/use-translation';
 import { TransmitReportPdf } from '@/components/transmit/TransmitReportPdf';
 import html2canvas from 'html2canvas';
+import * as XLSX from 'xlsx';
 
 const destinations = ["Erbil", "Baghdad", "Diwan", "Dohuk"];
 
@@ -24,8 +24,6 @@ export default function StagedItemsPage() {
   const { pdfSettings, customFont } = settings || {};
   const searchParams = useSearchParams();
   const [selectedDestination, setSelectedDestination] = useState<string | null>(null);
-
-  const pdfRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const destinationParam = searchParams.get('destination');
@@ -51,46 +49,35 @@ export default function StagedItemsPage() {
             .filter(t => t.destinationCity === dest && t.transferDate && !isNaN(parseISO(t.transferDate).getTime()))
             .sort((a,b) => parseISO(b.transferDate).getTime() - parseISO(a.transferDate).getTime())[0];
         
+        const color = pdfSettings?.invoice?.branchColors?.[dest as keyof typeof pdfSettings.invoice.branchColors] || '#cccccc';
+
         return {
             destination: dest,
             stagedItemCount: itemsForDest.length,
-            lastTransferDate: lastTransfer ? lastTransfer.transferDate : null
+            lastTransferDate: lastTransfer ? lastTransfer.transferDate : null,
+            color: color
         };
     });
-  }, [stagedItems, transfers]);
+  }, [stagedItems, transfers, pdfSettings]);
   
-  const handleDownloadPdf = async () => {
-    if (!pdfRef.current || !selectedDestination || !pdfSettings) return;
+  const handlePrint = () => {
+    window.print();
+  };
 
-    const pdfContentEl = pdfRef.current;
-    const scale = pdfSettings.invoice?.scale ?? 2;
-    const contentWidth = pdfSettings.invoice?.width ?? 800;
+  const handleExportExcel = () => {
+    if (!itemsForSelectedDestination || itemsForSelectedDestination.length === 0) return;
+    const dataToExport = itemsForSelectedDestination.map(item => ({
+        [t('model')]: item.model,
+        [t('quantity')]: item.quantity,
+        [t('invoice_no')]: item.invoiceNo || 'N/A',
+        [t('storage')]: item.storage || 'N/A',
+        [t('notes')]: item.notes || 'N/A',
+    }));
 
-    const originalWidth = pdfContentEl.style.width;
-    pdfContentEl.style.width = `${contentWidth}px`;
-    
-    const doc = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
-    
-    const canvas = await html2canvas(pdfContentEl, { 
-      scale,
-      useCORS: true, 
-      backgroundColor: 'white',
-      onclone: (document) => {
-        if (customFont) {
-            const style = document.createElement('style');
-            style.innerHTML = `@font-face { font-family: 'CustomAppFont'; src: url(${customFont}); } body, table, div, p, h1, h2, h3, span { font-family: 'CustomAppFont' !important; }`;
-            document.head.appendChild(style);
-        }
-      }
-    });
-
-    pdfContentEl.style.width = originalWidth;
-
-    const imgData = canvas.toDataURL('image/png');
-    const pdfWidth = doc.internal.pageSize.getWidth();
-    
-    doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfWidth / (canvas.width / canvas.height));
-    doc.save(`staged-items-${selectedDestination}-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, `Staged - ${selectedDestination}`);
+    XLSX.writeFile(workbook, `staged-items-${selectedDestination}-${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
   };
 
   if (isAppLoading) {
@@ -110,16 +97,14 @@ export default function StagedItemsPage() {
   if (selectedDestination) {
     return (
         <>
-            <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-                {pdfSettings && <div ref={pdfRef}>
-                    <TransmitReportPdf
-                        transfer={{ destinationCity: selectedDestination, transferDate: new Date().toISOString() }}
-                        items={itemsForSelectedDestination}
-                        settings={pdfSettings.invoice}
-                    />
-                </div>}
+            <div className="hidden print:block">
+                <TransmitReportPdf
+                    transfer={{ destinationCity: selectedDestination, transferDate: new Date().toISOString() }}
+                    items={itemsForSelectedDestination}
+                    settings={pdfSettings?.invoice || {}}
+                />
             </div>
-            <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
+            <div className="min-h-screen bg-background text-foreground p-4 md:p-8 print:hidden">
                 <header className="flex items-center justify-between gap-4 mb-8">
                     <div className="flex items-center gap-4">
                         <Button variant="outline" size="icon" onClick={() => setSelectedDestination(null)}>
@@ -127,9 +112,10 @@ export default function StagedItemsPage() {
                         </Button>
                         <h1 className="text-2xl md:text-3xl font-bold">{t('staged_items_for')} {selectedDestination}</h1>
                     </div>
-                    <Button onClick={handleDownloadPdf} disabled={itemsForSelectedDestination.length === 0}>
-                        <FileDown className="mr-2 h-4 w-4" /> {t('download_pdf')}
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button onClick={handlePrint} variant="outline" size="icon" disabled={itemsForSelectedDestination.length === 0}><Printer className="h-4 w-4" /></Button>
+                        <Button onClick={handleExportExcel} variant="outline" size="icon" disabled={itemsForSelectedDestination.length === 0}><FileSpreadsheet className="h-4 w-4" /></Button>
+                    </div>
                 </header>
                 <Card>
                 <CardContent className="pt-6">
@@ -191,11 +177,11 @@ export default function StagedItemsPage() {
             </CardHeader>
             <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {destinationStats.map(stat => (
-                    <Card key={stat.destination} className="p-4 hover:bg-muted/50 cursor-pointer" onClick={() => setSelectedDestination(stat.destination)}>
-                        <CardHeader className="p-2 pt-0">
+                    <Card key={stat.destination} className="hover:bg-muted/50 cursor-pointer border-2" style={{borderColor: stat.color}} onClick={() => setSelectedDestination(stat.destination)}>
+                        <CardHeader className="p-4 pb-2">
                             <CardTitle className="flex items-center gap-2"><Building className="w-5 h-5 text-primary"/>{stat.destination}</CardTitle>
                         </CardHeader>
-                        <CardContent className="p-2 space-y-1 text-sm">
+                        <CardContent className="p-4 pt-0 space-y-1 text-sm">
                             <p><strong>{stat.stagedItemCount}</strong> {t('items_staged')}</p>
                             <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
                                 <Calendar className="w-3 h-3" />

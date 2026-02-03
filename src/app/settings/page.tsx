@@ -120,7 +120,7 @@ const mockEmployee: Employee = {
   phone: '555-1234',
   employmentStartDate: '2022-01-15T00:00:00.000Z',
   dateOfBirth: '1985-05-20T00:00:00.000Z',
-  isActive: true
+  isActive: true,
 };
 
 const mockTransfer: Transfer = {
@@ -483,7 +483,7 @@ function SettingsPage() {
     useState<AppSettings>(initialSettings);
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
+  const [isUploading, setIsUploading] = useState<string | null>(null);
 
   const [activePdfTab, setActivePdfTab] = useState<'report' | 'invoice' | 'card' | 'datasheet'>('report');
   const [selectedReportType, setSelectedReportType] =
@@ -668,6 +668,7 @@ function SettingsPage() {
         }
         
         savingToast.update({ id: savingToast.id, variant: 'destructive', title: 'Save Failed', description });
+    } finally {
         setIsSaving(false);
     }
   };
