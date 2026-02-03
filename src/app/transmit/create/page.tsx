@@ -1,10 +1,9 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, Truck, Calendar as CalendarIcon, Printer, ArrowRight, Save, Loader2 } from 'lucide-react';
+import { ArrowLeft, Plus, Truck, Calendar as CalendarIcon, Printer, ArrowRight, Save, Loader2, ListChecks } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -21,7 +20,6 @@ import { Calendar } from '@/components/ui/calendar';
 import { useAppContext } from '@/context/app-provider';
 import type { Transfer, ItemForTransfer } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
-import { TransmitReportPdf } from '@/components/transmit/TransmitReportPdf';
 
 const destinations = ["Erbil", "Baghdad", "Diwan", "Dohuk"];
 
@@ -47,6 +45,7 @@ export default function CreateTransferPage() {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   
   const [itemsToTransfer, setItemsToTransfer] = useState< (ItemForTransfer & { transferQuantity: number })[] >([]);
+  const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
   
   const [lastTransfer, setLastTransfer] = useState<Transfer | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -69,6 +68,8 @@ export default function CreateTransferPage() {
       
       const stagedItems = transferItems.filter(item => !item.transferId && item.destination === transferDetails.destinationCity);
       setItemsToTransfer(stagedItems.map(item => ({ ...item, transferQuantity: item.quantity })));
+      // Select all items by default
+      setSelectedItemIds(new Set(stagedItems.map(item => item.id)));
       setStep(2);
   };
   
@@ -87,10 +88,10 @@ export default function CreateTransferPage() {
   
 
   const handleCreateTransfer = async () => {
-    const selectedItems = itemsToTransfer.filter(item => item.transferQuantity > 0);
+    const selectedItems = itemsToTransfer.filter(item => selectedItemIds.has(item.id) && item.transferQuantity > 0);
 
     if (selectedItems.length === 0) {
-        toast({ variant: 'destructive', title: t('no_items_to_transfer'), description: "Please select at least one item or set a quantity greater than zero." });
+        toast({ variant: 'destructive', title: t('no_items_to_transfer'), description: "Please select at least one item and ensure its quantity is greater than zero." });
         return;
     }
     
@@ -155,7 +156,6 @@ export default function CreateTransferPage() {
         
         setLastTransfer(newTransfer);
         setIsModalOpen(true);
-        toast({ title: t('transfer_slip_created_title'), description: t('transfer_slip_created_desc', { cargoName }) });
         
         // Reset state for next transfer
         setStep(1);
@@ -269,7 +269,7 @@ export default function CreateTransferPage() {
         {step === 2 && (
              <Card>
                 <CardHeader>
-                    <CardTitle>{t('step_2_title')}</CardTitle>
+                    <CardTitle className="flex items-center gap-2"><ListChecks /> {t('step_2_title')}</CardTitle>
                     <CardDescription>{t('step_2_desc')}</CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -277,13 +277,43 @@ export default function CreateTransferPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
+                                     <TableHead className="w-12">
+                                        <Checkbox
+                                            checked={itemsToTransfer.length > 0 && selectedItemIds.size === itemsToTransfer.length}
+                                            onCheckedChange={(checked) => {
+                                                if (checked) {
+                                                    setSelectedItemIds(new Set(itemsToTransfer.map(item => item.id)));
+                                                } else {
+                                                    setSelectedItemIds(new Set());
+                                                }
+                                            }}
+                                            aria-label="Select all"
+                                        />
+                                    </TableHead>
                                     <TableHead>{t('model')}</TableHead>
                                     <TableHead className="w-48">{t('transfer_quantity')}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {itemsToTransfer.length > 0 ? itemsToTransfer.map((item) => (
-                                    <TableRow key={item.id}>
+                                    <TableRow key={item.id} data-state={selectedItemIds.has(item.id) ? "selected" : ""}>
+                                        <TableCell>
+                                            <Checkbox
+                                                checked={selectedItemIds.has(item.id)}
+                                                onCheckedChange={(checked) => {
+                                                    setSelectedItemIds(prev => {
+                                                        const newSet = new Set(prev);
+                                                        if (checked) {
+                                                            newSet.add(item.id);
+                                                        } else {
+                                                            newSet.delete(item.id);
+                                                        }
+                                                        return newSet;
+                                                    });
+                                                }}
+                                                aria-label="Select row"
+                                            />
+                                        </TableCell>
                                         <TableCell>
                                             <p className="font-medium">{item.model}</p>
                                             <p className="text-xs text-muted-foreground">{t('available_quantity', {qty: item.quantity})}</p>
@@ -296,12 +326,13 @@ export default function CreateTransferPage() {
                                                 max={item.quantity}
                                                 min={0}
                                                 className="w-24"
+                                                disabled={!selectedItemIds.has(item.id)}
                                             />
                                         </TableCell>
                                     </TableRow>
                                 )) : (
                                     <TableRow>
-                                        <TableCell colSpan={2} className="text-center h-24 text-muted-foreground">
+                                        <TableCell colSpan={3} className="text-center h-24 text-muted-foreground">
                                             {t('no_items_for_destination')}
                                         </TableCell>
                                     </TableRow>
