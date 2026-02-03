@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
@@ -7,7 +8,7 @@ import { ArrowLeft, Archive, Calendar as CalendarIcon, Clock, Eye, Loader2, Plus
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
-import { format, parseISO, isSameMonth } from 'date-fns';
+import { format, parseISO, isSameMonth, subMonths, startOfMonth } from 'date-fns';
 import { useAppContext } from '@/context/app-provider';
 import type { Overtime } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';

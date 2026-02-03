@@ -164,7 +164,7 @@ export default function MonthlyWithdrawalReportPage() {
                     setSelectedDate(date);
                     setIsCalendarOpen(false);
                   }}
-                  captionLayout="dropdown-buttons"
+                  captionLayout="dropdown-nav"
                   fromYear={2020}
                   toYear={2040}
                 />
