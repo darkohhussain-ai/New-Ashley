@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -39,7 +40,6 @@ const Section = ({ id, code, items, onClick, isHighlighted }: { id: string, code
 
 const WarehouseCard = ({ name, floors, onSectionClick, itemsByLocationId, highlightId }: { name: string; floors: { floor1: StorageLocation[], floor2: StorageLocation[] }, onSectionClick: (loc: StorageLocation) => void, itemsByLocationId: Map<string, Item[]>, highlightId: string }) => {
     const {t} = useTranslation();
-    const [activeTab, setActiveTab] = useState('floor1');
 
     const renderSections = (sections: StorageLocation[]) => {
         const getSection = (num: number) => sections.find(s => s.name.endsWith(`-${num}`));
@@ -62,19 +62,19 @@ const WarehouseCard = ({ name, floors, onSectionClick, itemsByLocationId, highli
 
     return (
         <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-sm">
-            <CardHeader className="p-3">
-                <CardTitle className="text-base">{name}</CardTitle>
-                 <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
+            <Tabs defaultValue="floor1" className="w-full">
+                <CardHeader className="p-3">
+                    <CardTitle className="text-base">{name}</CardTitle>
                     <TabsList className="grid w-full grid-cols-2 h-8">
                         <TabsTrigger value="floor1" className="text-xs h-6">{t('floor')} 1</TabsTrigger>
                         <TabsTrigger value="floor2" className="text-xs h-6">{t('floor')} 2</TabsTrigger>
                     </TabsList>
-                </Tabs>
-            </CardHeader>
-            <CardContent className="p-2">
-                <TabsContent value="floor1" className="m-0">{renderSections(floors.floor1)}</TabsContent>
-                <TabsContent value="floor2" className="m-0">{renderSections(floors.floor2)}</TabsContent>
-            </CardContent>
+                </CardHeader>
+                <CardContent className="p-2">
+                    <TabsContent value="floor1" className="m-0">{renderSections(floors.floor1)}</TabsContent>
+                    <TabsContent value="floor2" className="m-0">{renderSections(floors.floor2)}</TabsContent>
+                </CardContent>
+            </Tabs>
         </Card>
     );
 };
