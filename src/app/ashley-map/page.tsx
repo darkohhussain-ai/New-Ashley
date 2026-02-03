@@ -16,40 +16,27 @@ import { useTranslation } from '@/hooks/use-translation';
 
 
 const Shelf = ({ loc, items, onClick, isHighlighted }: { loc: StorageLocation, items: Item[], onClick: (loc: StorageLocation) => void, isHighlighted: boolean }) => {
+    const {t} = useTranslation();
     const itemCount = items.length;
     const isOccupied = itemCount > 0;
     const locationCode = loc.name.split('-').pop();
     
     return (
-        <div 
+        <button 
             id={loc.id}
-            className="flex-shrink-0"
-            title={`${loc.name}: ${itemCount} items`}
+            title={`${loc.name}: ${itemCount} ${t('items_lowercase')}`}
+            onClick={() => onClick(loc)}
+            className={cn(
+                "relative w-full h-12 rounded-lg border-2 transition-all group focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background focus:ring-primary",
+                isOccupied 
+                    ? 'bg-primary/10 border-primary/50 text-primary-foreground' 
+                    : 'bg-background/30 border-border hover:border-primary/50',
+                isHighlighted && "ring-2 border-primary"
+            )}
         >
-            <button 
-                onClick={() => onClick(loc)}
-                className={cn(
-                    "relative w-12 h-16 bg-gray-300/70 dark:bg-gray-700/70 border border-gray-400/70 dark:border-gray-600/70 rounded-sm flex items-end justify-center pb-1 transition-all group focus:outline-none focus:ring-2 focus:ring-primary focus:z-10",
-                    isOccupied && "bg-location-occupied-bg/70 border-location-occupied-border/70",
-                    isHighlighted && "ring-2 ring-primary z-10"
-                )}
-            >
-                <div className={cn(
-                    "absolute -top-3 left-0 w-full h-3 bg-gray-200/70 dark:bg-gray-800/70 border-t border-x border-gray-400/70 dark:border-gray-500/70 rounded-t-sm transform -skew-x-[45deg]",
-                    isOccupied && "bg-location-occupied-bg border-location-occupied-border",
-                    "group-hover:bg-primary/20 group-hover:border-primary"
-                )} />
-
-                <div className={cn(
-                     "absolute top-0 right-0 w-3 h-full bg-gray-200/70 dark:bg-gray-800/70 border-y border-r border-gray-400/70 dark:border-gray-500/70 rounded-r-sm transform -skew-y-[45deg] origin-top-right",
-                     isOccupied && "bg-location-occupied-bg/50 border-location-occupied-border/50",
-                     "group-hover:bg-primary/10 group-hover:border-primary/50"
-                 )} />
-
-                <span className="relative text-xs font-mono text-muted-foreground group-hover:text-primary">{locationCode}</span>
-                {isOccupied && <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary/80" />}
-            </button>
-        </div>
+            <span className="font-mono font-bold text-sm text-foreground group-hover:text-primary">{locationCode}</span>
+            {isOccupied && <div className="absolute top-1 right-1 h-2 w-2 rounded-full bg-primary animate-pulse" />}
+        </button>
     );
 };
 
@@ -139,7 +126,7 @@ export default function AshleyMapPage() {
 
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-      <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
+      <div className="min-h-screen bg-muted/40 text-foreground p-4 md:p-8">
         <header className="flex items-center gap-4 mb-8">
           <Button variant="outline" size="icon" asChild>
             <Link href="/items">
@@ -161,18 +148,18 @@ export default function AshleyMapPage() {
             </div>
           ) : (
             <>
-              <Card>
+              <Card className="bg-[hsl(var(--ashley-floor4-bg))] border-blue-400/50">
                 <CardHeader>
                   <CardTitle>{t('floor_4')}</CardTitle>
                 </CardHeader>
-                <CardContent className="p-8 flex justify-center bg-gray-100 dark:bg-gray-900/30 rounded-xl overflow-x-auto">
-                    <div className="flex flex-col gap-12">
-                        <div className="flex flex-nowrap gap-2">
+                <CardContent className="p-4 md:p-8 flex justify-center rounded-xl overflow-x-auto">
+                    <div className="flex flex-col gap-8">
+                        <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
                              {floor4.slice(0, 8).map(loc => (
                                 <Shelf key={loc.id} loc={loc} items={itemsByLocationId.get(loc.id) || []} onClick={handleSectionClick} isHighlighted={highlightId === loc.id} />
                             ))}
                         </div>
-                        <div className="flex flex-nowrap gap-2">
+                        <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
                              {floor4.slice(8, 16).map(loc => (
                                 <Shelf key={loc.id} loc={loc} items={itemsByLocationId.get(loc.id) || []} onClick={handleSectionClick} isHighlighted={highlightId === loc.id} />
                             ))}
@@ -181,11 +168,11 @@ export default function AshleyMapPage() {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="bg-[hsl(var(--ashley-floor3-area1-bg))] border-green-400/50">
                 <CardHeader>
                   <CardTitle>{t('floor_3')}</CardTitle>
                 </CardHeader>
-                <CardContent className="p-8 flex flex-wrap gap-12 justify-center items-start bg-gray-100 dark:bg-gray-900/30 rounded-xl">
+                <CardContent className="p-4 md:p-8 flex flex-wrap gap-12 justify-center items-start rounded-xl">
                     <div className="space-y-6">
                         <CardTitle className="text-center">{t('area_1')}</CardTitle>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-12">
@@ -202,7 +189,7 @@ export default function AshleyMapPage() {
                         </div>
                     </div>
 
-                    <div className="space-y-6 pt-2">
+                    <div className="space-y-6 pt-2 bg-[hsl(var(--ashley-floor3-office-bg))] p-4 rounded-xl border-2 border-purple-400/50">
                          <CardTitle className="text-center">{t('area_2_office')}</CardTitle>
                          <div className="grid grid-cols-3 gap-2">
                             {floor3office.map(loc => (
@@ -255,4 +242,3 @@ export default function AshleyMapPage() {
     </Dialog>
   );
 }
-    

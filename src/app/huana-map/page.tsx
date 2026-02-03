@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -12,34 +13,34 @@ import { cn } from '@/lib/utils';
 import { useAppContext } from '@/context/app-provider';
 import type { Item, StorageLocation } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
 
 const Section = ({ id, code, items, onClick, isHighlighted }: { id: string, code: string; items: Item[]; onClick: () => void, isHighlighted?: boolean }) => {
-  const itemCount = items.length;
-  return (
-    <Button
-      id={id}
-      variant="outline"
-      className={cn(`h-12 w-12 flex flex-col items-center justify-center p-1 border-2 transition-all duration-200 text-[10px]`,
-        itemCount > 0 ? 'border-location-occupied-border bg-location-occupied-bg hover:bg-location-occupied-bg/80' : 'bg-white/80 dark:bg-black/30 hover:border-muted-foreground/50',
-        isHighlighted && 'ring-2 ring-offset-2 ring-primary')}
-      onClick={onClick}
-    >
-      <span className="font-mono">{code}</span>
-      {itemCount > 0 && (
-        <span className="text-[10px] text-primary flex items-center gap-1 mt-1">
-          <Box className="w-2.5 h-2.5" />
-          {itemCount}
-        </span>
-      )}
-    </Button>
-  );
+    const {t} = useTranslation();
+    const itemCount = items.length;
+    const isOccupied = itemCount > 0;
+    
+    return (
+        <button 
+            id={id}
+            title={`${code}: ${itemCount} ${t('items_lowercase')}`}
+            onClick={onClick}
+            className={cn(
+                "relative w-full h-12 rounded-lg border-2 transition-all group focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background focus:ring-primary",
+                isOccupied 
+                    ? 'bg-primary/10 border-primary/50 text-primary-foreground' 
+                    : 'bg-background/30 border-border hover:border-primary/50',
+                isHighlighted && "ring-2 border-primary"
+            )}
+        >
+            <span className="font-mono font-bold text-sm text-foreground group-hover:text-primary">{code}</span>
+            {isOccupied && <div className="absolute top-1 right-1 h-2 w-2 rounded-full bg-primary animate-pulse" />}
+        </button>
+    );
 };
 
-const WarehouseCard = ({ name, floors, onSectionClick, itemsByLocationId, highlightId }: { name: string; floors: { floor1: StorageLocation[], floor2: StorageLocation[] }, onSectionClick: (loc: StorageLocation) => void, itemsByLocationId: Map<string, Item[]>, highlightId: string }) => {
+const WarehouseDisplay = ({ name, floors, onSectionClick, itemsByLocationId, highlightId, colorClass }: { name: string; floors: { floor1: StorageLocation[], floor2: StorageLocation[] }, onSectionClick: (loc: StorageLocation) => void, itemsByLocationId: Map<string, Item[]>, highlightId: string, colorClass: string }) => {
     const {t} = useTranslation();
-
+    
     const renderSections = (sections: StorageLocation[]) => {
         const getSection = (num: number) => sections.find(s => s.name.endsWith(`-${num}`));
         
@@ -49,10 +50,10 @@ const WarehouseCard = ({ name, floors, onSectionClick, itemsByLocationId, highli
         ];
 
         return (
-            <div className="grid grid-cols-4 gap-1 p-1 bg-gray-200 dark:bg-gray-700 rounded-md">
+            <div className="grid grid-cols-4 gap-1">
                 {sectionGrid.flat().map(num => {
                     const section = getSection(num);
-                    if (!section) return <div key={num} className="h-12 w-12 rounded bg-gray-300 dark:bg-gray-600" />;
+                    if (!section) return <div key={num} className="h-12 w-full rounded-lg bg-muted/30" />;
                     return <Section key={section.id} id={section.id} code={section.name.split('-').pop()!} items={itemsByLocationId.get(section.id) || []} onClick={() => onSectionClick(section)} isHighlighted={highlightId === section.id} />;
                 })}
             </div>
@@ -60,21 +61,19 @@ const WarehouseCard = ({ name, floors, onSectionClick, itemsByLocationId, highli
     };
 
     return (
-        <Card className="bg-white/60 dark:bg-black/40 backdrop-blur-sm">
-            <Tabs defaultValue="floor1" className="w-full">
-                <CardHeader className="p-3">
-                    <CardTitle className="text-base">{name}</CardTitle>
-                    <TabsList className="grid w-full grid-cols-2 h-8">
-                        <TabsTrigger value="floor1" className="text-xs h-6">{t('floor')} 1</TabsTrigger>
-                        <TabsTrigger value="floor2" className="text-xs h-6">{t('floor')} 2</TabsTrigger>
-                    </TabsList>
-                </CardHeader>
-                <CardContent className="p-2">
-                    <TabsContent value="floor1" className="m-0">{renderSections(floors.floor1)}</TabsContent>
-                    <TabsContent value="floor2" className="m-0">{renderSections(floors.floor2)}</TabsContent>
-                </CardContent>
-            </Tabs>
-        </Card>
+        <div className={cn("p-3 rounded-xl border-2 space-y-2", colorClass)}>
+            <h3 className="text-center font-bold text-lg">{name}</h3>
+            <div className="space-y-3">
+                <div>
+                    <p className="text-xs text-center text-muted-foreground mb-1">{t('floor')} 1</p>
+                    {renderSections(floors.floor1)}
+                </div>
+                <div>
+                    <p className="text-xs text-center text-muted-foreground mb-1">{t('floor')} 2</p>
+                    {renderSections(floors.floor2)}
+                </div>
+            </div>
+        </div>
     );
 };
 
@@ -159,7 +158,7 @@ export default function HuanaMapPage() {
 
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-800 text-foreground p-4 md:p-8">
+      <div className="min-h-screen bg-muted/40 text-foreground p-4 md:p-8">
         <header className="flex items-center gap-4 mb-8">
           <Button variant="outline" size="icon" asChild>
             <Link href="/items">
@@ -176,27 +175,27 @@ export default function HuanaMapPage() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
                 {/* Left Column */}
                 <div className="lg:col-span-4 flex flex-col gap-4">
-                    <Card className="bg-blue-200/50 dark:bg-blue-900/50 border-blue-300 dark:border-blue-700 h-24 flex items-center justify-center">
+                    <Card className="bg-blue-200/30 dark:bg-blue-900/30 border-blue-400/50 h-24 flex items-center justify-center">
                         <CardTitle className="text-blue-800 dark:text-blue-200">D3</CardTitle>
                     </Card>
-                    <WarehouseCard name="K1" floors={kWarehouse.k1} onSectionClick={handleSectionClick} itemsByLocationId={itemsByLocationId} highlightId={highlightId} />
+                    <WarehouseDisplay name="K1" floors={kWarehouse.k1} onSectionClick={handleSectionClick} itemsByLocationId={itemsByLocationId} highlightId={highlightId} colorClass="bg-[hsl(var(--huana-k-bg))] border-pink-400/50" />
                 </div>
 
                 {/* Middle Column */}
                 <div className="lg:col-span-3 flex flex-col gap-4">
-                    <Card className="bg-blue-200/50 dark:bg-blue-900/50 border-blue-300 dark:border-blue-700 flex-grow min-h-[300px] flex items-center justify-center">
+                    <Card className="bg-blue-200/30 dark:bg-blue-900/30 border-blue-400/50 flex-grow min-h-[300px] flex items-center justify-center">
                         <CardTitle className="text-blue-800 dark:text-blue-200">D1</CardTitle>
                     </Card>
-                     <Card className="bg-blue-200/50 dark:bg-blue-900/50 border-blue-300 dark:border-blue-700 min-h-[150px] flex items-center justify-center">
+                     <Card className="bg-blue-200/30 dark:bg-blue-900/30 border-blue-400/50 min-h-[150px] flex items-center justify-center">
                         <CardTitle className="text-blue-800 dark:text-blue-200">D2</CardTitle>
                     </Card>
                 </div>
 
                 {/* Right Column */}
                 <div className="lg:col-span-5 flex flex-col gap-4">
-                    <WarehouseCard name="H3" floors={hWarehouses.h3} onSectionClick={handleSectionClick} itemsByLocationId={itemsByLocationId} highlightId={highlightId} />
-                    <WarehouseCard name="H2" floors={hWarehouses.h2} onSectionClick={handleSectionClick} itemsByLocationId={itemsByLocationId} highlightId={highlightId} />
-                    <WarehouseCard name="H1" floors={hWarehouses.h1} onSectionClick={handleSectionClick} itemsByLocationId={itemsByLocationId} highlightId={highlightId} />
+                    <WarehouseDisplay name="H3" floors={hWarehouses.h3} onSectionClick={handleSectionClick} itemsByLocationId={itemsByLocationId} highlightId={highlightId} colorClass="bg-[hsl(var(--huana-h3-bg))] border-cyan-400/50" />
+                    <WarehouseDisplay name="H2" floors={hWarehouses.h2} onSectionClick={handleSectionClick} itemsByLocationId={itemsByLocationId} highlightId={highlightId} colorClass="bg-[hsl(var(--huana-h2-bg))] border-green-400/50" />
+                    <WarehouseDisplay name="H1" floors={hWarehouses.h1} onSectionClick={handleSectionClick} itemsByLocationId={itemsByLocationId} highlightId={highlightId} colorClass="bg-[hsl(var(--huana-h1-bg))] border-yellow-400/50" />
                 </div>
             </div>
           )}

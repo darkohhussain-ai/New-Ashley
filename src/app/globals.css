@@ -48,7 +48,16 @@
     --status-damaged-bg: 0 100% 94%;
     
     --status-new-bg: 48 96% 89%; /* Strong Yellow */
-    --status-updated-bg: 142 80% 92%; 
+    --status-updated-bg: 142 80% 92%;
+    
+    /* Map Area Colors */
+    --ashley-floor4-bg: 220 10% 97%;
+    --ashley-floor3-area1-bg: 210 20% 97%;
+    --ashley-floor3-office-bg: 190 20% 97%;
+    --huana-h1-bg: 30 50% 97%;
+    --huana-h2-bg: 130 30% 97%;
+    --huana-h3-bg: 200 40% 97%;
+    --huana-k-bg: 330 50% 97%;
   }
   .dark {
     --background: 222.2 84% 4.9%;
@@ -79,11 +88,6 @@
     /* Custom Added Colors */
     --tab-active-background: hsl(var(--background));
     --tab-active-foreground: hsl(var(--foreground));
-    --table-row-primary: hsl(var(--background));
-    --table-row-secondary: hsl(var(--secondary));
-    --huana-highlight: 54 92% 15%;
-    --location-occupied-border: 217.2 91.2% 50%;
-    --location-occupied-bg: 217.2 91.2% 15%;
 
     /* Custom Status Colors */
     --status-correct-bg: 142 76% 15%; 
@@ -91,9 +95,20 @@
     --status-more-bg: 210 100% 20%;
     --status-wrapped-bg: 54 92% 15%;
     --status-damaged-bg: 0 84% 15%;
+    --location-occupied-border: 217.2 91.2% 50%;
+    --location-occupied-bg: 217.2 91.2% 15%;
     
     --status-new-bg: 48 96% 25%; /* Strong Yellow */
-    --status-updated-bg: 142 76% 20%; 
+    --status-updated-bg: 142 76% 20%;
+    
+    /* Map Area Colors */
+    --ashley-floor4-bg: 220 10% 12%;
+    --ashley-floor3-area1-bg: 210 20% 12%;
+    --ashley-floor3-office-bg: 190 20% 12%;
+    --huana-h1-bg: 30 20% 12%;
+    --huana-h2-bg: 130 20% 12%;
+    --huana-h3-bg: 200 20% 12%;
+    --huana-k-bg: 330 20% 12%;
   }
 }
 
