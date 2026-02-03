@@ -12,7 +12,7 @@ import jsPDF from 'jspdf';
 import { format, parseISO } from 'date-fns';
 import { useAppContext } from '@/context/app-provider';
 import { useTranslation } from '@/hooks/use-translation';
-import { TransmitReportPdf } from '@/components/transmit/TransmitReportPdf';
+import { StagedItemsPrintView } from '@/components/transmit/StagedItemsPrintView';
 import html2canvas from 'html2canvas';
 import * as XLSX from 'xlsx';
 
@@ -21,7 +21,7 @@ const destinations = ["Erbil", "Baghdad", "Diwan", "Dohuk"];
 export default function StagedItemsPage() {
   const { t, language } = useTranslation();
   const { transferItems, transfers, settings, isLoading: isAppLoading } = useAppContext();
-  const { pdfSettings, customFont } = settings || {};
+  const { pdfSettings } = settings || {};
   const searchParams = useSearchParams();
   const [selectedDestination, setSelectedDestination] = useState<string | null>(null);
 
@@ -98,10 +98,9 @@ export default function StagedItemsPage() {
     return (
         <>
             <div className="hidden print:block">
-                <TransmitReportPdf
-                    transfer={{ destinationCity: selectedDestination, transferDate: new Date().toISOString() }}
+                <StagedItemsPrintView
+                    destination={selectedDestination}
                     items={itemsForSelectedDestination}
-                    settings={pdfSettings?.invoice || {}}
                 />
             </div>
             <div className="min-h-screen bg-background text-foreground p-4 md:p-8 print:hidden">
