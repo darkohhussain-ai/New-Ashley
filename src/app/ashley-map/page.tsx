@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -148,7 +147,7 @@ export default function AshleyMapPage() {
             </div>
           ) : (
             <>
-              <Card className="bg-[hsl(var(--ashley-floor4-bg))] border-blue-400/50">
+              <Card>
                 <CardHeader>
                   <CardTitle>{t('floor_4')}</CardTitle>
                 </CardHeader>
@@ -168,7 +167,7 @@ export default function AshleyMapPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-[hsl(var(--ashley-floor3-area1-bg))] border-green-400/50">
+              <Card>
                 <CardHeader>
                   <CardTitle>{t('floor_3')}</CardTitle>
                 </CardHeader>
@@ -189,7 +188,7 @@ export default function AshleyMapPage() {
                         </div>
                     </div>
 
-                    <div className="space-y-6 pt-2 bg-[hsl(var(--ashley-floor3-office-bg))] p-4 rounded-xl border-2 border-purple-400/50">
+                    <div className="space-y-6 pt-2">
                          <CardTitle className="text-center">{t('area_2_office')}</CardTitle>
                          <div className="grid grid-cols-3 gap-2">
                             {floor3office.map(loc => (

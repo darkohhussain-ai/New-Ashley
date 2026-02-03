@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -7,7 +6,6 @@ import { ArrowLeft, Box, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import { useAppContext } from '@/context/app-provider';
@@ -38,7 +36,7 @@ const Section = ({ id, code, items, onClick, isHighlighted }: { id: string, code
     );
 };
 
-const WarehouseDisplay = ({ name, floors, onSectionClick, itemsByLocationId, highlightId, colorClass }: { name: string; floors: { floor1: StorageLocation[], floor2: StorageLocation[] }, onSectionClick: (loc: StorageLocation) => void, itemsByLocationId: Map<string, Item[]>, highlightId: string, colorClass: string }) => {
+const WarehouseDisplay = ({ name, floors, onSectionClick, itemsByLocationId, highlightId }: { name: string; floors: { floor1: StorageLocation[], floor2: StorageLocation[] }, onSectionClick: (loc: StorageLocation) => void, itemsByLocationId: Map<string, Item[]>, highlightId: string }) => {
     const {t} = useTranslation();
     
     const renderSections = (sections: StorageLocation[]) => {
@@ -61,7 +59,7 @@ const WarehouseDisplay = ({ name, floors, onSectionClick, itemsByLocationId, hig
     };
 
     return (
-        <div className={cn("p-3 rounded-xl border-2 space-y-2", colorClass)}>
+        <div className="p-3 bg-card rounded-xl border-2 space-y-2">
             <h3 className="text-center font-bold text-lg">{name}</h3>
             <div className="space-y-3">
                 <div>
@@ -172,31 +170,11 @@ export default function HuanaMapPage() {
           {isLoading ? (
             <div className="flex justify-center items-center h-96"><Loader2 className="h-10 w-10 animate-spin" /></div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-                {/* Left Column */}
-                <div className="lg:col-span-4 flex flex-col gap-4">
-                    <Card className="bg-blue-200/30 dark:bg-blue-900/30 border-blue-400/50 h-24 flex items-center justify-center">
-                        <CardTitle className="text-blue-800 dark:text-blue-200">D3</CardTitle>
-                    </Card>
-                    <WarehouseDisplay name="K1" floors={kWarehouse.k1} onSectionClick={handleSectionClick} itemsByLocationId={itemsByLocationId} highlightId={highlightId} colorClass="bg-[hsl(var(--huana-k-bg))] border-pink-400/50" />
-                </div>
-
-                {/* Middle Column */}
-                <div className="lg:col-span-3 flex flex-col gap-4">
-                    <Card className="bg-blue-200/30 dark:bg-blue-900/30 border-blue-400/50 flex-grow min-h-[300px] flex items-center justify-center">
-                        <CardTitle className="text-blue-800 dark:text-blue-200">D1</CardTitle>
-                    </Card>
-                     <Card className="bg-blue-200/30 dark:bg-blue-900/30 border-blue-400/50 min-h-[150px] flex items-center justify-center">
-                        <CardTitle className="text-blue-800 dark:text-blue-200">D2</CardTitle>
-                    </Card>
-                </div>
-
-                {/* Right Column */}
-                <div className="lg:col-span-5 flex flex-col gap-4">
-                    <WarehouseDisplay name="H3" floors={hWarehouses.h3} onSectionClick={handleSectionClick} itemsByLocationId={itemsByLocationId} highlightId={highlightId} colorClass="bg-[hsl(var(--huana-h3-bg))] border-cyan-400/50" />
-                    <WarehouseDisplay name="H2" floors={hWarehouses.h2} onSectionClick={handleSectionClick} itemsByLocationId={itemsByLocationId} highlightId={highlightId} colorClass="bg-[hsl(var(--huana-h2-bg))] border-green-400/50" />
-                    <WarehouseDisplay name="H1" floors={hWarehouses.h1} onSectionClick={handleSectionClick} itemsByLocationId={itemsByLocationId} highlightId={highlightId} colorClass="bg-[hsl(var(--huana-h1-bg))] border-yellow-400/50" />
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <WarehouseDisplay name="H1" floors={hWarehouses.h1} onSectionClick={handleSectionClick} itemsByLocationId={itemsByLocationId} highlightId={highlightId} />
+                <WarehouseDisplay name="H2" floors={hWarehouses.h2} onSectionClick={handleSectionClick} itemsByLocationId={itemsByLocationId} highlightId={highlightId} />
+                <WarehouseDisplay name="H3" floors={hWarehouses.h3} onSectionClick={handleSectionClick} itemsByLocationId={itemsByLocationId} highlightId={highlightId} />
+                 <WarehouseDisplay name="K1" floors={kWarehouse.k1} onSectionClick={handleSectionClick} itemsByLocationId={itemsByLocationId} highlightId={highlightId} />
             </div>
           )}
         </main>

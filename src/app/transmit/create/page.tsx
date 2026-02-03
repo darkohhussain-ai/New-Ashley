@@ -3,9 +3,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, Truck, Calendar as CalendarIcon, Printer, ArrowRight, Save, Loader2, ListChecks } from 'lucide-react';
+import { ArrowLeft, Plus, Truck, Calendar as CalendarIcon, Save, Loader2, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -14,7 +13,7 @@ import { format, formatISO, parseISO, getYear } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
-import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogFooter } from '@/components/ui/alert-dialog';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { useAppContext } from '@/context/app-provider';
@@ -195,13 +194,16 @@ export default function CreateTransferPage() {
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
-    <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
-        <header className="flex items-center justify-between gap-4 mb-8">
+    <div className="min-h-screen bg-background text-foreground">
+        <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm flex items-center justify-between gap-4 p-4 border-b">
             <div className="flex items-center gap-4">
                 <Button variant="outline" size="icon" asChild>
                     <Link href="/transmit"><ArrowLeft /></Link>
                 </Button>
-                <h1 className="text-2xl md:text-3xl font-bold">{t('create_transfer_slip')}</h1>
+                <div>
+                    <h1 className="text-xl font-bold">{t('create_transfer_slip')}</h1>
+                    <p className="text-sm text-muted-foreground">{step === 1 ? t('step_1_title') : t('step_2_title')}</p>
+                </div>
             </div>
             {step === 2 && (
                  <Button onClick={handleCreateTransfer} disabled={isSaving}>
@@ -211,14 +213,10 @@ export default function CreateTransferPage() {
             )}
         </header>
 
-        {step === 1 && (
-            <Card className="max-w-2xl mx-auto">
-                <CardHeader>
-                    <CardTitle>{t('step_1_title')}</CardTitle>
-                    <CardDescription>{t('step_1_desc')}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="space-y-2">
+        <main className="p-4 md:p-8">
+            {step === 1 && (
+                <div className="max-w-3xl mx-auto space-y-8">
+                    <div className="space-y-4">
                         <Label htmlFor="destination">{t('destination_city')}</Label>
                         <Select onValueChange={(val) => setTransferDetails(prev => ({...prev, destinationCity: val}))} value={transferDetails.destinationCity}>
                             <SelectTrigger id="destination"><SelectValue placeholder={t('filter_items_by_city')} /></SelectTrigger>
@@ -227,18 +225,18 @@ export default function CreateTransferPage() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="space-y-4">
                             <Label htmlFor="driver-name">{t('driver_name')}</Label>
                             <Input id="driver-name" value={transferDetails.driverName || ''} onChange={e => setTransferDetails(prev => ({...prev, driverName: e.target.value}))} placeholder={t('enter_driver_name')} />
                         </div>
-                        <div className="space-y-2">
+                        <div className="space-y-4">
                            <Label htmlFor="manager-name">{t('warehouse_manager')}</Label>
                            <Input id="manager-name" value={transferDetails.warehouseManagerName || ''} onChange={e => setTransferDetails(prev => ({...prev, warehouseManagerName: e.target.value}))} placeholder={t('enter_manager_name')} />
                         </div>
                     </div>
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="space-y-4">
                             <Label>{t('transfer_date')}</Label>
                             <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                                 <PopoverTrigger asChild>
@@ -252,28 +250,22 @@ export default function CreateTransferPage() {
                                 </PopoverContent>
                             </Popover>
                         </div>
-                        <div className="space-y-2">
+                        <div className="space-y-4">
                             <Label htmlFor="invoice-number">{t('invoice_no')}</Label>
                             <Input id="invoice-number" type="number" value={transferDetails.invoiceNumber || ''} onChange={e => setTransferDetails(prev => ({...prev, invoiceNumber: parseInt(e.target.value) || 0}))} />
                         </div>
                     </div>
-                </CardContent>
-                <CardFooter>
-                    <Button onClick={handleNextStep} className="w-full">
-                        {t('next_step')} <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                </CardFooter>
-            </Card>
-        )}
+                    <div className="pt-8">
+                        <Button onClick={handleNextStep} className="w-full" size="lg">
+                            {t('next_step')} <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                    </div>
+                </div>
+            )}
 
-        {step === 2 && (
-             <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><ListChecks /> {t('step_2_title')}</CardTitle>
-                    <CardDescription>{t('step_2_desc')}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                     <div className="overflow-x-auto">
+            {step === 2 && (
+                 <div className="max-w-5xl mx-auto">
+                    <div className="overflow-x-auto border rounded-lg">
                         <Table>
                             <TableHeader>
                                 <TableRow>
@@ -340,13 +332,12 @@ export default function CreateTransferPage() {
                             </TableBody>
                         </Table>
                     </div>
-                </CardContent>
-                <CardFooter>
-                    <Button onClick={() => setStep(1)} variant="outline">{t('back')}</Button>
-                </CardFooter>
-            </Card>
-        )}
-
+                    <div className="mt-8">
+                      <Button onClick={() => setStep(1)} variant="outline">{t('back')}</Button>
+                    </div>
+                 </div>
+            )}
+        </main>
     </div>
     </>
   );
