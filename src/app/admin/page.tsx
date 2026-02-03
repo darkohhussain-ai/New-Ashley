@@ -48,7 +48,8 @@ export const useAdminAuth = () => {
 };
 
 function UserManagement() {
-  const { users, setUsers, roles, employees } = useAppContext();
+  const { users, setUsers, roles, employees, setActivityLogs } = useAppContext();
+  const { user: currentUser } = useAuth();
   const { t } = useTranslation();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -56,21 +57,34 @@ function UserManagement() {
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
-  const handleSaveUser = (user: User, isNew: boolean) => {
+  const handleSaveUser = (userToSave: User, isNew: boolean) => {
     if(isNew) {
-        setUsers([...users, user]);
-        toast({ title: "User Created", description: `A user account for ${user.username} has been created.` });
+        setUsers([...users, userToSave]);
+        toast({ title: "User Created", description: `A user account for ${userToSave.username} has been created.` });
+        if (currentUser) {
+            const log: ActivityLog = { id: crypto.randomUUID(), userId: currentUser.id, username: currentUser.username, action: 'create', entity: 'User Account', entityId: userToSave.id, description: `Created user account: ${userToSave.username}`, timestamp: new Date().toISOString() };
+            setActivityLogs(prev => [...prev, log]);
+        }
     } else {
-        setUsers(users.map(u => u.id === user.id ? user : u));
-        toast({ title: "User Updated", description: `Details for ${user.username} have been updated.` });
+        setUsers(users.map(u => u.id === userToSave.id ? userToSave : u));
+        toast({ title: "User Updated", description: `Details for ${userToSave.username} have been updated.` });
+        if (currentUser) {
+            const log: ActivityLog = { id: crypto.randomUUID(), userId: currentUser.id, username: currentUser.username, action: 'update', entity: 'User Account', entityId: userToSave.id, description: `Updated user account: ${userToSave.username}`, timestamp: new Date().toISOString() };
+            setActivityLogs(prev => [...prev, log]);
+        }
     }
     setEditingUser(null);
     setIsDialogOpen(false);
   };
 
   const handleDeleteUser = (userId: string) => {
+    const userToDelete = users.find(u => u.id === userId);
     setUsers(users.filter(u => u.id !== userId));
     toast({ title: "User Deleted", description: "The user has been removed." });
+    if (currentUser && userToDelete) {
+        const log: ActivityLog = { id: crypto.randomUUID(), userId: currentUser.id, username: currentUser.username, action: 'delete', entity: 'User Account', entityId: userToDelete.id, description: `Deleted user account: ${userToDelete.username}`, timestamp: new Date().toISOString() };
+        setActivityLogs(prev => [...prev, log]);
+    }
   };
   
   const handleDeleteAllUsers = () => {
@@ -82,6 +96,10 @@ function UserManagement() {
     
     if (deletedCount > 0) {
         toast({ title: "All Users Deleted", description: `${deletedCount} user accounts have been removed. The admin account was preserved.` });
+        if (currentUser) {
+            const log: ActivityLog = { id: crypto.randomUUID(), userId: currentUser.id, username: currentUser.username, action: 'delete', entity: 'System', description: `Deleted ${deletedCount} user accounts.`, timestamp: new Date().toISOString() };
+            setActivityLogs(prev => [...prev, log]);
+        }
     } else {
         toast({ title: "No Users Deleted", description: "Only the admin account exists." });
     }
@@ -114,6 +132,10 @@ function UserManagement() {
 
     setUsers([...users, ...newUsers]);
     toast({ title: "Users Created", description: `${newUsers.length} new user accounts have been created.` });
+    if (currentUser) {
+        const log: ActivityLog = { id: crypto.randomUUID(), userId: currentUser.id, username: currentUser.username, action: 'create', entity: 'System', description: `Bulk created ${newUsers.length} user accounts for employees.`, timestamp: new Date().toISOString() };
+        setActivityLogs(prev => [...prev, log]);
+    }
   };
 
   return (
@@ -240,6 +262,7 @@ function UserManagement() {
 
 function UserDialog({ open, onOpenChange, user, onSave, roles, employees, existingUsers }: { open: boolean, onOpenChange: (open: boolean) => void, user: User | null, onSave: (user: User, isNew: boolean) => void, roles: Role[], employees: Employee[], existingUsers: User[] }) {
     const { t } = useTranslation();
+    const { toast } = useToast();
     const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
     const [password, setPassword] = useState('');
     const [roleId, setRoleId] = useState('');
@@ -364,7 +387,8 @@ function UserDialog({ open, onOpenChange, user, onSave, roles, employees, existi
 }
 
 function RoleManagement() {
-    const { roles, setRoles } = useAppContext();
+    const { roles, setRoles, setActivityLogs } = useAppContext();
+    const { user: currentUser } = useAuth();
     const { t } = useTranslation();
     const [selectedRole, setSelectedRole] = useState<Role | null>(null);
     const { toast } = useToast();
@@ -391,6 +415,10 @@ function RoleManagement() {
         if (!selectedRole) return;
         setRoles(roles.map(r => r.id === selectedRole.id ? selectedRole : r));
         toast({ title: t("role_updated"), description: t('role_updated_desc', {roleName: selectedRole.name})});
+        if (currentUser) {
+            const log: ActivityLog = { id: crypto.randomUUID(), userId: currentUser.id, username: currentUser.username, action: 'update', entity: 'Role', entityId: selectedRole.id, description: `Updated permissions for role: ${selectedRole.name}`, timestamp: new Date().toISOString() };
+            setActivityLogs(prev => [...prev, log]);
+        }
     };
   
     return (

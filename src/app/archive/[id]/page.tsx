@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -16,10 +17,11 @@ import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { useAppContext } from '@/context/app-provider';
-import type { ExcelFile, Item, Employee, StorageLocation } from '@/lib/types';
+import type { ExcelFile, Item, Employee, StorageLocation, ActivityLog } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import * as XLSX from 'xlsx';
+import { useAuth } from '@/hooks/use-auth';
 
 
 type SortableKeys = keyof Item;
@@ -87,13 +89,15 @@ export default function FileDetailPage() {
   const router = useRouter();
   const { t, language } = useTranslation();
   const { toast } = useToast();
+  const { user } = useAuth();
   const fileId = params.id as string;
   const { 
     excelFiles, setExcelFiles, 
     items, setItems: setAllItems, 
     employees, 
     locations,
-    settings
+    settings,
+    setActivityLogs
   } = useAppContext();
 
   const [isLoading, setIsLoading] = useState(true);
@@ -206,10 +210,10 @@ export default function FileDetailPage() {
   };
   
   const handleSave = async () => {
-    if (!fileId) return;
+    if (!fileId || !file) return;
 
     // Update file details
-    setExcelFiles(excelFiles.map(f => f.id === fileId ? { ...f, ...editableFile } : f));
+    setExcelFiles(excelFiles.map(f => f.id === fileId ? { ...f, ...editableFile } as ExcelFile : f));
     
     // Update items
     const originalItemIds = new Set(fileItems.map(i => i.id));
@@ -223,7 +227,7 @@ export default function FileDetailPage() {
         const { updateStatus, ...itemData } = item;
         if (updateStatus === 'NEW') {
             const newItem = {...itemData, id: crypto.randomUUID(), fileId};
-            newItems.push(newItem);
+            newItems.push(newItem as Item);
         } else if (originalItemIds.has(item.id)) {
             updatedItems.push(itemData as Item);
         }
@@ -243,13 +247,25 @@ export default function FileDetailPage() {
 
     toast({ title: "Success", description: "All changes have been saved." });
     setIsEditing(false);
+
+    if(user) {
+        const log: ActivityLog = { id: crypto.randomUUID(), userId: user.id, username: user.username, action: 'update', entity: 'Excel File', entityId: file.id, description: `Updated items in file: ${file.storageName}`, timestamp: new Date().toISOString() };
+        setActivityLogs(prev => [...prev, log]);
+    }
   };
 
 
   const handleDeleteFile = () => {
+    if(!file) return;
     setExcelFiles(excelFiles.filter(f => f.id !== fileId));
     setAllItems(items.filter(i => i.fileId !== fileId));
     toast({ title: "File Deleted", description: `The Excel file has been removed.` });
+    
+    if (user) {
+        const log: ActivityLog = { id: crypto.randomUUID(), userId: user.id, username: user.username, action: 'delete', entity: 'Excel File', entityId: file.id, description: `Deleted file: ${file.storageName}`, timestamp: new Date().toISOString() };
+        setActivityLogs(prev => [...prev, log]);
+    }
+
     router.push('/archive');
   }
   
