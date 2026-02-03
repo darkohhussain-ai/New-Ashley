@@ -3,7 +3,7 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, FileText, Calendar as CalendarIcon, User, Building, Clock } from 'lucide-react';
+import { ArrowLeft, FileText, Calendar as CalendarIcon, User, Building, Clock, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { format, parseISO } from 'date-fns';
@@ -12,12 +12,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAppContext } from '@/context/app-provider';
 import type { Employee, ExcelFile } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
+import * as XLSX from 'xlsx';
+import { useToast } from '@/hooks/use-toast';
 
 
 export default function ArchivePage() {
   const { excelFiles, employees } = useAppContext();
   const [isLoading, setIsLoading] = useState(true);
   const { t } = useTranslation();
+  const { toast } = useToast();
 
   useEffect(() => {
     // Only set loading to false on the client side after data is available
@@ -39,18 +42,46 @@ export default function ArchivePage() {
     });
   }, [excelFiles]);
 
+  const handleExportAll = () => {
+    if (!sortedFiles || sortedFiles.length === 0) {
+        toast({ title: t('no_data_to_export') });
+        return;
+    }
+
+    const dataToExport = sortedFiles.map(file => ({
+        [t('file_name')]: file.storageName,
+        [t('category')]: file.categoryName,
+        [t('storekeeper')]: getEmployeeName(file.storekeeperId),
+        [t('source')]: file.source,
+        [t('date')]: file.date ? format(parseISO(file.date), 'yyyy-MM-dd') : 'N/A',
+        [t('type')]: file.type,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, t('excel_archive'));
+    XLSX.writeFile(workbook, `Excel_Archive_Summary_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+  };
+
   if (isLoading) {
     return (
       <div className="h-screen bg-background text-foreground flex flex-col">
         <header className="bg-card border-b p-4">
-          <div className="container mx-auto flex items-center gap-4">
-            <Button variant="outline" size="icon" asChild>
-              <Link href="/items">
-                <ArrowLeft />
-                <span className="sr-only">{t('back_to_placement_storage')}</span>
-              </Link>
-            </Button>
-            <h1 className="text-xl">{t('excel_archive')}</h1>
+          <div className="container mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-4">
+                <Button variant="outline" size="icon" asChild>
+                  <Link href="/items">
+                    <ArrowLeft />
+                    <span className="sr-only">{t('back_to_placement_storage')}</span>
+                  </Link>
+                </Button>
+                <h1 className="text-xl">{t('excel_archive')}</h1>
+            </div>
+             <div className="flex items-center gap-2">
+                <Button variant="outline" size="icon" disabled>
+                    <FileDown className="h-4 w-4" />
+                </Button>
+            </div>
           </div>
         </header>
         <main className="container mx-auto p-4 md:p-8 flex-1 overflow-y-auto">
@@ -77,14 +108,22 @@ export default function ArchivePage() {
   return (
     <div className="h-screen bg-background text-foreground flex flex-col">
       <header className="bg-card border-b p-4">
-        <div className="container mx-auto flex items-center gap-4">
-          <Button variant="outline" size="icon" asChild>
-            <Link href="/items">
-              <ArrowLeft />
-              <span className="sr-only">{t('back_to_placement_storage')}</span>
-            </Link>
-          </Button>
-          <h1 className="text-xl">{t('excel_archive')}</h1>
+        <div className="container mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button variant="outline" size="icon" asChild>
+                <Link href="/items">
+                  <ArrowLeft />
+                  <span className="sr-only">{t('back_to_placement_storage')}</span>
+                </Link>
+              </Button>
+              <h1 className="text-xl">{t('excel_archive')}</h1>
+            </div>
+            <div className="flex items-center gap-2">
+                <Button onClick={handleExportAll} variant="outline" size="icon">
+                    <FileDown className="h-4 w-4" />
+                    <span className="sr-only">Export All to Excel</span>
+                </Button>
+            </div>
         </div>
       </header>
       <main className="container mx-auto p-4 md:p-8 flex-1 overflow-y-auto">
