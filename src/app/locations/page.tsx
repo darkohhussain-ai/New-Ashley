@@ -131,7 +131,7 @@ export default function LocationsPage() {
   const generatedCode = useMemo(() => {
     if (warehouseType === 'Huana') {
       if (huanaWarehouse && huanaFloor && huanaSection) {
-        return `H-${huanaWarehouse}-${huanaFloor}-${huanaSection}`;
+        return `${huanaWarehouse}-${huanaFloor}-${huanaSection}`;
       }
     } else if (warehouseType === 'Ashley') {
       if (ashleyFloor === '4' && ashleySection) {
@@ -187,6 +187,14 @@ export default function LocationsPage() {
             const code = `H-${w}-${f}-${s}`;
             if (!existingNames.has(code)) newLocations.push({ id: crypto.randomUUID(), name: code, warehouseType: 'Huana' });
           }
+        }
+      }
+
+      // K1 Hall: 1 warehouse, 2 floors, 8 sections
+      for (let f = 1; f <= 2; f++) {
+        for (let s = 1; s <= 8; s++) {
+          const code = `K-1-${f}-${s}`;
+          if (!existingNames.has(code)) newLocations.push({ id: crypto.randomUUID(), name: code, warehouseType: 'Huana' });
         }
       }
   
@@ -341,10 +349,15 @@ export default function LocationsPage() {
             {warehouseType === 'Huana' && (
               <div className="space-y-4 p-4 border rounded-md bg-muted/50">
                  <div className="space-y-2">
-                    <Label>{t('warehouse')} #</Label>
+                    <Label>{t('warehouse')}</Label>
                     <Select onValueChange={setHuanaWarehouse} value={huanaWarehouse}>
-                       <SelectTrigger><SelectValue placeholder="1-3" /></SelectTrigger>
-                       <SelectContent>{[1,2,3].map(n => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}</SelectContent>
+                       <SelectTrigger><SelectValue placeholder="Select Warehouse" /></SelectTrigger>
+                       <SelectContent>
+                          <SelectItem value="H-1">H1</SelectItem>
+                          <SelectItem value="H-2">H2</SelectItem>
+                          <SelectItem value="H-3">H3</SelectItem>
+                          <SelectItem value="K-1">K1</SelectItem>
+                       </SelectContent>
                     </Select>
                  </div>
                  <div className="space-y-2">
