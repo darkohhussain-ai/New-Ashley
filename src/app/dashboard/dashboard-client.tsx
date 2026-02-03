@@ -18,6 +18,7 @@ import { useTranslation } from '@/hooks/use-translation';
 import { DashboardCard } from '@/components/dashboard/dashboard-card';
 import { useAuth } from '@/hooks/use-auth';
 import { MonthlyFinancialChart } from '@/components/dashboard/MonthlyFinancialChart';
+import { StorageSummaryChart } from '@/components/dashboard/StorageSummaryChart';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 
 const allMenuItems = [
@@ -156,8 +157,9 @@ export function DashboardClient() {
                     </CardContent>
                 </Card>
             </div>
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-2 space-y-8">
                 <MonthlyFinancialChart />
+                <StorageSummaryChart />
             </div>
         </div>
       </main>

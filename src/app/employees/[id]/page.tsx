@@ -27,6 +27,7 @@ import { useTranslation } from "@/hooks/use-translation"
 import { useStorage } from "@/firebase";
 import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
 import { EmployeeReportPdf } from "@/components/employees/EmployeeReportPdf";
+import { EmployeeActivityChart } from "@/components/employees/EmployeeActivityChart";
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -493,6 +494,13 @@ function EmployeeDetailPage() {
                     </CardContent>
                 </Card>
 
+                <EmployeeActivityChart activityData={{
+                    expenses: sortedExpenses,
+                    overtime: sortedOvertime,
+                    bonuses: sortedBonuses,
+                    withdrawals: sortedWithdrawals
+                }} />
+
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Card><CardHeader><CardTitle className="flex items-center gap-2"><DollarSign className="w-5 h-5 text-blue-500"/> {t('expenses')}</CardTitle></CardHeader><CardContent>{sortedExpenses.length > 0 ? <Table><TableHeader><TableRow><TableHead>{t('date')}</TableHead><TableHead className="text-right">{t('amount')}</TableHead></TableRow></TableHeader><TableBody>{sortedExpenses.slice(0, 3).map(e => (<TableRow key={e.id}><TableCell>{format(parseISO(e.date), 'PP')}</TableCell><TableCell className="text-right">{formatCurrency(e.amount)}</TableCell></TableRow>))}</TableBody></Table> : <p className="text-sm text-center text-muted-foreground py-4">{t('no_expenses')}</p>}</CardContent>{sortedExpenses.length > 0 && <CardFooter className="justify-end gap-2 bg-muted/50 text-sm"><span className="text-muted-foreground">{t('total_colon')}</span><span className="text-blue-500">{formatCurrency(totalExpenses)}</span></CardFooter>}</Card>
                     <Card><CardHeader><div className="flex justify-between items-center"><CardTitle className="flex items-center gap-2"><Clock className="w-5 h-5 text-orange-500"/> {t('overtime')}</CardTitle><Badge variant="outline">{totalOvertimeHours.toFixed(2)} {t('hours_short')}</Badge></div></CardHeader><CardContent>{sortedOvertime.length > 0 ? <Table><TableHeader><TableRow><TableHead>{t('date')}</TableHead><TableHead className="text-right">{t('amount')}</TableHead></TableRow></TableHeader><TableBody>{sortedOvertime.slice(0, 3).map(o => (<TableRow key={o.id}><TableCell>{format(parseISO(o.date), 'PP')}</TableCell><TableCell className="text-right">{formatCurrency(o.totalAmount)}</TableCell></TableRow>))}</TableBody></Table> : <p className="text-sm text-center text-muted-foreground py-4">{t('no_overtime_this_month')}</p>}</CardContent>{sortedOvertime.length > 0 && <CardFooter className="justify-end gap-2 bg-muted/50 text-sm"><span className="text-muted-foreground">{t('months_total_colon')}</span><span className="text-orange-500">{formatCurrency(totalOvertimeAmount)}</span></CardFooter>}</Card>
@@ -506,5 +514,3 @@ function EmployeeDetailPage() {
 }
 
 export default withAuth(EmployeeDetailPage);
-
-    

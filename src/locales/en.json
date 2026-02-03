@@ -716,6 +716,11 @@
   "create_transfer_validation_step1": "Please fill out all transfer details before proceeding.",
   "no_items_to_transfer": "No items selected for transfer.",
   "next_step": "Next Step",
-  "back": "Back"
+  "back": "Back",
+  "storage_status_overview": "Storage Status Overview",
+  "storage_status_overview_desc": "A breakdown of items by their storage verification status.",
+  "no_storage_data_available": "No storage status data is available to display.",
+  "not_set": "Not Set",
+  "yearly_activity_overview": "Yearly Activity Overview",
+  "yearly_activity_overview_desc": "A summary of financial activities for the selected year."
 }
-
