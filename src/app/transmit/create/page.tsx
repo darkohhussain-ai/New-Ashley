@@ -4,14 +4,14 @@
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, Truck, Calendar as CalendarIcon, Printer } from 'lucide-react';
+import { ArrowLeft, Plus, Truck, Calendar as CalendarIcon, Printer, ArrowRight, Save, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { format, formatISO, parseISO } from 'date-fns';
+import { format, formatISO, parseISO, getYear } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -25,101 +25,155 @@ import { TransmitReportPdf } from '@/components/transmit/TransmitReportPdf';
 
 const destinations = ["Erbil", "Baghdad", "Diwan", "Dohuk"];
 
+type TransferDetails = {
+    destinationCity: string;
+    driverName: string;
+    warehouseManagerName: string;
+    transferDate: Date;
+    invoiceNumber: number;
+}
+
 export default function CreateTransferPage() {
   const { toast } = useToast();
   const { t } = useTranslation();
   const router = useRouter();
-  const { transferItems, setTransferItems, transfers, setTransfers, isLoading: isAppLoading, settings } = useAppContext();
+  const { transferItems, setTransferItems, transfers, setTransfers, isLoading: isAppLoading } = useAppContext();
 
+  const [step, setStep] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
-  const [destinationCity, setDestinationCity] = useState('');
-  const [driverName, setDriverName] = useState('');
-  const [warehouseManagerName, setWarehouseManagerName] = useState('');
-  const [transferDate, setTransferDate] = useState<Date | undefined>(undefined);
+  const [transferDetails, setTransferDetails] = useState<Partial<TransferDetails>>({
+      transferDate: new Date(),
+  });
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const [selectedItems, setSelectedItems] = useState<Record<string, boolean>>({});
   
-  useEffect(() => {
-    if (!isAppLoading) {
-        setTransferDate(new Date());
-    }
-  }, [isAppLoading]);
-
+  const [itemsToTransfer, setItemsToTransfer] = useState< (ItemForTransfer & { transferQuantity: number })[] >([]);
+  
   const [lastTransfer, setLastTransfer] = useState<Transfer | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
-  const stagedItems = useMemo(() => transferItems.filter(item => !item.transferId), [transferItems]);
 
-  const filteredItems = useMemo(() => {
-    if (!stagedItems || !destinationCity) return [];
-    return stagedItems.filter(item => item.destination === destinationCity);
-  }, [stagedItems, destinationCity]);
-  
-  const selectedInFilterCount = useMemo(() => {
-    return filteredItems.filter(item => selectedItems[item.id]).length;
-  }, [filteredItems, selectedItems]);
-  
-  const isAllSelected = filteredItems.length > 0 && selectedInFilterCount === filteredItems.length;
-  const isIndeterminate = selectedInFilterCount > 0 && !isAllSelected;
+  useEffect(() => {
+    const nextInvoiceNumber = () => {
+        const currentYear = getYear(new Date());
+        const yearlyTransfers = transfers.filter(t => t.transferDate && getYear(parseISO(t.transferDate)) === currentYear);
+        return yearlyTransfers.length + 1;
+    };
+    setTransferDetails(prev => ({...prev, invoiceNumber: nextInvoiceNumber()}));
+  }, [transfers]);
 
-  const handleSelectAll = (checked: boolean) => {
-    setSelectedItems(prev => {
-      const newSelected = { ...prev };
-      filteredItems.forEach(item => {
-        newSelected[item.id] = checked;
-      });
-      return newSelected;
-    });
+
+  const handleNextStep = () => {
+      if (!transferDetails.destinationCity || !transferDetails.driverName || !transferDetails.warehouseManagerName || !transferDetails.transferDate || !transferDetails.invoiceNumber) {
+        toast({ variant: 'destructive', title: t('missing_information'), description: t('create_transfer_validation_step1') });
+        return;
+      }
+      
+      const stagedItems = transferItems.filter(item => !item.transferId && item.destination === transferDetails.destinationCity);
+      setItemsToTransfer(stagedItems.map(item => ({ ...item, transferQuantity: item.quantity })));
+      setStep(2);
   };
+  
+  const handleItemQuantityChange = (itemId: string, newQuantity: number) => {
+      setItemsToTransfer(currentItems =>
+          currentItems.map(item => {
+              if (item.id === itemId) {
+                  const maxQuantity = transferItems.find(i => i.id === itemId)?.quantity || 0;
+                  const validatedQuantity = Math.max(0, Math.min(newQuantity, maxQuantity));
+                  return { ...item, transferQuantity: validatedQuantity };
+              }
+              return item;
+          })
+      );
+  };
+  
 
   const handleCreateTransfer = async () => {
-    const selectedItemIds = Object.keys(selectedItems).filter(id => selectedItems[id]);
+    const selectedItems = itemsToTransfer.filter(item => item.transferQuantity > 0);
 
-    if (!destinationCity || !driverName || !warehouseManagerName || !transferDate || selectedItemIds.length === 0) {
-      toast({ variant: 'destructive', title: t('missing_information'), description: t('create_transfer_validation') });
-      return;
+    if (selectedItems.length === 0) {
+        toast({ variant: 'destructive', title: t('no_items_to_transfer'), description: "Please select at least one item or set a quantity greater than zero." });
+        return;
     }
+    
+    if (!transferDetails.destinationCity || !transferDetails.driverName || !transferDetails.warehouseManagerName || !transferDetails.transferDate || !transferDetails.invoiceNumber) {
+        toast({ variant: 'destructive', title: t('missing_information'), description: t('create_transfer_validation_step1') });
+        setStep(1);
+        return;
+    }
+    
     setIsSaving(true);
     
     try {
         const transferId = crypto.randomUUID();
-        const cargoName = `Transfer to ${destinationCity} - ${format(transferDate, 'yyyy-MM-dd')}`;
+        const cargoName = `Transfer to ${transferDetails.destinationCity} - ${format(transferDetails.transferDate, 'yyyy-MM-dd')}`;
         
-        const currentYear = new Date().getFullYear();
-        const yearlyTransfers = transfers.filter(t => t.transferDate && new Date(t.transferDate).getFullYear() === currentYear);
-        const invoiceNumber = yearlyTransfers.length + 1;
-        
-        const transferData: Transfer = {
+        const newTransfer: Transfer = {
             id: transferId,
-            transferDate: formatISO(transferDate),
+            transferDate: formatISO(transferDetails.transferDate),
             cargoName,
-            destinationCity,
-            driverName,
-            warehouseManagerName,
-            itemIds: selectedItemIds,
-            invoiceNumber
+            destinationCity: transferDetails.destinationCity,
+            driverName: transferDetails.driverName,
+            warehouseManagerName: transferDetails.warehouseManagerName,
+            itemIds: selectedItems.map(item => item.id),
+            invoiceNumber: transferDetails.invoiceNumber,
         };
 
-        setTransfers(prev => [...prev, transferData]);
-        setTransferItems(prevItems => prevItems.map(item => selectedItemIds.includes(item.id) ? { ...item, transferId } : item));
+        const updatedItems: ItemForTransfer[] = [];
+        const newStagedItems: ItemForTransfer[] = [];
+
+        transferItems.forEach(originalItem => {
+            const transferItem = selectedItems.find(i => i.id === originalItem.id);
+            if (transferItem) {
+                if (transferItem.transferQuantity < originalItem.quantity) {
+                    // Partial transfer
+                    const remainingItem: ItemForTransfer = {
+                        ...originalItem,
+                        id: crypto.randomUUID(),
+                        quantity: originalItem.quantity - transferItem.transferQuantity,
+                        transferId: null,
+                    };
+                    newStagedItems.push(remainingItem);
+                    
+                    const itemBeingTransferred: ItemForTransfer = {
+                        ...originalItem,
+                        quantity: transferItem.transferQuantity,
+                        transferId: transferId,
+                    };
+                    updatedItems.push(itemBeingTransferred);
+
+                } else {
+                    // Full transfer
+                    updatedItems.push({ ...originalItem, transferId: transferId });
+                }
+            } else {
+                // Item not in this transfer, keep it as is
+                updatedItems.push(originalItem);
+            }
+        });
         
-        setLastTransfer(transferData);
+        setTransfers(prev => [...prev, newTransfer]);
+        setTransferItems([...updatedItems, ...newStagedItems]);
+        
+        setLastTransfer(newTransfer);
         setIsModalOpen(true);
         toast({ title: t('transfer_slip_created_title'), description: t('transfer_slip_created_desc', { cargoName }) });
-
-        setDestinationCity('');
-        setDriverName('');
-        setWarehouseManagerName('');
-        setTransferDate(new Date());
-        setSelectedItems({});
         
+        // Reset state for next transfer
+        setStep(1);
+        setTransferDetails({ transferDate: new Date() });
+        setItemsToTransfer([]);
+
     } catch (error) {
         console.error("Error creating transfer:", error);
-        toast({ variant: 'destructive', title: t('save_error'), description: t('create_transfer_error') });
+        toast({ variant: 'destructive', title: "Error", description: "Failed to create transfer slip." });
     } finally {
         setIsSaving(false);
     }
   };
+
+
+  if (isAppLoading) {
+    return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
 
   return (
     <>
@@ -142,128 +196,113 @@ export default function CreateTransferPage() {
         </AlertDialogContent>
     </AlertDialog>
     <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
-      <header className="flex items-center gap-4 mb-8">
-          <Button variant="outline" size="icon" asChild>
-            <Link href="/transmit"><ArrowLeft /></Link>
-          </Button>
-          <h1 className="text-2xl md:text-3xl font-bold">{t('create_transfer_slip')}</h1>
-      </header>
+        <header className="flex items-center justify-between gap-4 mb-8">
+            <div className="flex items-center gap-4">
+                <Button variant="outline" size="icon" asChild>
+                    <Link href="/transmit"><ArrowLeft /></Link>
+                </Button>
+                <h1 className="text-2xl md:text-3xl font-bold">{t('create_transfer_slip')}</h1>
+            </div>
+            {step === 2 && (
+                 <Button onClick={handleCreateTransfer} disabled={isSaving}>
+                    {isSaving ? <Loader2 className="animate-spin mr-2"/> : <Save className="mr-2" />}
+                    {t('create_transfer_generate_report')}
+                </Button>
+            )}
+        </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-1 space-y-6">
-            <Card>
+        {step === 1 && (
+            <Card className="max-w-2xl mx-auto">
                 <CardHeader>
-                    <CardTitle>{t('transfer_details')}</CardTitle>
-                    <CardDescription>{t('transfer_details_desc')}</CardDescription>
+                    <CardTitle>{t('step_1_title')}</CardTitle>
+                    <CardDescription>{t('step_1_desc')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="destination">{t('destination_city')}</Label>
-                        <Select onValueChange={setDestinationCity} value={destinationCity}>
+                        <Select onValueChange={(val) => setTransferDetails(prev => ({...prev, destinationCity: val}))} value={transferDetails.destinationCity}>
                             <SelectTrigger id="destination"><SelectValue placeholder={t('filter_items_by_city')} /></SelectTrigger>
                             <SelectContent>
                                 {destinations.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
                             </SelectContent>
                         </Select>
                     </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="driver-name">{t('driver_name')}</Label>
-                        <Input id="driver-name" value={driverName} onChange={e => setDriverName(e.target.value)} placeholder={t('enter_driver_name')} />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="driver-name">{t('driver_name')}</Label>
+                            <Input id="driver-name" value={transferDetails.driverName || ''} onChange={e => setTransferDetails(prev => ({...prev, driverName: e.target.value}))} placeholder={t('enter_driver_name')} />
+                        </div>
+                        <div className="space-y-2">
+                           <Label htmlFor="manager-name">{t('warehouse_manager')}</Label>
+                           <Input id="manager-name" value={transferDetails.warehouseManagerName || ''} onChange={e => setTransferDetails(prev => ({...prev, warehouseManagerName: e.target.value}))} placeholder={t('enter_manager_name')} />
+                        </div>
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="manager-name">{t('warehouse_manager')}</Label>
-                        <Input id="manager-name" value={warehouseManagerName} onChange={e => setWarehouseManagerName(e.target.value)} placeholder={t('enter_manager_name')} />
-                    </div>
-                    <div className="space-y-2">
-                        <Label>{t('transfer_date')}</Label>
-                        <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                            <PopoverTrigger asChild>
-                                <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !transferDate && "text-muted-foreground")}>
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {transferDate ? format(transferDate, 'PPP') : <span>{t('pick_a_date')}</span>}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0">
-                              <Calendar
-                                mode="single"
-                                selected={transferDate}
-                                onSelect={(date) => {
-                                  if (date) setTransferDate(date);
-                                  setIsCalendarOpen(false);
-                                }}
-                                initialFocus
-                              />
-                              <div className="p-2 border-t">
-                                <Input 
-                                    type="text"
-                                    placeholder="yyyy-mm-dd"
-                                    value={transferDate ? format(transferDate, 'yyyy-MM-dd') : ''}
-                                    onChange={(e) => {
-                                        try {
-                                            const newDate = parseISO(e.target.value);
-                                            if (!isNaN(newDate.getTime())) {
-                                                setTransferDate(newDate);
-                                            }
-                                        } catch {}
-                                    }}
-                                />
-                              </div>
-                            </PopoverContent>
-                        </Popover>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>{t('transfer_date')}</Label>
+                            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !transferDetails.transferDate && "text-muted-foreground")}>
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        {transferDetails.transferDate ? format(transferDetails.transferDate, 'PPP') : <span>{t('pick_a_date')}</span>}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0">
+                                <Calendar mode="single" selected={transferDetails.transferDate} onSelect={(d) => {if(d) setTransferDetails(p=>({...p, transferDate: d})); setIsCalendarOpen(false);}} initialFocus />
+                                </PopoverContent>
+                            </Popover>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="invoice-number">{t('invoice_no')}</Label>
+                            <Input id="invoice-number" type="number" value={transferDetails.invoiceNumber || ''} onChange={e => setTransferDetails(prev => ({...prev, invoiceNumber: parseInt(e.target.value) || 0}))} />
+                        </div>
                     </div>
                 </CardContent>
-                <CardContent>
-                     <Button onClick={handleCreateTransfer} disabled={isSaving || Object.keys(selectedItems).filter(k => selectedItems[k]).length === 0} className="w-full">
-                        {isSaving ? <Loader2 className="animate-spin mr-2"/> : <Truck className="mr-2" />}
-                        {t('create_transfer_generate_report')}
+                <CardFooter>
+                    <Button onClick={handleNextStep} className="w-full">
+                        {t('next_step')} <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
-                </CardContent>
+                </CardFooter>
             </Card>
-        </div>
-        <div className="lg:col-span-2">
-            <Card>
+        )}
+
+        {step === 2 && (
+             <Card>
                 <CardHeader>
-                    <CardTitle>{t('items_ready_for_transfer')} ({filteredItems.length})</CardTitle>
-                    <CardDescription>{t('items_ready_for_transfer_desc')}</CardDescription>
+                    <CardTitle>{t('step_2_title')}</CardTitle>
+                    <CardDescription>{t('step_2_desc')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                      <div className="overflow-x-auto">
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="w-[50px]">
-                                        <Checkbox 
-                                          checked={isIndeterminate ? 'indeterminate' : isAllSelected}
-                                          onCheckedChange={(checked) => handleSelectAll(checked === true)}
-                                          aria-label="Select all"
-                                          disabled={!destinationCity || filteredItems.length === 0}
-                                        />
-                                    </TableHead>
                                     <TableHead>{t('model')}</TableHead>
-                                    <TableHead>{t('quantity')}</TableHead>
-                                    <TableHead>{t('destination')}</TableHead>
+                                    <TableHead className="w-48">{t('transfer_quantity')}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {filteredItems.length > 0 ? filteredItems.map((item) => (
-                                    <TableRow key={item.id} data-state={selectedItems[item.id] && "selected"}>
+                                {itemsToTransfer.length > 0 ? itemsToTransfer.map((item) => (
+                                    <TableRow key={item.id}>
                                         <TableCell>
-                                          <Checkbox
-                                              checked={selectedItems[item.id] || false}
-                                              onCheckedChange={(checked) => {
-                                                  setSelectedItems(prev => ({...prev, [item.id]: !!checked}))
-                                              }}
-                                              aria-label={`Select ${item.model}`}
-                                          />
+                                            <p className="font-medium">{item.model}</p>
+                                            <p className="text-xs text-muted-foreground">{t('available_quantity', {qty: item.quantity})}</p>
                                         </TableCell>
-                                        <TableCell className="font-medium">{item.model}</TableCell>
-                                        <TableCell>{item.quantity}</TableCell>
-                                        <TableCell className="text-muted-foreground">{item.destination}</TableCell>
+                                        <TableCell>
+                                            <Input
+                                                type="number"
+                                                value={item.transferQuantity}
+                                                onChange={e => handleItemQuantityChange(item.id, parseInt(e.target.value))}
+                                                max={item.quantity}
+                                                min={0}
+                                                className="w-24"
+                                            />
+                                        </TableCell>
                                     </TableRow>
                                 )) : (
                                     <TableRow>
-                                        <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">
-                                            {destinationCity ? t('no_items_for_destination') : t('select_destination_to_see_items')}
+                                        <TableCell colSpan={2} className="text-center h-24 text-muted-foreground">
+                                            {t('no_items_for_destination')}
                                         </TableCell>
                                     </TableRow>
                                 )}
@@ -271,9 +310,12 @@ export default function CreateTransferPage() {
                         </Table>
                     </div>
                 </CardContent>
+                <CardFooter>
+                    <Button onClick={() => setStep(1)} variant="outline">{t('back')}</Button>
+                </CardFooter>
             </Card>
-        </div>
-      </div>
+        )}
+
     </div>
     </>
   );

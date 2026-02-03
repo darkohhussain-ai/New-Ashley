@@ -566,7 +566,7 @@
   "reactivate": "Reactivate",
   "deactivate_desc": "Deactivated employees will not appear in dropdown lists for new entries.",
   "report_date": "Report Date",
-  "taxi_expenses": "Taxi Expenses",
+  "taxi_expenses": "Taxi Rent",
   "purchases_buying_items": "Purchases (Buying Items)",
   "taxi_for_warehouse_organization": "Taxi for warehouse organization",
   "taxi_for_loading_items": "Taxi for loading items",
@@ -706,5 +706,15 @@
   "view_transfer": "View Transfer",
   "confirm_delete_item": "This will permanently delete {model} from the staging list.",
   "confirm_delete_transfer": "This will delete the transfer slip and return all its items to the staging list. This action cannot be undone.",
-  "export_excel": "Export Excel"
+  "export_excel": "Export Excel",
+  "next_step": "Next Step",
+  "back": "Back",
+  "step_1_title": "Transfer Details",
+  "step_1_desc": "Enter the general information for this transfer.",
+  "step_2_title": "Select Items for Transfer",
+  "step_2_desc": "Select items and adjust quantities for this transfer.",
+  "available_quantity": "Available: {qty}",
+  "transfer_quantity": "Transfer Qty",
+  "create_transfer_validation_step1": "Please fill out all transfer details before proceeding.",
+  "no_items_to_transfer": "No items selected for transfer."
 }
