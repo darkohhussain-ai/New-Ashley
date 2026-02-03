@@ -15,13 +15,14 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAppContext } from '@/context/app-provider';
-import type { ItemForTransfer } from '@/lib/types';
+import type { ItemForTransfer, ActivityLog } from '@/lib/types';
 import { format, formatISO, parseISO } from 'date-fns';
 import { useTranslation } from '@/hooks/use-translation';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import * as XLSX from 'xlsx';
+import { useAuth } from '@/hooks/use-auth';
 
 const destinations = ["Erbil", "Baghdad", "Diwan", "Dohuk"];
 const storageOptions = ["Ashley", "Huana", "Showroom"];
@@ -29,7 +30,8 @@ const storageOptions = ["Ashley", "Huana", "Showroom"];
 export default function AddItemsPage() {
   const { toast } = useToast();
   const { t } = useTranslation();
-  const { transferItems, setTransferItems, isLoading: isAppLoading } = useAppContext();
+  const { transferItems, setTransferItems, isLoading: isAppLoading, setActivityLogs } = useAppContext();
+  const { user } = useAuth();
 
   const [isSaving, setIsSaving] = useState(false);
   
@@ -100,6 +102,21 @@ export default function AddItemsPage() {
     };
     
     setTransferItems([...transferItems, newItemData]);
+    
+    if (user) {
+        const log: ActivityLog = {
+            id: crypto.randomUUID(),
+            userId: user.id,
+            username: user.username,
+            action: 'create',
+            entity: 'Staged Item',
+            entityId: newItemData.id,
+            description: `Staged item "${newItemData.model}" for transfer to ${newItemData.destination}.`,
+            timestamp: new Date().toISOString(),
+        };
+        setActivityLogs(prev => [...prev, log]);
+    }
+
     toast({ title: t('item_added'), description: t('item_added_to_transfer_list', {model}) });
     resetForm();
     setIsSaving(false);
@@ -114,6 +131,21 @@ export default function AddItemsPage() {
 
     setIsSaving(true);
     setTransferItems(transferItems.map(item => item.id === editingItem.id ? editingItem : item));
+    
+    if (user) {
+        const log: ActivityLog = {
+            id: crypto.randomUUID(),
+            userId: user.id,
+            username: user.username,
+            action: 'update',
+            entity: 'Staged Item',
+            entityId: editingItem.id,
+            description: `Updated staged item "${editingItem.model}".`,
+            timestamp: new Date().toISOString(),
+        };
+        setActivityLogs(prev => [...prev, log]);
+    }
+
     toast({ title: t('item_updated'), description: t('item_changes_saved') });
     setEditingItem(null);
     setIsSaving(false);
@@ -121,6 +153,21 @@ export default function AddItemsPage() {
 
   const handleDeleteItem = (itemToDelete: ItemForTransfer) => {
     setTransferItems(transferItems.filter(item => item.id !== itemToDelete.id));
+
+    if (user) {
+        const log: ActivityLog = {
+            id: crypto.randomUUID(),
+            userId: user.id,
+            username: user.username,
+            action: 'delete',
+            entity: 'Staged Item',
+            entityId: itemToDelete.id,
+            description: `Removed staged item "${itemToDelete.model}".`,
+            timestamp: new Date().toISOString(),
+        };
+        setActivityLogs(prev => [...prev, log]);
+    }
+
     toast({ title: t('item_removed'), description: t('item_removed_from_list', {model: itemToDelete.model}) });
   };
   

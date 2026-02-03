@@ -1,3 +1,5 @@
+
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -17,8 +19,9 @@ import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogHea
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { useAppContext } from '@/context/app-provider';
-import type { Transfer, ItemForTransfer } from '@/lib/types';
+import type { Transfer, ItemForTransfer, ActivityLog } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
+import { useAuth } from '@/hooks/use-auth';
 
 const destinations = ["Erbil", "Baghdad", "Diwan", "Dohuk"];
 
@@ -34,7 +37,8 @@ export default function CreateTransferPage() {
   const { toast } = useToast();
   const { t } = useTranslation();
   const router = useRouter();
-  const { transferItems, setTransferItems, transfers, setTransfers, isLoading: isAppLoading } = useAppContext();
+  const { transferItems, setTransferItems, transfers, setTransfers, isLoading: isAppLoading, setActivityLogs } = useAppContext();
+  const { user } = useAuth();
 
   const [step, setStep] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
@@ -153,6 +157,20 @@ export default function CreateTransferPage() {
         setTransfers(prev => [...prev, newTransfer]);
         setTransferItems([...updatedItems, ...newStagedItems]);
         
+        if (user) {
+            const log: ActivityLog = {
+                id: crypto.randomUUID(),
+                userId: user.id,
+                username: user.username,
+                action: 'create',
+                entity: 'Transfer',
+                entityId: newTransfer.id,
+                description: `Created transfer slip "${newTransfer.cargoName}" with ${newTransfer.itemIds.length} items.`,
+                timestamp: new Date().toISOString(),
+            };
+            setActivityLogs(prev => [...prev, log]);
+        }
+
         setLastTransfer(newTransfer);
         setIsModalOpen(true);
         

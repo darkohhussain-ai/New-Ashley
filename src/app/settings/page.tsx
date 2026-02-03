@@ -642,22 +642,15 @@ function SettingsPage() {
     
     const savingToast = toast({
       title: 'Saving Settings...',
-      description: 'Please wait. This may take a moment.',
-      duration: Infinity,
+      description: 'Your changes are being saved and applied.',
+      duration: 5000,
     });
 
     try {
         await setSettings(draftSettings);
         
-        savingToast.update({ id: savingToast.id, title: 'Settings Saved', description: 'Applying changes and reloading...', duration: 5000 });
+        savingToast.update({ id: savingToast.id, title: 'Settings Saved', description: 'Your changes have been applied across the application.' });
 
-        const channel = new BroadcastChannel('settings-update');
-        channel.postMessage('reload');
-        channel.close();
-
-        setTimeout(() => {
-            window.location.reload();
-        }, 1000);
     } catch (err: any) {
         console.error("Error saving settings:", err);
         let description = 'An error occurred while saving. Check the console for details.';

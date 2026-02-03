@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useMemo, useRef, useEffect, useState } from 'react';
@@ -12,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { TransmitReportPdf } from '@/components/transmit/TransmitReportPdf';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAppContext } from '@/context/app-provider';
-import type { Transfer, ItemForTransfer, BranchColors } from '@/lib/types';
+import type { Transfer, ItemForTransfer, BranchColors, ActivityLog } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,13 +26,15 @@ import { ReportWrapper } from '@/components/reports/ReportWrapper';
 import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
 import html2canvas from 'html2canvas';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function ViewTransferPage() {
   const { id: transferId } = useParams();
   const router = useRouter();
   const { t } = useTranslation();
   const { toast } = useToast();
-  const { transfers, setTransfers, transferItems, setTransferItems, settings, isLoading: isAppLoading } = useAppContext();
+  const { transfers, setTransfers, transferItems, setTransferItems, settings, isLoading: isAppLoading, setActivityLogs } = useAppContext();
+  const { user } = useAuth();
 
   const transfer = useMemo(() => transfers?.find(t => t.id === transferId), [transfers, transferId]);
   const items = useMemo(() => transferItems?.filter(i => i.transferId === transferId), [transferItems, transferId]);
@@ -89,6 +92,20 @@ export default function ViewTransferPage() {
       return item;
     }));
 
+    if (user) {
+        const log: ActivityLog = {
+            id: crypto.randomUUID(),
+            userId: user.id,
+            username: user.username,
+            action: 'update',
+            entity: 'Transfer',
+            entityId: updatedTransfer.id,
+            description: `Updated transfer slip "${updatedTransfer.cargoName}".`,
+            timestamp: new Date().toISOString(),
+        };
+        setActivityLogs(prev => [...prev, log]);
+    }
+
     toast({ title: "Transfer Updated", description: "The transfer details and item list have been saved." });
     setIsEditing(false);
   };
@@ -101,6 +118,21 @@ export default function ViewTransferPage() {
     ));
     // Delete transfer
     setTransfers(prev => prev.filter(t => t.id !== transfer.id));
+
+    if (user) {
+        const log: ActivityLog = {
+            id: crypto.randomUUID(),
+            userId: user.id,
+            username: user.username,
+            action: 'delete',
+            entity: 'Transfer',
+            entityId: transfer.id,
+            description: `Deleted transfer slip "${transfer.cargoName}".`,
+            timestamp: new Date().toISOString(),
+        };
+        setActivityLogs(prev => [...prev, log]);
+    }
+
     toast({ title: "Transfer Deleted", description: "The items have been returned to the staging list." });
     router.push('/transmit/archive');
   };
@@ -344,4 +376,3 @@ export default function ViewTransferPage() {
     </>
   );
 }
-

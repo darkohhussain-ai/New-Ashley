@@ -161,39 +161,39 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const settingsDocRef = useMemoFirebase(() => db ? doc(db, 'settings', 'main') : null, [db]);
     const { data: firestoreSettings, isLoading: isSettingsLoading } = useDoc<AppSettings>(settingsDocRef);
     const [settings, setLocalSettings] = useState<AppSettings>(initialSettings);
-    const [isInitialSettingsLoaded, setIsInitialSettingsLoaded] = useState(false);
-
+    
     useEffect(() => {
-        // This effect runs only once to populate initial settings from Firestore.
-        // It avoids overwriting optimistic local updates from user actions.
-        if (!isSettingsLoading && !isInitialSettingsLoaded) {
-            if (firestoreSettings) {
-                const mergedSettings = {
-                    ...initialSettings,
-                    ...firestoreSettings,
-                    pdfSettings: {
-                        ...initialSettings.pdfSettings,
-                        ...(firestoreSettings.pdfSettings || {}),
-                        report: { ...initialSettings.pdfSettings.report, ...(firestoreSettings.pdfSettings?.report || {}) },
-                        invoice: { ...initialSettings.pdfSettings.invoice, ...(firestoreSettings.pdfSettings?.invoice || {}) },
-                        card: { ...initialSettings.pdfSettings.card, ...(firestoreSettings.pdfSettings?.card || {}) },
-                        datasheet: { ...initialSettings.pdfSettings.datasheet, ...(firestoreSettings.pdfSettings?.datasheet || {}) },
-                    }
-                };
-                setLocalSettings(mergedSettings);
-            }
-            setIsInitialSettingsLoaded(true);
+        if (firestoreSettings) {
+            const mergedSettings: AppSettings = {
+                ...initialSettings,
+                ...firestoreSettings,
+                pdfSettings: {
+                    ...initialSettings.pdfSettings,
+                    ...(firestoreSettings.pdfSettings || {}),
+                    report: { ...initialSettings.pdfSettings.report, ...(firestoreSettings.pdfSettings?.report || {}) },
+                    invoice: { ...initialSettings.pdfSettings.invoice, ...(firestoreSettings.pdfSettings?.invoice || {}) },
+                    card: { ...initialSettings.pdfSettings.card, ...(firestoreSettings.pdfSettings?.card || {}) },
+                    datasheet: { ...initialSettings.pdfSettings.datasheet, ...(firestoreSettings.pdfSettings?.datasheet || {}) },
+                },
+                lightThemeColors: { ...initialSettings.lightThemeColors, ...(firestoreSettings.lightThemeColors || {}) },
+                darkThemeColors: { ...initialSettings.darkThemeColors, ...(firestoreSettings.darkThemeColors || {}) },
+                salarySettings: { ...initialSettings.salarySettings, ...(firestoreSettings.salarySettings || {}) },
+                translations: {
+                    en: { ...initialSettings.translations.en, ...(firestoreSettings.translations?.en || {}) },
+                    ku: { ...initialSettings.translations.ku, ...(firestoreSettings.translations?.ku || {}) },
+                },
+                reportHeaderColors: { ...initialSettings.reportHeaderColors, ...(firestoreSettings.reportHeaderColors || {}) },
+            };
+            setLocalSettings(mergedSettings);
         }
-    }, [firestoreSettings, isSettingsLoading, isInitialSettingsLoaded]);
+    }, [firestoreSettings]);
 
     const setSettings = useCallback(async (value: React.SetStateAction<AppSettings>) => {
-        // Optimistically update local state for immediate UI feedback.
         const newSettings = value instanceof Function ? value(settings) : value;
-        setLocalSettings(newSettings);
+        setLocalSettings(newSettings); 
         
-        // Persist to Firestore and wait for it to complete.
         if (settingsDocRef) {
-            await setDocumentNonBlocking(settingsDocRef, JSON.parse(JSON.stringify(newSettings)), { merge: true });
+            setDocumentNonBlocking(settingsDocRef, JSON.parse(JSON.stringify(newSettings)), { merge: true });
         }
     }, [settingsDocRef, settings]);
     
@@ -215,7 +215,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
     }, [isUsersLoading, users, db]);
 
-    const isLoading = isUserLoading || !isInitialSettingsLoaded || isEmployeesLoading || isExcelFilesLoading || isItemsLoading || isLocationsLoading || isExpensesLoading || isExpenseReportsLoading || isOvertimeLoading || isBonusesLoading || isWithdrawalsLoading || isItemCategoriesLoading || isTransfersLoading || isTransferItemsLoading || isMarketingFeedbacksLoading || isEvaluationQuestionsLoading || isUsersLoading || isRolesLoading || isSoldItemsListsLoading || isActivityLogsLoading;
+    const isLoading = isUserLoading || isSettingsLoading || isEmployeesLoading || isExcelFilesLoading || isItemsLoading || isLocationsLoading || isExpensesLoading || isExpenseReportsLoading || isOvertimeLoading || isBonusesLoading || isWithdrawalsLoading || isItemCategoriesLoading || isTransfersLoading || isTransferItemsLoading || isMarketingFeedbacksLoading || isEvaluationQuestionsLoading || isUsersLoading || isRolesLoading || isSoldItemsListsLoading || isActivityLogsLoading;
 
     const value = useMemo<AppState>(() => ({
         employees, setEmployees,
