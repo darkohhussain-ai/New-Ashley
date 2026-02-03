@@ -1,4 +1,5 @@
 
+
 export type Translations = Record<string, string>;
 
 export type Language = 'en' | 'ku';
@@ -19,6 +20,17 @@ export type Role = {
 export type Permission = {
     id: string;
     description: string;
+};
+
+export type ActivityLog = {
+  id: string;
+  userId: string; 
+  username: string; 
+  action: 'create' | 'update' | 'delete' | 'login' | 'logout';
+  entity: string; 
+  entityId?: string;
+  description: string;
+  timestamp: string; 
 };
 
 export type Employee = {
@@ -155,6 +167,7 @@ export type ItemForTransfer = {
   requestDate?: string;
   invoiceNo?: string;
   storage?: string;
+  status?: 'Pending' | 'Prepared' | 'Approved';
 };
 
 export type NewItem = Omit<Item, 'id' | 'fileId' | 'storageStatus' | 'modelCondition' | 'quantityPerCondition' | 'updateStatus'> & {

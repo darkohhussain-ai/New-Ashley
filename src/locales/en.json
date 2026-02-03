@@ -723,5 +723,17 @@
   "not_set": "Not Set",
   "yearly_activity_overview": "Yearly Activity Overview",
   "yearly_activity_overview_desc": "A summary of financial activities for the selected year.",
-  "no_activity_for_year": "No activity recorded for {year}."
+  "no_activity_for_year": "No activity recorded for {year}.",
+  "user_role_management": "User & Role Management",
+  "activity_log": "Activity Log",
+  "system_activity": "System Activity",
+  "system_activity_desc": "A log of all important changes made by users in the system.",
+  "search_by_user_or_action": "Search by user, action, or description...",
+  "pick_a_date_range": "Pick a date range",
+  "clear_filters": "Clear Filters",
+  "user": "User",
+  "action": "Action",
+  "description": "Description",
+  "timestamp": "Timestamp",
+  "no_activity_found": "No activity found for the selected criteria."
 }

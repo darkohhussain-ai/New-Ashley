@@ -1,5 +1,5 @@
 
-import { Employee, ExcelFile, Item, StorageLocation, Expense, ExpenseReport, Overtime, Bonus, CashWithdrawal, SoldItemsList, Transfer, ItemForTransfer, MarketingFeedback, EvaluationQuestion, AnswerOption, User, Role, AppSettings, AllPdfSettings, PdfSettings, ThemeColors, ItemCategory, BranchColors } from '@/lib/types';
+import { Employee, ExcelFile, Item, StorageLocation, Expense, ExpenseReport, Overtime, Bonus, CashWithdrawal, SoldItemsList, Transfer, ItemForTransfer, MarketingFeedback, EvaluationQuestion, AnswerOption, User, Role, AppSettings, AllPdfSettings, PdfSettings, ThemeColors, ItemCategory, BranchColors, ActivityLog } from '@/lib/types';
 import { adminPermissions, adminAssistantPermissions, viewerPermissions, employeePermissions } from '@/lib/permissions';
 import en from '@/locales/en.json';
 import ku from '@/locales/ku.json';
@@ -144,6 +144,7 @@ export const initialData: {
     users: User[],
     roles: Role[],
     soldItemsLists: SoldItemsList[],
+    activityLogs: ActivityLog[],
 } = {
     employees: [
       { id: 'emp-01', name: 'Darko', employeeId: '01', role: 'Super Manager', createdAt: '2023-01-01T00:00:00.000Z', isActive: true },
@@ -188,4 +189,10 @@ export const initialData: {
     users: initialUsers,
     roles: initialRoles,
     soldItemsLists: [],
+    activityLogs: [
+      { id: 'log1', userId: 'user-admin-default', username: 'admin', action: 'update', entity: 'Employee', entityId: 'emp-01', description: 'Updated employee Darko details', timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString() },
+      { id: 'log2', userId: 'user-admin-default', username: 'admin', action: 'create', entity: 'Expense', entityId: 'exp-123', description: 'Created new expense for 25000 IQD', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString() },
+      { id: 'log3', userId: 'user-admin-default', username: 'admin', action: 'delete', entity: 'Item', entityId: 'item-abc', description: 'Deleted item "Old Chair" from file "Warehouse Check"', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 25).toISOString() },
+      { id: 'log4', userId: 'user-admin-default', username: 'admin', action: 'login', entity: 'User', description: 'User admin logged in successfully.', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString() },
+    ],
 };

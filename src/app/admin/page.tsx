@@ -3,8 +3,8 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, ShieldCheck, Users, KeyRound, Save, Plus, Trash2, Edit, X, Users2 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2, ShieldCheck, Users, KeyRound, Save, Plus, Trash2, Edit, X, Users2, Search, Calendar as CalendarIcon } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,12 +15,21 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/context/app-provider';
-import type { User, Role, Employee } from '@/lib/types';
+import type { User, Role, Employee, ActivityLog } from '@/lib/types';
 import { allPermissions } from '@/lib/permissions';
 import { useAuth } from '@/hooks/use-auth';
 import withAuth from '@/hooks/withAuth';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useTranslation } from '@/hooks/use-translation';
+import { format, parseISO, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
+import { DateRange } from "react-day-picker";
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
-const useAdminAuth = () => {
+
+export const useAdminAuth = () => {
   const { user, loading, hasPermission } = useAuth();
   const router = useRouter();
   const [isAdmin, setIsAdmin] = useState(false);
@@ -40,6 +49,7 @@ const useAdminAuth = () => {
 
 function UserManagement() {
   const { users, setUsers, roles, employees } = useAppContext();
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -109,49 +119,49 @@ function UserManagement() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>User Management</CardTitle>
-        <CardDescription>Add, edit, or remove user accounts and assign their roles.</CardDescription>
+        <CardTitle>{t('user_management')}</CardTitle>
+        <CardDescription>{t('user_management_desc')}</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="mb-4 flex justify-end gap-2">
            <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="outline">
-                  <Users2 className="mr-2 h-4 w-4" /> Create All Users
+                  <Users2 className="mr-2 h-4 w-4" /> {t('create_all_users')}
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Are you sure you want to create all users?</AlertDialogTitle>
+                  <AlertDialogTitle>{t('are_you_sure_create_all_users')}</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will create user accounts for all employees who do not already have one. Existing users will not be affected.
+                    {t('create_all_users_desc')}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleCreateAllUsers}>Create Users</AlertDialogAction>
+                  <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleCreateAllUsers}>{t('create_users')}</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
           <Button onClick={() => { setEditingUser(null); setIsDialogOpen(true); }}>
-            <Plus className="mr-2 h-4 w-4" /> Add User
+            <Plus className="mr-2 h-4 w-4" /> {t('add_user')}
           </Button>
            <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" disabled={users.length <= 1}>
-                  <Trash2 className="mr-2 h-4 w-4" /> Remove All
+                  <Trash2 className="mr-2 h-4 w-4" /> {t('remove_all')}
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogTitle>{t('are_you_sure_remove_all_users')}</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This action will permanently delete all user accounts except for the main administrator. This cannot be undone.
+                    {t('remove_all_users_desc')}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDeleteAllUsers}>Delete All Users</AlertDialogAction>
+                  <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteAllUsers}>{t('delete_all_users')}</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
@@ -160,9 +170,9 @@ function UserManagement() {
             <Table>
             <TableHeader>
                 <TableRow>
-                <TableHead>Username</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{t('username')}</TableHead>
+                <TableHead>{t('role')}</TableHead>
+                <TableHead className="text-right">{t('actions')}</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
@@ -182,7 +192,7 @@ function UserManagement() {
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                               <AlertDialogHeader>
-                                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                  <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
                                   <AlertDialogDescription>
                                       This action cannot be undone. This will permanently delete the user account for <strong>{userToDelete?.username}</strong>. 
                                       To confirm, please type <strong>DELETE {userToDelete?.username}</strong> below.
@@ -195,7 +205,7 @@ function UserManagement() {
                                   autoFocus
                               />
                               <AlertDialogFooter>
-                                  <AlertDialogCancel onClick={() => setUserToDelete(null)}>Cancel</AlertDialogCancel>
+                                  <AlertDialogCancel onClick={() => setUserToDelete(null)}>{t('cancel')}</AlertDialogCancel>
                                   <AlertDialogAction
                                       disabled={deleteConfirmText !== `DELETE ${userToDelete?.username}`}
                                       onClick={() => {
@@ -203,7 +213,7 @@ function UserManagement() {
                                           setUserToDelete(null);
                                       }}
                                   >
-                                      Delete User
+                                      {t('delete_user')}
                                   </AlertDialogAction>
                               </AlertDialogFooter>
                           </AlertDialogContent>
@@ -229,6 +239,7 @@ function UserManagement() {
 }
 
 function UserDialog({ open, onOpenChange, user, onSave, roles, employees, existingUsers }: { open: boolean, onOpenChange: (open: boolean) => void, user: User | null, onSave: (user: User, isNew: boolean) => void, roles: Role[], employees: Employee[], existingUsers: User[] }) {
+    const { t } = useTranslation();
     const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
     const [password, setPassword] = useState('');
     const [roleId, setRoleId] = useState('');
@@ -265,12 +276,12 @@ function UserDialog({ open, onOpenChange, user, onSave, roles, employees, existi
     const handleSubmit = () => {
       if(isNewUser) {
         if (!selectedEmployeeId) {
-            alert("Please select an employee.");
+            toast({ variant: 'destructive', title: t('please_select_employee')});
             return;
         }
         const selectedEmp = employees.find(e => e.id === selectedEmployeeId);
         if (!selectedEmp) {
-            alert("Selected employee not found.");
+            toast({ variant: 'destructive', title: t('selected_employee_not_found')});
             return;
         }
         
@@ -300,18 +311,18 @@ function UserDialog({ open, onOpenChange, user, onSave, roles, employees, existi
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{user ? 'Edit User' : 'Add User'}</DialogTitle>
+            <DialogTitle>{user ? t('edit_user') : t('add_user')}</DialogTitle>
             <DialogDescription>
-              {user ? `Update details for ${user.username}.` : "Select an employee to create a new user account."}
+              {user ? `${t('user_updated_desc', { username: user.username})}` : t('create_new_user_desc')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
+                <Label htmlFor="username">{t('username')}</Label>
                 {isNewUser ? (
                     <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
                         <SelectTrigger id="username">
-                            <SelectValue placeholder="Select an employee" />
+                            <SelectValue placeholder={t('select_an_employee')} />
                         </SelectTrigger>
                         <SelectContent>
                             {availableEmployees.map(emp => (
@@ -324,14 +335,14 @@ function UserDialog({ open, onOpenChange, user, onSave, roles, employees, existi
                 )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder={isNewUser ? "Leave blank for default (firstname123)" : "Leave blank to keep current password"} />
+              <Label htmlFor="password">{t('password')}</Label>
+              <Input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder={isNewUser ? t('password_default_new') : t('password_default_edit')} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="role">Role</Label>
+              <Label htmlFor="role">{t('role')}</Label>
               <Select value={roleId} onValueChange={setRoleId}>
                 <SelectTrigger id="role">
-                  <SelectValue placeholder="Select a role" />
+                  <SelectValue placeholder={t('select_a_role')} />
                 </SelectTrigger>
                 <SelectContent>
                   {roles.map(role => (
@@ -344,17 +355,17 @@ function UserDialog({ open, onOpenChange, user, onSave, roles, employees, existi
             </div>
           </div>
           <DialogFooter>
-            <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-            <Button onClick={handleSubmit}>Save</Button>
+            <DialogClose asChild><Button variant="outline">{t('cancel')}</Button></DialogClose>
+            <Button onClick={handleSubmit}>{t('save')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     );
 }
 
-
 function RoleManagement() {
     const { roles, setRoles } = useAppContext();
+    const { t } = useTranslation();
     const [selectedRole, setSelectedRole] = useState<Role | null>(null);
     const { toast } = useToast();
   
@@ -379,21 +390,21 @@ function RoleManagement() {
     const handleSaveRole = () => {
         if (!selectedRole) return;
         setRoles(roles.map(r => r.id === selectedRole.id ? selectedRole : r));
-        toast({ title: "Role Updated", description: `Permissions for ${selectedRole.name} have been saved.`});
+        toast({ title: t("role_updated"), description: t('role_updated_desc', {roleName: selectedRole.name})});
     };
   
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Role & Permission Management</CardTitle>
-          <CardDescription>Select a role to view and edit its page access permissions.</CardDescription>
+          <CardTitle>{t('role_management')}</CardTitle>
+          <CardDescription>{t('role_management_desc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
             <div className="flex items-center gap-4">
-                <Label htmlFor="role-select">Select Role:</Label>
+                <Label htmlFor="role-select">{t('select_role')}</Label>
                 <Select value={selectedRole?.id || ''} onValueChange={(roleId) => setSelectedRole(roles.find(r => r.id === roleId) || null)}>
                     <SelectTrigger id="role-select" className="w-[250px]">
-                        <SelectValue placeholder="Select a role..." />
+                        <SelectValue placeholder={t('select_a_role')} />
                     </SelectTrigger>
                     <SelectContent>
                         {roles.map(role => (
@@ -405,7 +416,7 @@ function RoleManagement() {
 
             {selectedRole && (
                 <div className="border p-4 rounded-lg">
-                    <h3 className="mb-4">Permissions for {selectedRole.name}</h3>
+                    <h3 className="mb-4">{t('permissions_for_role', {roleName: selectedRole.name})}</h3>
                     <div className="max-h-[40vh] overflow-y-auto space-y-2">
                         {allPermissions.map(permission => (
                             <div key={permission.id} className="flex items-center space-x-2">
@@ -423,7 +434,7 @@ function RoleManagement() {
                     </div>
                     <div className="mt-4 text-right">
                         <Button onClick={handleSaveRole} disabled={selectedRole.name === 'Admin'}>
-                            <Save className="mr-2 h-4 w-4" /> Save Permissions for {selectedRole.name}
+                            <Save className="mr-2 h-4 w-4" /> {t('save_permissions_for_role', {roleName: selectedRole.name})}
                         </Button>
                     </div>
                 </div>
@@ -433,8 +444,121 @@ function RoleManagement() {
     );
 }
 
+function ActivityLog() {
+    const { t } = useTranslation();
+    const { activityLogs, isLoading } = useAppContext();
+
+    const [searchQuery, setSearchQuery] = useState('');
+    const [dateRange, setDateRange] = useState<DateRange | undefined>();
+
+    const sortedLogs = useMemo(() => {
+        if (!activityLogs) return [];
+        return [...activityLogs].sort((a,b) => parseISO(b.timestamp).getTime() - parseISO(a.timestamp).getTime());
+    }, [activityLogs]);
+
+    const filteredLogs = useMemo(() => {
+        return sortedLogs.filter(log => {
+            const queryMatch = log.username.toLowerCase().includes(searchQuery.toLowerCase()) || log.description.toLowerCase().includes(searchQuery.toLowerCase()) || log.action.toLowerCase().includes(searchQuery.toLowerCase());
+            
+            const dateMatch = !dateRange || !dateRange.from || (
+                isWithinInterval(parseISO(log.timestamp), {
+                    start: startOfDay(dateRange.from),
+                    end: dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from),
+                })
+            );
+
+            return queryMatch && dateMatch;
+        });
+    }, [sortedLogs, searchQuery, dateRange]);
+
+    const getActionBadgeVariant = (action: string) => {
+        switch (action) {
+            case 'create': return 'default';
+            case 'login': return 'default';
+            case 'update': return 'secondary';
+            case 'delete': return 'destructive';
+            case 'logout': return 'outline';
+            default: return 'outline';
+        }
+    };
+
+    if (isLoading) {
+        return (
+             <div className="flex items-center justify-center p-8"><Loader2 className="animate-spin text-primary h-8 w-8"/></div>
+        )
+    }
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>{t('system_activity')}</CardTitle>
+                <CardDescription>{t('system_activity_desc')}</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="flex flex-col md:flex-row gap-4 mb-6">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input placeholder={t('search_by_user_or_action')} className="pl-10" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                    </div>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button id="date" variant={"outline"} className={cn("w-full md:w-[300px] justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {dateRange?.from ? (dateRange.to ? (
+                                    <>{format(dateRange.from, "LLL dd, y")} - {format(dateRange.to, "LLL dd, y")}</>
+                                ) : (
+                                    format(dateRange.from, "LLL dd, y")
+                                )) : (
+                                    <span>{t('pick_a_date_range')}</span>
+                                )}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="end">
+                            <Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={2}/>
+                        </PopoverContent>
+                    </Popover>
+                    <Button variant="ghost" onClick={() => {setSearchQuery(''); setDateRange(undefined);}}>{t('clear_filters')}</Button>
+                </div>
+
+                 <div className="border rounded-lg overflow-hidden">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-[150px]">{t('user')}</TableHead>
+                                <TableHead className="w-[100px]">{t('action')}</TableHead>
+                                <TableHead>{t('description')}</TableHead>
+                                <TableHead className="w-[200px] text-right">{t('timestamp')}</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {filteredLogs.length > 0 ? (
+                                filteredLogs.map(log => (
+                                    <TableRow key={log.id}>
+                                        <TableCell className="font-medium flex items-center gap-2 pt-4"><Users className="h-4 w-4 text-muted-foreground"/>{log.username}</TableCell>
+                                        <TableCell><Badge variant={getActionBadgeVariant(log.action)}>{log.action}</Badge></TableCell>
+                                        <TableCell>{log.description}</TableCell>
+                                        <TableCell className="text-right">{format(parseISO(log.timestamp), 'PPP p')}</TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                 <TableRow>
+                                    <TableCell colSpan={4} className="h-24 text-center">
+                                        {t('no_activity_found')}
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                 </div>
+            </CardContent>
+        </Card>
+    );
+}
+
+
 function AdminPage() {
   const { isAdmin, loading } = useAdminAuth();
+  const { t } = useTranslation();
 
   if (loading || !isAdmin) {
     return (
@@ -450,15 +574,26 @@ function AdminPage() {
         <div className="mb-8">
             <h1 className="text-3xl flex items-center gap-2">
             <ShieldCheck className="h-8 w-8" />
-            Admin Panel
+            {t('admin_panel')}
             </h1>
-            <p className="text-muted-foreground">System configuration and user management.</p>
+            <p className="text-muted-foreground">{t('admin_panel_desc')}</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <UserManagement />
-            <RoleManagement />
-        </div>
+        <Tabs defaultValue="management" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="management">{t('user_role_management')}</TabsTrigger>
+                <TabsTrigger value="activity">{t('activity_log')}</TabsTrigger>
+            </TabsList>
+            <TabsContent value="management" className="pt-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <UserManagement />
+                    <RoleManagement />
+                </div>
+            </TabsContent>
+            <TabsContent value="activity" className="pt-6">
+                <ActivityLog />
+            </TabsContent>
+        </Tabs>
         </main>
     </div>
   );
