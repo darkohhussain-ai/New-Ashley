@@ -345,10 +345,6 @@ function TranslationEditor({ onSave, draftSettings, setDraftSettings }: {
   const { t } = useTranslation();
   const [search, setSearch] = useState('');
 
-  const handleDraftChange = (key: keyof AppSettings, value: any) => {
-    setDraftSettings(prev => ({ ...prev, [key]: value }));
-  };
-
   const handleTranslationChange = (lang: 'en' | 'ku', key: string, value: string) => {
     setDraftSettings(prev => ({
       ...prev,
@@ -377,51 +373,10 @@ function TranslationEditor({ onSave, draftSettings, setDraftSettings }: {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Languages /> {t('language_text')}
+          <Languages /> {t('app_text')}
         </CardTitle>
-        <CardDescription>{t('language_text_desc')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Type /> Application Font
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-             <div className="space-y-2">
-              <Label htmlFor="font-select">Application Font</Label>
-              <Select value={draftSettings.fontFamily} onValueChange={(value) => handleDraftChange('fontFamily', value)}>
-                <SelectTrigger id="font-select">
-                  <SelectValue placeholder="Select a font" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Arial">Arial</SelectItem>
-                  <SelectItem value="Times New Roman">Times New Roman</SelectItem>
-                  <SelectItem value="Calibri">Calibri</SelectItem>
-                  <SelectItem value="Cambria">Cambria</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {draftSettings.fontFamily && (
-              <div className="space-y-2">
-                <Label>{t('font_preview')}</Label>
-                <div
-                  className="p-4 border rounded-lg"
-                  style={{ fontFamily: `${draftSettings.fontFamily}, sans-serif` }}
-                >
-                  <p className="text-lg">
-                    The quick brown fox jumps over the lazy dog.
-                  </p>
-                  <p className="text-lg" dir="rtl">
-                    چۆنی باشی؟ سوپاس بۆ تۆ، من باشم.
-                  </p>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
         <div className="flex gap-4">
           <div className="relative flex-grow">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -1254,6 +1209,38 @@ function SettingsPage() {
               draftSettings={draftSettings}
               setDraftSettings={setDraftSettings}
             />
+            <Card>
+              <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                  <Type /> {t('custom_app_font')}
+                  </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                      <Label htmlFor="font-upload">{t('upload_font_file')}</Label>
+                      <Input
+                          id="font-upload"
+                          type="file"
+                          accept=".ttf,.otf,.woff,.woff2"
+                          onChange={e => handleFileUpload(e, 'customFont')}
+                      />
+                  </div>
+                  <div className="space-y-2">
+                      <Label htmlFor="font-select">Fallback Font</Label>
+                      <Select value={draftSettings.fontFamily} onValueChange={(value) => handleDraftChange('fontFamily', value)}>
+                          <SelectTrigger id="font-select">
+                          <SelectValue placeholder="Select a fallback font" />
+                          </SelectTrigger>
+                          <SelectContent>
+                          <SelectItem value="Arial">Arial</SelectItem>
+                          <SelectItem value="Times New Roman">Times New Roman</SelectItem>
+                          <SelectItem value="Calibri">Calibri</SelectItem>
+                          <SelectItem value="Cambria">Cambria</SelectItem>
+                          </SelectContent>
+                      </Select>
+                  </div>
+              </CardContent>
+            </Card>
             <TranslationEditor
               onSave={handleSave}
               draftSettings={draftSettings}

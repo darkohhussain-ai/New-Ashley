@@ -4,6 +4,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, Cell, ResponsiveContainer } from 'recharts';
 import { ArrowLeft, User, Calendar as CalendarIcon, Building, FileText, MapPin, Edit, Trash2, Save, X, ArrowUpDown, ArrowDown, ArrowUp, ChevronLeft, ChevronRight, Search, Upload, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
@@ -81,6 +82,60 @@ const PaginationControls = ({ currentPage, totalPages, onPageChange }: { current
       </Button>
     </div>
   );
+};
+
+const ItemStatusChart = ({ items }: { items: Item[] }) => {
+    const { t } = useTranslation();
+
+    const chartData = useMemo(() => {
+        const statuses = {
+            Correct: 0,
+            Less: 0,
+            More: 0,
+            Wrapped: 0,
+            Damaged: 0,
+        };
+        items.forEach(item => {
+            if (item.storageStatus && ['Correct', 'Less', 'More'].includes(item.storageStatus)) {
+                statuses[item.storageStatus as 'Correct' | 'Less' | 'More']++;
+            }
+            if (item.modelCondition && ['Wrapped', 'Damaged'].includes(item.modelCondition)) {
+                statuses[item.modelCondition as 'Wrapped' | 'Damaged']++;
+            }
+        });
+
+        return [
+            { name: t('correct'), value: statuses.Correct, fill: 'hsl(var(--chart-2))' },
+            { name: t('less'), value: statuses.Less, fill: 'hsl(var(--chart-4))' },
+            { name: t('more'), value: statuses.More, fill: 'hsl(var(--chart-1))' },
+            { name: t('wrapped'), value: statuses.Wrapped, fill: 'hsl(var(--chart-3))' },
+            { name: t('damaged'), value: statuses.Damaged, fill: 'hsl(var(--chart-5))' },
+        ].filter(d => d.value > 0);
+    }, [items, t]);
+
+    if (chartData.length === 0) return null;
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>{t('inventory_status')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <ResponsiveContainer width="100%" height={250}>
+                    <BarChart data={chartData} layout="vertical" margin={{ left: 10, right: 10 }}>
+                        <XAxis type="number" hide />
+                        <YAxis type="category" dataKey="name" width={80} stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                        <Tooltip cursor={{ fill: 'hsl(var(--accent))' }} contentStyle={{ backgroundColor: 'hsl(var(--background))' }} />
+                        <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                            {chartData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.fill} />
+                            ))}
+                        </Bar>
+                    </BarChart>
+                </ResponsiveContainer>
+            </CardContent>
+        </Card>
+    );
 };
 
 
@@ -536,6 +591,8 @@ export default function FileDetailPage() {
                     </div>
                 </CardHeader>
               </Card>
+
+              <ItemStatusChart items={fileItems} />
 
               {isEditing && warehouseType && (
                 <Card className="print:hidden">
