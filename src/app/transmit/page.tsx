@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -21,6 +22,20 @@ function TransmitDashboardPage() {
     const router = useRouter();
 
     const menuItems = [
+      {
+        title: t('request_an_order'),
+        icon: ListPlus,
+        href: "/transmit/request-order",
+        color: "bg-fuchsia-500",
+        permission: 'page:transmit:request',
+      },
+      {
+        title: t('view_order_requests'),
+        icon: History,
+        href: "/transmit/view-requests",
+        color: "bg-indigo-500",
+        permission: 'page:transmit:view-requests',
+      },
       {
         title: t('add_manage_items'),
         icon: ListPlus,
@@ -75,7 +90,7 @@ function TransmitDashboardPage() {
   return (
     <div className="h-screen bg-background text-foreground flex flex-col">
       <header className="bg-card border-b p-4">
-        <div className="container mx-auto flex items-center gap-4">
+        <div className="w-full mx-auto flex items-center gap-4">
           <Button variant="outline" size="icon" asChild>
             <Link href="/">
               <ArrowLeft />
@@ -85,7 +100,7 @@ function TransmitDashboardPage() {
           <h1 className="text-xl font-bold">{t('transmit_cargo')}</h1>
         </div>
       </header>
-      <main className='container mx-auto p-4 md:p-8 flex-1 overflow-y-auto space-y-8'>
+      <main className='w-full mx-auto p-4 md:p-8 flex-1 overflow-y-auto space-y-8'>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {menuItems.filter(item => hasPermission(item.permission)).map((item) => (
             <Link key={item.title} href={item.href} className="group block" passHref>

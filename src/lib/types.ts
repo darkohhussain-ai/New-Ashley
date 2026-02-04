@@ -168,6 +168,7 @@ export type ItemForTransfer = {
   invoiceNo?: string;
   storage?: string;
   status?: 'Pending' | 'Prepared' | 'Approved';
+  requestedBy?: string;
 };
 
 export type NewItem = Omit<Item, 'id' | 'fileId' | 'storageStatus' | 'modelCondition' | 'quantityPerCondition' | 'updateStatus'> & {

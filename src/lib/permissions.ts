@@ -22,6 +22,8 @@ export const allPermissions: Permission[] = [
     
     // Transmit Cargo
     { id: 'page:transmit:view', description: 'View Transmit Cargo dashboard' },
+    { id: 'page:transmit:request', description: 'Create new order requests' },
+    { id: 'page:transmit:view-requests', description: 'View, edit, and delete order requests' },
     { id: 'page:transmit:add', description: 'Add/manage items for transfer' },
     { id: 'page:transmit:staged', description: 'View staged items by destination' },
     { id: 'page:transmit:create', description: 'Create new transfer slips' },
