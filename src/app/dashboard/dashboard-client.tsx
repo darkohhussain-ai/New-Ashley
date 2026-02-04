@@ -22,6 +22,7 @@ import { StorageSummaryChart } from '@/components/dashboard/StorageSummaryChart'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { FinancialSummaries } from '@/components/dashboard/FinancialSummaries';
 import { StagedItemsSummary } from '@/components/dashboard/StagedItemsSummary';
+import { OrderRequestsSummary } from '@/components/dashboard/OrderRequestsSummary';
 
 const allMenuItems = [
     {
@@ -162,7 +163,12 @@ export function DashboardClient() {
                         <FinancialSummaries />
                     </div>
                 )}
-                 {hasPermission('page:transmit:view') && (
+                 {hasPermission('admin:all') && (
+                    <div className="animate-fade-in-down" style={{ animationDelay: '150ms' }}>
+                        <OrderRequestsSummary />
+                    </div>
+                )}
+                 {hasPermission('admin:all') && (
                     <div className="animate-fade-in-down" style={{ animationDelay: '200ms' }}>
                         <StagedItemsSummary />
                     </div>

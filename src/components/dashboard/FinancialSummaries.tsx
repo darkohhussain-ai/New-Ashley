@@ -19,16 +19,18 @@ const formatCurrency = (amount: number) => {
 };
 
 const SummaryCard = ({ title, value, Icon, color }: { title: string, value: number, Icon: LucideIcon, color: string }) => (
-    <Card className="transition-transform hover:-translate-y-1">
+    <Card className="transition-transform hover:-translate-y-1 h-full flex flex-col">
         <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <Icon className="w-4 h-4" style={{ color }} />
                 {title}
             </CardTitle>
         </CardHeader>
-        <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(value)}</div>
-            <Progress value={(value / 1000000) * 100} className="h-2 mt-2" indicatorClassName="bg-primary" style={{ backgroundColor: color }} />
+        <CardContent className="flex-grow pt-0 flex flex-col justify-end">
+            <div>
+                <div className="text-2xl font-bold">{formatCurrency(value)}</div>
+                <Progress value={Math.min((value / 1000000) * 100, 100)} className="h-2 mt-2" indicatorClassName="bg-primary" style={{ backgroundColor: color }} />
+            </div>
         </CardContent>
     </Card>
 );
@@ -62,10 +64,10 @@ export function FinancialSummaries() {
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Link href="/expenses"><SummaryCard title={t('expenses')} value={monthlyTotals.expenses} Icon={DollarSign} color={colors?.expense || 'hsl(var(--chart-1))'} /></Link>
-        <Link href="/overtime"><SummaryCard title={t('overtime')} value={monthlyTotals.overtime} Icon={Clock} color={colors?.overtime || 'hsl(var(--chart-2))'} /></Link>
-        <Link href="/bonuses"><SummaryCard title={t('bonuses')} value={monthlyTotals.bonuses} Icon={Gift} color={colors?.bonus || 'hsl(var(--chart-3))'} /></Link>
-        <Link href="/cash-withdrawal"><SummaryCard title={t('cash_withdrawals')} value={monthlyTotals.withdrawals} Icon={Banknote} color={colors?.withdrawal || 'hsl(var(--chart-4))'} /></Link>
+        <Link href="/expenses" className="flex"><SummaryCard title={t('expenses')} value={monthlyTotals.expenses} Icon={DollarSign} color={colors?.expense || 'hsl(var(--chart-1))'} /></Link>
+        <Link href="/overtime" className="flex"><SummaryCard title={t('overtime')} value={monthlyTotals.overtime} Icon={Clock} color={colors?.overtime || 'hsl(var(--chart-2))'} /></Link>
+        <Link href="/bonuses" className="flex"><SummaryCard title={t('bonuses')} value={monthlyTotals.bonuses} Icon={Gift} color={colors?.bonus || 'hsl(var(--chart-3))'} /></Link>
+        <Link href="/cash-withdrawal" className="flex"><SummaryCard title={t('cash_withdrawals')} value={monthlyTotals.withdrawals} Icon={Banknote} color={colors?.withdrawal || 'hsl(var(--chart-4))'} /></Link>
     </div>
   );
 }
