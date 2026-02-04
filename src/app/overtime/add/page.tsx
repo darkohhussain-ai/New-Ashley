@@ -4,7 +4,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, Trash2, Calendar as CalendarIcon, Clock, User, Edit, Save, X, Printer, Loader2 } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Calendar as CalendarIcon, Clock, User, Edit, Save, X, Printer, Loader2, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -21,6 +21,7 @@ import type { Overtime, AllPdfSettings } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { ReportWrapper } from '@/components/reports/ReportWrapper';
+import * as XLSX from 'xlsx';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -170,6 +171,23 @@ export default function AddOvertimePage() {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleExportExcel = () => {
+    if (overtimeRecords.length === 0) {
+      toast({ variant: 'destructive', title: 'No data to export' });
+      return;
+    }
+    const dataToExport = overtimeRecords.map(record => ({
+      [t('employee')]: getEmployeeName(record.employeeId, language === 'ku'),
+      [t('overtime_hours')]: record.hours.toFixed(2),
+      [t('salary')]: record.totalAmount,
+      [t('notes')]: record.notes || '',
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, `Overtime ${format(selectedDate || new Date(), 'yyyy-MM-dd')}`);
+    XLSX.writeFile(workbook, `Daily_Overtime_${format(selectedDate || new Date(), 'yyyy-MM-dd')}.xlsx`);
   };
   
   const PageContent = () => (
@@ -372,6 +390,7 @@ export default function AddOvertimePage() {
               </PopoverContent>
             </Popover>
              <Button variant="outline" size="icon" onClick={handlePrint} disabled={isLoading || overtimeRecords.length === 0}><Printer className="h-4 w-4"/></Button>
+             <Button variant="outline" size="icon" onClick={handleExportExcel} disabled={isLoading || overtimeRecords.length === 0}><FileDown className="h-4 w-4"/></Button>
           </div>
         </div>
       </header>

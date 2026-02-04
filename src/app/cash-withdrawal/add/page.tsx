@@ -4,7 +4,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, Trash2, Calendar as CalendarIcon, User, Edit, Save, X, FileText, Banknote, Printer, Loader2 } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Calendar as CalendarIcon, User, Edit, Save, X, FileText, Banknote, Printer, Loader2, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -22,6 +22,7 @@ import { useTranslation } from '@/hooks/use-translation';
 import { useAuth } from '@/hooks/use-auth';
 import { CashWithdrawalReportPdf } from '@/components/reports/CashWithdrawalReportPdf';
 import { ReportWrapper } from '@/components/reports/ReportWrapper';
+import * as XLSX from 'xlsx';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -173,6 +174,22 @@ export default function AddCashWithdrawalPage() {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleExportExcel = () => {
+    if (dailyWithdrawals.length === 0) {
+      toast({ variant: 'destructive', title: 'No data to export' });
+      return;
+    }
+    const dataToExport = dailyWithdrawals.map(record => ({
+      [t('employee')]: getEmployeeName(record.employeeId, language === 'ku'),
+      [t('amount_iqd')]: record.amount,
+      [t('notes')]: record.notes || '',
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, `Withdrawals ${format(selectedDate || new Date(), 'yyyy-MM-dd')}`);
+    XLSX.writeFile(workbook, `Daily_Withdrawals_${format(selectedDate || new Date(), 'yyyy-MM-dd')}.xlsx`);
   };
 
   if (!selectedDate) {
@@ -371,6 +388,7 @@ export default function AddCashWithdrawalPage() {
                 </PopoverContent>
               </Popover>
               <Button variant="outline" size="icon" onClick={handlePrint} disabled={isLoading || dailyWithdrawals.length === 0}><Printer className="h-4 w-4"/></Button>
+              <Button variant="outline" size="icon" onClick={handleExportExcel} disabled={isLoading || dailyWithdrawals.length === 0}><FileDown className="h-4 w-4" /></Button>
             </div>
           </div>
         </header>

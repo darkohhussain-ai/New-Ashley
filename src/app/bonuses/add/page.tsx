@@ -4,7 +4,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, Trash2, Calendar as CalendarIcon, User, Edit, Save, X, FileText, Truck, Printer, Loader2 } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Calendar as CalendarIcon, User, Edit, Save, X, FileText, Truck, Printer, Loader2, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -22,6 +22,7 @@ import { useTranslation } from '@/hooks/use-translation';
 import { useAuth } from '@/hooks/use-auth';
 import { BonusReportPdf } from '@/components/reports/BonusReportPdf';
 import { ReportWrapper } from '@/components/reports/ReportWrapper';
+import * as XLSX from 'xlsx';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -185,6 +186,23 @@ export default function AddBonusPage() {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleExportExcel = () => {
+    if (dailyBonuses.length === 0) {
+      toast({ variant: 'destructive', title: 'No data to export' });
+      return;
+    }
+    const dataToExport = dailyBonuses.map(record => ({
+      [t('employee')]: getEmployeeName(record.employeeId, language === 'ku'),
+      [t('number_of_loads')]: record.loadCount,
+      [t('total_bonus')]: record.totalAmount,
+      [t('notes')]: record.notes || '',
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, `Bonuses ${format(selectedDate || new Date(), 'yyyy-MM-dd')}`);
+    XLSX.writeFile(workbook, `Daily_Bonuses_${format(selectedDate || new Date(), 'yyyy-MM-dd')}.xlsx`);
   };
 
   if (!selectedDate) {
@@ -396,6 +414,7 @@ export default function AddBonusPage() {
                 </PopoverContent>
               </Popover>
               <Button variant="outline" size="icon" onClick={handlePrint} disabled={isLoading || dailyBonuses.length === 0}><Printer className="h-4 w-4"/></Button>
+              <Button variant="outline" size="icon" onClick={handleExportExcel} disabled={isLoading || dailyBonuses.length === 0}><FileDown className="h-4 w-4" /></Button>
             </div>
           </div>
         </header>
