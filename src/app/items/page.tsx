@@ -2,13 +2,12 @@
 "use client";
 
 import Link from 'next/link';
-import { ArrowLeft, MapPin, FilePlus, Upload, Archive, FileText, ShoppingCart, ClipboardList } from 'lucide-react';
+import { ArrowLeft, MapPin, FilePlus, Upload, Archive } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
 import { useTranslation } from '@/hooks/use-translation';
 import { useAuth } from '@/hooks/use-auth';
 import withAuth from '@/hooks/withAuth';
+import { DashboardCard } from '@/components/dashboard/dashboard-card';
 
 function ItemsPage() {
     const { t } = useTranslation();
@@ -61,16 +60,13 @@ function ItemsPage() {
       <main className='container mx-auto p-4 md:p-8 flex-1 overflow-y-auto'>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {menuItems.filter(item => hasPermission(item.permission)).map((item) => (
-            <Link key={item.title} href={item.href} className="group block" passHref>
-                <Card className={cn("h-48 flex flex-col items-center justify-center text-white transition-transform transform hover:-translate-y-1 hover:shadow-xl", item.color)}>
-                  <CardContent className="flex flex-col items-center justify-center p-6 text-center">
-                    <div className="p-4 bg-white/20 rounded-full mb-4">
-                        <item.icon className="w-8 h-8" />
-                    </div>
-                    <CardTitle className="text-lg">{item.title}</CardTitle>
-                  </CardContent>
-                </Card>
-            </Link>
+            <DashboardCard
+                key={item.title}
+                title={item.title}
+                icon={item.icon}
+                href={item.href}
+                color={item.color}
+            />
           ))}
         </div>
       </main>

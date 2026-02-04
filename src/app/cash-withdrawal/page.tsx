@@ -14,6 +14,7 @@ import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } fro
 import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ReportWrapper } from '@/components/reports/ReportWrapper';
+import { DashboardCard } from '@/components/dashboard/dashboard-card';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'IQD', maximumFractionDigits: 0 }).format(amount);
 
@@ -114,16 +115,13 @@ function CashWithdrawalDashboardPage() {
           <DashboardContent />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {menuItems.map((item) => (
-              <Link key={item.title} href={item.href} className="group block" passHref>
-                  <Card className={cn("h-48 flex flex-col items-center justify-center text-white transition-transform transform hover:-translate-y-1 hover:shadow-xl", item.color)}>
-                    <CardContent className="flex flex-col items-center justify-center p-6 text-center">
-                      <div className="p-4 bg-white/20 rounded-full mb-4">
-                          <item.icon className="w-8 h-8" />
-                      </div>
-                      <CardTitle className="text-lg">{item.title}</CardTitle>
-                    </CardContent>
-                  </Card>
-              </Link>
+                <DashboardCard
+                    key={item.title}
+                    title={item.title}
+                    icon={item.icon}
+                    href={item.href}
+                    color={item.color}
+                />
             ))}
           </div>
         </main>

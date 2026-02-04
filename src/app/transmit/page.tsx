@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -14,6 +15,7 @@ import { useMemo } from 'react';
 import { format, parseISO } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { StagedItemsSummary } from '@/components/dashboard/StagedItemsSummary';
+import { DashboardCard } from '@/components/dashboard/dashboard-card';
 
 function TransmitDashboardPage() {
     const { t } = useTranslation();
@@ -89,18 +91,15 @@ function TransmitDashboardPage() {
         </div>
       </header>
       <main className='w-full mx-auto p-4 md:p-8 flex-1 overflow-y-auto space-y-8'>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {menuItems.filter(item => hasPermission(item.permission)).map((item) => (
-            <Link key={item.title} href={item.href} className="group block" passHref>
-                <Card className={cn("h-40 flex flex-col items-center justify-center text-white transition-transform transform hover:-translate-y-1 hover:shadow-xl", item.color)}>
-                  <CardContent className="flex flex-col items-center justify-center p-6 text-center">
-                    <div className="p-3 bg-white/20 rounded-full mb-3">
-                        <item.icon className="w-7 h-7" />
-                    </div>
-                    <CardTitle className="text-base font-semibold">{item.title}</CardTitle>
-                  </CardContent>
-                </Card>
-            </Link>
+            <DashboardCard
+              key={item.title}
+              title={item.title}
+              icon={item.icon}
+              href={item.href}
+              color={item.color}
+            />
           ))}
         </div>
         
