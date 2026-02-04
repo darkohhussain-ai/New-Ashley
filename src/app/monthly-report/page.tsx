@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -17,6 +16,8 @@ import { useTranslation } from '@/hooks/use-translation';
 import { useAuth } from '@/hooks/use-auth';
 import { FullMonthlyReportPdf } from '@/components/reports/FullMonthlyReportPdf';
 import { ReportWrapper } from '@/components/reports/ReportWrapper';
+import * as XLSX from 'xlsx';
+import { useToast } from '@/hooks/use-toast';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -31,6 +32,7 @@ export default function MonthlyReportPage() {
   const { employees, expenses, overtime, bonuses, withdrawals, settings } = useAppContext();
   const { user, hasPermission } = useAuth();
   const isReadOnly = !hasPermission('page:admin');
+  const { toast } = useToast();
   
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   
@@ -106,6 +108,43 @@ export default function MonthlyReportPage() {
     window.print();
   };
   
+  const handleExportExcel = () => {
+    if (isLoading || monthlyReportData.records.length === 0 || !selectedDate) {
+        toast({
+            variant: "destructive",
+            title: "No data to export"
+        });
+        return;
+    }
+    
+    const dataToExport = monthlyReportData.records.map(record => ({
+      [t('employee')]: getEmployeeName(record.employeeId, language === 'ku'),
+      [t('salary')]: record.salary,
+      [t('overtime')]: record.totalOvertime,
+      [t('bonuses')]: record.totalBonuses,
+      [t('expenses')]: record.totalExpenses,
+      [t('cash_withdrawals')]: record.totalWithdrawals,
+      [t('net_salary')]: record.netSalary,
+    }));
+    
+    const totalsRow = {
+      [t('employee')]: t('grand_total'),
+      [t('salary')]: grandTotals.salary,
+      [t('overtime')]: grandTotals.totalOvertime,
+      [t('bonuses')]: grandTotals.totalBonuses,
+      [t('expenses')]: grandTotals.totalExpenses,
+      [t('cash_withdrawals')]: grandTotals.totalWithdrawals,
+      [t('net_salary')]: grandTotals.netSalary,
+    };
+
+    dataToExport.push(totalsRow);
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Full Monthly Report');
+    XLSX.writeFile(workbook, `Full_Monthly_Report_${format(selectedDate, 'yyyy-MM')}.xlsx`);
+  };
+  
   const PageContent = () => (
       <>
         {isLoading ? (
@@ -166,6 +205,7 @@ export default function MonthlyReportPage() {
               </PopoverContent>
             </Popover>
             <Button variant="outline" size="icon" onClick={handlePrint} disabled={isLoading || monthlyReportData.records.length === 0}><Printer className="h-4 w-4"/></Button>
+            <Button variant="outline" size="icon" onClick={handleExportExcel} disabled={isLoading || monthlyReportData.records.length === 0}><FileDown className="h-4 w-4"/></Button>
           </div>
         </header>
 

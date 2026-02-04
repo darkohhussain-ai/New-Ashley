@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Calendar as CalendarIcon, Printer, Loader2, BarChart } from 'lucide-react';
+import { ArrowLeft, Calendar as CalendarIcon, Printer, Loader2, BarChart, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -16,6 +15,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslation } from '@/hooks/use-translation';
 import { useAuth } from '@/hooks/use-auth';
 import { ReportWrapper } from '@/components/reports/ReportWrapper';
+import * as XLSX from 'xlsx';
+import { useToast } from '@/hooks/use-toast';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -30,6 +31,7 @@ export default function MonthlyOvertimeReportPage() {
   const { overtime, employees } = useAppContext();
   const { user, hasPermission } = useAuth();
   const isReadOnly = !hasPermission('page:admin');
+  const { toast } = useToast();
   
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -78,6 +80,32 @@ export default function MonthlyOvertimeReportPage() {
 
   const handlePrint = () => {
     window.print();
+  };
+  
+  const handleExportExcel = () => {
+    if (isLoading || monthlyData.records.length === 0 || !selectedDate) {
+      toast({
+        variant: "destructive",
+        title: "No data to export"
+      });
+      return;
+    }
+    const dataToExport = monthlyData.summary.map(item => ({
+      [t('employee')]: item.employeeName,
+      [t('total_hours')]: item.totalHours.toFixed(2),
+      [t('total_amount')]: isReadOnly ? '***' : item.totalAmount,
+    }));
+    const totalsRow = {
+      [t('employee')]: t('grand_total'),
+      [t('total_hours')]: monthlyData.totalHours.toFixed(2),
+      [t('total_amount')]: isReadOnly ? '***' : monthlyData.totalAmount,
+    };
+    dataToExport.push(totalsRow);
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Monthly Overtime Report');
+    XLSX.writeFile(workbook, `Monthly_Overtime_Report_${format(selectedDate, 'yyyy-MM')}.xlsx`);
   };
   
   if(isLoading) {
@@ -174,6 +202,7 @@ export default function MonthlyOvertimeReportPage() {
               </PopoverContent>
             </Popover>
             <Button variant="outline" size="icon" onClick={handlePrint} disabled={isLoading || monthlyData.records.length === 0}><Printer className="h-4 w-4"/></Button>
+            <Button variant="outline" size="icon" onClick={handleExportExcel} disabled={isLoading || monthlyData.records.length === 0}><FileDown className="h-4 w-4"/></Button>
           </div>
         </header>
 

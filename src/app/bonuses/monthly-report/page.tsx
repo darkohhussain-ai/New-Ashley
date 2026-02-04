@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -9,6 +8,7 @@ import {
   FileText,
   Printer,
   BarChart,
+  FileDown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -39,6 +39,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslation } from '@/hooks/use-translation';
 import { useAuth } from '@/hooks/use-auth';
 import { ReportWrapper } from '@/components/reports/ReportWrapper';
+import * as XLSX from 'xlsx';
+import { useToast } from '@/hooks/use-toast';
+
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -54,6 +57,7 @@ export default function MonthlyBonusReportPage() {
   const { pdfSettings } = settings;
   const { user, hasPermission } = useAuth();
   const isReadOnly = !hasPermission('page:admin');
+  const { toast } = useToast();
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -122,6 +126,34 @@ export default function MonthlyBonusReportPage() {
 
   const handlePrint = () => {
     window.print();
+  };
+  
+  const handleExportExcel = () => {
+    if (isLoading || monthlyData.records.length === 0 || !selectedDate) {
+        toast({
+            variant: "destructive",
+            title: "No data to export"
+        });
+        return;
+    };
+    const dataToExport = monthlyData.summary.map(item => ({
+      [t('employee')]: item.employeeName,
+      [t('total_loads')]: item.totalLoads.toFixed(0),
+      [t('total_bonus')]: isReadOnly ? '***' : item.totalAmount,
+    }));
+    
+    const totalsRow = {
+      [t('employee')]: t('grand_total'),
+      [t('total_loads')]: monthlyData.totalLoads.toFixed(0),
+      [t('total_bonus')]: isReadOnly ? '***' : monthlyData.totalAmount,
+    };
+    
+    dataToExport.push(totalsRow);
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Monthly Bonus Report');
+    XLSX.writeFile(workbook, `Monthly_Bonus_Report_${format(selectedDate, 'yyyy-MM')}.xlsx`);
   };
 
   const PageContent = () => (
@@ -266,6 +298,14 @@ export default function MonthlyBonusReportPage() {
               disabled={isLoading || monthlyData.records.length === 0}
             >
               <Printer className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleExportExcel}
+              disabled={isLoading || monthlyData.records.length === 0}
+            >
+              <FileDown className="h-4 w-4" />
             </Button>
           </div>
         </header>

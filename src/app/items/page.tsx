@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { ArrowLeft, MapPin, FilePlus, Upload, Archive } from 'lucide-react';
+import { ArrowLeft, MapPin, FilePlus, Upload, Archive, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/use-translation';
 import { useAuth } from '@/hooks/use-auth';
@@ -40,6 +40,13 @@ function ItemsPage() {
       icon: Archive,
       href: "/archive",
       color: "bg-yellow-500",
+      permission: 'page:items:archive',
+    },
+    {
+      title: t("pdf_archive"),
+      icon: FileText,
+      href: "/pdf-archive",
+      color: "bg-red-500",
       permission: 'page:items:archive',
     }
   ];
