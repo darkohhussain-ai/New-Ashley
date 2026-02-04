@@ -121,24 +121,21 @@ export function DashboardClient() {
 
   return (
     <>
-      {settings.dashboardBanner && (
-        <div className="w-full p-4 md:px-8">
-          <div
-            className="relative w-full mx-auto rounded-lg overflow-hidden animate-fade-in-down"
-            style={{ height: `${settings.dashboardBannerHeight}px` }}
-          >
-            <Image
-              key={settings.dashboardBanner}
-              src={settings.dashboardBanner}
-              alt="Dashboard Banner"
-              fill
-              className="object-cover"
-              data-ai-hint="banner abstract"
-            />
-          </div>
-        </div>
-      )}
-      <main className="w-full p-4 md:p-8 pt-0 md:pt-0">
+      <main className="w-full p-4 md:p-8">
+        {settings.dashboardBanner && (
+            <div className="mb-8 relative w-full mx-auto rounded-lg overflow-hidden animate-fade-in-down"
+                style={{ height: `${settings.dashboardBannerHeight}px` }}
+            >
+                <Image
+                    key={settings.dashboardBanner}
+                    src={settings.dashboardBanner}
+                    alt="Dashboard Banner"
+                    fill
+                    className="object-cover"
+                    data-ai-hint="banner abstract"
+                />
+            </div>
+        )}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1 space-y-2">
                  <Card className="animate-fade-in-down">
