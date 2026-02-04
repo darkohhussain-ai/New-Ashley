@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -123,7 +124,21 @@ export function DashboardClient() {
     <>
       <main className="w-full p-4 md:p-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-1 space-y-2">
+            <div className="lg:col-span-1 space-y-8">
+                {settings.dashboardBanner && (
+                    <div className="relative w-full rounded-lg overflow-hidden animate-fade-in-down"
+                        style={{ height: `${settings.dashboardBannerHeight}px` }}
+                    >
+                        <Image
+                            key={settings.dashboardBanner}
+                            src={settings.dashboardBanner}
+                            alt="Dashboard Banner"
+                            fill
+                            className="object-cover"
+                            data-ai-hint="banner abstract"
+                        />
+                    </div>
+                )}
                  <Card className="animate-fade-in-down">
                     <CardHeader>
                         <CardTitle>{t('welcome_back')}</CardTitle>
@@ -143,20 +158,6 @@ export function DashboardClient() {
                 </Card>
             </div>
             <div className="lg:col-span-2 space-y-8">
-                {settings.dashboardBanner && (
-                    <div className="relative w-full rounded-lg overflow-hidden animate-fade-in-down"
-                        style={{ height: `${settings.dashboardBannerHeight}px` }}
-                    >
-                        <Image
-                            key={settings.dashboardBanner}
-                            src={settings.dashboardBanner}
-                            alt="Dashboard Banner"
-                            fill
-                            className="object-cover"
-                            data-ai-hint="banner abstract"
-                        />
-                    </div>
-                )}
                 {hasPermission('admin:all') && (
                     <div className="animate-fade-in-down" style={{ animationDelay: '100ms' }}>
                         <FinancialSummaries />
