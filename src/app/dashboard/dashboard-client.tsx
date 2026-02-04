@@ -1,8 +1,8 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import {
   Users,
   Box,
@@ -122,6 +122,20 @@ export function DashboardClient() {
   return (
     <>
       <main className="w-full p-4 md:p-8">
+        {settings.dashboardBanner && (
+            <div className="mb-8 relative w-full mx-auto rounded-lg overflow-hidden animate-fade-in-down"
+                style={{ height: `${settings.dashboardBannerHeight}px` }}
+            >
+                <Image
+                    key={settings.dashboardBanner}
+                    src={settings.dashboardBanner}
+                    alt="Dashboard Banner"
+                    fill
+                    className="object-cover"
+                    data-ai-hint="banner abstract"
+                />
+            </div>
+        )}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1 space-y-2">
                  <Card className="animate-fade-in-down">
@@ -154,12 +168,16 @@ export function DashboardClient() {
                     </div>
                 )}
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                    <div className="animate-fade-in-down" style={{ animationDelay: '300ms' }}>
-                        <MonthlyFinancialChart />
-                    </div>
-                    <div className="animate-fade-in-down" style={{ animationDelay: '400ms' }}>
-                        <StorageSummaryChart />
-                    </div>
+                    {hasPermission('admin:all') && (
+                        <Link href="/ashley-expenses" className="block animate-fade-in-down hover:-translate-y-1 transition-transform" style={{ animationDelay: '300ms' }}>
+                            <MonthlyFinancialChart />
+                        </Link>
+                    )}
+                    {hasPermission('page:items:view') && (
+                         <Link href="/items" className="block animate-fade-in-down hover:-translate-y-1 transition-transform" style={{ animationDelay: '400ms' }}>
+                            <StorageSummaryChart />
+                        </Link>
+                    )}
                 </div>
             </div>
         </div>
