@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, Fragment } from 'react';
@@ -113,6 +112,9 @@ export default function AshleyMapPage() {
     return { floor4, floor3area1Units, floor3office };
   }, [ashleyLocations]);
 
+  const floor4Left = useMemo(() => floor4.slice(8, 16), [floor4]); // 9-16
+  const floor4Right = useMemo(() => floor4.slice(0, 8).reverse(), [floor4]); // 8-1
+
   const itemsByLocationId = useMemo(() => {
     if (!allItems) return new Map<string, Item[]>();
     return allItems.reduce((acc, item) => {
@@ -162,14 +164,14 @@ export default function AshleyMapPage() {
                   <CardTitle>{t('floor_4')}</CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 md:p-8 flex justify-center rounded-xl overflow-x-auto">
-                    <div className="flex flex-col gap-8">
-                        <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
-                             {floor4.slice(0, 8).map(loc => (
+                    <div className="grid grid-cols-2 gap-4 w-full max-w-sm">
+                        <div className="flex flex-col gap-2">
+                            {floor4Left.map(loc => (
                                 <Shelf key={loc.id} loc={loc} items={itemsByLocationId.get(loc.id) || []} onClick={handleSectionClick} isHighlighted={highlightId === loc.id} />
                             ))}
                         </div>
-                        <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
-                             {floor4.slice(8, 16).map(loc => (
+                        <div className="flex flex-col gap-2">
+                             {floor4Right.map(loc => (
                                 <Shelf key={loc.id} loc={loc} items={itemsByLocationId.get(loc.id) || []} onClick={handleSectionClick} isHighlighted={highlightId === loc.id} />
                             ))}
                         </div>
