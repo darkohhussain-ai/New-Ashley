@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Plus, Trash2, Edit, Save, X, Settings, Receipt, Printer } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Edit, Save, X, Settings, Receipt, Printer, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -20,6 +21,7 @@ import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import withAuth from '@/hooks/withAuth';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import * as XLSX from 'xlsx';
 
 const initialNewItem: Omit<SoldItemsListItem, 'id'> = {
   name: '',
@@ -171,6 +173,20 @@ const SoldItemsCheckPage = () => {
         window.print();
     };
 
+    const handleExportExcel = () => {
+        if (!selectedList || selectedList.items.length === 0) return;
+        const dataToExport = selectedList.items.map(item => ({
+            [t('item_name')]: item.name,
+            [t('category')]: itemCategories.find(c => c.id === item.categoryId)?.name || 'N/A',
+            [t('quantity')]: item.quantity,
+            [t('notes')]: item.notes || 'N/A',
+        }));
+        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, selectedList.name);
+        XLSX.writeFile(workbook, `${selectedList.name}.xlsx`);
+    };
+
     return (
         <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
              <CategoryManagerDialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen} />
@@ -256,8 +272,9 @@ const SoldItemsCheckPage = () => {
                             {selectedList ? (
                             <div className="flex justify-between items-center">
                                 <div><CardTitle>{selectedList.name}</CardTitle><CardDescription>{t('items_in_list_count', {count: selectedList.items.length})}</CardDescription></div>
-                                <div className="flex items-center gap-2">
-                                  <Button variant="outline" onClick={handlePrint} disabled={!selectedList || selectedList.items.length === 0}>{t('print')}</Button>
+                                <div className="flex items-center gap-2 print:hidden">
+                                  <Button variant="outline" size="icon" onClick={handlePrint} disabled={!selectedList || selectedList.items.length === 0}><Printer className="h-4 w-4"/></Button>
+                                  <Button variant="outline" size="icon" onClick={handleExportExcel} disabled={!selectedList || selectedList.items.length === 0}><FileDown className="h-4 w-4"/></Button>
                                 </div>
                             </div>
                             ) : <CardTitle>{t('select_a_list')}</CardTitle>}
@@ -272,7 +289,7 @@ const SoldItemsCheckPage = () => {
                                     <TableHead>{t('category')}</TableHead>
                                     <TableHead className="w-24">{t('quantity')}</TableHead>
                                     <TableHead>{t('notes')}</TableHead>
-                                    <TableHead className="text-right w-28">{t('actions')}</TableHead>
+                                    <TableHead className="text-right w-28 print:hidden">{t('actions')}</TableHead>
                                   </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -288,7 +305,7 @@ const SoldItemsCheckPage = () => {
                                         </TableCell>
                                         <TableCell><Input type="number" value={editingItem.quantity} onChange={(e) => setEditingItem({...editingItem, quantity: parseInt(e.target.value) || 1})} /></TableCell>
                                         <TableCell><Textarea value={editingItem.notes} onChange={(e) => setEditingItem({...editingItem, notes: e.target.value})} dir="rtl"/></TableCell>
-                                        <TableCell className="text-right">
+                                        <TableCell className="text-right print:hidden">
                                             <div className="flex gap-1 justify-end">
                                                 <Button size="icon" className="h-8 w-8" onClick={handleUpdateItem}><Save className="h-4 w-4"/></Button>
                                                 <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setEditingItem(null)}><X className="h-4 w-4"/></Button>
@@ -301,7 +318,7 @@ const SoldItemsCheckPage = () => {
                                         <TableCell>{itemCategories.find(c => c.id === item.categoryId)?.name || 'N/A'}</TableCell>
                                         <TableCell>{item.quantity}</TableCell>
                                         <TableCell dir="rtl">{item.notes || t('na')}</TableCell>
-                                        <TableCell className="text-right">
+                                        <TableCell className="text-right print:hidden">
                                             <Button variant="ghost" size="icon" onClick={() => setEditingItem(JSON.parse(JSON.stringify(item)))}><Edit className="w-4 h-4"/></Button>
                                             <Button variant="ghost" size="icon" onClick={() => handleDeleteItem(item.id)}><Trash2 className="w-4 h-4 text-destructive"/></Button>
                                         </TableCell>
@@ -309,7 +326,7 @@ const SoldItemsCheckPage = () => {
                                     )
                                     ))}
                                 </TableBody>
-                                <TableFooter>
+                                <TableFooter className="print:hidden">
                                     <TableRow>
                                         <TableCell><Input value={newItem.name} onChange={e => setNewItem({...newItem, name: e.target.value})} placeholder={t('item_name')} dir="rtl" /></TableCell>
                                         <TableCell>

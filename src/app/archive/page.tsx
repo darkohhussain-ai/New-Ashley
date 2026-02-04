@@ -3,7 +3,7 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, FileText, Calendar as CalendarIcon, User, Building, Clock, FileDown } from 'lucide-react';
+import { ArrowLeft, FileText, Calendar as CalendarIcon, User, Building, Clock, FileDown, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { format, parseISO } from 'date-fns';
@@ -63,10 +63,14 @@ export default function ArchivePage() {
     XLSX.writeFile(workbook, `Excel_Archive_Summary_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   if (isLoading) {
     return (
       <div className="h-screen bg-background text-foreground flex flex-col">
-        <header className="bg-card border-b p-4">
+        <header className="bg-card border-b p-4 print:hidden">
           <div className="w-full flex items-center justify-between">
             <div className="flex items-center gap-4">
                 <Button variant="outline" size="icon" asChild>
@@ -78,6 +82,9 @@ export default function ArchivePage() {
                 <h1 className="text-xl">{t('excel_archive')}</h1>
             </div>
              <div className="flex items-center gap-2">
+                <Button variant="outline" size="icon" disabled>
+                    <Printer className="h-4 w-4" />
+                </Button>
                 <Button variant="outline" size="icon" disabled>
                     <FileDown className="h-4 w-4" />
                 </Button>
@@ -107,7 +114,7 @@ export default function ArchivePage() {
 
   return (
     <div className="h-screen bg-background text-foreground flex flex-col">
-      <header className="bg-card border-b p-4">
+      <header className="bg-card border-b p-4 print:hidden">
         <div className="w-full flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Button variant="outline" size="icon" asChild>
@@ -119,6 +126,10 @@ export default function ArchivePage() {
               <h1 className="text-xl">{t('excel_archive')}</h1>
             </div>
             <div className="flex items-center gap-2">
+                <Button onClick={handlePrint} variant="outline" size="icon">
+                    <Printer className="h-4 w-4" />
+                    <span className="sr-only">Print</span>
+                </Button>
                 <Button onClick={handleExportAll} variant="outline" size="icon">
                     <FileDown className="h-4 w-4" />
                     <span className="sr-only">Export All to Excel</span>

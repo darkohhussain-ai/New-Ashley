@@ -3,7 +3,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Archive, Calendar as CalendarIcon, Truck, Eye, Loader2, Plus, Printer } from 'lucide-react';
+import { ArrowLeft, Archive, Calendar as CalendarIcon, Truck, Eye, Loader2, Plus, Printer, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { format, parseISO } from 'date-fns';
@@ -12,7 +12,7 @@ import type { Bonus } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ReportWrapper } from '@/components/reports/ReportWrapper';
-
+import * as XLSX from 'xlsx';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -50,6 +50,18 @@ export default function BonusArchivePage() {
   const handlePrint = () => {
     window.print();
   }
+
+  const handleExportExcel = () => {
+    const dataToExport = groupedByDay.map(item => ({
+        [t('date')]: item.date,
+        [t('total_loads')]: item.totalLoads,
+        [t('total_amount')]: item.totalAmount,
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Bonus Archive");
+    XLSX.writeFile(workbook, "Bonus_Archive.xlsx");
+  };
   
   const PageContent = () => (
       <>
@@ -116,6 +128,7 @@ export default function BonusArchivePage() {
           </div>
            <div className="flex items-center gap-2">
               <Button onClick={handlePrint} variant="outline" size="icon"><Printer className="h-4 w-4"/></Button>
+              <Button onClick={handleExportExcel} variant="outline" size="icon"><FileDown className="h-4 w-4"/></Button>
               <Button asChild>
                   <Link href="/bonuses/add"><Plus className="mr-2"/> {t('add_bonus')}</Link>
               </Button>

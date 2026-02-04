@@ -1,10 +1,9 @@
 
-
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Archive, Calendar as CalendarIcon, Clock, Eye, Loader2, Plus, Printer } from 'lucide-react';
+import { ArrowLeft, Archive, Calendar as CalendarIcon, Clock, Eye, Loader2, Plus, Printer, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
@@ -16,6 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { ReportWrapper } from '@/components/reports/ReportWrapper';
+import * as XLSX from 'xlsx';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -43,7 +43,7 @@ export default function OvertimeArchivePage() {
     const groups: Record<string, { records: Overtime[], totalHours: number, totalAmount: number }> = {};
     
     const monthRecords = allOvertimeRecords.filter(record => 
-        isSameMonth(parseISO(record.date), selectedMonth)
+        record.date && isSameMonth(parseISO(record.date), selectedMonth)
     );
 
     monthRecords.forEach(record => {
@@ -63,7 +63,19 @@ export default function OvertimeArchivePage() {
 
   const handlePrint = () => {
     window.print();
-  }
+  };
+
+  const handleExportExcel = () => {
+    const dataToExport = monthlyReports.map(item => ({
+        [t('date')]: item.date,
+        [t('total_hours')]: item.totalHours.toFixed(2),
+        [t('total_amount')]: item.totalAmount,
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Overtime Archive");
+    XLSX.writeFile(workbook, "Overtime_Archive.xlsx");
+  };
 
   const PageContent = () => (
       <>
@@ -129,7 +141,7 @@ export default function OvertimeArchivePage() {
             <h1 className="text-xl">{t('overtime_archive')}</h1>
           </div>
           <div className="flex items-center gap-2">
-              <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+              <Popover>
                 <PopoverTrigger asChild>
                   <Button variant={"outline"} className={cn("w-48 justify-start text-left font-normal", !selectedMonth && "text-muted-foreground")}>
                     <CalendarIcon className="mr-2 h-4 w-4" />
@@ -142,13 +154,13 @@ export default function OvertimeArchivePage() {
                     selected={selectedMonth}
                     onSelect={(date) => {
                       setSelectedMonth(date);
-                      setIsCalendarOpen(false);
                     }}
                     captionLayout="dropdown-nav" fromYear={2020} toYear={2040}
                   />
                 </PopoverContent>
               </Popover>
               <Button onClick={handlePrint} variant="outline" size="icon" disabled={isLoading || monthlyReports.length === 0}><Printer className="h-4 w-4"/></Button>
+              <Button onClick={handleExportExcel} variant="outline" size="icon" disabled={isLoading || monthlyReports.length === 0}><FileDown className="h-4 w-4"/></Button>
               <Button asChild>
                   <Link href="/overtime/add"><Plus className="mr-2"/> {t('add_overtime')}</Link>
               </Button>

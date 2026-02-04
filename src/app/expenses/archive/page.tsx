@@ -3,7 +3,7 @@
 
 import { useMemo } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Archive, Calendar as CalendarIcon, DollarSign, Eye, Plus, Printer } from 'lucide-react';
+import { ArrowLeft, Archive, Calendar as CalendarIcon, DollarSign, Eye, Plus, Printer, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { format, parseISO } from 'date-fns';
@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAppContext } from '@/context/app-provider';
 import { useTranslation } from '@/hooks/use-translation';
 import { ReportWrapper } from '@/components/reports/ReportWrapper';
+import * as XLSX from 'xlsx';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'IQD', maximumFractionDigits: 0 }).format(amount);
 
@@ -27,6 +28,18 @@ export default function ExpenseArchivePage() {
   const handlePrint = () => {
     window.print();
   }
+
+  const handleExportExcel = () => {
+    const dataToExport = sortedReports.map(report => ({
+      [t('report_name')]: report.reportName,
+      [t('report_date')]: format(parseISO(report.reportDate), 'yyyy-MM-dd'),
+      [t('total_amount')]: report.totalAmount,
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Expense Reports");
+    XLSX.writeFile(workbook, "Expense_Reports_Archive.xlsx");
+  };
   
   const PageContent = () => (
       <>
@@ -93,6 +106,7 @@ export default function ExpenseArchivePage() {
           </div>
           <div className="flex items-center gap-2">
             <Button onClick={handlePrint} variant="outline" size="icon"><Printer className="h-4 w-4"/></Button>
+            <Button onClick={handleExportExcel} variant="outline" size="icon"><FileDown className="h-4 w-4"/></Button>
             <Button asChild>
               <Link href="/expenses/add"><Plus className="mr-2" /> {t('create_report')}</Link>
             </Button>

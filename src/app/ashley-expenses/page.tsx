@@ -3,7 +3,7 @@
 
 import { useState, useMemo, useRef } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Calendar as CalendarIcon, Printer, DollarSign, Clock, Gift, Banknote, FileText, Settings } from 'lucide-react';
+import { ArrowLeft, Calendar as CalendarIcon, Printer, DollarSign, Clock, Gift, Banknote, FileText, Settings, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardTitle, CardHeader, CardDescription } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -17,6 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { ReportWrapper } from '@/components/reports/ReportWrapper';
 import { DashboardCard } from '@/components/dashboard/dashboard-card';
+import * as XLSX from 'xlsx';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -70,6 +71,18 @@ function AshleyExpensesDashboard() {
   const grandTotal = chartData.reduce((sum, item) => sum + item.total, 0);
 
   const handlePrint = () => window.print();
+
+  const handleExportExcel = () => {
+    const dataToExport = chartData.map(item => ({
+      Category: item.name,
+      'Total Amount': item.total,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Monthly Overview");
+    XLSX.writeFile(workbook, `Ashley_Expenses_Overview_${format(selectedDate || new Date(), 'yyyy-MM')}.xlsx`);
+  };
 
   const DashboardContent = () => (
     <Card>
@@ -133,6 +146,7 @@ function AshleyExpensesDashboard() {
           </div>
             <div className='flex items-center gap-2'>
                 <Button onClick={handlePrint} variant="outline" size="icon"><Printer className="h-4 w-4"/></Button>
+                <Button onClick={handleExportExcel} variant="outline" size="icon"><FileDown className="h-4 w-4"/></Button>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant={"outline"} className={cn("w-48 justify-start text-left font-normal", !selectedDate && "text-muted-foreground")}>
