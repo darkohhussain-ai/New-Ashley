@@ -99,7 +99,7 @@ export function AppHeader() {
 
   return (
     <header className="bg-card border-b top-0 z-10 print:hidden">
-      <div className="w-full px-4">
+      <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20">
             <div className="flex-1 flex items-center justify-start">
                  <div className="hidden md:flex items-center gap-4 text-sm text-muted-foreground">
@@ -108,16 +108,15 @@ export function AppHeader() {
             </div>
           
             <div className="flex-1 flex items-center justify-center">
-                {isMounted && settings.appLogo && (
+                {isMounted && settings.dashboardBanner && (
                 <Link href="/">
-                    <div className="relative w-full max-w-[240px] h-16 cursor-pointer">
+                    <div className="relative w-full max-w-[320px] h-16 cursor-pointer">
                     <Image
-                        key={settings.appLogo}
-                        src={settings.appLogo}
-                        alt="App Logo"
+                        key={settings.dashboardBanner}
+                        src={settings.dashboardBanner}
+                        alt="App Banner"
                         fill
                         className="object-contain"
-                        data-ai-hint="logo"
                     />
                     </div>
                 </Link>
