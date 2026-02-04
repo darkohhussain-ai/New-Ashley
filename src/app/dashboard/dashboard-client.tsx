@@ -21,6 +21,7 @@ import { MonthlyFinancialChart } from '@/components/dashboard/MonthlyFinancialCh
 import { StorageSummaryChart } from '@/components/dashboard/StorageSummaryChart';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { FinancialSummaries } from '@/components/dashboard/FinancialSummaries';
+import { StagedItemsSummary } from '@/components/dashboard/StagedItemsSummary';
 
 const allMenuItems = [
     {
@@ -120,7 +121,7 @@ export function DashboardClient() {
 
   return (
     <>
-      <main className="container mx-auto p-4 md:p-8">
+      <main className="w-full p-4 md:p-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1 space-y-2">
                  <Card className="animate-fade-in-down">
@@ -142,13 +143,18 @@ export function DashboardClient() {
                 </Card>
             </div>
             <div className="lg:col-span-2 space-y-8">
-                {hasPermission('page:admin') && (
+                {hasPermission('admin:all') && (
                     <div className="animate-fade-in-down" style={{ animationDelay: '100ms' }}>
                         <FinancialSummaries />
                     </div>
                 )}
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                 {hasPermission('page:transmit:view') && (
                     <div className="animate-fade-in-down" style={{ animationDelay: '200ms' }}>
+                        <StagedItemsSummary />
+                    </div>
+                )}
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                    <div className="animate-fade-in-down" style={{ animationDelay: '300ms' }}>
                         <MonthlyFinancialChart />
                     </div>
                     <div className="animate-fade-in-down" style={{ animationDelay: '400ms' }}>
