@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -130,14 +131,30 @@ export default function HuanaMapPage() {
     if (!huanaLocations) return { hWarehouses, kWarehouse };
 
     for (const loc of huanaLocations) {
-        if (loc.name.startsWith('H-1')) {
-            loc.name.includes('-1-') ? hWarehouses.h1.floor1.push(loc) : hWarehouses.h1.floor2.push(loc);
-        } else if (loc.name.startsWith('H-2')) {
-            loc.name.includes('-1-') ? hWarehouses.h2.floor1.push(loc) : hWarehouses.h2.floor2.push(loc);
-        } else if (loc.name.startsWith('H-3')) {
-            loc.name.includes('-1-') ? hWarehouses.h3.floor1.push(loc) : hWarehouses.h3.floor2.push(loc);
-        } else if (loc.name.startsWith('K-1')) {
-            loc.name.includes('-1-') ? kWarehouse.k1.floor1.push(loc) : kWarehouse.k1.floor2.push(loc);
+        const parts = loc.name.split('-');
+        if (parts.length < 4) continue;
+
+        const warehousePrefix = parts[0];
+        const warehouseNum = parts[1];
+        const floorNum = parts[2];
+        
+        if (warehousePrefix === 'H') {
+            const warehouseKey = `h${warehouseNum}`;
+            if (hWarehouses[warehouseKey]) {
+                if (floorNum === '1') {
+                    hWarehouses[warehouseKey].floor1.push(loc);
+                } else if (floorNum === '2') {
+                    hWarehouses[warehouseKey].floor2.push(loc);
+                }
+            }
+        } else if (warehousePrefix === 'K') {
+             if (warehouseNum === '1') {
+                 if (floorNum === '1') {
+                    kWarehouse.k1.floor1.push(loc);
+                } else if (floorNum === '2') {
+                    kWarehouse.k1.floor2.push(loc);
+                }
+             }
         }
     }
     return { hWarehouses, kWarehouse };
