@@ -103,7 +103,7 @@ export const initialSettings: AppSettings = {
     appLogo: null,
     mainBackground: null,
     loginBackground: null,
-    dashboardBanner: null,
+    dashboardBanner: "https://picsum.photos/seed/dashboard-banner/1200/300",
     dashboardBannerHeight: 150,
     newsTickerText: 'Welcome to the Ashley DRP Manager! This is a scrolling news update.',
     fontFamily: 'Arial',
