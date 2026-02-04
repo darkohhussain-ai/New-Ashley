@@ -1,7 +1,7 @@
-
 'use client';
 
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useAppContext } from '@/context/app-provider';
 import { useTranslation } from '@/hooks/use-translation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,7 +19,7 @@ const formatCurrency = (amount: number) => {
 };
 
 const SummaryCard = ({ title, value, Icon, color }: { title: string, value: number, Icon: LucideIcon, color: string }) => (
-    <Card>
+    <Card className="transition-transform hover:-translate-y-1">
         <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <Icon className="w-4 h-4" style={{ color }} />
@@ -62,10 +62,10 @@ export function FinancialSummaries() {
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <SummaryCard title={t('expenses')} value={monthlyTotals.expenses} Icon={DollarSign} color={colors?.expense || 'hsl(var(--chart-1))'} />
-        <SummaryCard title={t('overtime')} value={monthlyTotals.overtime} Icon={Clock} color={colors?.overtime || 'hsl(var(--chart-2))'} />
-        <SummaryCard title={t('bonuses')} value={monthlyTotals.bonuses} Icon={Gift} color={colors?.bonus || 'hsl(var(--chart-3))'} />
-        <SummaryCard title={t('cash_withdrawals')} value={monthlyTotals.withdrawals} Icon={Banknote} color={colors?.withdrawal || 'hsl(var(--chart-4))'} />
+        <Link href="/expenses"><SummaryCard title={t('expenses')} value={monthlyTotals.expenses} Icon={DollarSign} color={colors?.expense || 'hsl(var(--chart-1))'} /></Link>
+        <Link href="/overtime"><SummaryCard title={t('overtime')} value={monthlyTotals.overtime} Icon={Clock} color={colors?.overtime || 'hsl(var(--chart-2))'} /></Link>
+        <Link href="/bonuses"><SummaryCard title={t('bonuses')} value={monthlyTotals.bonuses} Icon={Gift} color={colors?.bonus || 'hsl(var(--chart-3))'} /></Link>
+        <Link href="/cash-withdrawal"><SummaryCard title={t('cash_withdrawals')} value={monthlyTotals.withdrawals} Icon={Banknote} color={colors?.withdrawal || 'hsl(var(--chart-4))'} /></Link>
     </div>
   );
 }

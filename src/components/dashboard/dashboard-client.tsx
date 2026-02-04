@@ -1,8 +1,8 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import {
   Users,
   Box,
@@ -20,6 +20,8 @@ import { useAuth } from '@/hooks/use-auth';
 import { MonthlyFinancialChart } from '@/components/dashboard/MonthlyFinancialChart';
 import { StorageSummaryChart } from '@/components/dashboard/StorageSummaryChart';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { FinancialSummaries } from '@/components/dashboard/FinancialSummaries';
+import { StagedItemsSummary } from '@/components/dashboard/StagedItemsSummary';
 
 const allMenuItems = [
     {
@@ -120,23 +122,23 @@ export function DashboardClient() {
   return (
     <>
       {settings.dashboardBanner && (
-        <div className="container mx-auto px-4">
-            <div
-            className="relative w-full mx-auto my-4 max-w-6xl rounded-lg overflow-hidden animate-fade-in-down"
+        <div className="w-full p-4 md:px-8">
+          <div
+            className="relative w-full mx-auto rounded-lg overflow-hidden animate-fade-in-down"
             style={{ height: `${settings.dashboardBannerHeight}px` }}
-            >
+          >
             <Image
-                key={settings.dashboardBanner}
-                src={settings.dashboardBanner}
-                alt="Dashboard Banner"
-                fill
-                className="object-contain"
-                data-ai-hint="banner abstract"
+              key={settings.dashboardBanner}
+              src={settings.dashboardBanner}
+              alt="Dashboard Banner"
+              fill
+              className="object-cover"
+              data-ai-hint="banner abstract"
             />
-            </div>
+          </div>
         </div>
       )}
-      <div className="container mx-auto p-4 md:p-8">
+      <main className="w-full p-4 md:p-8 pt-0 md:pt-0">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1 space-y-2">
                  <Card className="animate-fade-in-down">
@@ -157,16 +159,32 @@ export function DashboardClient() {
                     </CardContent>
                 </Card>
             </div>
-            <div className="lg:col-span-2 grid grid-cols-1 xl:grid-cols-2 gap-8">
-                <div className="animate-fade-in-down" style={{ animationDelay: '200ms' }}>
-                    <MonthlyFinancialChart />
-                </div>
-                <div className="animate-fade-in-down" style={{ animationDelay: '400ms' }}>
-                    <StorageSummaryChart />
+            <div className="lg:col-span-2 space-y-8">
+                {hasPermission('admin:all') && (
+                    <div className="animate-fade-in-down" style={{ animationDelay: '100ms' }}>
+                        <FinancialSummaries />
+                    </div>
+                )}
+                 {hasPermission('page:transmit:view') && (
+                    <div className="animate-fade-in-down" style={{ animationDelay: '200ms' }}>
+                        <StagedItemsSummary />
+                    </div>
+                )}
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                    {hasPermission('admin:all') && (
+                        <Link href="/ashley-expenses" className="block animate-fade-in-down hover:-translate-y-1 transition-transform" style={{ animationDelay: '300ms' }}>
+                            <MonthlyFinancialChart />
+                        </Link>
+                    )}
+                    {hasPermission('page:items:view') && (
+                         <Link href="/items" className="block animate-fade-in-down hover:-translate-y-1 transition-transform" style={{ animationDelay: '400ms' }}>
+                            <StorageSummaryChart />
+                        </Link>
+                    )}
                 </div>
             </div>
         </div>
-      </div>
+      </main>
       <NewsTicker />
     </>
   );

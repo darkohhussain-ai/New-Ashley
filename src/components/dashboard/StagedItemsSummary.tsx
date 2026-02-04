@@ -1,7 +1,7 @@
-
 'use client';
 
 import { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/context/app-provider';
 import { useTranslation } from '@/hooks/use-translation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -13,6 +13,7 @@ const destinations = ["Erbil", "Baghdad", "Dohuk", "Diwan"];
 export function StagedItemsSummary() {
   const { t } = useTranslation();
   const { transferItems, transfers, settings } = useAppContext();
+  const router = useRouter();
 
   const destinationStats = useMemo(() => {
     const staged = transferItems.filter(item => !item.transferId);
@@ -42,7 +43,12 @@ export function StagedItemsSummary() {
       </CardHeader>
       <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {destinationStats.map(stat => (
-            <Card key={stat.destination} className="p-4 flex flex-col justify-between" style={{ borderLeft: `4px solid ${stat.color}`}}>
+            <Card 
+              key={stat.destination} 
+              className="p-4 flex flex-col justify-between hover:bg-muted/50 cursor-pointer transition-colors" 
+              style={{ borderLeft: `4px solid ${stat.color}`}} 
+              onClick={() => router.push(`/transmit/staged?destination=${stat.destination}`)}
+            >
                 <div>
                     <p className="font-bold text-lg flex items-center gap-2">
                         <Building className="w-5 h-5 text-muted-foreground"/> 
