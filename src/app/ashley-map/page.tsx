@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, Fragment } from 'react';
@@ -157,13 +158,13 @@ export default function AshleyMapPage() {
                     </Card>
                 ))}
             </div>
-          ) : (
+          ) : ashleyLocations.length > 0 ? (
             <>
               <Card>
                 <CardHeader>
                   <CardTitle>{t('floor_4')}</CardTitle>
                 </CardHeader>
-                <CardContent className="p-4 md:p-8 flex justify-center rounded-xl overflow-x-auto">
+                <CardContent className="p-4 md:p-8 flex justify-center rounded-xl">
                     <div className="grid grid-cols-2 gap-4 w-full max-w-sm">
                         <div className="flex flex-col gap-2">
                             {floor4Left.map(loc => (
@@ -183,77 +184,47 @@ export default function AshleyMapPage() {
                 <CardHeader>
                     <CardTitle>{t('floor_3')}</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-8">
-                    {/* Office Area */}
-                    <div className="mb-12">
-                        <h2 className="text-lg font-semibold text-center mb-4">{t('area_2_office')}</h2>
-                        <div className="grid grid-cols-3 gap-2 max-w-sm mx-auto p-4 rounded-lg bg-gray-100 dark:bg-gray-800/50">
-                            {sortedOffice.map(loc => {
-                                const items = itemsByLocationId.get(loc.id) || [];
-                                return (
-                                    <Shelf 
-                                        key={loc.id} 
-                                        loc={loc} 
-                                        items={items}
-                                        onClick={handleSectionClick} 
-                                        isHighlighted={highlightId === loc.id} 
-                                    />
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    <hr className="my-8 border-t-2 border-destructive"/>
-
-                    {/* Area One */}
+                <CardContent className="space-y-12">
                     <div>
-                        <h2 className="text-lg font-semibold text-center mb-4">{t('area_1')}</h2>
-                        <div className="flex justify-center gap-x-2 md:gap-x-4 lg:gap-x-6 overflow-x-auto p-4 bg-gray-50/50 dark:bg-gray-900/50 rounded-lg">
+                        <h3 className="text-lg font-semibold text-center mb-4">{t('area_1')}</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                             {['6', '5', '4', '3', '2', '1'].map((unitKey) => {
                                 const unitLocations = floor3area1Units[unitKey] || [];
-                                const colors = { '1': 'bg-yellow-100/70 dark:bg-yellow-900/40', '2': 'bg-blue-100/70 dark:bg-blue-900/40', '3': 'bg-green-100/70 dark:bg-green-900/40', '4': 'bg-orange-100/70 dark:bg-orange-900/40', '5': 'bg-purple-100/70 dark:bg-purple-900/40', '6': 'bg-stone-200/70 dark:bg-stone-800/40' };
-
+                                if (unitLocations.length === 0) return null;
                                 return (
-                                    <div key={unitKey} className="flex flex-col items-center space-y-2">
-                                        <div className={cn("p-2 rounded-t-lg flex flex-col-reverse divide-y-2 divide-red-400/70 border-x-2 border-gray-300 dark:border-gray-700", colors[unitKey as keyof typeof colors])}>
-                                            {[4, 3, 2, 1].map((zoneNum, index) => {
-                                                const loc = unitLocations.find(l => l.name.endsWith(`-${zoneNum}`));
-                                                if (!loc) return <div key={zoneNum} className="h-24 w-16 p-2"/>;
-                                                
-                                                const itemCount = itemsByLocationId.get(loc.id)?.length || 0;
-                                                const isOccupied = itemCount > 0;
-
-                                                return (
-                                                    <div key={loc.id} className="p-2">
-                                                        <button
-                                                            id={loc.id}
-                                                            onClick={() => handleSectionClick(loc)}
-                                                            title={`${loc.name}: ${itemCount} items`}
-                                                            className={cn(
-                                                                "relative w-16 h-24 rounded-sm transition-all flex items-center justify-center gap-1 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary",
-                                                                highlightId === loc.id && "ring-2 ring-primary"
-                                                            )}
-                                                        >
-                                                            <div className={cn("w-3 h-full rounded-sm", isOccupied ? 'bg-primary/30' : 'bg-gray-300 dark:bg-gray-600')}/>
-                                                            <div className={cn("w-3 h-full rounded-sm", isOccupied ? 'bg-primary/30' : 'bg-gray-300 dark:bg-gray-600')}/>
-                                                            {isOccupied && <div className="absolute top-0.5 right-0.5 h-2 w-2 rounded-full bg-primary" />}
-                                                            <span className="absolute text-xs font-mono font-bold text-black/40 dark:text-white/40">{loc.name.split('-')[4]}</span>
-                                                        </button>
-                                                    </div>
-                                                );
-                                            })}
+                                    <div key={unitKey} className="p-4 rounded-lg bg-muted/30 border">
+                                        <h4 className="font-bold text-center mb-4">Unit {unitKey}</h4>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {unitLocations.map(loc => (
+                                                <Shelf
+                                                    key={loc.id}
+                                                    loc={loc}
+                                                    items={itemsByLocationId.get(loc.id) || []}
+                                                    onClick={handleSectionClick}
+                                                    isHighlighted={highlightId === loc.id}
+                                                />
+                                            ))}
                                         </div>
-                                        <div className="text-xs font-semibold mt-1">Section {unitKey}</div>
                                     </div>
                                 );
                             })}
                         </div>
                     </div>
+                    
+                    <hr className="my-8" />
+                    
+                    <div>
+                        <h3 className="text-lg font-semibold text-center mb-4">{t('area_2_office')}</h3>
+                        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 max-w-xl mx-auto p-4 rounded-lg bg-muted/30 border">
+                            {sortedOffice.map(loc => (
+                                <Shelf key={loc.id} loc={loc} items={itemsByLocationId.get(loc.id) || []} onClick={handleSectionClick} isHighlighted={highlightId === loc.id} />
+                            ))}
+                        </div>
+                    </div>
                 </CardContent>
               </Card>
             </>
-          )}
-           {(!isLoading && ashleyLocations.length === 0) && (
+          ) : (
              <div className="text-center py-16 border-2 border-dashed rounded-lg">
                 <Box className="mx-auto h-12 w-12 text-muted-foreground" />
                 <h3 className="mt-4 text-lg">{t('no_ashley_locations_found')}</h3>
