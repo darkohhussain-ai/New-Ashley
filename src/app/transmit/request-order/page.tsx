@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -22,12 +21,11 @@ import withAuth from '@/hooks/withAuth';
 import { cn } from '@/lib/utils';
 
 const destinations = ["Erbil", "Baghdad", "Diwan", "Dohuk"];
-const storageOptions = ["Ashley", "Huana", "Showroom"];
 
 function RequestOrderPage() {
   const { toast } = useToast();
   const { t } = useTranslation();
-  const { transferItems, setTransferItems, employees, isLoading: isAppLoading, setActivityLogs } = useAppContext();
+  const { transferItems, setTransferItems, isLoading: isAppLoading, setActivityLogs } = useAppContext();
   const { user } = useAuth();
 
   const [isSaving, setIsSaving] = useState(false);
@@ -37,36 +35,22 @@ function RequestOrderPage() {
   const [quantity, setQuantity] = useState(1);
   const [destination, setDestination] = useState('');
   const [invoiceNo, setInvoiceNo] = useState('');
-  const [storage, setStorage] = useState('');
   const [notes, setNotes] = useState('');
   const [requestDate, setRequestDate] = useState<Date | undefined>(new Date());
   const [requestedBy, setRequestedBy] = useState('');
-
-  useEffect(() => {
-    if (user && employees) {
-      const currentUserEmployee = employees.find(e => {
-        const potentialUsername = `${e.name.split(' ')[0]}${e.employeeId || ''}`;
-        return potentialUsername === user.username;
-      });
-      if (currentUserEmployee) {
-        setRequestedBy(currentUserEmployee.id);
-      }
-    }
-  }, [user, employees]);
   
   const resetForm = () => {
       setModel('');
       setQuantity(1);
       setDestination('');
       setInvoiceNo('');
-      setStorage('');
       setNotes('');
       setRequestDate(new Date());
-      // Don't reset requestedBy, as it's likely the same user
+      setRequestedBy('');
   }
 
   const handleAddRequest = () => {
-    if (!model.trim() || !destination || !requestedBy) {
+    if (!model.trim() || !destination || !requestedBy.trim()) {
       toast({ variant: 'destructive', title: t('missing_information'), description: t('provide_model_destination_requester') });
       return;
     }
@@ -82,11 +66,10 @@ function RequestOrderPage() {
         quantity,
         destination,
         invoiceNo,
-        storage,
         notes,
         status: 'Pending',
         requestDate: requestDate ? formatISO(requestDate) : undefined,
-        requestedBy,
+        requestedBy: requestedBy.trim(),
         transferId: null,
         createdAt: formatISO(new Date())
     };
@@ -133,12 +116,7 @@ function RequestOrderPage() {
           <CardContent className="space-y-4">
               <div className="space-y-2">
                   <Label htmlFor="requestedBy">{t('requested_by')}</Label>
-                  <Select value={requestedBy} onValueChange={setRequestedBy}>
-                      <SelectTrigger id="requestedBy"><SelectValue placeholder={t('select_an_employee')} /></SelectTrigger>
-                      <SelectContent>
-                          {employees?.map(e => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
-                      </SelectContent>
-                  </Select>
+                  <Input id="requestedBy" value={requestedBy} onChange={(e) => setRequestedBy(e.target.value)} placeholder={t('enter_requester_name')} />
               </div>
               <div className="space-y-2">
                   <Label htmlFor="model">{t('model_name')}</Label>
@@ -173,20 +151,9 @@ function RequestOrderPage() {
                       </Select>
                   </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                      <Label htmlFor="invoiceNo">{t('invoice_no')}</Label>
-                      <Input id="invoiceNo" value={invoiceNo} onChange={(e) => setInvoiceNo(e.target.value)} placeholder="e.g., INV-001" />
-                  </div>
-                  <div className="space-y-2">
-                      <Label htmlFor="storage">{t('storage')}</Label>
-                       <Select value={storage} onValueChange={setStorage}>
-                          <SelectTrigger id="storage"><SelectValue placeholder={t('select_a_source')} /></SelectTrigger>
-                          <SelectContent>
-                              {storageOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                          </SelectContent>
-                      </Select>
-                  </div>
+              <div className="space-y-2">
+                  <Label htmlFor="invoiceNo">{t('invoice_no')}</Label>
+                  <Input id="invoiceNo" value={invoiceNo} onChange={(e) => setInvoiceNo(e.target.value)} placeholder="e.g., INV-001" />
               </div>
                <div className="space-y-2">
                   <Label htmlFor="notes">{t('notes')}</Label>

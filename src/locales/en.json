@@ -740,7 +740,7 @@
   "request_order": "Request an Order",
   "request_order_desc": "Fill out the form to request new items.",
   "requested_by": "Requested By",
-  "provide_model_destination_requester": "Please provide a model name, destination, and requester.",
+  "provide_model_destination_requester": "Please provide a model name, destination, and requester name.",
   "submit_request": "Submit Request",
   "request_submitted": "Request Submitted",
   "item_request_submitted_desc": "Your request for {model} has been submitted.",
@@ -756,5 +756,10 @@
   "request_for_model_deleted": "The request for {model} has been deleted.",
   "request_updated": "Request Updated",
   "request_for_model_updated": "The request for {model} has been updated.",
-  "order_requests_for": "Order Requests for {month}"
+  "order_requests_for": "Order Requests for {month}",
+  "enter_requester_name": "Enter requester's name",
+  "recent_order_requests": "Recent Order Requests",
+  "recent_order_requests_desc": "The 5 most recent open order requests.",
+  "requested": "Requested",
+  "no_open_order_requests": "There are no open order requests at this time."
 }

@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
@@ -27,7 +26,7 @@ const destinations = ["Erbil", "Baghdad", "Diwan", "Dohuk"];
 
 function ViewRequestsPage() {
     const { t } = useTranslation();
-    const { transferItems, setTransferItems, employees, isLoading } = useAppContext();
+    const { transferItems, setTransferItems, isLoading, setActivityLogs } = useAppContext();
     const { toast } = useToast();
     const { user } = useAuth();
     
@@ -39,11 +38,6 @@ function ViewRequestsPage() {
         return transferItems.filter(item => item.requestDate && isSameMonth(parseISO(item.requestDate), selectedMonth))
                .sort((a,b) => parseISO(b.requestDate!).getTime() - parseISO(a.requestDate!).getTime());
     }, [transferItems, selectedMonth]);
-
-    const getEmployeeName = (id?: string) => {
-        if (!id) return t('unknown');
-        return employees.find(e => e.id === id)?.name || t('unknown');
-    };
 
     const handleDelete = (item: ItemForTransfer) => {
         setTransferItems(prev => prev.filter(i => i.id !== item.id));
@@ -90,7 +84,7 @@ function ViewRequestsPage() {
                     <DialogHeader><DialogTitle>{t('edit_request')}</DialogTitle></DialogHeader>
                     {editingItem && (
                          <div className="space-y-4 py-4">
-                            <div className="space-y-2"><Label>{t('requested_by')}</Label><Input value={getEmployeeName(editingItem.requestedBy)} disabled /></div>
+                            <div className="space-y-2"><Label>{t('requested_by')}</Label><Input value={editingItem.requestedBy} disabled /></div>
                             <div className="space-y-2"><Label htmlFor="model">{t('model_name')}</Label><Input id="model" value={editingItem.model} onChange={e => setEditingItem({...editingItem, model: e.target.value})} /></div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2"><Label htmlFor="quantity">{t('quantity')}</Label><Input id="quantity" type="number" value={editingItem.quantity} onChange={e => setEditingItem({...editingItem, quantity: parseInt(e.target.value) || 1})} /></div>
@@ -124,7 +118,7 @@ function ViewRequestsPage() {
                             {monthlyRequests.length > 0 ? monthlyRequests.map(item => (
                                 <TableRow key={item.id}>
                                     <TableCell>{item.requestDate ? format(parseISO(item.requestDate), 'PP') : 'N/A'}</TableCell>
-                                    <TableCell>{getEmployeeName(item.requestedBy)}</TableCell>
+                                    <TableCell>{item.requestedBy || t('unknown')}</TableCell>
                                     <TableCell>{item.model}</TableCell>
                                     <TableCell className="text-center">{item.quantity}</TableCell>
                                     <TableCell>{item.destination}</TableCell>

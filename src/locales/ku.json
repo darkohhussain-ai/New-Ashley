@@ -205,7 +205,7 @@
   "items_in_report_count": "خاڵەکانی خەرجی ({count})",
   "create_report": "دروستکردنی ڕاپۆرت",
   "no_expense_reports_found": "هیچ ڕاپۆرتێکی خەرجی نەدۆزرایەوە",
-  "no_expense_reports_found_desc": "یەکەم ڕاپۆرتی خەرجی خۆت دروست بکە بۆ بینینی لێرە.",
+  "no_expense_reports_found_desc": "یەکەم ڕاپۆرتەی خەرجی خۆت دروست بکە بۆ بینینی لێرە.",
   "summary_by_employee": "پوختە بەپێی کارمەند",
   "total_amount": "کۆی گشتی بڕ",
   "summary_for_month_desc": "هەر کارمەندێک یەک جار لیست کراوە لەگەڵ کۆی گشتی خەرجییەکانیان بۆ مانگەکە.",
@@ -693,7 +693,6 @@
   "general": "گشتی",
   "generated_by_ashley_system": "لەلایەن سیستەمی ئاشلییەوە دروستکراوە",
   "employees_dashboard": "داشبۆردی کارمەندان",
-  "employees_list": "لیستی کارمەندان",
   "daily_expense_report": "ڕاپۆرتی ڕۆژانەی خەرجی",
   "daily_overtime_summary": "پوختەی ڕۆژانەی کاتی زیادە",
   "overtime_summary_desc": "شیکردنەوەیەکی ڕۆژانەی تۆمارەکانی کاتی زیادە بۆ مانگی {month}.",
@@ -741,7 +740,7 @@
   "request_order": "داواکردنی داواکاری",
   "request_order_desc": "فۆڕمەکە پڕبکەرەوە بۆ داواکردنی کاڵای نوێ.",
   "requested_by": "داواکراوە لەلایەن",
-  "provide_model_destination_requester": "تکایە ناوی مۆدێل، مەبەست، و داواکار دابین بکە.",
+  "provide_model_destination_requester": "تکایە ناوی مۆدێل، مەبەست، و ناوی داواکار دابین بکە.",
   "submit_request": "پێشکەشکردنی داواکاری",
   "request_submitted": "داواکاری پێشکەشکرا",
   "item_request_submitted_desc": "داواکارییەکەت بۆ {model} پێشکەشکرا.",
@@ -757,5 +756,10 @@
   "request_for_model_deleted": "داواکارییەکە بۆ {model} سڕایەوە.",
   "request_updated": "داواکاری نوێکرایەوە",
   "request_for_model_updated": "داواکارییەکە بۆ {model} نوێکرایەوە.",
-  "order_requests_for": "داواکارییەکانی داواکردن بۆ {month}"
+  "order_requests_for": "داواکارییەکانی داواکردن بۆ {month}",
+  "enter_requester_name": "ناوی داواکار بنووسە",
+  "recent_order_requests": "داواکارییەکانی داواکردنی نوێ",
+  "recent_order_requests_desc": "٥ نوێترین داواکارییەکانی داواکردنی کراوە.",
+  "requested": "داواکرا",
+  "no_open_order_requests": "لەم کاتەدا هیچ داواکارییەکی داواکردنی کراوە نییە."
 }

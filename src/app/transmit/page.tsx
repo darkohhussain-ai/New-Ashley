@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -14,6 +13,7 @@ import { useAppContext } from '@/context/app-provider';
 import { useMemo } from 'react';
 import { format, parseISO } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { StagedItemsSummary } from '@/components/dashboard/StagedItemsSummary';
 
 function TransmitDashboardPage() {
     const { t } = useTranslation();
@@ -66,25 +66,13 @@ function TransmitDashboardPage() {
       }
     ];
 
-    const stagedItemsByDestination = useMemo(() => {
-        const staged = transferItems.filter(item => !item.transferId);
-        const grouped = staged.reduce((acc, item) => {
-            if (!acc[item.destination]) {
-                acc[item.destination] = { count: 0 };
-            }
-            acc[item.destination].count++;
-            return acc;
-        }, {} as Record<string, { count: number }>);
-        return Object.entries(grouped).map(([destination, data]) => ({ destination, ...data }));
-    }, [transferItems]);
-
-    const recentTransfers = useMemo(() => {
-        if (!transfers) return [];
-        return transfers
-            .filter(t => t.transferDate && !isNaN(parseISO(t.transferDate).getTime()))
-            .sort((a,b) => parseISO(b.transferDate).getTime() - parseISO(a.transferDate).getTime())
+    const recentRequests = useMemo(() => {
+        if (!transferItems) return [];
+        return transferItems
+            .filter(item => item.requestedBy && !item.transferId)
+            .sort((a,b) => parseISO(b.createdAt).getTime() - parseISO(a.createdAt).getTime())
             .slice(0, 5);
-    }, [transfers]);
+    }, [transferItems]);
 
 
   return (
@@ -117,64 +105,35 @@ function TransmitDashboardPage() {
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <StagedItemsSummary />
+            
             <Card>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><ClipboardList /> {t('staged_items_summary')}</CardTitle>
-                    <CardDescription>{t('staged_items_summary_desc')}</CardDescription>
+                    <CardTitle className="flex items-center gap-2"><History /> {t('recent_order_requests')}</CardTitle>
+                    <CardDescription>{t('recent_order_requests_desc')}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {stagedItemsByDestination.length > 0 ? (
+                    {recentRequests.length > 0 ? (
                         <Table>
                             <TableHeader>
                                 <TableRow>
+                                    <TableHead>{t('model')}</TableHead>
                                     <TableHead>{t('destination')}</TableHead>
-                                    <TableHead className="text-right">{t('items_staged')}</TableHead>
+                                    <TableHead className="text-right">{t('requested')}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {stagedItemsByDestination.map(item => (
-                                    <TableRow key={item.destination} onClick={() => router.push(`/transmit/staged?destination=${encodeURIComponent(item.destination)}`)} className="cursor-pointer hover:bg-muted/50">
-                                        <TableCell className="font-medium">{item.destination}</TableCell>
-                                        <TableCell className="text-right">
-                                            {item.count}
-                                        </TableCell>
+                                {recentRequests.map(item => (
+                                    <TableRow key={item.id} onClick={() => router.push(`/transmit/view-requests`)} className="cursor-pointer hover:bg-muted/50">
+                                        <TableCell>{item.model}</TableCell>
+                                        <TableCell>{item.destination}</TableCell>
+                                        <TableCell className="text-right text-xs text-muted-foreground">{item.requestDate ? format(parseISO(item.requestDate), 'PP') : t('na')}</TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
                         </Table>
                     ) : (
-                        <p className="text-sm text-muted-foreground text-center py-8">{t('no_items_currently_staged')}</p>
-                    )}
-                </CardContent>
-            </Card>
-
-             <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><History /> {t('recent_transfers')}</CardTitle>
-                    <CardDescription>{t('recent_transfers_desc')}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                     {recentTransfers.length > 0 ? (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>{t('date')}</TableHead>
-                                    <TableHead>{t('destination')}</TableHead>
-                                    <TableHead className="text-right">{t('items_count')}</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {recentTransfers.map(transfer => (
-                                    <TableRow key={transfer.id} onClick={() => router.push(`/transmit/archive/${transfer.id}`)} className="cursor-pointer hover:bg-muted/50">
-                                        <TableCell>{format(parseISO(transfer.transferDate), 'PP')}</TableCell>
-                                        <TableCell>{transfer.destinationCity}</TableCell>
-                                        <TableCell className="text-right">{transfer.itemIds.length}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    ) : (
-                        <p className="text-sm text-muted-foreground text-center py-8">{t('no_recent_transfers')}</p>
+                        <p className="text-sm text-muted-foreground text-center py-8">{t('no_open_order_requests')}</p>
                     )}
                 </CardContent>
             </Card>
