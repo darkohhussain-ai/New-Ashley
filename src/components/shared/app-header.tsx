@@ -99,7 +99,7 @@ export function AppHeader() {
 
   return (
     <header className="bg-card border-b top-0 z-10 print:hidden">
-      <div className="container mx-auto px-4">
+      <div className="w-full px-4">
         <div className="flex items-center justify-between h-20">
             <div className="flex-1 flex items-center justify-start">
                  <div className="hidden md:flex items-center gap-4 text-sm text-muted-foreground">

@@ -41,7 +41,7 @@ function AshleyExpensesSettingsPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="bg-card border-b p-4">
-        <div className="container mx-auto flex items-center justify-between">
+        <div className="w-full flex items-center justify-between">
             <div className="flex items-center gap-4">
             <Button variant="outline" size="icon" asChild>
                 <Link href="/ashley-expenses">
@@ -57,7 +57,7 @@ function AshleyExpensesSettingsPage() {
             </Button>
         </div>
       </header>
-      <main className="container mx-auto p-4 md:p-8">
+      <main className="w-full p-4 md:p-8">
          <Card className="max-w-2xl mx-auto">
             <CardHeader>
                 <CardTitle>{t('salary_rates')}</CardTitle>

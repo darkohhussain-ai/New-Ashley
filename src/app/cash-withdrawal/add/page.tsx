@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useAppContext } from '@/context/app-provider';
-import type { CashWithdrawal, AllPdfSettings } from '@/lib/types';
+import type { CashWithdrawal, AllPdfSettings, ActivityLog } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { useAuth } from '@/hooks/use-auth';
 import { CashWithdrawalReportPdf } from '@/components/reports/CashWithdrawalReportPdf';
@@ -38,7 +38,7 @@ export default function AddCashWithdrawalPage() {
   const router = useRouter();
   const { user, hasPermission } = useAuth();
 
-  const { employees, withdrawals, setWithdrawals, settings } = useAppContext();
+  const { employees, withdrawals, setWithdrawals, settings, setActivityLogs } = useAppContext();
   const isReadOnly = !hasPermission('page:admin');
 
   const dateParam = searchParams.get('date');
@@ -116,6 +116,10 @@ export default function AddCashWithdrawalPage() {
     
     setWithdrawals(withdrawals.map(rec => rec.id === editingRecord.id ? editingRecord : rec));
     toast({ title: t('save_changes'), description: t('withdrawal_record_updated') });
+    if(user) {
+        const log: ActivityLog = { id: crypto.randomUUID(), userId: user.id, username: user.username, action: 'update', entity: 'Withdrawal', entityId: editingRecord.id, description: `Updated withdrawal for ${getEmployeeName(editingRecord.employeeId)}`, timestamp: new Date().toISOString() };
+        setActivityLogs(prev => [...prev, log]);
+    }
     setEditingRecord(null);
     setIsSaving(false);
   };
@@ -139,6 +143,10 @@ export default function AddCashWithdrawalPage() {
 
     setWithdrawals([...withdrawals, withdrawalData]);
     toast({ title: t('withdrawal_added'), description: t('withdrawal_added_desc') });
+    if(user) {
+        const log: ActivityLog = { id: crypto.randomUUID(), userId: user.id, username: user.username, action: 'create', entity: 'Withdrawal', entityId: withdrawalData.id, description: `Added withdrawal for ${getEmployeeName(withdrawalData.employeeId)}`, timestamp: new Date().toISOString() };
+        setActivityLogs(prev => [...prev, log]);
+    }
     resetForm();
     setIsSaving(false);
   };
@@ -147,6 +155,10 @@ export default function AddCashWithdrawalPage() {
     if (isReadOnly) return;
     setWithdrawals(withdrawals.filter(rec => rec.id !== record.id));
     toast({ title: t('record_deleted'), description: t('withdrawal_record_deleted') });
+    if(user) {
+        const log: ActivityLog = { id: crypto.randomUUID(), userId: user.id, username: user.username, action: 'delete', entity: 'Withdrawal', entityId: record.id, description: `Deleted withdrawal for ${getEmployeeName(record.employeeId)}`, timestamp: new Date().toISOString() };
+        setActivityLogs(prev => [...prev, log]);
+    }
   };
   
   const { totalAmount } = useMemo(() => {
@@ -313,7 +325,7 @@ export default function AddCashWithdrawalPage() {
       </div>
       <div className="min-h-screen bg-background text-foreground print:hidden">
         <header className="bg-card border-b p-4">
-          <div className="container mx-auto flex items-center justify-between">
+          <div className="w-full flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Button variant="outline" size="icon" asChild>
                 <Link href="/cash-withdrawal">
@@ -362,7 +374,7 @@ export default function AddCashWithdrawalPage() {
             </div>
           </div>
         </header>
-        <main className="container mx-auto p-4 md:p-8">
+        <main className="w-full p-4 md:p-8">
           <PageContent />
         </main>
       </div>

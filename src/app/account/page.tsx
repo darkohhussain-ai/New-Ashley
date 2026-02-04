@@ -1,3 +1,4 @@
+
 'use client';
 
 import withAuth from '@/hooks/withAuth';
@@ -677,7 +678,7 @@ function AccountPage() {
       </div>
 
       <div className="min-h-screen bg-background text-foreground print:hidden">
-        <main className="container mx-auto p-4 md:p-8">
+        <main className="w-full p-4 md:p-8">
           <div className="flex justify-end gap-2 mb-4">
             <Button variant="outline" size="icon" onClick={handlePrint}>
               <Printer className="h-4 w-4" />

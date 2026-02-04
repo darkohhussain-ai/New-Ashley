@@ -87,7 +87,7 @@ function CashWithdrawalDashboardPage() {
 
       <div className="h-screen bg-background text-foreground flex flex-col print:hidden">
         <header className="bg-card border-b p-4">
-          <div className="container mx-auto flex items-center justify-between">
+          <div className="w-full flex items-center justify-between">
               <div className="flex items-center gap-4">
                   <Button variant="outline" size="icon" asChild>
                       <Link href="/ashley-expenses"><ArrowLeft /></Link>
@@ -110,7 +110,7 @@ function CashWithdrawalDashboardPage() {
               </div>
           </div>
         </header>
-        <main className='container mx-auto p-4 md:p-8 flex-1 overflow-y-auto space-y-8'>
+        <main className='w-full p-4 md:p-8 flex-1 overflow-y-auto space-y-8'>
           <DashboardContent />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {menuItems.map((item) => (

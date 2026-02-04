@@ -17,11 +17,12 @@ import { format, startOfDay, endOfDay, isWithinInterval, parseISO } from 'date-f
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/context/app-provider';
-import type { Expense } from '@/lib/types';
+import type { Expense, ActivityLog } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { DailyExpenseReportPdf } from '@/components/expenses/DailyExpenseReportPdf';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useAuth } from '@/hooks/use-auth';
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'IQD', maximumFractionDigits: 0 }).format(amount);
 
@@ -40,7 +41,8 @@ const taxiSubTypes = [
 export default function AddExpensePage() {
   const { t, language } = useTranslation();
   const { toast } = useToast();
-  const { employees, expenses, setExpenses, settings } = useAppContext();
+  const { user } = useAuth();
+  const { employees, expenses, setExpenses, settings, setActivityLogs } = useAppContext();
 
   const searchParams = useSearchParams();
   const dateParam = searchParams.get('date');
@@ -122,6 +124,10 @@ export default function AddExpensePage() {
       const updatedExpense: Expense = { ...editingExpense, ...expensePayload };
       setExpenses(expenses.map(e => e.id === editingExpense.id ? updatedExpense : e));
       toast({ title: t('expense_updated'), description: t('expense_updated_desc') });
+      if(user) {
+          const log: ActivityLog = { id: crypto.randomUUID(), userId: user.id, username: user.username, action: 'update', entity: 'Expense', entityId: updatedExpense.id, description: `Updated expense for ${getEmployeeName(updatedExpense.employeeId)}`, timestamp: new Date().toISOString() };
+          setActivityLogs(prev => [...prev, log]);
+      }
       setEditingExpense(null);
     } else {
       const newExpense: Expense = {
@@ -131,6 +137,10 @@ export default function AddExpensePage() {
       };
       setExpenses([...expenses, newExpense]);
       toast({ title: t('expense_added'), description: t('expense_added_desc', {amount: formatCurrency(newExpense.amount)})});
+      if(user) {
+          const log: ActivityLog = { id: crypto.randomUUID(), userId: user.id, username: user.username, action: 'create', entity: 'Expense', entityId: newExpense.id, description: `Added expense for ${getEmployeeName(newExpense.employeeId)}`, timestamp: new Date().toISOString() };
+          setActivityLogs(prev => [...prev, log]);
+      }
     }
 
     resetForm();
@@ -155,6 +165,10 @@ export default function AddExpensePage() {
   const handleDelete = (expenseToDelete: Expense) => {
     setExpenses(expenses.filter(e => e.id !== expenseToDelete.id));
     toast({ title: t('expense_deleted'), description: t('expense_deleted_desc') });
+    if(user) {
+        const log: ActivityLog = { id: crypto.randomUUID(), userId: user.id, username: user.username, action: 'delete', entity: 'Expense', entityId: expenseToDelete.id, description: `Deleted expense for ${getEmployeeName(expenseToDelete.employeeId)}`, timestamp: new Date().toISOString() };
+        setActivityLogs(prev => [...prev, log]);
+    }
   };
   
   const handlePrint = () => {
@@ -300,7 +314,7 @@ export default function AddExpensePage() {
         </div>
         <div className="min-h-screen bg-background text-foreground print:hidden">
             <header className="bg-card border-b p-4">
-                <div className="container mx-auto flex items-center justify-between">
+                <div className="w-full flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <Button variant="outline" size="icon" asChild>
                             <Link href="/expenses"><ArrowLeft /></Link>
@@ -333,7 +347,7 @@ export default function AddExpensePage() {
                 </div>
             </header>
 
-            <main className="container mx-auto p-4 md:p-8">
+            <main className="w-full p-4 md:p-8">
               <PageContent />
             </main>
         </div>

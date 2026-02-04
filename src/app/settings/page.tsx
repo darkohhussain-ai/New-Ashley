@@ -72,6 +72,7 @@ import type {
   AppSettings,
   BranchColors,
   ItemForTransfer,
+  ActivityLog
 } from '@/lib/types';
 import { format, formatISO } from 'date-fns';
 import {
@@ -94,7 +95,6 @@ import withAuth from '@/hooks/withAuth';
 import { useAppContext } from '@/context/app-provider';
 import { useAuth } from '@/hooks/use-auth';
 import { initialSettings, initialData } from '@/context/initial-data';
-import { getAllDataForExport, importData } from '@/hooks/use-local-storage';
 import { TransmitReportPdf } from '@/components/transmit/TransmitReportPdf';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -431,8 +431,8 @@ function SettingsPage() {
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
   const { t } = useTranslation();
-  const { settings, setSettings, setEmployees, setItems, setExcelFiles, setLocations, setExpenses, setExpenseReports, setOvertime, setBonuses, setWithdrawals, setReceipts, setItemCategories, setTransfers, setTransferItems, setMarketingFeedbacks, setEvaluationQuestions, setUsers, setRoles } = useAppContext();
-  const { hasPermission } = useAuth();
+  const { settings, setSettings, setEmployees, setItems, setExcelFiles, setLocations, setExpenses, setExpenseReports, setOvertime, setBonuses, setWithdrawals, setReceipts, setItemCategories, setTransfers, setTransferItems, setMarketingFeedbacks, setEvaluationQuestions, setUsers, setRoles, setActivityLogs } = useAppContext();
+  const { user, hasPermission } = useAuth();
 
   const [draftSettings, setDraftSettings] =
     useState<AppSettings>(initialSettings);
@@ -603,6 +603,10 @@ function SettingsPage() {
 
     try {
         await setSettings(draftSettings);
+        if(user) {
+            const log: ActivityLog = { id: crypto.randomUUID(), userId: user.id, username: user.username, action: 'update', entity: 'System Settings', description: `Updated application settings`, timestamp: new Date().toISOString() };
+            setActivityLogs(prev => [...prev, log]);
+        }
         
         savingToast.update({ id: savingToast.id, title: 'Settings Saved', description: 'Your changes have been applied across the application.' });
 
@@ -666,6 +670,11 @@ function SettingsPage() {
         
         await setSettings(initialSettings);
         setDraftSettings(initialSettings);
+        
+        if (user) {
+            const log: ActivityLog = { id: crypto.randomUUID(), userId: user.id, username: user.username, action: 'delete', entity: 'System', description: 'Performed a full system data reset.', timestamp: new Date().toISOString() };
+            setActivityLogs(prev => [log]); // Overwrite logs
+        }
 
         toast({
           id: toastId,
@@ -688,30 +697,6 @@ function SettingsPage() {
     }
   };
 
-  const handleExport = async () => {
-    try {
-      const data = await getAllDataForExport();
-      const blob = new Blob([JSON.stringify(data, null, 2)], {
-        type: 'application/json',
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `ashley-hr-backup-${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      toast({ title: t('data_exported_successfully') });
-    } catch (error) {
-      console.error('Export failed:', error);
-      toast({
-        variant: 'destructive',
-        title: t('export_failed'),
-        description: t('export_failed_desc'),
-      });
-    }
-  };
 
   const handleImportFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -720,33 +705,6 @@ function SettingsPage() {
     }
   };
 
-  const handleRunImport = () => {
-    if (importFile) {
-      const reader = new FileReader();
-      reader.onload = async event => {
-        try {
-          const backupData = JSON.parse(event.target?.result as string);
-          await importData(backupData);
-          toast({
-            title: t('data_imported_successfully'),
-            description: t('page_will_reload'),
-          });
-          setTimeout(() => window.location.reload(), 2000);
-        } catch (error) {
-          console.error('Import failed:', error);
-          toast({
-            variant: 'destructive',
-            title: t('import_failed'),
-            description: t('invalid_or_corrupted_file'),
-          });
-        } finally {
-          setImportFile(null);
-          if (importInputRef.current) importInputRef.current.value = '';
-        }
-      };
-      reader.readAsText(importFile);
-    }
-  };
 
   if (!settings || !draftSettings) {
     return (
@@ -767,7 +725,7 @@ function SettingsPage() {
   const currentPdfSettings = draftSettings.pdfSettings[activePdfTab];
 
   return (
-    <div className={cn("h-screen bg-background text-foreground flex flex-col", !isAdmin && "pointer-events-none opacity-60")}>
+    <div className={cn("min-h-screen bg-background text-foreground flex flex-col", !isAdmin && "pointer-events-none opacity-60")}>
        <style>{`
             @font-face {
               font-family: 'CustomAppFont';
@@ -775,7 +733,7 @@ function SettingsPage() {
             }
         `}</style>
       <header className="bg-card border-b p-4">
-        <div className="container mx-auto flex items-center justify-between">
+        <div className="w-full flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button variant="outline" size="icon" asChild>
               <Link href="/">
@@ -795,7 +753,7 @@ function SettingsPage() {
           </div>
         </div>
       </header>
-      <main className="flex-1 overflow-y-auto p-4 md:p-6 container mx-auto">
+      <main className="flex-1 overflow-y-auto p-4 md:p-6 w-full">
         {!isAdmin && (
              <div className="absolute inset-0 bg-background/50 backdrop-blur-sm z-10 flex items-center justify-center">
                 <Card className="max-w-md text-center">
@@ -1577,12 +1535,7 @@ function SettingsPage() {
                 <CardDescription>{t('data_management_desc')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="p-4 border rounded-lg flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <p className="">{t('export_data_desc')}</p>
-                  <Button onClick={handleExport} variant="outline">
-                    <Download className="mr-2 h-4 w-4" /> {t('export_data')}
-                  </Button>
-                </div>
+              
                 <div className="p-4 border rounded-lg space-y-4">
                   <p className="">{t('import_data_title')}</p>
                   <p className="text-sm text-destructive">
@@ -1596,9 +1549,6 @@ function SettingsPage() {
                       accept=".json"
                       onChange={handleImportFileSelect}
                     />
-                    <Button onClick={handleRunImport} disabled={!importFile}>
-                      <Play className="mr-2 h-4 w-4" /> {t('run_import')}
-                    </Button>
                   </div>
                 </div>
               </CardContent>

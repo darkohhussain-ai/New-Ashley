@@ -598,7 +598,7 @@ function AdminPage() {
 
   return (
     <div className="h-[calc(100vh-80px)] flex flex-col">
-        <main className="container mx-auto p-4 md:p-8 flex-1 overflow-y-auto">
+        <main className="w-full p-4 md:p-8 flex-1 overflow-y-auto">
         <div className="mb-8">
             <h1 className="text-3xl flex items-center gap-2">
             <ShieldCheck className="h-8 w-8" />

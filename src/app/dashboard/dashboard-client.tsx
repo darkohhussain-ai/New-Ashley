@@ -120,9 +120,9 @@ export function DashboardClient() {
   return (
     <>
       {settings.dashboardBanner && (
-        <div className="container mx-auto px-4">
+        <div className="w-full px-4">
             <div
-            className="relative w-full mx-auto my-4 max-w-6xl rounded-lg overflow-hidden"
+            className="relative w-full mx-auto my-4 max-w-6xl rounded-lg overflow-hidden animate-fade-in-down"
             style={{ height: `${settings.dashboardBannerHeight}px` }}
             >
             <Image
@@ -136,10 +136,10 @@ export function DashboardClient() {
             </div>
         </div>
       )}
-      <main className="container mx-auto p-4 md:p-8">
+      <main className="w-full p-4 md:p-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1 space-y-2">
-                 <Card>
+                 <Card className="animate-fade-in-down">
                     <CardHeader>
                         <CardTitle>{t('welcome_back')}</CardTitle>
                         <CardDescription>{t('select_service')}</CardDescription>
@@ -157,9 +157,13 @@ export function DashboardClient() {
                     </CardContent>
                 </Card>
             </div>
-            <div className="lg:col-span-2 space-y-8">
-                <MonthlyFinancialChart />
-                <StorageSummaryChart />
+            <div className="lg:col-span-2 grid grid-cols-1 xl:grid-cols-2 gap-8">
+                <div className="animate-fade-in-down" style={{ animationDelay: '200ms' }}>
+                    <MonthlyFinancialChart />
+                </div>
+                <div className="animate-fade-in-down" style={{ animationDelay: '400ms' }}>
+                    <StorageSummaryChart />
+                </div>
             </div>
         </div>
       </main>

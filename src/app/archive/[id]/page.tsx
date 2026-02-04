@@ -514,7 +514,7 @@ export default function FileDetailPage() {
         accept=".xlsx,.xls"
       />
       <header className="bg-card border-b p-4 print:hidden">
-        <div className="container mx-auto flex items-center justify-between gap-4">
+        <div className="w-full flex items-center justify-between gap-4">
             <div className='flex items-center gap-4'>
                 <Button variant="outline" size="icon" asChild>
                     <Link href="/archive">
@@ -556,7 +556,7 @@ export default function FileDetailPage() {
             </div>
         </div>
       </header>
-      <main className="p-4 md:p-8 container mx-auto">
+      <main className="p-4 md:p-8 w-full">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-1 space-y-8">
               <Card>

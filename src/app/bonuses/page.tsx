@@ -90,14 +90,14 @@ function BonusesDashboardPage() {
 
       <div className="h-screen bg-background text-foreground flex flex-col print:hidden">
         <header className="bg-card border-b p-4">
-          <div className="container mx-auto flex items-center justify-between">
+          <div className="w-full flex items-center justify-between">
               <div className="flex items-center gap-4">
                   <Button variant="outline" size="icon" asChild>
                       <Link href="/ashley-expenses"><ArrowLeft /></Link>
                   </Button>
                   <h1 className="text-xl">{t('loading_unloading_bonus')}</h1>
               </div>
-              <div className="flex items-center gap-2">
+               <div className="flex items-center gap-2">
                   <Button onClick={handlePrint} variant="outline"><Printer className="mr-2 h-4 w-4"/> {t('print')}</Button>
                   <Popover>
                       <PopoverTrigger asChild>
@@ -113,7 +113,7 @@ function BonusesDashboardPage() {
               </div>
           </div>
         </header>
-        <main className='container mx-auto p-4 md:p-8 flex-1 overflow-y-auto space-y-8'>
+        <main className='w-full p-4 md:p-8 flex-1 overflow-y-auto space-y-8'>
           <DashboardContent />
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

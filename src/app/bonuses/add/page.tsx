@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useAppContext } from '@/context/app-provider';
-import type { Bonus, AllPdfSettings } from '@/lib/types';
+import type { Bonus, AllPdfSettings, ActivityLog } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { useAuth } from '@/hooks/use-auth';
 import { BonusReportPdf } from '@/components/reports/BonusReportPdf';
@@ -39,7 +39,7 @@ export default function AddBonusPage() {
   const router = useRouter();
   const { user, hasPermission } = useAuth();
 
-  const { employees, bonuses, setBonuses, settings } = useAppContext();
+  const { employees, bonuses, setBonuses, settings, setActivityLogs } = useAppContext();
   const { salarySettings } = settings;
 
   const dateParam = searchParams.get('date');
@@ -123,6 +123,10 @@ export default function AddBonusPage() {
     
     setBonuses(bonuses.map(rec => rec.id === updatedData.id ? updatedData : rec));
     toast({ title: t('save_changes'), description: t('bonus_record_updated') });
+    if(user) {
+        const log: ActivityLog = { id: crypto.randomUUID(), userId: user.id, username: user.username, action: 'update', entity: 'Bonus', entityId: updatedData.id, description: `Updated bonus for ${getEmployeeName(updatedData.employeeId)}`, timestamp: new Date().toISOString() };
+        setActivityLogs(prev => [...prev, log]);
+    }
     setEditingRecord(null);
     setIsSaving(false);
   };
@@ -148,6 +152,10 @@ export default function AddBonusPage() {
 
     setBonuses([...bonuses, bonusData]);
     toast({ title: t('bonus_added'), description: t('bonus_added_desc') });
+    if(user) {
+        const log: ActivityLog = { id: crypto.randomUUID(), userId: user.id, username: user.username, action: 'create', entity: 'Bonus', entityId: bonusData.id, description: `Added bonus for ${getEmployeeName(bonusData.employeeId)}`, timestamp: new Date().toISOString() };
+        setActivityLogs(prev => [...prev, log]);
+    }
     resetForm();
     setIsSaving(false);
   };
@@ -156,6 +164,10 @@ export default function AddBonusPage() {
     if (isReadOnly) return;
     setBonuses(bonuses.filter(rec => rec.id !== record.id));
     toast({ title: t('record_deleted'), description: t('bonus_record_deleted') });
+    if(user) {
+        const log: ActivityLog = { id: crypto.randomUUID(), userId: user.id, username: user.username, action: 'delete', entity: 'Bonus', entityId: record.id, description: `Deleted bonus for ${getEmployeeName(record.employeeId)}`, timestamp: new Date().toISOString() };
+        setActivityLogs(prev => [...prev, log]);
+    }
   };
   
   const { totalLoads, totalAmount } = useMemo(() => {
@@ -338,7 +350,7 @@ export default function AddBonusPage() {
       </div>
       <div className="min-h-screen bg-background text-foreground print:hidden">
         <header className="bg-card border-b p-4">
-          <div className="container mx-auto flex items-center justify-between">
+          <div className="w-full flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Button variant="outline" size="icon" asChild>
                 <Link href="/bonuses">
@@ -388,7 +400,7 @@ export default function AddBonusPage() {
           </div>
         </header>
 
-        <main className="container mx-auto p-4 md:p-8">
+        <main className="w-full p-4 md:p-8">
             <PageContent />
         </main>
       </div>
