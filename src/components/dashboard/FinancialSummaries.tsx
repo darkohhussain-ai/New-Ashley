@@ -28,7 +28,7 @@ const SummaryCard = ({ title, value, Icon, color }: { title: string, value: numb
         </CardHeader>
         <CardContent className="flex-grow pt-0 flex flex-col justify-end">
             <div>
-                <div className="text-2xl font-bold">{formatCurrency(value)}</div>
+                <div className="text-2xl font-bold h-8 flex items-center">{formatCurrency(value)}</div>
                 <Progress value={Math.min((value / 1000000) * 100, 100)} className="h-2 mt-2" indicatorClassName="bg-primary" style={{ backgroundColor: color }} />
             </div>
         </CardContent>
