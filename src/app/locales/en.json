@@ -695,5 +695,8 @@
   "employees_dashboard": "Employees Dashboard",
   "daily_expense_report": "Daily Expense Report",
   "daily_overtime_summary": "Daily Overtime Summary",
-  "overtime_summary_desc": "A daily breakdown of overtime records for {month}."
+  "overtime_summary_desc": "A daily breakdown of overtime records for {month}.",
+  "excel": "Excel",
+  "pdf": "PDF",
+  "services": "Services"
 }

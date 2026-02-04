@@ -122,71 +122,71 @@ export function DashboardClient() {
 
   return (
     <>
-      <main className="w-full p-4 md:p-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-1 space-y-8">
-                {settings.dashboardBanner && (
-                    <div className="relative w-full rounded-lg overflow-hidden animate-fade-in-down"
-                        style={{ height: `${settings.dashboardBannerHeight}px` }}
-                    >
-                        <Image
-                            key={settings.dashboardBanner}
-                            src={settings.dashboardBanner}
-                            alt="Dashboard Banner"
-                            fill
-                            className="object-cover"
-                            data-ai-hint="banner abstract"
-                        />
-                    </div>
-                )}
-                 <Card className="animate-fade-in-down">
-                    <CardHeader>
-                        <CardTitle>{t('welcome_back')}</CardTitle>
-                        <CardDescription>{t('select_service')}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-1">
-                        {menuItems.map((item) => (
-                            <DashboardCard
-                            key={item.title}
-                            title={t(item.title)}
-                            icon={item.icon}
-                            href={item.href}
-                            color={item.color}
-                            />
-                        ))}
-                    </CardContent>
-                </Card>
+      <main className="w-full max-w-7xl mx-auto p-4 md:p-8 space-y-8">
+        {settings.dashboardBanner && (
+            <div className="relative w-full rounded-lg overflow-hidden animate-fade-in-down"
+                style={{ height: `${settings.dashboardBannerHeight}px` }}
+            >
+                <Image
+                    key={settings.dashboardBanner}
+                    src={settings.dashboardBanner}
+                    alt="Dashboard Banner"
+                    fill
+                    className="object-cover"
+                    data-ai-hint="banner abstract"
+                />
             </div>
-            <div className="lg:col-span-2 space-y-8">
-                {hasPermission('admin:all') && (
-                    <div className="animate-fade-in-down" style={{ animationDelay: '100ms' }}>
-                        <FinancialSummaries />
-                    </div>
-                )}
-                 {hasPermission('admin:all') && (
-                    <div className="animate-fade-in-down" style={{ animationDelay: '150ms' }}>
-                        <OrderRequestsSummary />
-                    </div>
-                )}
-                 {hasPermission('admin:all') && (
-                    <div className="animate-fade-in-down" style={{ animationDelay: '200ms' }}>
-                        <StagedItemsSummary />
-                    </div>
-                )}
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                    {hasPermission('admin:all') && (
-                        <Link href="/ashley-expenses" className="block animate-fade-in-down hover:-translate-y-1 transition-transform" style={{ animationDelay: '300ms' }}>
-                            <MonthlyFinancialChart />
-                        </Link>
-                    )}
-                    {hasPermission('page:items:view') && (
-                         <Link href="/items" className="block animate-fade-in-down hover:-translate-y-1 transition-transform" style={{ animationDelay: '400ms' }}>
-                            <StorageSummaryChart />
-                        </Link>
-                    )}
-                </div>
+        )}
+
+        {hasPermission('admin:all') && (
+            <div className="animate-fade-in-down" style={{ animationDelay: '100ms' }}>
+                <FinancialSummaries />
             </div>
+        )}
+        
+        {hasPermission('admin:all') && (
+            <div className="animate-fade-in-down" style={{ animationDelay: '150ms' }}>
+                <OrderRequestsSummary />
+            </div>
+        )}
+        
+        {hasPermission('page:transmit:view') && (
+            <div className="animate-fade-in-down" style={{ animationDelay: '200ms' }}>
+                <StagedItemsSummary />
+            </div>
+        )}
+
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+            {hasPermission('admin:all') && (
+                <Link href="/ashley-expenses" className="block animate-fade-in-down hover:-translate-y-1 transition-transform" style={{ animationDelay: '300ms' }}>
+                    <MonthlyFinancialChart />
+                </Link>
+            )}
+            {hasPermission('page:items:view') && (
+                  <Link href="/items" className="block animate-fade-in-down hover:-translate-y-1 transition-transform" style={{ animationDelay: '400ms' }}>
+                    <StorageSummaryChart />
+                </Link>
+            )}
         </div>
+
+         <Card className="animate-fade-in-down" style={{ animationDelay: '500ms' }}>
+            <CardHeader>
+                <CardTitle>{t('services')}</CardTitle>
+                <CardDescription>{t('select_service')}</CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {menuItems.map((item) => (
+                    <DashboardCard
+                    key={item.title}
+                    title={t(item.title)}
+                    icon={item.icon}
+                    href={item.href}
+                    color={item.color}
+                    />
+                ))}
+            </CardContent>
+        </Card>
+
       </main>
       <NewsTicker />
     </>

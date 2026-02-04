@@ -5,7 +5,6 @@ import Link from "next/link"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import type { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { ChevronRight } from 'lucide-react';
 
 type DashboardCardProps = {
   title: string
@@ -16,14 +15,13 @@ type DashboardCardProps = {
 
 export function DashboardCard({ title, icon: Icon, href, color }: DashboardCardProps) {
   return (
-    <Link href={href} className="group block -mx-2 rounded-lg transition-colors hover:bg-accent">
-      <div className="flex items-center p-4">
-        <div className={cn("p-4 rounded-lg text-white", color)}>
-          <Icon className="w-6 h-6" />
-        </div>
-        <span className="ml-5 text-base font-semibold text-foreground/90">{title}</span>
-        <ChevronRight className="ml-auto h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1" />
-      </div>
+    <Link href={href} className="group block" passHref>
+        <Card className="h-full flex flex-col items-center justify-center text-center p-6 transition-transform transform hover:-translate-y-1 hover:shadow-xl">
+          <div className={cn("p-4 rounded-full text-white mb-4", color)}>
+              <Icon className="w-8 h-8" />
+          </div>
+          <CardTitle className="text-lg font-semibold">{title}</CardTitle>
+        </Card>
     </Link>
   )
 }
