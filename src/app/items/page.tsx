@@ -9,6 +9,7 @@ import {
   Search as SearchIcon,
   Loader2,
   Calendar,
+  ArrowLeft,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/use-translation';
