@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -42,16 +41,9 @@ export default function AddItemsPage() {
   const [invoiceNo, setInvoiceNo] = useState('');
   const [storage, setStorage] = useState('');
   const [notes, setNotes] = useState('');
-  const [requestDate, setRequestDate] = useState<Date | undefined>(undefined);
 
   // Editing state
   const [editingItem, setEditingItem] = useState<ItemForTransfer | null>(null);
-  
-  useEffect(() => {
-      if (!isAppLoading) {
-          setRequestDate(new Date());
-      }
-  }, [isAppLoading]);
 
   const stagedItems = useMemo(() => {
       return transferItems.filter(item => !item.transferId);
@@ -73,7 +65,6 @@ export default function AddItemsPage() {
       setInvoiceNo('');
       setStorage('');
       setNotes('');
-      setRequestDate(new Date());
   }
 
   const handleAddItem = () => {
@@ -95,8 +86,6 @@ export default function AddItemsPage() {
         invoiceNo,
         storage,
         notes,
-        status: 'Pending',
-        requestDate: requestDate ? formatISO(requestDate) : undefined,
         transferId: null,
         createdAt: formatISO(new Date())
     };
@@ -185,7 +174,7 @@ export default function AddItemsPage() {
       [t('quantity')]: item.quantity,
       [t('destination')]: item.destination,
       [t('invoice_no')]: item.invoiceNo || 'N/A',
-      [t('status')]: item.status || 'N/A',
+      [t('storage')]: item.storage || 'N/A',
       [t('notes')]: item.notes || 'N/A',
     }));
 
@@ -235,36 +224,6 @@ export default function AddItemsPage() {
                     <div className="space-y-2">
                         <Label htmlFor="model">{t('model_name')}</Label>
                         <Input id="model" value={editingItem ? editingItem.model : model} onChange={(e) => editingItem ? setEditingItem({...editingItem, model: e.target.value}) : setModel(e.target.value)} placeholder="e.g., Sofa 123" />
-                    </div>
-                    <div className="space-y-2">
-                        <Label>{t('request_date')}</Label>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !requestDate && "text-muted-foreground")}>
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {requestDate ? format(requestDate, 'PPP') : <span>{t('pick_a_date')}</span>}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0">
-                                <Calendar mode="single" selected={editingItem ? (editingItem.requestDate ? new Date(editingItem.requestDate) : new Date()) : requestDate} onSelect={(date) => editingItem ? setEditingItem({...editingItem, requestDate: date ? formatISO(date) : undefined}) : setRequestDate(date)} initialFocus />
-                                 <div className="p-2 border-t">
-                                    <Input 
-                                        type="text"
-                                        placeholder="yyyy-mm-dd"
-                                        value={requestDate ? format(requestDate, 'yyyy-MM-dd') : ''}
-                                        onChange={(e) => {
-                                            try {
-                                                const newDate = parseISO(e.target.value);
-                                                if (!isNaN(newDate.getTime())) {
-                                                    const setter = editingItem ? (d: Date) => setEditingItem({...editingItem, requestDate: d.toISOString()}) : setRequestDate;
-                                                    setter(newDate);
-                                                }
-                                            } catch {}
-                                        }}
-                                    />
-                                </div>
-                            </PopoverContent>
-                        </Popover>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
@@ -334,14 +293,13 @@ export default function AddItemsPage() {
                                     <TableHead>{t('quantity')}</TableHead>
                                     <TableHead>{t('destination')}</TableHead>
                                     <TableHead>{t('invoice_no')}</TableHead>
-                                    <TableHead>{t('status')}</TableHead>
                                     <TableHead>{t('notes')}</TableHead>
                                     <TableHead className="text-right">{t('actions')}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {isAppLoading ? (
-                                    <TableRow><TableCell colSpan={7} className="h-24 text-center"><Loader2 className="mx-auto animate-spin"/></TableCell></TableRow>
+                                    <TableRow><TableCell colSpan={6} className="h-24 text-center"><Loader2 className="mx-auto animate-spin"/></TableCell></TableRow>
                                 ) : sortedItems.length > 0 ? sortedItems.map((item, index) => (
                                     <TableRow key={item.id} className={cn(
                                         editingItem?.id === item.id ? "bg-muted" : "bg-transparent"
@@ -350,7 +308,6 @@ export default function AddItemsPage() {
                                         <TableCell>{item.quantity}</TableCell>
                                         <TableCell>{item.destination}</TableCell>
                                         <TableCell>{item.invoiceNo || 'N/A'}</TableCell>
-                                        <TableCell>{item.status || 'N/A'}</TableCell>
                                         <TableCell className="text-sm text-muted-foreground">{item.notes || 'N/A'}</TableCell>
                                         <TableCell className="text-right">
                                             <Button variant="ghost" size="icon" onClick={() => startEditing(item)}><Edit className="w-4 h-4"/></Button>
@@ -375,7 +332,7 @@ export default function AddItemsPage() {
                                     </TableRow>
                                 )) : (
                                     <TableRow>
-                                        <TableCell colSpan={7} className="text-center h-24">
+                                        <TableCell colSpan={6} className="text-center h-24">
                                             <ListPlus className="mx-auto h-12 w-12 text-muted-foreground mb-2"/>
                                             {t('no_items_staged_yet')}
                                         </TableCell>

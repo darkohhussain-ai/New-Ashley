@@ -156,6 +156,7 @@ export type Transfer = {
   invoiceNumber: number;
 };
 
+// For items we are sending out
 export type ItemForTransfer = {
   id: string;
   model: string;
@@ -164,11 +165,22 @@ export type ItemForTransfer = {
   notes?: string;
   transferId?: string | null;
   createdAt: string;
-  requestDate?: string;
   invoiceNo?: string;
   storage?: string;
-  status?: 'Pending' | 'Prepared' | 'Approved';
-  requestedBy?: string;
+};
+
+// For items we need to receive
+export type OrderRequest = {
+  id: string;
+  requestedBy: string;
+  requestDate?: string;
+  model: string;
+  quantity: number;
+  destination: string;
+  invoiceNo?: string;
+  notes?: string;
+  status: 'Pending' | 'Approved' | 'Completed';
+  createdAt: string;
 };
 
 export type NewItem = Omit<Item, 'id' | 'fileId' | 'storageStatus' | 'modelCondition' | 'quantityPerCondition' | 'updateStatus'> & {

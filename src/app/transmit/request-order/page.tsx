@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -11,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/context/app-provider';
-import type { ItemForTransfer, ActivityLog } from '@/lib/types';
+import type { OrderRequest, ActivityLog } from '@/lib/types';
 import { format, formatISO, parseISO } from 'date-fns';
 import { useTranslation } from '@/hooks/use-translation';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -25,7 +26,7 @@ const destinations = ["Erbil", "Baghdad", "Diwan", "Dohuk"];
 function RequestOrderPage() {
   const { toast } = useToast();
   const { t } = useTranslation();
-  const { transferItems, setTransferItems, isLoading: isAppLoading, setActivityLogs } = useAppContext();
+  const { setOrderRequests, isLoading: isAppLoading, setActivityLogs } = useAppContext();
   const { user } = useAuth();
 
   const [isSaving, setIsSaving] = useState(false);
@@ -60,7 +61,7 @@ function RequestOrderPage() {
     }
     
     setIsSaving(true);
-    const newItemData: ItemForTransfer = {
+    const newRequestData: OrderRequest = {
         id: crypto.randomUUID(),
         model: model.trim(),
         quantity,
@@ -70,11 +71,10 @@ function RequestOrderPage() {
         status: 'Pending',
         requestDate: requestDate ? formatISO(requestDate) : undefined,
         requestedBy: requestedBy.trim(),
-        transferId: null,
         createdAt: formatISO(new Date())
     };
     
-    setTransferItems([...transferItems, newItemData]);
+    setOrderRequests(prev => [...prev, newRequestData]);
     
     if (user) {
         const log: ActivityLog = {
@@ -83,8 +83,8 @@ function RequestOrderPage() {
             username: user.username,
             action: 'create',
             entity: 'Order Request',
-            entityId: newItemData.id,
-            description: `Created order request for "${newItemData.model}" to ${newItemData.destination}.`,
+            entityId: newRequestData.id,
+            description: `Created order request for "${newRequestData.model}" to ${newRequestData.destination}.`,
             timestamp: new Date().toISOString(),
         };
         setActivityLogs(prev => [...prev, log]);

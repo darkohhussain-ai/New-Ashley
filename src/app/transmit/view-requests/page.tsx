@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
@@ -9,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { format, parseISO, isSameMonth, startOfMonth, subMonths, addMonths } from 'date-fns';
 import { useAppContext } from '@/context/app-provider';
-import type { ItemForTransfer, ActivityLog } from '@/lib/types';
+import type { OrderRequest, ActivityLog } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
 import withAuth from '@/hooks/withAuth';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -26,21 +27,21 @@ const destinations = ["Erbil", "Baghdad", "Diwan", "Dohuk"];
 
 function ViewRequestsPage() {
     const { t } = useTranslation();
-    const { transferItems, setTransferItems, isLoading, setActivityLogs } = useAppContext();
+    const { orderRequests, setOrderRequests, isLoading } = useAppContext();
     const { toast } = useToast();
     const { user } = useAuth();
     
     const [selectedMonth, setSelectedMonth] = useState<Date>(startOfMonth(new Date()));
-    const [editingItem, setEditingItem] = useState<ItemForTransfer | null>(null);
+    const [editingItem, setEditingItem] = useState<OrderRequest | null>(null);
 
     const monthlyRequests = useMemo(() => {
-        if (!transferItems) return [];
-        return transferItems.filter(item => item.requestDate && isSameMonth(parseISO(item.requestDate), selectedMonth))
+        if (!orderRequests) return [];
+        return orderRequests.filter(item => item.requestDate && isSameMonth(parseISO(item.requestDate), selectedMonth))
                .sort((a,b) => parseISO(b.requestDate!).getTime() - parseISO(a.requestDate!).getTime());
-    }, [transferItems, selectedMonth]);
+    }, [orderRequests, selectedMonth]);
 
-    const handleDelete = (item: ItemForTransfer) => {
-        setTransferItems(prev => prev.filter(i => i.id !== item.id));
+    const handleDelete = (item: OrderRequest) => {
+        setOrderRequests(prev => prev.filter(i => i.id !== item.id));
         toast({ title: t('request_deleted'), description: t('request_for_model_deleted', {model: item.model}) });
         if (user) {
             const log: ActivityLog = { id: crypto.randomUUID(), userId: user.id, username: user.username, action: 'delete', entity: 'Order Request', entityId: item.id, description: `Deleted order request for "${item.model}".`, timestamp: new Date().toISOString() };
@@ -50,7 +51,7 @@ function ViewRequestsPage() {
     
     const handleUpdate = () => {
         if(!editingItem) return;
-        setTransferItems(prev => prev.map(i => i.id === editingItem.id ? editingItem : i));
+        setOrderRequests(prev => prev.map(i => i.id === editingItem.id ? editingItem : i));
         toast({ title: t('request_updated'), description: t('request_for_model_updated', {model: editingItem.model}) });
          if (user) {
             const log: ActivityLog = { id: crypto.randomUUID(), userId: user.id, username: user.username, action: 'update', entity: 'Order Request', entityId: editingItem.id, description: `Updated order request for "${editingItem.model}".`, timestamp: new Date().toISOString() };
@@ -90,6 +91,16 @@ function ViewRequestsPage() {
                                 <div className="space-y-2"><Label htmlFor="quantity">{t('quantity')}</Label><Input id="quantity" type="number" value={editingItem.quantity} onChange={e => setEditingItem({...editingItem, quantity: parseInt(e.target.value) || 1})} /></div>
                                 <div className="space-y-2"><Label htmlFor="destination">{t('destination')}</Label><Select value={editingItem.destination} onValueChange={val => setEditingItem({...editingItem, destination: val})}><SelectTrigger id="destination"><SelectValue /></SelectTrigger><SelectContent>{destinations.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent></Select></div>
                             </div>
+                            <div className="space-y-2"><Label htmlFor="status">{t('status')}</Label>
+                                <Select value={editingItem.status} onValueChange={(val: 'Pending' | 'Approved' | 'Completed') => setEditingItem({...editingItem, status: val})}>
+                                    <SelectTrigger id="status"><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Pending">{t('pending')}</SelectItem>
+                                        <SelectItem value="Approved">{t('approved')}</SelectItem>
+                                        <SelectItem value="Completed">{t('completed')}</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                             <div className="space-y-2"><Label htmlFor="notes">{t('notes')}</Label><Textarea id="notes" value={editingItem.notes || ''} onChange={e => setEditingItem({...editingItem, notes: e.target.value})} /></div>
                         </div>
                     )}
@@ -123,23 +134,22 @@ function ViewRequestsPage() {
                                     <TableCell className="text-center">{item.quantity}</TableCell>
                                     <TableCell>{item.destination}</TableCell>
                                     <TableCell>
-                                        <span className={cn("px-2 py-1 text-xs rounded-full", item.transferId ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800")}>
-                                            {item.transferId ? t('done') : t('waiting')}
+                                        <span className={cn("px-2 py-1 text-xs rounded-full", 
+                                            item.status === 'Completed' ? "bg-green-100 text-green-800" : 
+                                            item.status === 'Approved' ? "bg-blue-100 text-blue-800" :
+                                            "bg-yellow-100 text-yellow-800")}>
+                                            {t(item.status.toLowerCase())}
                                         </span>
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        {!item.transferId && (
-                                            <>
-                                                <Button variant="ghost" size="icon" onClick={() => setEditingItem(JSON.parse(JSON.stringify(item)))}><Edit className="h-4 w-4" /></Button>
-                                                <AlertDialog>
-                                                    <AlertDialogTrigger asChild><Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button></AlertDialogTrigger>
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader><AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle><AlertDialogDescription>{t('confirm_delete_request', {model: item.model})}</AlertDialogDescription></AlertDialogHeader>
-                                                        <AlertDialogFooter><AlertDialogCancel>{t('cancel')}</AlertDialogCancel><AlertDialogAction onClick={() => handleDelete(item)}>{t('delete')}</AlertDialogAction></AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
-                                            </>
-                                        )}
+                                        <Button variant="ghost" size="icon" onClick={() => setEditingItem(JSON.parse(JSON.stringify(item)))}><Edit className="h-4 w-4" /></Button>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild><Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button></AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader><AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle><AlertDialogDescription>{t('confirm_delete_request', {model: item.model})}</AlertDialogDescription></AlertDialogHeader>
+                                                <AlertDialogFooter><AlertDialogCancel>{t('cancel')}</AlertDialogCancel><AlertDialogAction onClick={() => handleDelete(item)}>{t('delete')}</AlertDialogAction></AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
                                     </TableCell>
                                 </TableRow>
                             )) : (

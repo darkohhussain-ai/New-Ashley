@@ -19,6 +19,7 @@ import {
     ItemCategory,
     Transfer,
     ItemForTransfer,
+    OrderRequest,
     MarketingFeedback,
     EvaluationQuestion,
     User,
@@ -56,6 +57,8 @@ interface AppState {
     setTransfers: React.Dispatch<React.SetStateAction<Transfer[]>>;
     transferItems: ItemForTransfer[];
     setTransferItems: React.Dispatch<React.SetStateAction<ItemForTransfer[]>>;
+    orderRequests: OrderRequest[];
+    setOrderRequests: React.Dispatch<React.SetStateAction<OrderRequest[]>>;
     marketingFeedbacks: MarketingFeedback[];
     setMarketingFeedbacks: React.Dispatch<React.SetStateAction<MarketingFeedback[]>>;
     evaluationQuestions: EvaluationQuestion[];
@@ -150,6 +153,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const [itemCategories, setItemCategories, isItemCategoriesLoading] = useFirestoreCollection<ItemCategory>('itemCategories', initialData.itemCategories);
     const [transfers, setTransfers, isTransfersLoading] = useFirestoreCollection<Transfer>('transfers', initialData.transfers);
     const [transferItems, setTransferItems, isTransferItemsLoading] = useFirestoreCollection<ItemForTransfer>('transferItems', initialData.transferItems);
+    const [orderRequests, setOrderRequests, isOrderRequestsLoading] = useFirestoreCollection<OrderRequest>('orderRequests', initialData.orderRequests);
     const [marketingFeedbacks, setMarketingFeedbacks, isMarketingFeedbacksLoading] = useFirestoreCollection<MarketingFeedback>('marketingFeedbacks', initialData.marketingFeedbacks);
     const [evaluationQuestions, setEvaluationQuestions, isEvaluationQuestionsLoading] = useFirestoreCollection<EvaluationQuestion>('evaluationQuestions', initialData.evaluationQuestions);
     const [users, setUsers, isUsersLoading] = useFirestoreCollection<User>('users', initialData.users);
@@ -215,7 +219,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
     }, [isUsersLoading, users, db]);
 
-    const isLoading = isUserLoading || isSettingsLoading || isEmployeesLoading || isExcelFilesLoading || isItemsLoading || isLocationsLoading || isExpensesLoading || isExpenseReportsLoading || isOvertimeLoading || isBonusesLoading || isWithdrawalsLoading || isItemCategoriesLoading || isTransfersLoading || isTransferItemsLoading || isMarketingFeedbacksLoading || isEvaluationQuestionsLoading || isUsersLoading || isRolesLoading || isSoldItemsListsLoading || isActivityLogsLoading;
+    const isLoading = isUserLoading || isSettingsLoading || isEmployeesLoading || isExcelFilesLoading || isItemsLoading || isLocationsLoading || isExpensesLoading || isExpenseReportsLoading || isOvertimeLoading || isBonusesLoading || isWithdrawalsLoading || isItemCategoriesLoading || isTransfersLoading || isTransferItemsLoading || isOrderRequestsLoading || isMarketingFeedbacksLoading || isEvaluationQuestionsLoading || isUsersLoading || isRolesLoading || isSoldItemsListsLoading || isActivityLogsLoading;
 
     const value = useMemo<AppState>(() => ({
         employees, setEmployees,
@@ -230,6 +234,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         itemCategories, setItemCategories,
         transfers, setTransfers,
         transferItems, setTransferItems,
+        orderRequests, setOrderRequests,
         marketingFeedbacks, setMarketingFeedbacks,
         evaluationQuestions, setEvaluationQuestions,
         users, setUsers,
@@ -252,6 +257,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         itemCategories, setItemCategories,
         transfers, setTransfers,
         transferItems, setTransferItems,
+        orderRequests, setOrderRequests,
         marketingFeedbacks, setMarketingFeedbacks,
         evaluationQuestions, setEvaluationQuestions,
         users, setUsers,

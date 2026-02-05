@@ -1,5 +1,5 @@
 
-import { Employee, ExcelFile, Item, StorageLocation, Expense, ExpenseReport, Overtime, Bonus, CashWithdrawal, SoldItemsList, Transfer, ItemForTransfer, MarketingFeedback, EvaluationQuestion, AnswerOption, User, Role, AppSettings, AllPdfSettings, PdfSettings, ThemeColors, ItemCategory, BranchColors, ActivityLog } from '@/lib/types';
+import { Employee, ExcelFile, Item, StorageLocation, Expense, ExpenseReport, Overtime, Bonus, CashWithdrawal, SoldItemsList, Transfer, ItemForTransfer, MarketingFeedback, EvaluationQuestion, AnswerOption, User, Role, AppSettings, AllPdfSettings, PdfSettings, ThemeColors, ItemCategory, BranchColors, ActivityLog, OrderRequest } from '@/lib/types';
 import { adminPermissions, adminAssistantPermissions, viewerPermissions, employeePermissions } from '@/lib/permissions';
 import en from '@/locales/en.json';
 import ku from '@/locales/ku.json';
@@ -139,6 +139,7 @@ export const initialData: {
     itemCategories: ItemCategory[],
     transfers: Transfer[],
     transferItems: ItemForTransfer[],
+    orderRequests: OrderRequest[],
     marketingFeedbacks: MarketingFeedback[],
     evaluationQuestions: EvaluationQuestion[],
     users: User[],
@@ -165,6 +166,7 @@ export const initialData: {
     ],
     transfers: [],
     transferItems: [],
+    orderRequests: [],
     marketingFeedbacks: [],
     evaluationQuestions: [
         { id: 'q1', text: 'Commitment to work', answers: defaultAnswers },

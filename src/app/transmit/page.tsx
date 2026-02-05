@@ -16,11 +16,12 @@ import { format, parseISO } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { StagedItemsSummary } from '@/components/dashboard/StagedItemsSummary';
 import { DashboardCard } from '@/components/dashboard/dashboard-card';
+import { OrderRequestsSummary } from '@/components/dashboard/OrderRequestsSummary';
 
 function TransmitDashboardPage() {
     const { t } = useTranslation();
     const { hasPermission } = useAuth();
-    const { transferItems, transfers } = useAppContext();
+    const { orderRequests, transfers } = useAppContext();
     const router = useRouter();
 
     const menuItems = [
@@ -69,12 +70,12 @@ function TransmitDashboardPage() {
     ];
 
     const recentRequests = useMemo(() => {
-        if (!transferItems) return [];
-        return transferItems
-            .filter(item => item.requestedBy && !item.transferId)
+        if (!orderRequests) return [];
+        return orderRequests
+            .filter(item => item.status === 'Pending')
             .sort((a,b) => parseISO(b.createdAt).getTime() - parseISO(a.createdAt).getTime())
             .slice(0, 5);
-    }, [transferItems]);
+    }, [orderRequests]);
 
 
   return (
@@ -105,37 +106,7 @@ function TransmitDashboardPage() {
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <StagedItemsSummary />
-            
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><History /> {t('recent_order_requests')}</CardTitle>
-                    <CardDescription>{t('recent_order_requests_desc')}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {recentRequests.length > 0 ? (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>{t('model')}</TableHead>
-                                    <TableHead>{t('destination')}</TableHead>
-                                    <TableHead className="text-right">{t('requested')}</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {recentRequests.map(item => (
-                                    <TableRow key={item.id} onClick={() => router.push(`/transmit/view-requests`)} className="cursor-pointer hover:bg-muted/50">
-                                        <TableCell>{item.model}</TableCell>
-                                        <TableCell>{item.destination}</TableCell>
-                                        <TableCell className="text-right text-xs text-muted-foreground">{item.requestDate ? format(parseISO(item.requestDate), 'PP') : t('na')}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    ) : (
-                        <p className="text-sm text-muted-foreground text-center py-8">{t('no_open_order_requests')}</p>
-                    )}
-                </CardContent>
-            </Card>
+            <OrderRequestsSummary />
         </div>
       </main>
     </div>

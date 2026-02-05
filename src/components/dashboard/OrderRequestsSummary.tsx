@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo } from 'react';
@@ -12,16 +13,16 @@ const destinations = ["Erbil", "Baghdad", "Dohuk", "Diwan"];
 
 export function OrderRequestsSummary() {
   const { t } = useTranslation();
-  const { transferItems, settings } = useAppContext();
+  const { orderRequests, settings } = useAppContext();
   const router = useRouter();
 
   const destinationStats = useMemo(() => {
-    const orderRequests = transferItems.filter(item => item.requestedBy && !item.transferId);
+    const pendingRequests = orderRequests.filter(item => item.status === 'Pending');
     
     return destinations.map(dest => {
-        const itemsForDest = orderRequests.filter(item => item.destination === dest);
+        const itemsForDest = pendingRequests.filter(item => item.destination === dest);
         const latestRequest = itemsForDest
-            .sort((a,b) => parseISO(b.requestDate || b.createdAt).getTime() - parseISO(a.requestDate || a.createdAt).getTime())[0];
+            .sort((a,b) => parseISO(b.createdAt).getTime() - parseISO(a.createdAt).getTime())[0];
         
         const color = 'hsl(var(--chart-5))';
 
@@ -32,7 +33,7 @@ export function OrderRequestsSummary() {
             color: color
         };
     });
-  }, [transferItems]);
+  }, [orderRequests]);
   
   const hasData = useMemo(() => destinationStats.some(d => d.requestCount > 0), [destinationStats]);
 
