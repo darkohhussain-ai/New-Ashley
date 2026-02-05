@@ -5,6 +5,7 @@ import type { Item, StorageLocation } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shelf } from './Shelf';
+import { cn } from '@/lib/utils';
 
 export function AshleyMap({
   locations,
@@ -66,14 +67,14 @@ export function AshleyMap({
     const order = ['LF', 'MF', 'RF', 'LB', 'MB', 'RB'];
     return [...floor3office].sort((a, b) => {
       const codeA = a.name.split('-').pop() || '';
-      const codeB = b.name.split('-').pop() || '';
+      const codeB = a.name.split('-').pop() || '';
       return order.indexOf(codeA) - order.indexOf(codeB);
     });
   }, [floor3office]);
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="bg-[hsl(var(--ashley-floor4-bg))]">
         <CardHeader>
           <CardTitle>{t('floor_4')}</CardTitle>
         </CardHeader>
@@ -109,8 +110,8 @@ export function AshleyMap({
         <CardHeader>
           <CardTitle>{t('floor_3')}</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-12">
-          <div>
+        <CardContent className="space-y-6">
+          <div className="p-4 rounded-lg bg-[hsl(var(--ashley-floor3-area1-bg))]">
             <h3 className="text-lg font-semibold text-center mb-4">
               {t('area_1')}
             </h3>
@@ -121,7 +122,7 @@ export function AshleyMap({
                 return (
                   <div
                     key={unitKey}
-                    className="p-4 rounded-lg bg-muted/30 border"
+                    className="p-4 rounded-lg bg-background/50 border"
                   >
                     <h4 className="font-bold text-center mb-4">
                       Unit {unitKey}
@@ -142,12 +143,12 @@ export function AshleyMap({
               })}
             </div>
           </div>
-          <hr className="my-8" />
-          <div>
+          
+          <div className="p-4 rounded-lg bg-[hsl(var(--ashley-floor3-office-bg))]">
             <h3 className="text-lg font-semibold text-center mb-4">
               {t('area_2_office')}
             </h3>
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 max-w-xl mx-auto p-4 rounded-lg bg-muted/30 border">
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 max-w-xl mx-auto">
               {sortedOffice.map(loc => (
                 <Shelf
                   key={loc.id}

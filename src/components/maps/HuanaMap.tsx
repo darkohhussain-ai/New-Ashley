@@ -4,6 +4,17 @@ import type { Item, StorageLocation } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shelf } from './Shelf';
+import { cn } from '@/lib/utils';
+
+const getWarehouseBgColor = (warehouseName: string) => {
+    switch (warehouseName) {
+        case 'H1': return 'bg-[hsl(var(--huana-h1-bg))]';
+        case 'H2': return 'bg-[hsl(var(--huana-h2-bg))]';
+        case 'H3': return 'bg-[hsl(var(--huana-h3-bg))]';
+        case 'K1': return 'bg-[hsl(var(--huana-k-bg))]';
+        default: return 'bg-card';
+    }
+};
 
 const WarehouseDisplay = ({
   name,
@@ -48,7 +59,7 @@ const WarehouseDisplay = ({
   };
 
   return (
-    <div className="p-3 bg-card rounded-xl border-2 space-y-2">
+    <div className={cn("p-3 rounded-xl border-2 space-y-2", getWarehouseBgColor(name))}>
       <h3 className="text-center font-bold text-lg">{name}</h3>
       <div className="space-y-3">
         <div>

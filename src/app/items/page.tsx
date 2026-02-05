@@ -49,7 +49,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-
+import { cn } from '@/lib/utils';
 import { AshleyMap } from '@/components/maps/AshleyMap';
 import { HuanaMap } from '@/components/maps/HuanaMap';
 
@@ -87,30 +87,40 @@ function ItemsPage() {
       icon: MapPin,
       href: '/locations',
       permission: 'page:items:locations',
+      color: 'text-blue-500',
+      hoverColor: 'hover:bg-blue-500/10',
     },
     {
       title: t('new_excel_file'),
       icon: FilePlus,
       href: '/new-file',
       permission: 'page:items:new',
+      color: 'text-green-500',
+      hoverColor: 'hover:bg-green-500/10',
     },
     {
       title: t('import_excel_file'),
       icon: Upload,
       href: '/import',
       permission: 'page:items:import',
+      color: 'text-orange-500',
+      hoverColor: 'hover:bg-orange-500/10',
     },
     {
       title: t('excel_archive'),
       icon: Archive,
       href: '/archive',
       permission: 'page:items:archive',
+      color: 'text-purple-500',
+      hoverColor: 'hover:bg-purple-500/10',
     },
     {
       title: t('pdf_archive'),
       icon: Archive,
       href: '/pdf-archive',
       permission: 'page:items:archive',
+      color: 'text-red-500',
+      hoverColor: 'hover:bg-red-500/10',
     },
   ].filter(item => hasPermission(item.permission));
 
@@ -250,9 +260,12 @@ function ItemsPage() {
                   <Link key={item.href} href={item.href} passHref>
                     <Button
                       variant="ghost"
-                      className="w-full justify-start text-base p-6"
+                      className={cn(
+                        'w-full justify-start text-base p-6',
+                        item.hoverColor
+                      )}
                     >
-                      <item.icon className="mr-3 h-5 w-5" />
+                      <item.icon className={cn('mr-3 h-5 w-5', item.color)} />
                       {item.title}
                     </Button>
                   </Link>
