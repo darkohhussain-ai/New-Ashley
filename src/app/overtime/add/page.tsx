@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect, Fragment } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Plus, Trash2, Calendar as CalendarIcon, Clock, User, Edit, Save, X, Printer, Loader2, FileDown } from 'lucide-react';
@@ -30,6 +30,60 @@ const formatCurrency = (amount: number) => {
     maximumFractionDigits: 0,
   }).format(amount);
 };
+
+function EditableOvertimeRow({
+  record,
+  onSave,
+  onCancel,
+  isSaving,
+  getEmployeeName,
+  language,
+  t
+}: {
+  record: Overtime;
+  onSave: (updatedRecord: Overtime) => void;
+  onCancel: () => void;
+  isSaving: boolean;
+  getEmployeeName: (id: string, useKurdish?: boolean) => string;
+  language: string;
+  t: (key: string) => string;
+}) {
+  const [editedRecord, setEditedRecord] = useState(record);
+
+  useEffect(() => {
+    setEditedRecord(record);
+  }, [record]);
+
+  return (
+    <Fragment>
+      <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{getEmployeeName(record.employeeId, language === 'ku')}</TableCell>
+      <TableCell className='text-center'>
+        <Input
+          type="number"
+          value={editedRecord.hours}
+          onChange={(e) => setEditedRecord({ ...editedRecord, hours: parseFloat(e.target.value) || 0 })}
+          className="h-8 w-24 mx-auto text-center"
+        />
+      </TableCell>
+      <TableCell className='text-center'>{formatCurrency(editedRecord.hours * editedRecord.rate)}</TableCell>
+      <TableCell>
+        <Textarea
+          value={editedRecord.notes}
+          onChange={(e) => setEditedRecord({ ...editedRecord, notes: e.target.value })}
+          placeholder={t('notes_optional')}
+          className="h-8"
+        />
+      </TableCell>
+      <TableCell className="text-right print:hidden">
+        <div className="flex gap-1">
+          <Button size="icon" className="h-8 w-8" onClick={() => onSave(editedRecord)} disabled={isSaving}><Save className="h-4 w-4" /></Button>
+          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={onCancel}><X className="h-4 w-4" /></Button>
+        </div>
+      </TableCell>
+    </Fragment>
+  );
+}
+
 
 export default function AddOvertimePage() {
   const { t, language } = useTranslation();
@@ -110,14 +164,14 @@ export default function AddOvertimePage() {
     setEditingRecord(null);
   };
   
-  const handleUpdateRecord = () => {
-    if(!editingRecord) return;
+  const handleUpdateRecord = (updatedRecord: Overtime) => {
+    if(!updatedRecord) return;
     
     setIsSaving(true);
     
     const updatedData = {
-        ...editingRecord,
-        totalAmount: editingRecord.hours * editingRecord.rate,
+        ...updatedRecord,
+        totalAmount: updatedRecord.hours * updatedRecord.rate,
     };
     
     setAllOvertimeRecords(allOvertimeRecords.map(rec => rec.id === updatedData.id ? updatedData : rec));
@@ -264,35 +318,19 @@ export default function AddOvertimePage() {
                             </TableHeader>
                             <TableBody>
                                 {overtimeRecords.map(record => (
-                                    editingRecord?.id === record.id ? (
-                                        <TableRow key={record.id}>
-                                            <TableCell>{getEmployeeName(record.employeeId, language==='ku')}</TableCell>
-                                            <TableCell>
-                                                <Input 
-                                                    type="number" 
-                                                    value={editingRecord.hours}
-                                                    onChange={(e) => setEditingRecord({...editingRecord, hours: parseFloat(e.target.value) || 0})}
-                                                    className="h-8 w-24 mx-auto text-center"
-                                                />
-                                            </TableCell>
-                                            <TableCell className='text-center'>{formatCurrency(editingRecord.hours * editingRecord.rate)}</TableCell>
-                                            <TableCell>
-                                                <Textarea 
-                                                    value={editingRecord.notes}
-                                                    onChange={(e) => setEditingRecord({...editingRecord, notes: e.target.value})}
-                                                    placeholder={t('notes_optional')}
-                                                    className="h-8"
-                                                />
-                                            </TableCell>
-                                            <TableCell className="text-right print:hidden">
-                                                <div className="flex gap-1">
-                                                    <Button size="icon" className="h-8 w-8" onClick={handleUpdateRecord} disabled={isSaving}><Save className="h-4 w-4"/></Button>
-                                                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={cancelEditing}><X className="h-4 w-4"/></Button>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
+                                    <TableRow key={record.id}>
+                                    {editingRecord?.id === record.id ? (
+                                        <EditableOvertimeRow
+                                            record={editingRecord}
+                                            onSave={handleUpdateRecord}
+                                            onCancel={cancelEditing}
+                                            isSaving={isSaving}
+                                            getEmployeeName={getEmployeeName}
+                                            language={language}
+                                            t={t}
+                                        />
                                     ) : (
-                                        <TableRow key={record.id}>
+                                        <>
                                             <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{getEmployeeName(record.employeeId, language === 'ku')}</TableCell>
                                             <TableCell className="text-center">{record.hours.toFixed(2)}</TableCell>
                                             <TableCell className="text-center">{formatCurrency(record.totalAmount)}</TableCell>
@@ -323,8 +361,9 @@ export default function AddOvertimePage() {
                                                     </AlertDialog>
                                                 </div>
                                             </TableCell>
-                                        </TableRow>
-                                    )
+                                        </>
+                                    )}
+                                    </TableRow>
                                 ))}
                             </TableBody>
                         </Table>

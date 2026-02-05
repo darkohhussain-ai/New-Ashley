@@ -32,6 +32,56 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
+function EditableWithdrawalRow({
+  record,
+  onSave,
+  onCancel,
+  isSaving,
+  getEmployeeName,
+  language,
+  t
+}: {
+  record: CashWithdrawal;
+  onSave: (updatedRecord: CashWithdrawal) => void;
+  onCancel: () => void;
+  isSaving: boolean;
+  getEmployeeName: (id: string, useKurdish?: boolean) => string;
+  language: string;
+  t: (key: string) => string;
+}) {
+  const [editedRecord, setEditedRecord] = useState(record);
+
+  useEffect(() => {
+    setEditedRecord(record);
+  }, [record]);
+
+  return (
+    <>
+      <div className="flex-1 space-y-2 print:hidden">
+        <p dir={language === 'ku' ? 'rtl' : 'ltr'}>{getEmployeeName(record.employeeId, language === 'ku')}</p>
+        <Input
+          type="number"
+          value={editedRecord.amount}
+          onChange={(e) => setEditedRecord({ ...editedRecord, amount: parseFloat(e.target.value) || 0 })}
+          className="h-8"
+        />
+        <Textarea
+          value={editedRecord.notes}
+          onChange={(e) => setEditedRecord({ ...editedRecord, notes: e.target.value })}
+          placeholder={t('notes_optional')}
+        />
+      </div>
+      <div className='flex flex-col items-end'>
+        <p className="font-semibold text-primary">{formatCurrency(editedRecord.amount)}</p>
+        <div className="flex gap-1 mt-2 print:hidden">
+          <Button size="icon" className="h-8 w-8" onClick={() => onSave(editedRecord)} disabled={isSaving}><Save className="h-4 w-4" /></Button>
+          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={onCancel}><X className="h-4 w-4" /></Button>
+        </div>
+      </div>
+    </>
+  );
+}
+
 export default function AddCashWithdrawalPage() {
   const { t, language } = useTranslation();
   const { toast } = useToast();
@@ -110,15 +160,15 @@ export default function AddCashWithdrawalPage() {
     setEditingRecord(null);
   };
   
-  const handleUpdateRecord = () => {
-    if(!editingRecord || isReadOnly) return;
+  const handleUpdateRecord = (updatedRecord: CashWithdrawal) => {
+    if(isReadOnly) return;
     
     setIsSaving(true);
     
-    setWithdrawals(withdrawals.map(rec => rec.id === editingRecord.id ? editingRecord : rec));
+    setWithdrawals(withdrawals.map(rec => rec.id === updatedRecord.id ? updatedRecord : rec));
     toast({ title: t('save_changes'), description: t('withdrawal_record_updated') });
     if(user) {
-        const log: ActivityLog = { id: crypto.randomUUID(), userId: user.id, username: user.username, action: 'update', entity: 'Withdrawal', entityId: editingRecord.id, description: `Updated withdrawal for ${getEmployeeName(editingRecord.employeeId)}`, timestamp: new Date().toISOString() };
+        const log: ActivityLog = { id: crypto.randomUUID(), userId: user.id, username: user.username, action: 'update', entity: 'Withdrawal', entityId: updatedRecord.id, description: `Updated withdrawal for ${getEmployeeName(updatedRecord.employeeId)}`, timestamp: new Date().toISOString() };
         setActivityLogs(prev => [...prev, log]);
     }
     setEditingRecord(null);
@@ -259,62 +309,52 @@ export default function AddCashWithdrawalPage() {
                         dailyWithdrawals.map(record => (
                         <div key={record.id} className="py-3 flex justify-between items-start gap-4">
                             {editingRecord?.id === record.id ? (
-                            <div className="flex-1 space-y-2 print:hidden">
-                                <p dir={language === 'ku' ? 'rtl' : 'ltr'}>{getEmployeeName(record.employeeId, language === 'ku')}</p>
-                                <Input 
-                                    type="number" 
-                                    value={editingRecord.amount}
-                                    onChange={(e) => setEditingRecord({...editingRecord, amount: parseFloat(e.target.value) || 0})}
-                                    className="h-8"
-                                />
-                                <Textarea 
-                                    value={editingRecord.notes}
-                                    onChange={(e) => setEditingRecord({...editingRecord, notes: e.target.value})}
-                                    placeholder={t('notes_optional')}
-                                />
-                            </div>
+                               <EditableWithdrawalRow
+                                record={editingRecord}
+                                onSave={handleUpdateRecord}
+                                onCancel={cancelEditing}
+                                isSaving={isSaving}
+                                getEmployeeName={getEmployeeName}
+                                language={language}
+                                t={t}
+                              />
                             ) : (
-                            <div className="flex-1">
-                                <p className="flex items-center gap-2" dir={language === 'ku' ? 'rtl' : 'ltr'}><User className="h-4 w-4 text-primary" /> {getEmployeeName(record.employeeId, language === 'ku')}</p>
-                                {record.notes && <p className="text-sm mt-1">{record.notes}</p>}
-                            </div>
-                            )}
-                            <div className='flex flex-col items-end'>
+                            <>
+                              <div className="flex-1">
+                                  <p className="flex items-center gap-2" dir={language === 'ku' ? 'rtl' : 'ltr'}><User className="h-4 w-4 text-primary" /> {getEmployeeName(record.employeeId, language === 'ku')}</p>
+                                  {record.notes && <p className="text-sm mt-1">{record.notes}</p>}
+                              </div>
+                              <div className='flex flex-col items-end'>
                                 <p className="font-semibold text-primary">{formatCurrency(record.amount)}</p>
                                 {!isReadOnly && (
-                                editingRecord?.id === record.id ? (
-                                    <div className="flex gap-1 mt-2 print:hidden">
-                                        <Button size="icon" className="h-8 w-8" onClick={handleUpdateRecord} disabled={isSaving}><Save className="h-4 w-4"/></Button>
-                                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={cancelEditing}><X className="h-4 w-4"/></Button>
-                                    </div>
-                                ) : (
-                                    <div className="flex gap-1 mt-1 print:hidden">
-                                        <Button size="icon" variant="ghost" className="text-muted-foreground hover:text-primary h-8 w-8" onClick={() => startEditing(record)}>
-                                            <Edit className="h-4 w-4"/>
-                                        </Button>
-                                        <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8">
-                                                    <Trash2 className="h-4 w-4"/>
-                                                </Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle>{t('delete_this_record')}</AlertDialogTitle>
-                                                    <AlertDialogDescription>
-                                                    {t('confirm_delete_withdrawal', {employeeName: getEmployeeName(record.employeeId, language === 'ku')})}
-                                                    </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                    <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => handleDelete(record)}>{t('delete')}</AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
-                                    </div>
-                                )
+                                <div className="flex gap-1 mt-1 print:hidden">
+                                    <Button size="icon" variant="ghost" className="text-muted-foreground hover:text-primary h-8 w-8" onClick={() => startEditing(record)}>
+                                        <Edit className="h-4 w-4"/>
+                                    </Button>
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8">
+                                                <Trash2 className="h-4 w-4"/>
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>{t('delete_this_record')}</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                {t('confirm_delete_withdrawal', {employeeName: getEmployeeName(record.employeeId, language === 'ku')})}
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => handleDelete(record)}>{t('delete')}</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </div>
                                 )}
-                            </div>
+                              </div>
+                            </>
+                            )}
                         </div>
                         ))
                     ) : (
