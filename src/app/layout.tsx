@@ -16,6 +16,7 @@ import { FirebaseClientProvider } from '@/firebase';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SidebarProvider } from '@/components/ui/sidebar';
 
 
 function CustomFontInjector() {
@@ -105,7 +106,7 @@ function AppContent({ children }: { children: React.ReactNode }) {
     }
 
     return (
-        <>
+        <SidebarProvider>
             <CustomFontInjector />
 
             {!isLoginPage && <MainBackground />}
@@ -114,7 +115,7 @@ function AppContent({ children }: { children: React.ReactNode }) {
             <div key={pathname} className="animate-fade-in-down">
                 {children}
             </div>
-        </>
+        </SidebarProvider>
     );
 }
 

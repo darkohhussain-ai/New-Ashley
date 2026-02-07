@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -27,10 +28,10 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/use-auth';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAppContext } from '@/context/app-provider';
 import { useTheme } from '@/components/shared/theme-provider';
-
+import { SidebarTrigger } from '@/components/ui/sidebar';
 
 function DateTimeDisplay() {
   const [time, setTime] = useState<Date | null>(null);
@@ -80,6 +81,7 @@ export function AppHeader() {
   const { settings } = useAppContext();
   const { theme, setTheme } = useTheme();
   const router = useRouter();
+  const pathname = usePathname();
 
   const [isMounted, setIsMounted] = useState(false);
   
@@ -96,11 +98,14 @@ export function AppHeader() {
     router.push('/login');
   };
 
+  const isDashboard = pathname === '/';
+
   return (
     <header className="bg-card border-b top-0 z-10 print:hidden">
       <div className="w-full px-4">
         <div className="flex items-center justify-between h-20">
-            <div className="flex-1 flex items-center justify-start">
+            <div className="flex-1 flex items-center justify-start gap-2">
+                 {isDashboard && <SidebarTrigger className="-ml-2" />}
                  <div className="hidden md:flex items-center gap-4 text-sm text-muted-foreground">
                     <DateTimeDisplay />
                 </div>

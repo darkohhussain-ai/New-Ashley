@@ -31,6 +31,16 @@
     --chart-5: 27 87% 67%;
     --radius: 0.8rem;
 
+    /* Sidebar variables */
+    --sidebar-background: hsl(var(--card));
+    --sidebar-foreground: hsl(var(--card-foreground));
+    --sidebar-primary: hsl(var(--primary));
+    --sidebar-primary-foreground: hsl(var(--primary-foreground));
+    --sidebar-accent: hsl(var(--accent));
+    --sidebar-accent-foreground: hsl(var(--accent-foreground));
+    --sidebar-border: hsl(var(--border));
+    --sidebar-ring: hsl(var(--ring));
+    
     /* Custom Added Colors */
     --tab-active-background: hsl(var(--background));
     --tab-active-foreground: hsl(var(--foreground));
@@ -72,6 +82,16 @@
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+
+    /* Sidebar variables */
+    --sidebar-background: hsl(var(--card));
+    --sidebar-foreground: hsl(var(--card-foreground));
+    --sidebar-primary: hsl(var(--primary));
+    --sidebar-primary-foreground: hsl(var(--primary-foreground));
+    --sidebar-accent: hsl(var(--accent));
+    --sidebar-accent-foreground: hsl(var(--accent-foreground));
+    --sidebar-border: hsl(var(--border));
+    --sidebar-ring: hsl(var(--ring));
 
     /* Custom Added Colors */
     --tab-active-background: hsl(var(--background));

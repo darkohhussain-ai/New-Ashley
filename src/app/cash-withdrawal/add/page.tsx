@@ -82,6 +82,156 @@ function EditableWithdrawalRow({
   );
 }
 
+const PageContent = ({
+  isReadOnly,
+  t,
+  language,
+  handleAddWithdrawal,
+  selectedEmployee,
+  setSelectedEmployee,
+  isSaving,
+  isLoading,
+  sortedEmployees,
+  getEmployeeName,
+  amount,
+  setAmount,
+  notes,
+  setNotes,
+  selectedDate,
+  dailyWithdrawals,
+  editingRecord,
+  startEditing,
+  handleUpdateRecord,
+  cancelEditing,
+  handleDelete,
+  totalAmount
+}: any) => (
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className={cn("lg:col-span-1 print:hidden", isReadOnly && "opacity-50 pointer-events-none")}>
+                <Card>
+                <CardHeader>
+                    <CardTitle>{t('add_withdrawal_record')}</CardTitle>
+                    <CardDescription>{t('add_withdrawal_record_desc')}</CardDescription>
+                </CardHeader>
+                <form onSubmit={handleAddWithdrawal}>
+                    <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        <label htmlFor="employee">{t('employee')}</label>
+                        <Select onValueChange={setSelectedEmployee} value={selectedEmployee} disabled={isSaving || isReadOnly}>
+                        <SelectTrigger id="employee">
+                            <SelectValue placeholder={t('select_an_employee')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {isLoading ? (
+                            <SelectItem value="loading" disabled>{t('loading')}...</SelectItem>
+                            ) : (
+                            sortedEmployees.map((emp:any) => (
+                                <SelectItem key={emp.id} value={emp.id} dir={language === 'ku' ? 'rtl' : 'ltr'}>{getEmployeeName(emp.id, language === 'ku')}</SelectItem>
+                            ))
+                            )}
+                        </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2">
+                        <label htmlFor="amount">{t('amount_iqd')}</label>
+                        <div className="relative">
+                        <Banknote className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input id="amount" type="number" value={amount} onChange={e => setAmount(e.target.value)} required placeholder="e.g., 100000" className="pl-8" disabled={isSaving || isReadOnly} />
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <label htmlFor="notes">{t('notes')}</label>
+                        <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder={t('notes_optional')} disabled={isSaving || isReadOnly}/>
+                    </div>
+                    </CardContent>
+                    <CardFooter>
+                        <Button type="submit" className="w-full" disabled={isSaving || isReadOnly}>
+                            <Plus className="mr-2 h-4 w-4" /> {t('add_record')}
+                        </Button>
+                    </CardFooter>
+                </form>
+                </Card>
+            </div>
+
+            <div className="lg:col-span-2">
+                <Card>
+                <CardHeader>
+                    <div className='text-center'>
+                        <CardTitle className='text-2xl'>{t('withdrawals_for_date', {date: selectedDate ? format(selectedDate, 'PPP') : '...'})}</CardTitle>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <div className="divide-y">
+                    {isLoading ? (
+                        <div className="p-8 text-center text-muted-foreground">{t('loading_records')}...</div>
+                    ) : dailyWithdrawals && dailyWithdrawals.length > 0 ? (
+                        dailyWithdrawals.map((record: CashWithdrawal) => (
+                        <div key={record.id} className="py-3 flex justify-between items-start gap-4">
+                            {editingRecord?.id === record.id ? (
+                               <EditableWithdrawalRow
+                                record={editingRecord}
+                                onSave={handleUpdateRecord}
+                                onCancel={cancelEditing}
+                                isSaving={isSaving}
+                                getEmployeeName={getEmployeeName}
+                                language={language}
+                                t={t}
+                              />
+                            ) : (
+                            <>
+                              <div className="flex-1">
+                                  <p className="flex items-center gap-2" dir={language === 'ku' ? 'rtl' : 'ltr'}><User className="h-4 w-4 text-primary" /> {getEmployeeName(record.employeeId, language === 'ku')}</p>
+                                  {record.notes && <p className="text-sm mt-1">{record.notes}</p>}
+                              </div>
+                              <div className='flex flex-col items-end'>
+                                <p className="font-semibold text-primary">{formatCurrency(record.amount)}</p>
+                                {!isReadOnly && (
+                                <div className="flex gap-1 mt-1 print:hidden">
+                                    <Button size="icon" variant="ghost" className="text-muted-foreground hover:text-primary h-8 w-8" onClick={() => startEditing(record)}>
+                                        <Edit className="h-4 w-4"/>
+                                    </Button>
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8">
+                                                <Trash2 className="h-4 w-4"/>
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>{t('delete_this_record')}</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                {t('confirm_delete_withdrawal', {employeeName: getEmployeeName(record.employeeId, language === 'ku')})}
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => handleDelete(record)}>{t('delete')}</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </div>
+                                )}
+                              </div>
+                            </>
+                            )}
+                        </div>
+                        ))
+                    ) : (
+                        <div className="py-8 text-center text-muted-foreground">{t('no_withdrawal_records_for_date')}</div>
+                    )}
+                    </div>
+                </CardContent>
+                {dailyWithdrawals && dailyWithdrawals.length > 0 && (
+                    <CardFooter className="flex justify-between bg-muted/50 py-4 rounded-b-lg">
+                        <span>{t('total')}</span>
+                        <p className="text-primary">{isReadOnly ? '***' : formatCurrency(totalAmount)}</p>
+                    </CardFooter>
+                )}
+                </Card>
+            </div>
+            </div>
+  );
+
 export default function AddCashWithdrawalPage() {
   const { t, language } = useTranslation();
   const { toast } = useToast();
@@ -246,138 +396,34 @@ export default function AddCashWithdrawalPage() {
     return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
   
-  const PageContent = () => (
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className={cn("lg:col-span-1 print:hidden", isReadOnly && "opacity-50 pointer-events-none")}>
-                <Card>
-                <CardHeader>
-                    <CardTitle>{t('add_withdrawal_record')}</CardTitle>
-                    <CardDescription>{t('add_withdrawal_record_desc')}</CardDescription>
-                </CardHeader>
-                <form onSubmit={handleAddWithdrawal}>
-                    <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                        <label htmlFor="employee">{t('employee')}</label>
-                        <Select onValueChange={setSelectedEmployee} value={selectedEmployee} disabled={isSaving || isReadOnly}>
-                        <SelectTrigger id="employee">
-                            <SelectValue placeholder={t('select_an_employee')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {isLoading ? (
-                            <SelectItem value="loading" disabled>{t('loading')}...</SelectItem>
-                            ) : (
-                            sortedEmployees.map(emp => (
-                                <SelectItem key={emp.id} value={emp.id} dir={language === 'ku' ? 'rtl' : 'ltr'}>{getEmployeeName(emp.id, language === 'ku')}</SelectItem>
-                            ))
-                            )}
-                        </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="space-y-2">
-                        <label htmlFor="amount">{t('amount_iqd')}</label>
-                        <div className="relative">
-                        <Banknote className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input id="amount" type="number" value={amount} onChange={e => setAmount(e.target.value)} required placeholder="e.g., 100000" className="pl-8" disabled={isSaving || isReadOnly} />
-                        </div>
-                    </div>
-                    <div className="space-y-2">
-                        <label htmlFor="notes">{t('notes')}</label>
-                        <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder={t('notes_optional')} disabled={isSaving || isReadOnly}/>
-                    </div>
-                    </CardContent>
-                    <CardFooter>
-                        <Button type="submit" className="w-full" disabled={isSaving || isReadOnly}>
-                            <Plus className="mr-2 h-4 w-4" /> {t('add_record')}
-                        </Button>
-                    </CardFooter>
-                </form>
-                </Card>
-            </div>
-
-            <div className="lg:col-span-2">
-                <Card>
-                <CardHeader>
-                    <div className='text-center'>
-                        <CardTitle className='text-2xl'>{t('withdrawals_for_date', {date: selectedDate ? format(selectedDate, 'PPP') : '...'})}</CardTitle>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <div className="divide-y">
-                    {isLoading ? (
-                        <div className="p-8 text-center text-muted-foreground">{t('loading_records')}...</div>
-                    ) : dailyWithdrawals && dailyWithdrawals.length > 0 ? (
-                        dailyWithdrawals.map(record => (
-                        <div key={record.id} className="py-3 flex justify-between items-start gap-4">
-                            {editingRecord?.id === record.id ? (
-                               <EditableWithdrawalRow
-                                record={editingRecord}
-                                onSave={handleUpdateRecord}
-                                onCancel={cancelEditing}
-                                isSaving={isSaving}
-                                getEmployeeName={getEmployeeName}
-                                language={language}
-                                t={t}
-                              />
-                            ) : (
-                            <>
-                              <div className="flex-1">
-                                  <p className="flex items-center gap-2" dir={language === 'ku' ? 'rtl' : 'ltr'}><User className="h-4 w-4 text-primary" /> {getEmployeeName(record.employeeId, language === 'ku')}</p>
-                                  {record.notes && <p className="text-sm mt-1">{record.notes}</p>}
-                              </div>
-                              <div className='flex flex-col items-end'>
-                                <p className="font-semibold text-primary">{formatCurrency(record.amount)}</p>
-                                {!isReadOnly && (
-                                <div className="flex gap-1 mt-1 print:hidden">
-                                    <Button size="icon" variant="ghost" className="text-muted-foreground hover:text-primary h-8 w-8" onClick={() => startEditing(record)}>
-                                        <Edit className="h-4 w-4"/>
-                                    </Button>
-                                    <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8">
-                                                <Trash2 className="h-4 w-4"/>
-                                            </Button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                                <AlertDialogTitle>{t('delete_this_record')}</AlertDialogTitle>
-                                                <AlertDialogDescription>
-                                                {t('confirm_delete_withdrawal', {employeeName: getEmployeeName(record.employeeId, language === 'ku')})}
-                                                </AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                            <AlertDialogFooter>
-                                                <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-                                                <AlertDialogAction onClick={() => handleDelete(record)}>{t('delete')}</AlertDialogAction>
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                    </AlertDialog>
-                                </div>
-                                )}
-                              </div>
-                            </>
-                            )}
-                        </div>
-                        ))
-                    ) : (
-                        <div className="py-8 text-center text-muted-foreground">{t('no_withdrawal_records_for_date')}</div>
-                    )}
-                    </div>
-                </CardContent>
-                {dailyWithdrawals && dailyWithdrawals.length > 0 && (
-                    <CardFooter className="flex justify-between bg-muted/50 py-4 rounded-b-lg">
-                        <span>{t('total')}</span>
-                        <p className="text-primary">{isReadOnly ? '***' : formatCurrency(totalAmount)}</p>
-                    </CardFooter>
-                )}
-                </Card>
-            </div>
-            </div>
-  );
-
   return (
     <>
       <div className="hidden print:block">
         <ReportWrapper>
-          <PageContent />
+          <PageContent 
+            isReadOnly={isReadOnly}
+            t={t}
+            language={language}
+            handleAddWithdrawal={handleAddWithdrawal}
+            selectedEmployee={selectedEmployee}
+            setSelectedEmployee={setSelectedEmployee}
+            isSaving={isSaving}
+            isLoading={isLoading}
+            sortedEmployees={sortedEmployees}
+            getEmployeeName={getEmployeeName}
+            amount={amount}
+            setAmount={setAmount}
+            notes={notes}
+            setNotes={setNotes}
+            selectedDate={selectedDate}
+            dailyWithdrawals={dailyWithdrawals}
+            editingRecord={editingRecord}
+            startEditing={startEditing}
+            handleUpdateRecord={handleUpdateRecord}
+            cancelEditing={cancelEditing}
+            handleDelete={handleDelete}
+            totalAmount={totalAmount}
+          />
         </ReportWrapper>
       </div>
       <div className="min-h-screen bg-background text-foreground print:hidden">
@@ -433,7 +479,30 @@ export default function AddCashWithdrawalPage() {
           </div>
         </header>
         <main className="w-full p-4 md:p-8">
-          <PageContent />
+          <PageContent 
+            isReadOnly={isReadOnly}
+            t={t}
+            language={language}
+            handleAddWithdrawal={handleAddWithdrawal}
+            selectedEmployee={selectedEmployee}
+            setSelectedEmployee={setSelectedEmployee}
+            isSaving={isSaving}
+            isLoading={isLoading}
+            sortedEmployees={sortedEmployees}
+            getEmployeeName={getEmployeeName}
+            amount={amount}
+            setAmount={setAmount}
+            notes={notes}
+            setNotes={setNotes}
+            selectedDate={selectedDate}
+            dailyWithdrawals={dailyWithdrawals}
+            editingRecord={editingRecord}
+            startEditing={startEditing}
+            handleUpdateRecord={handleUpdateRecord}
+            cancelEditing={cancelEditing}
+            handleDelete={handleDelete}
+            totalAmount={totalAmount}
+          />
         </main>
       </div>
     </>

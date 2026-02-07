@@ -195,6 +195,266 @@ const OvertimeDetailTable = ({
   );
 };
 
+const PageContent = ({
+  employeeDetails,
+  isEditing,
+  photoUrl,
+  email,
+  phone,
+  currentPassword,
+  newPassword,
+  confirmPassword,
+  selectedDate,
+  monthlyFinancials,
+  isCalendarOpen,
+  photoUploadRef,
+  setIsEditing,
+  setPhotoUrl,
+  setEmail,
+  setPhone,
+  setCurrentPassword,
+  setNewPassword,
+  setConfirmPassword,
+  setSelectedDate,
+  setIsCalendarOpen,
+  handleSaveChanges,
+  handleChangePassword,
+  handleSaveAll,
+  handleEditToggle,
+  handlePhotoUpload,
+}: any) => {
+  const { t } = useTranslation();
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="lg:col-span-1 space-y-8">
+        <Card>
+          <CardHeader className="items-center text-center">
+            <div className="relative">
+              <Avatar className="w-32 h-32 mb-4 border-4 border-primary/20">
+                <AvatarImage src={photoUrl} alt={employeeDetails.name} />
+                <AvatarFallback>
+                  {employeeDetails.name.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+              {isEditing && (
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="absolute -bottom-0 right-0 rounded-full h-10 w-10"
+                  onClick={() => photoUploadRef.current?.click()}
+                >
+                  <Upload className="w-5 h-5" />
+                  <input
+                    ref={photoUploadRef}
+                    type="file"
+                    onChange={handlePhotoUpload}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                </Button>
+              )}
+            </div>
+            <CardTitle className="text-2xl">{employeeDetails.name}</CardTitle>
+            <CardDescription>
+              {employeeDetails.role || 'Employee'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-sm text-muted-foreground space-y-3">
+            <p className="flex items-center gap-2">
+              <Mail className="w-4 h-4" />{' '}
+              {isEditing ? (
+                <Input
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="Email address"
+                />
+              ) : (
+                employeeDetails.email || t('no_email')
+              )}
+            </p>
+            <p className="flex items-center gap-2">
+              <Phone className="w-4 h-4" />{' '}
+              {isEditing ? (
+                <Input
+                  value={phone}
+                  onChange={e => setPhone(e.target.value)}
+                  placeholder="Phone number"
+                />
+              ) : (
+                employeeDetails.phone || t('no_phone')
+              )}
+            </p>
+          </CardContent>
+
+          {isEditing && (
+            <>
+              <Separator />
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <KeyRound /> Change Password
+                </CardTitle>
+                <CardDescription>
+                  For security, you must provide your current password to set a
+                  new one.
+                </CardDescription>
+              </CardHeader>
+              <form onSubmit={handleChangePassword}>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="current-password">Current Password</Label>
+                    <Input
+                      id="current-password"
+                      type="password"
+                      value={currentPassword}
+                      onChange={e => setCurrentPassword(e.target.value)}
+                      required={!!newPassword}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="new-password">New Password</Label>
+                      <Input
+                        id="new-password"
+                        type="password"
+                        value={newPassword}
+                        onChange={e => setNewPassword(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="confirm-password">
+                        Confirm New Password
+                      </Label>
+                      <Input
+                        id="confirm-password"
+                        type="password"
+                        value={confirmPassword}
+                        onChange={e => setConfirmPassword(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </form>
+            </>
+          )}
+
+          <CardFooter>
+            {isEditing ? (
+              <div className="flex w-full gap-2">
+                <Button onClick={handleSaveAll} className="flex-1">
+                  <Save className="mr-2 h-4 w-4" /> Save All
+                </Button>
+                <Button variant="ghost" onClick={handleEditToggle}>
+                  <X className="mr-2 h-4 w-4" /> Cancel
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                onClick={handleEditToggle}
+                className="w-full"
+              >
+                <Edit className="mr-2 h-4 w-4" /> Edit Profile
+              </Button>
+            )}
+          </CardFooter>
+        </Card>
+      </div>
+      <div className="lg:col-span-2 space-y-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('general')}</CardTitle>
+            <CardDescription>
+              Manage your general account information.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input id="name" value={employeeDetails.name} disabled />
+              <p className="text-xs text-muted-foreground">
+                Your name can only be changed by an administrator.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="kurdishName">Kurdish Name</Label>
+              <Input
+                id="kurdishName"
+                value={employeeDetails.kurdishName || ''}
+                dir="rtl"
+                disabled
+              />
+            </div>
+          </CardContent>
+        </Card>
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl">
+              {t('this_month_activity_summary', {
+                month: format(selectedDate, 'MMMM yyyy'),
+              })}
+            </h2>
+            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={'outline'}
+                  className={cn(
+                    'w-[240px] justify-start text-left font-normal',
+                    !selectedDate && 'text-muted-foreground'
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {selectedDate ? (
+                    format(selectedDate, 'MMMM yyyy')
+                  ) : (
+                    <span>{t('pick_a_month')}</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={date => {
+                    if (date) {
+                      setSelectedDate(date);
+                      setIsCalendarOpen(false);
+                    }
+                  }}
+                  initialFocus
+                  captionLayout="dropdown-nav"
+                  fromYear={2020}
+                  toYear={new Date().getFullYear()}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+          <FinancialDetailTable
+            title={t('expenses')}
+            data={monthlyFinancials.selected.expenses.items}
+            total={monthlyFinancials.selected.expenses.total}
+          />
+          <OvertimeDetailTable
+            title={t('overtime')}
+            data={monthlyFinancials.selected.overtime.items as Overtime[]}
+            total={monthlyFinancials.selected.overtime.total}
+          />
+          <FinancialDetailTable
+            title={t('bonuses')}
+            data={monthlyFinancials.selected.bonuses.items}
+            total={monthlyFinancials.selected.bonuses.total}
+          />
+          <FinancialDetailTable
+            title={t('cash_withdrawals')}
+            data={monthlyFinancials.selected.withdrawals.items}
+            total={monthlyFinancials.selected.withdrawals.total}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
 function AccountPage() {
   const { t, language } = useTranslation();
   const { toast } = useToast();
@@ -430,250 +690,38 @@ function AccountPage() {
     );
   }
   
-  const PageContent = () => (
-     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-1 space-y-8">
-              <Card>
-                <CardHeader className="items-center text-center">
-                  <div className="relative">
-                    <Avatar className="w-32 h-32 mb-4 border-4 border-primary/20">
-                      <AvatarImage src={photoUrl} alt={employeeDetails.name} />
-                      <AvatarFallback>
-                        {employeeDetails.name.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    {isEditing && (
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="absolute -bottom-0 right-0 rounded-full h-10 w-10"
-                        onClick={() => photoUploadRef.current?.click()}
-                      >
-                        <Upload className="w-5 h-5" />
-                        <input
-                          ref={photoUploadRef}
-                          type="file"
-                          onChange={handlePhotoUpload}
-                          accept="image/*"
-                          className="hidden"
-                        />
-                      </Button>
-                    )}
-                  </div>
-                  <CardTitle className="text-2xl">
-                    {employeeDetails.name}
-                  </CardTitle>
-                  <CardDescription>
-                    {employeeDetails.role || 'Employee'}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="text-sm text-muted-foreground space-y-3">
-                  <p className="flex items-center gap-2">
-                    <Mail className="w-4 h-4" />{' '}
-                    {isEditing ? (
-                      <Input
-                        value={email}
-                        onChange={e => setEmail(e.target.value)}
-                        placeholder="Email address"
-                      />
-                    ) : (
-                      employeeDetails.email || t('no_email')
-                    )}
-                  </p>
-                  <p className="flex items-center gap-2">
-                    <Phone className="w-4 h-4" />{' '}
-                    {isEditing ? (
-                      <Input
-                        value={phone}
-                        onChange={e => setPhone(e.target.value)}
-                        placeholder="Phone number"
-                      />
-                    ) : (
-                      employeeDetails.phone || t('no_phone')
-                    )}
-                  </p>
-                </CardContent>
-
-                {isEditing && (
-                  <>
-                    <Separator />
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <KeyRound /> Change Password
-                      </CardTitle>
-                      <CardDescription>
-                        For security, you must provide your current password to set
-                        a new one.
-                      </CardDescription>
-                    </CardHeader>
-                    <form onSubmit={handleChangePassword}>
-                      <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="current-password">
-                            Current Password
-                          </Label>
-                          <Input
-                            id="current-password"
-                            type="password"
-                            value={currentPassword}
-                            onChange={e => setCurrentPassword(e.target.value)}
-                            required={!!newPassword}
-                          />
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="new-password">New Password</Label>
-                            <Input
-                              id="new-password"
-                              type="password"
-                              value={newPassword}
-                              onChange={e => setNewPassword(e.target.value)}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="confirm-password">
-                              Confirm New Password
-                            </Label>
-                            <Input
-                              id="confirm-password"
-                              type="password"
-                              value={confirmPassword}
-                              onChange={e => setConfirmPassword(e.target.value)}
-                            />
-                          </div>
-                        </div>
-                      </CardContent>
-                    </form>
-                  </>
-                )}
-
-                <CardFooter>
-                  {isEditing ? (
-                    <div className="flex w-full gap-2">
-                      <Button onClick={handleSaveAll} className="flex-1">
-                        <Save className="mr-2 h-4 w-4" /> Save All
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        onClick={handleEditToggle}
-                      >
-                        <X className="mr-2 h-4 w-4" /> Cancel
-                      </Button>
-                    </div>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      onClick={handleEditToggle}
-                      className="w-full"
-                    >
-                      <Edit className="mr-2 h-4 w-4" /> Edit Profile
-                    </Button>
-                  )}
-                </CardFooter>
-              </Card>
-            </div>
-            <div className="lg:col-span-2 space-y-8">
-              <Card>
-                <CardHeader>
-                  <CardTitle>{t('general')}</CardTitle>
-                  <CardDescription>
-                    Manage your general account information.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Name</Label>
-                    <Input id="name" value={employeeDetails.name} disabled />
-                    <p className="text-xs text-muted-foreground">
-                      Your name can only be changed by an administrator.
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="kurdishName">Kurdish Name</Label>
-                    <Input
-                      id="kurdishName"
-                      value={employeeDetails.kurdishName || ''}
-                      dir="rtl"
-                      disabled
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-xl">
-                    {t('this_month_activity_summary', {
-                      month: format(selectedDate, 'MMMM yyyy'),
-                    })}
-                  </h2>
-                  <Popover
-                    open={isCalendarOpen}
-                    onOpenChange={setIsCalendarOpen}
-                  >
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant={'outline'}
-                        className={cn(
-                          'w-[240px] justify-start text-left font-normal',
-                          !selectedDate && 'text-muted-foreground'
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {selectedDate ? (
-                          format(selectedDate, 'MMMM yyyy')
-                        ) : (
-                          <span>{t('pick_a_month')}</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={selectedDate}
-                        onSelect={date => {
-                          if (date) {
-                            setSelectedDate(date);
-                            setIsCalendarOpen(false);
-                          }
-                        }}
-                        initialFocus
-                        captionLayout="dropdown-nav"
-                        fromYear={2020}
-                        toYear={new Date().getFullYear()}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <FinancialDetailTable
-                  title={t('expenses')}
-                  data={monthlyFinancials.selected.expenses.items}
-                  total={monthlyFinancials.selected.expenses.total}
-                />
-                <OvertimeDetailTable
-                  title={t('overtime')}
-                  data={monthlyFinancials.selected.overtime.items as Overtime[]}
-                  total={monthlyFinancials.selected.overtime.total}
-                />
-                <FinancialDetailTable
-                  title={t('bonuses')}
-                  data={monthlyFinancials.selected.bonuses.items}
-                  total={monthlyFinancials.selected.bonuses.total}
-                />
-                <FinancialDetailTable
-                  title={t('cash_withdrawals')}
-                  data={monthlyFinancials.selected.withdrawals.items}
-                  total={monthlyFinancials.selected.withdrawals.total}
-                />
-              </div>
-            </div>
-          </div>
-  );
-
   return (
     <>
       <div className="hidden print:block">
           <ReportWrapper>
-            <PageContent />
+            <PageContent 
+              employeeDetails={employeeDetails}
+              isEditing={isEditing}
+              photoUrl={photoUrl}
+              email={email}
+              phone={phone}
+              currentPassword={currentPassword}
+              newPassword={newPassword}
+              confirmPassword={confirmPassword}
+              selectedDate={selectedDate}
+              monthlyFinancials={monthlyFinancials}
+              isCalendarOpen={isCalendarOpen}
+              photoUploadRef={photoUploadRef}
+              setIsEditing={setIsEditing}
+              setPhotoUrl={setPhotoUrl}
+              setEmail={setEmail}
+              setPhone={setPhone}
+              setCurrentPassword={setCurrentPassword}
+              setNewPassword={setNewPassword}
+              setConfirmPassword={setConfirmPassword}
+              setSelectedDate={setSelectedDate}
+              setIsCalendarOpen={setIsCalendarOpen}
+              handleSaveChanges={handleSaveChanges}
+              handleChangePassword={handleChangePassword}
+              handleSaveAll={handleSaveAll}
+              handleEditToggle={handleEditToggle}
+              handlePhotoUpload={handlePhotoUpload}
+            />
           </ReportWrapper>
       </div>
 
@@ -684,7 +732,34 @@ function AccountPage() {
               <Printer className="h-4 w-4" />
             </Button>
           </div>
-          <PageContent />
+          <PageContent 
+            employeeDetails={employeeDetails}
+            isEditing={isEditing}
+            photoUrl={photoUrl}
+            email={email}
+            phone={phone}
+            currentPassword={currentPassword}
+            newPassword={newPassword}
+            confirmPassword={confirmPassword}
+            selectedDate={selectedDate}
+            monthlyFinancials={monthlyFinancials}
+            isCalendarOpen={isCalendarOpen}
+            photoUploadRef={photoUploadRef}
+            setIsEditing={setIsEditing}
+            setPhotoUrl={setPhotoUrl}
+            setEmail={setEmail}
+            setPhone={setPhone}
+            setCurrentPassword={setCurrentPassword}
+            setNewPassword={setNewPassword}
+            setConfirmPassword={setConfirmPassword}
+            setSelectedDate={setSelectedDate}
+            setIsCalendarOpen={setIsCalendarOpen}
+            handleSaveChanges={handleSaveChanges}
+            handleChangePassword={handleChangePassword}
+            handleSaveAll={handleSaveAll}
+            handleEditToggle={handleEditToggle}
+            handlePhotoUpload={handlePhotoUpload}
+          />
         </main>
       </div>
     </>
