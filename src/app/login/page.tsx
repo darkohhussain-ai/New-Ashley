@@ -3,7 +3,6 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
@@ -45,35 +44,28 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex-1 flex min-h-screen items-center justify-center bg-background p-4 relative">
-       {settings.loginBackground && (
-        <Image
-          key={settings.loginBackground}
-          src={settings.loginBackground}
-          alt="Login background"
-          fill
-          className="object-cover z-0"
-          priority
-        />
-      )}
-      <div className="absolute inset-0 bg-black/50 z-10"/>
-      <Card className="w-full max-w-lg z-20 bg-background/80 dark:bg-background/60 backdrop-blur-sm border-white/10">
-        <CardHeader className="text-center p-8">
+     <div className="w-full min-h-screen lg:grid lg:grid-cols-2">
+      <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-md space-y-8">
+          <div>
             {settings.appLogo && (
-                 <div className="relative w-full h-24 mb-4">
-                  <Image
-                    key={settings.appLogo}
-                    src={settings.appLogo}
-                    alt="App Logo"
-                    fill
-                    className="object-contain"
-                  />
-                </div>
+              <div className="relative w-full h-20 mb-6">
+                <Image
+                  key={settings.appLogo}
+                  src={settings.appLogo}
+                  alt="App Logo"
+                  fill
+                  className="object-contain"
+                />
+              </div>
             )}
-          <CardTitle className="mt-4 text-3xl font-bold">{t('login_title')}</CardTitle>
-          <CardDescription>{t('login_description')}</CardDescription>
-        </CardHeader>
-        <CardContent className="px-8 pb-8">
+            <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-foreground">
+              {t('login_title')}
+            </h2>
+            <p className="mt-2 text-center text-sm text-muted-foreground">
+              {t('login_description')}
+            </p>
+          </div>
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
@@ -106,8 +98,20 @@ export default function LoginPage() {
               Login
             </Button>
           </form>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+      <div className="hidden lg:block relative">
+        {settings.loginBackground && (
+          <Image
+            key={settings.loginBackground}
+            src={settings.loginBackground}
+            alt="Login background"
+            fill
+            className="object-cover"
+            priority
+          />
+        )}
+      </div>
     </div>
   );
 }
