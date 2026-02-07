@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback, memo } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ArrowLeft, Plus, Save, Trash2, Calendar as CalendarIcon, Loader2, User, Edit, X, Printer } from 'lucide-react';
@@ -35,9 +35,10 @@ const taxiSubTypes = [
   "Taxi for transporting furniture parts",
 ];
 
-function AddExpenseForm({ onAdd }: { onAdd: (expense: Omit<Expense, 'id' | 'date' | 'expenseReportId'>) => Promise<void> }) {
+const AddExpenseForm = memo(function AddExpenseForm({ onAdd }: { onAdd: (expense: Omit<Expense, 'id' | 'date' | 'expenseReportId'>) => Promise<void> }) {
     const { t, language } = useTranslation();
     const { employees } = useAppContext();
+    const { toast } = useToast();
     
     const [selectedEmployee, setSelectedEmployee] = useState('');
     const [expenseType, setExpenseType] = useState('');
@@ -134,7 +135,7 @@ function AddExpenseForm({ onAdd }: { onAdd: (expense: Omit<Expense, 'id' | 'date
             </form>
         </Card>
     );
-}
+});
 
 export default function AddExpensePage() {
   const { t, language } = useTranslation();
@@ -172,15 +173,15 @@ export default function AddExpensePage() {
     }).sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
   }, [expenses, date]);
   
-  const getEmployeeName = (id: string, useKurdish: boolean = false) => {
+  const getEmployeeName = useCallback((id: string, useKurdish: boolean = false) => {
     const employee = employees?.find(e => e.id === id);
     if (!employee) return t('unknown');
     return useKurdish && employee.kurdishName ? employee.kurdishName : employee.name;
-  };
+  }, [employees, t]);
 
   const grandTotal = useMemo(() => dailyExpenses.reduce((sum, exp) => sum + exp.amount, 0), [dailyExpenses]);
   
-  const handleAddExpense = async (newExpenseData: Omit<Expense, 'id' | 'date' | 'expenseReportId'>) => {
+  const handleAddExpense = useCallback(async (newExpenseData: Omit<Expense, 'id' | 'date' | 'expenseReportId'>) => {
     if (!date) return;
     const newExpense: Expense = {
       id: crypto.randomUUID(),
@@ -188,13 +189,13 @@ export default function AddExpensePage() {
       expenseReportId: '',
       ...newExpenseData,
     };
-    setExpenses([...expenses, newExpense]);
+    setExpenses(prev => [...prev, newExpense]);
     toast({ title: t('expense_added'), description: t('expense_added_desc', {amount: formatCurrency(newExpense.amount)})});
     if(user) {
         const log: ActivityLog = { id: crypto.randomUUID(), userId: user.id, username: user.username, action: 'create', entity: 'Expense', entityId: newExpense.id, description: `Added expense for ${getEmployeeName(newExpense.employeeId)}`, timestamp: new Date().toISOString() };
         setActivityLogs(prev => [...prev, log]);
     }
-  };
+  }, [date, setExpenses, toast, t, user, getEmployeeName, setActivityLogs]);
 
   const handleDelete = (expenseToDelete: Expense) => {
     setExpenses(expenses.filter(e => e.id !== expenseToDelete.id));

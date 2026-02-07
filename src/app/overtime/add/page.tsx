@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useRef, useEffect, Fragment } from 'react';
+import { useState, useMemo, useRef, useEffect, Fragment, useCallback, memo } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Plus, Trash2, Calendar as CalendarIcon, Clock, User, Edit, Save, X, Printer, Loader2, FileDown } from 'lucide-react';
@@ -30,7 +30,7 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
-function AddOvertimeForm({ onAdd }: { onAdd: (data: Omit<Overtime, 'id'|'date'>) => void }) {
+const AddOvertimeForm = memo(function AddOvertimeForm({ onAdd }: { onAdd: (data: Omit<Overtime, 'id'|'date'>) => void }) {
   const { t, language } = useTranslation();
   const { toast } = useToast();
   const { employees, settings } = useAppContext();
@@ -130,7 +130,7 @@ function AddOvertimeForm({ onAdd }: { onAdd: (data: Omit<Overtime, 'id'|'date'>)
         </Card>
     </div>
   );
-}
+});
 
 export default function AddOvertimePage() {
   const { t, language } = useTranslation();
@@ -169,13 +169,13 @@ export default function AddOvertimePage() {
   }, [allOvertimeRecords, selectedDate]);
 
 
-  const getEmployeeName = (id: string, useKurdish: boolean = false) => {
+  const getEmployeeName = useCallback((id: string, useKurdish: boolean = false) => {
     const employee = employees?.find(e => e.id === id);
     if (!employee) return t('unknown');
     return useKurdish && employee.kurdishName ? employee.kurdishName : employee.name;
-  };
+  }, [employees, t]);
 
-  const handleAddOvertime = (overtimePayload: Omit<Overtime, 'id' | 'date'>) => {
+  const handleAddOvertime = useCallback((overtimePayload: Omit<Overtime, 'id' | 'date'>) => {
     if (!selectedDate) return;
     const overtimeData: Overtime = {
       id: crypto.randomUUID(),
@@ -183,9 +183,9 @@ export default function AddOvertimePage() {
       ...overtimePayload,
     };
 
-    setAllOvertimeRecords([...allOvertimeRecords, overtimeData]);
+    setAllOvertimeRecords(prev => [...prev, overtimeData]);
     toast({ title: t('overtime_added'), description: t('overtime_added_desc') });
-  };
+  }, [selectedDate, setAllOvertimeRecords, toast, t]);
 
   const handleDelete = (record: Overtime) => {
     setAllOvertimeRecords(allOvertimeRecords.filter(rec => rec.id !== record.id));
@@ -239,7 +239,7 @@ export default function AddOvertimePage() {
       </div>
     <div className="h-[calc(100vh-80px)] flex flex-col print:hidden">
       <header className="bg-card border-b p-4">
-        <div className="container mx-auto flex items-center justify-between">
+        <div className="w-full flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button variant="outline" size="icon" asChild>
               <Link href="/overtime">
@@ -275,7 +275,7 @@ export default function AddOvertimePage() {
         </div>
       </header>
 
-      <main className="container mx-auto p-4 md:p-8 flex-1 overflow-y-auto">
+      <main className="w-full p-4 md:p-8 flex-1 overflow-y-auto">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <AddOvertimeForm onAdd={handleAddOvertime} />
 

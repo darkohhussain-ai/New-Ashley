@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback, memo } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ArrowLeft, Plus, Trash2, Calendar as CalendarIcon, User, Edit, Save, X, FileText, Banknote, Printer, Loader2, FileDown } from 'lucide-react';
@@ -31,7 +31,7 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
-function AddWithdrawalForm({ onAdd }: { onAdd: (data: Omit<CashWithdrawal, 'id' | 'date'>) => void }) {
+const AddWithdrawalForm = memo(function AddWithdrawalForm({ onAdd }: { onAdd: (data: Omit<CashWithdrawal, 'id' | 'date'>) => void }) {
   const { t, language } = useTranslation();
   const { toast } = useToast();
   const { employees } = useAppContext();
@@ -129,7 +129,7 @@ function AddWithdrawalForm({ onAdd }: { onAdd: (data: Omit<CashWithdrawal, 'id' 
         </Card>
     </div>
   );
-}
+});
 
 
 export default function AddCashWithdrawalPage() {
@@ -169,14 +169,14 @@ export default function AddCashWithdrawalPage() {
     }).sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
   }, [withdrawals, selectedDate]);
 
-  const getEmployeeName = (id: string, useKurdish: boolean = false) => {
+  const getEmployeeName = useCallback((id: string, useKurdish: boolean = false) => {
     const employee = employees?.find(e => e.id === id);
     if (!employee) return t('unknown');
     if (isReadOnly && user?.username !== `${employee.name.split(' ')[0]}${employee.employeeId || ''}`) return '***';
     return useKurdish && employee.kurdishName ? employee.kurdishName : employee.name;
-  };
+  }, [employees, t, isReadOnly, user]);
 
-  const handleAddWithdrawal = (withdrawalPayload: Omit<CashWithdrawal, 'id'|'date'>) => {
+  const handleAddWithdrawal = useCallback((withdrawalPayload: Omit<CashWithdrawal, 'id'|'date'>) => {
     if (!selectedDate) return;
     const withdrawalData: CashWithdrawal = {
       id: crypto.randomUUID(),
@@ -184,13 +184,13 @@ export default function AddCashWithdrawalPage() {
       ...withdrawalPayload
     };
 
-    setWithdrawals([...withdrawals, withdrawalData]);
+    setWithdrawals(prev => [...prev, withdrawalData]);
     toast({ title: t('withdrawal_added'), description: t('withdrawal_added_desc') });
     if(user) {
         const log: ActivityLog = { id: crypto.randomUUID(), userId: user.id, username: user.username, action: 'create', entity: 'Withdrawal', entityId: withdrawalData.id, description: `Added withdrawal for ${getEmployeeName(withdrawalData.employeeId)}`, timestamp: new Date().toISOString() };
         setActivityLogs(prev => [...prev, log]);
     }
-  };
+  }, [selectedDate, setWithdrawals, toast, t, user, getEmployeeName, setActivityLogs]);
 
   const handleDelete = (record: CashWithdrawal) => {
     if (isReadOnly) return;

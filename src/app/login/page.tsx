@@ -56,11 +56,11 @@ export default function LoginPage() {
           priority
         />
       )}
-      <div className="absolute inset-0 bg-black/30 z-10"/>
-      <Card className="w-full max-w-md z-20">
-        <CardHeader className="text-center">
+      <div className="absolute inset-0 bg-black/50 z-10"/>
+      <Card className="w-full max-w-lg z-20 bg-background/80 dark:bg-background/60 backdrop-blur-sm border-white/10">
+        <CardHeader className="text-center p-8">
             {settings.appLogo && (
-                 <div className="relative w-full h-20 mb-4">
+                 <div className="relative w-full h-24 mb-4">
                   <Image
                     key={settings.appLogo}
                     src={settings.appLogo}
@@ -70,10 +70,10 @@ export default function LoginPage() {
                   />
                 </div>
             )}
-          <CardTitle className="mt-4 text-2xl">{t('login_title')}</CardTitle>
+          <CardTitle className="mt-4 text-3xl font-bold">{t('login_title')}</CardTitle>
           <CardDescription>{t('login_description')}</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-8 pb-8">
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
@@ -85,6 +85,7 @@ export default function LoginPage() {
                 onChange={(e) => setUsername(e.target.value)}
                 required
                 disabled={isLoading}
+                className="h-12 text-base"
               />
             </div>
             <div className="space-y-2">
@@ -97,9 +98,10 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={isLoading}
+                className="h-12 text-base"
               />
             </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full h-12 text-lg" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Login
             </Button>

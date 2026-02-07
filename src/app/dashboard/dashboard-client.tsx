@@ -144,17 +144,18 @@ export function DashboardClient() {
             </div>
         )}
         
-        {hasPermission('admin:all') && (
-            <div className="animate-fade-in-down" style={{ animationDelay: '150ms' }}>
-                <OrderRequestsSummary />
-            </div>
-        )}
-        
-        {hasPermission('page:transmit:view') && (
-            <div className="animate-fade-in-down" style={{ animationDelay: '200ms' }}>
-                <StagedItemsSummary />
-            </div>
-        )}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {hasPermission('page:transmit:view') && (
+                <div className="animate-fade-in-down" style={{ animationDelay: '200ms' }}>
+                    <StagedItemsSummary />
+                </div>
+            )}
+            {hasPermission('admin:all') && (
+                <div className="animate-fade-in-down" style={{ animationDelay: '150ms' }}>
+                    <OrderRequestsSummary />
+                </div>
+            )}
+        </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
             {hasPermission('admin:all') && (
@@ -174,7 +175,7 @@ export function DashboardClient() {
                 <CardTitle>{t('services')}</CardTitle>
                 <CardDescription>{t('select_service')}</CardDescription>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {menuItems.map((item) => (
                     <DashboardCard
                     key={item.title}

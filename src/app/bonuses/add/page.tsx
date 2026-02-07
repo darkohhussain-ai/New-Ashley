@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback, memo } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Plus, Trash2, Calendar as CalendarIcon, User, Edit, Save, X, FileText, Truck, Printer, Loader2, FileDown } from 'lucide-react';
@@ -32,7 +32,7 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
-function AddBonusForm({ onAdd }: { onAdd: (data: Omit<Bonus, 'id' | 'date'>) => void }) {
+const AddBonusForm = memo(function AddBonusForm({ onAdd }: { onAdd: (data: Omit<Bonus, 'id' | 'date'>) => void }) {
   const { t, language } = useTranslation();
   const { toast } = useToast();
   const { employees, settings } = useAppContext();
@@ -133,7 +133,7 @@ function AddBonusForm({ onAdd }: { onAdd: (data: Omit<Bonus, 'id' | 'date'>) => 
         </Card>
     </div>
   );
-}
+});
 
 export default function AddBonusPage() {
   const { t, language } = useTranslation();
@@ -172,14 +172,14 @@ export default function AddBonusPage() {
     }).sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
   }, [bonuses, selectedDate]);
 
-  const getEmployeeName = (id: string, useKurdish: boolean = false) => {
+  const getEmployeeName = useCallback((id: string, useKurdish: boolean = false) => {
     const employee = employees?.find(e => e.id === id);
     if (!employee) return t('unknown');
     if (isReadOnly && user?.username !== `${employee.name.split(' ')[0]}${employee.employeeId || ''}`) return '***';
     return useKurdish && employee.kurdishName ? employee.kurdishName : employee.name;
-  };
+  }, [employees, t, isReadOnly, user]);
   
-  const handleAddBonus = (bonusPayload: Omit<Bonus, 'id'|'date'>) => {
+  const handleAddBonus = useCallback((bonusPayload: Omit<Bonus, 'id'|'date'>) => {
     if (!selectedDate) return;
 
     const bonusData: Bonus = {
@@ -188,13 +188,13 @@ export default function AddBonusPage() {
       ...bonusPayload,
     };
 
-    setBonuses([...bonuses, bonusData]);
+    setBonuses(prev => [...prev, bonusData]);
     toast({ title: t('bonus_added'), description: t('bonus_added_desc') });
     if(user) {
         const log: ActivityLog = { id: crypto.randomUUID(), userId: user.id, username: user.username, action: 'create', entity: 'Bonus', entityId: bonusData.id, description: `Added bonus for ${getEmployeeName(bonusData.employeeId)}`, timestamp: new Date().toISOString() };
         setActivityLogs(prev => [...prev, log]);
     }
-  };
+  }, [selectedDate, setBonuses, toast, t, user, getEmployeeName, setActivityLogs]);
 
   const handleDelete = (record: Bonus) => {
     if (isReadOnly) return;
