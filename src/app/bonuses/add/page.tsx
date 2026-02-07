@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -33,234 +32,119 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
-function EditableBonusRow({
-  record,
-  onSave,
-  onCancel,
-  isSaving,
-  getEmployeeName,
-  language,
-  t
-}: {
-  record: Bonus;
-  onSave: (updatedRecord: Bonus) => void;
-  onCancel: () => void;
-  isSaving: boolean;
-  getEmployeeName: (id: string, useKurdish?: boolean) => string;
-  language: string;
-  t: (key: string) => string;
-}) {
-  const [editedRecord, setEditedRecord] = useState(record);
+function AddBonusForm({ onAdd }: { onAdd: (data: Omit<Bonus, 'id' | 'date'>) => void }) {
+  const { t, language } = useTranslation();
+  const { toast } = useToast();
+  const { employees, settings } = useAppContext();
+  const { salarySettings } = settings;
+  const { user, hasPermission } = useAuth();
+  const isReadOnly = !hasPermission('page:admin');
 
-  useEffect(() => {
-    setEditedRecord(record);
-  }, [record]);
+  const [selectedEmployee, setSelectedEmployee] = useState('');
+  const [loadCount, setLoadCount] = useState('1');
+  const [notes, setNotes] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
+  const warehouseEmployees = useMemo(() => {
+    if (!employees) return [];
+    return employees.filter(e => e.role !== 'Marketing');
+  }, [employees]);
+
+  const sortedEmployees = useMemo(() => {
+    if (!warehouseEmployees) return [];
+    return [...warehouseEmployees].sort((a, b) => a.name.localeCompare(b.name));
+  }, [warehouseEmployees]);
+
+  const getEmployeeName = (id: string, useKurdish: boolean = false) => {
+    const employee = employees?.find(e => e.id === id);
+    if (!employee) return t('unknown');
+    return useKurdish && employee.kurdishName ? employee.kurdishName : employee.name;
+  };
+
+  const handleAddBonus = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isReadOnly) return;
+    if (!selectedEmployee || !loadCount || parseInt(loadCount) <= 0) {
+      toast({ variant: 'destructive', title: t('missing_information'), description: t('add_bonus_validation_error') });
+      return;
+    }
+    
+    setIsSaving(true);
+    const bonusData: Omit<Bonus, 'id' | 'date'> = {
+      employeeId: selectedEmployee,
+      loadCount: parseInt(loadCount),
+      rate: salarySettings.bonusRate,
+      totalAmount: parseInt(loadCount) * salarySettings.bonusRate,
+      notes,
+    };
+
+    onAdd(bonusData);
+    
+    setSelectedEmployee('');
+    setLoadCount('1');
+    setNotes('');
+    setIsSaving(false);
+  };
+  
   return (
-    <>
-      <div className="flex-1 space-y-2 print:hidden">
-        <p dir={language === 'ku' ? 'rtl' : 'ltr'}>{getEmployeeName(record.employeeId, language === 'ku')}</p>
-        <Input
-          type="number"
-          value={editedRecord.loadCount}
-          onChange={(e) => setEditedRecord({ ...editedRecord, loadCount: parseInt(e.target.value) || 0 })}
-          className="h-8"
-        />
-        <Textarea
-          value={editedRecord.notes}
-          onChange={(e) => setEditedRecord({ ...editedRecord, notes: e.target.value })}
-          placeholder={t('notes_optional')}
-        />
-      </div>
-      <div className='flex flex-col items-end'>
-        <p className="font-semibold text-primary">{formatCurrency(editedRecord.loadCount * editedRecord.rate)}</p>
-        <div className="flex gap-1 mt-2 print:hidden">
-          <Button size="icon" className="h-8 w-8" onClick={() => onSave(editedRecord)} disabled={isSaving}><Save className="h-4 w-4" /></Button>
-          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={onCancel}><X className="h-4 w-4" /></Button>
-        </div>
-      </div>
-    </>
+    <div className={cn("lg:col-span-1 print:hidden", isReadOnly && "opacity-50 pointer-events-none")}>
+        <Card>
+            <CardHeader>
+                <CardTitle>{t('add_bonus_record')}</CardTitle>
+                <CardDescription>{t('add_bonus_record_desc')}</CardDescription>
+            </CardHeader>
+            <form onSubmit={handleAddBonus}>
+                <CardContent className="space-y-4">
+                <div className="space-y-2">
+                    <label htmlFor="employee">{t('employee')}</label>
+                    <Select onValueChange={setSelectedEmployee} value={selectedEmployee} disabled={isSaving || isReadOnly}>
+                    <SelectTrigger id="employee">
+                        <SelectValue placeholder={t('select_an_employee')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {sortedEmployees.map((emp: any) => (
+                            <SelectItem key={emp.id} value={emp.id} dir={language === 'ku' ? 'rtl' : 'ltr'}>{getEmployeeName(emp.id, language === 'ku')}</SelectItem>
+                        ))
+                        }
+                    </SelectContent>
+                    </Select>
+                </div>
+                <div className="space-y-2">
+                    <label htmlFor="loadCount">{t('number_of_loads')}</label>
+                    <div className="relative">
+                    <Truck className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input id="loadCount" type="number" value={loadCount} onChange={e => setLoadCount(e.target.value)} required placeholder="e.g., 2" className="pl-8" disabled={isSaving || isReadOnly} />
+                    </div>
+                </div>
+                <div className="space-y-2">
+                    <label htmlFor="notes">{t('notes')}</label>
+                    <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder={t('notes_optional')} disabled={isSaving || isReadOnly}/>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                    {t('bonus_rate', {rate: formatCurrency(salarySettings.bonusRate)})}
+                </p>
+                </CardContent>
+                <CardFooter>
+                    <Button type="submit" className="w-full" disabled={isSaving || isReadOnly}>
+                        <Plus className="mr-2 h-4 w-4" /> {t('add_record')}
+                    </Button>
+                </CardFooter>
+            </form>
+        </Card>
+    </div>
   );
 }
-
-const PageContent = ({
-    isReadOnly,
-    t,
-    language,
-    handleAddBonus,
-    selectedEmployee,
-    setSelectedEmployee,
-    isSaving,
-    isLoading,
-    sortedEmployees,
-    getEmployeeName,
-    loadCount,
-    setLoadCount,
-    notes,
-    setNotes,
-    salarySettings,
-    selectedDate,
-    dailyBonuses,
-    editingRecord,
-    startEditing,
-    handleUpdateRecord,
-    cancelEditing,
-    handleDelete,
-    totalLoads,
-    totalAmount
-}: any) => (
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className={cn("lg:col-span-1 print:hidden", isReadOnly && "opacity-50 pointer-events-none")}>
-                <Card>
-                <CardHeader>
-                    <CardTitle>{t('add_bonus_record')}</CardTitle>
-                    <CardDescription>{t('add_bonus_record_desc')}</CardDescription>
-                </CardHeader>
-                <form onSubmit={handleAddBonus}>
-                    <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                        <label htmlFor="employee">{t('employee')}</label>
-                        <Select onValueChange={setSelectedEmployee} value={selectedEmployee} disabled={isSaving || isReadOnly}>
-                        <SelectTrigger id="employee">
-                            <SelectValue placeholder={t('select_an_employee')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {isLoading ? (
-                            <SelectItem value="loading" disabled>{t('loading')}...</SelectItem>
-                            ) : (
-                            sortedEmployees.map((emp: any) => (
-                                <SelectItem key={emp.id} value={emp.id} dir={language === 'ku' ? 'rtl' : 'ltr'}>{getEmployeeName(emp.id, language === 'ku')}</SelectItem>
-                            ))
-                            )}
-                        </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="space-y-2">
-                        <label htmlFor="loadCount">{t('number_of_loads')}</label>
-                        <div className="relative">
-                        <Truck className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input id="loadCount" type="number" value={loadCount} onChange={e => setLoadCount(e.target.value)} required placeholder="e.g., 2" className="pl-8" disabled={isSaving || isReadOnly} />
-                        </div>
-                    </div>
-                    <div className="space-y-2">
-                        <label htmlFor="notes">{t('notes')}</label>
-                        <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder={t('notes_optional')} disabled={isSaving || isReadOnly}/>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                        {t('bonus_rate', {rate: formatCurrency(salarySettings.bonusRate)})}
-                    </p>
-                    </CardContent>
-                    <CardFooter>
-                        <Button type="submit" className="w-full" disabled={isSaving || isReadOnly}>
-                            <Plus className="mr-2 h-4 w-4" /> {t('add_record')}
-                        </Button>
-                    </CardFooter>
-                </form>
-                </Card>
-            </div>
-
-            <div className="lg:col-span-2">
-                <Card>
-                <CardHeader>
-                    <div className="text-center">
-                        <CardTitle className='text-2xl'>{t('bonus_records_for_date', {date: selectedDate ? format(selectedDate, 'PPP') : '...'})}</CardTitle>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <div className="divide-y">
-                    {isLoading ? (
-                        <div className="p-8 text-center text-muted-foreground">{t('loading_records')}...</div>
-                    ) : dailyBonuses && dailyBonuses.length > 0 ? (
-                        dailyBonuses.map((record: Bonus) => (
-                        <div key={record.id} className="py-3 flex justify-between items-start gap-4">
-                            {editingRecord?.id === record.id ? (
-                               <EditableBonusRow
-                                record={editingRecord}
-                                onSave={handleUpdateRecord}
-                                onCancel={cancelEditing}
-                                isSaving={isSaving}
-                                getEmployeeName={getEmployeeName}
-                                language={language}
-                                t={t}
-                              />
-                            ) : (
-                            <>
-                                <div className="flex-1">
-                                    <p className="flex items-center gap-2" dir={language === 'ku' ? 'rtl' : 'ltr'}><User className="h-4 w-4 text-primary" /> {getEmployeeName(record.employeeId, language === 'ku')}</p>
-                                    <p className="text-sm text-muted-foreground">{record.loadCount} {t('loads')}</p>
-                                    {record.notes && <p className="text-sm mt-1">{record.notes}</p>}
-                                </div>
-                                <div className='flex flex-col items-end'>
-                                    <p className="font-semibold text-primary">{formatCurrency(record.totalAmount)}</p>
-                                    {!isReadOnly && (
-                                    <div className="flex gap-1 mt-1 print:hidden">
-                                        <Button size="icon" variant="ghost" className="text-muted-foreground hover:text-primary h-8 w-8" onClick={() => startEditing(record)}>
-                                            <Edit className="h-4 w-4"/>
-                                        </Button>
-                                        <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8">
-                                                    <Trash2 className="h-4 w-4"/>
-                                                </Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle>{t('delete_this_record')}</AlertDialogTitle>
-                                                    <AlertDialogDescription>
-                                                    {t('confirm_delete_bonus', {employeeName: getEmployeeName(record.employeeId, language === 'ku')})}
-                                                    </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                    <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => handleDelete(record)}>{t('delete')}</AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
-                                    </div>
-                                    )}
-                                </div>
-                            </>
-                            )}
-                        </div>
-                        ))
-                    ) : (
-                        <div className="py-8 text-center text-muted-foreground">{t('no_bonus_records_for_date')}</div>
-                    )}
-                    </div>
-                </CardContent>
-                {dailyBonuses && dailyBonuses.length > 0 && (
-                    <CardFooter className="flex justify-between bg-muted/50 py-4 rounded-b-lg">
-                        <span>{t('total')}</span>
-                        <div className='text-right'>
-                             {isReadOnly ? (
-                                <p className='font-bold'>***</p>
-                             ) : (
-                                <>
-                                    <p>{totalLoads.toFixed(0)} {t('loads')}</p>
-                                    <p className="text-primary">{formatCurrency(totalAmount)}</p>
-                                </>
-                             )}
-                        </div>
-                    </CardFooter>
-                )}
-                </Card>
-            </div>
-            </div>
-  );
-
 
 export default function AddBonusPage() {
   const { t, language } = useTranslation();
   const { toast } = useToast();
   const searchParams = useSearchParams();
-  const router = useRouter();
   const { user, hasPermission } = useAuth();
 
   const { employees, bonuses, setBonuses, settings, setActivityLogs } = useAppContext();
-  const { salarySettings } = settings;
+  const isReadOnly = !hasPermission('page:admin');
 
   const dateParam = searchParams.get('date');
-  const isReadOnly = !hasPermission('page:admin');
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -278,20 +162,6 @@ export default function AddBonusPage() {
     setSelectedDate(getInitialDate());
   }, [dateParam]);
   
-  // Form state
-  const [selectedEmployee, setSelectedEmployee] = useState('');
-  const [loadCount, setLoadCount] = useState('1');
-  const [notes, setNotes] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-
-  // Editing state
-  const [editingRecord, setEditingRecord] = useState<Bonus | null>(null);
-  
-  const warehouseEmployees = useMemo(() => {
-    if (!employees) return [];
-    return employees.filter(e => e.role !== 'Marketing');
-  }, [employees]);
-
   const dailyBonuses = useMemo(() => {
     if (!bonuses || !selectedDate) return [];
     const start = startOfDay(selectedDate);
@@ -302,11 +172,6 @@ export default function AddBonusPage() {
     }).sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
   }, [bonuses, selectedDate]);
 
-  const sortedEmployees = useMemo(() => {
-    if (!warehouseEmployees) return [];
-    return [...warehouseEmployees].sort((a, b) => a.name.localeCompare(b.name));
-  }, [warehouseEmployees]);
-
   const getEmployeeName = (id: string, useKurdish: boolean = false) => {
     const employee = employees?.find(e => e.id === id);
     if (!employee) return t('unknown');
@@ -314,57 +179,13 @@ export default function AddBonusPage() {
     return useKurdish && employee.kurdishName ? employee.kurdishName : employee.name;
   };
   
-  const resetForm = () => {
-    setSelectedEmployee('');
-    setLoadCount('1');
-    setNotes('');
-  };
-  
-  const startEditing = (record: Bonus) => {
-    setEditingRecord(JSON.parse(JSON.stringify(record))); // Deep copy
-  };
-  
-  const cancelEditing = () => {
-    setEditingRecord(null);
-  };
-  
-  const handleUpdateRecord = (updatedRecord: Bonus) => {
-    if(isReadOnly) return;
-    
-    setIsSaving(true);
-    
-    const updatedData = {
-        ...updatedRecord,
-        totalAmount: updatedRecord.loadCount * updatedRecord.rate,
-    };
-    
-    setBonuses(bonuses.map(rec => rec.id === updatedData.id ? updatedData : rec));
-    toast({ title: t('save_changes'), description: t('bonus_record_updated') });
-    if(user) {
-        const log: ActivityLog = { id: crypto.randomUUID(), userId: user.id, username: user.username, action: 'update', entity: 'Bonus', entityId: updatedData.id, description: `Updated bonus for ${getEmployeeName(updatedData.employeeId)}`, timestamp: new Date().toISOString() };
-        setActivityLogs(prev => [...prev, log]);
-    }
-    setEditingRecord(null);
-    setIsSaving(false);
-  };
+  const handleAddBonus = (bonusPayload: Omit<Bonus, 'id'|'date'>) => {
+    if (!selectedDate) return;
 
-  const handleAddBonus = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isReadOnly) return;
-    if (!selectedEmployee || !loadCount || !selectedDate || parseInt(loadCount) <= 0) {
-      toast({ variant: 'destructive', title: t('missing_information'), description: t('add_bonus_validation_error') });
-      return;
-    }
-    
-    setIsSaving(true);
     const bonusData: Bonus = {
       id: crypto.randomUUID(),
-      employeeId: selectedEmployee,
       date: selectedDate.toISOString(),
-      loadCount: parseInt(loadCount),
-      rate: salarySettings.bonusRate,
-      totalAmount: parseInt(loadCount) * salarySettings.bonusRate,
-      notes,
+      ...bonusPayload,
     };
 
     setBonuses([...bonuses, bonusData]);
@@ -373,8 +194,6 @@ export default function AddBonusPage() {
         const log: ActivityLog = { id: crypto.randomUUID(), userId: user.id, username: user.username, action: 'create', entity: 'Bonus', entityId: bonusData.id, description: `Added bonus for ${getEmployeeName(bonusData.employeeId)}`, timestamp: new Date().toISOString() };
         setActivityLogs(prev => [...prev, log]);
     }
-    resetForm();
-    setIsSaving(false);
   };
 
   const handleDelete = (record: Bonus) => {
@@ -429,32 +248,7 @@ export default function AddBonusPage() {
     <>
       <div className="hidden print:block">
         <ReportWrapper>
-          <PageContent
-             isReadOnly={isReadOnly}
-             t={t}
-             language={language}
-             handleAddBonus={handleAddBonus}
-             selectedEmployee={selectedEmployee}
-             setSelectedEmployee={setSelectedEmployee}
-             isSaving={isSaving}
-             isLoading={isLoading}
-             sortedEmployees={sortedEmployees}
-             getEmployeeName={getEmployeeName}
-             loadCount={loadCount}
-             setLoadCount={setLoadCount}
-             notes={notes}
-             setNotes={setNotes}
-             salarySettings={salarySettings}
-             selectedDate={selectedDate}
-             dailyBonuses={dailyBonuses}
-             editingRecord={editingRecord}
-             startEditing={startEditing}
-             handleUpdateRecord={handleUpdateRecord}
-             cancelEditing={cancelEditing}
-             handleDelete={handleDelete}
-             totalLoads={totalLoads}
-             totalAmount={totalAmount}
-          />
+           { /* Content for printing, can be a simplified version */ }
         </ReportWrapper>
       </div>
       <div className="min-h-screen bg-background text-foreground print:hidden">
@@ -511,32 +305,81 @@ export default function AddBonusPage() {
         </header>
 
         <main className="w-full p-4 md:p-8">
-            <PageContent
-                 isReadOnly={isReadOnly}
-                 t={t}
-                 language={language}
-                 handleAddBonus={handleAddBonus}
-                 selectedEmployee={selectedEmployee}
-                 setSelectedEmployee={setSelectedEmployee}
-                 isSaving={isSaving}
-                 isLoading={isLoading}
-                 sortedEmployees={sortedEmployees}
-                 getEmployeeName={getEmployeeName}
-                 loadCount={loadCount}
-                 setLoadCount={setLoadCount}
-                 notes={notes}
-                 setNotes={setNotes}
-                 salarySettings={salarySettings}
-                 selectedDate={selectedDate}
-                 dailyBonuses={dailyBonuses}
-                 editingRecord={editingRecord}
-                 startEditing={startEditing}
-                 handleUpdateRecord={handleUpdateRecord}
-                 cancelEditing={cancelEditing}
-                 handleDelete={handleDelete}
-                 totalLoads={totalLoads}
-                 totalAmount={totalAmount}
-            />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <AddBonusForm onAdd={handleAddBonus} />
+
+                <div className="lg:col-span-2">
+                    <Card>
+                    <CardHeader>
+                        <div className="text-center">
+                            <CardTitle className='text-2xl'>{t('bonus_records_for_date', {date: selectedDate ? format(selectedDate, 'PPP') : '...'})}</CardTitle>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="divide-y">
+                        {isLoading ? (
+                            <div className="p-8 text-center text-muted-foreground">{t('loading_records')}...</div>
+                        ) : dailyBonuses && dailyBonuses.length > 0 ? (
+                            dailyBonuses.map((record: Bonus) => (
+                            <div key={record.id} className="py-3 flex justify-between items-start gap-4">
+                                <>
+                                    <div className="flex-1">
+                                        <p className="flex items-center gap-2" dir={language === 'ku' ? 'rtl' : 'ltr'}><User className="h-4 w-4 text-primary" /> {getEmployeeName(record.employeeId, language === 'ku')}</p>
+                                        <p className="text-sm text-muted-foreground">{record.loadCount} {t('loads')}</p>
+                                        {record.notes && <p className="text-sm mt-1">{record.notes}</p>}
+                                    </div>
+                                    <div className='flex flex-col items-end'>
+                                        <p className="font-semibold text-primary">{formatCurrency(record.totalAmount)}</p>
+                                        {!isReadOnly && (
+                                        <div className="flex gap-1 mt-1 print:hidden">
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8">
+                                                        <Trash2 className="h-4 w-4"/>
+                                                    </Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>{t('delete_this_record')}</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                        {t('confirm_delete_bonus', {employeeName: getEmployeeName(record.employeeId, language === 'ku')})}
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={() => handleDelete(record)}>{t('delete')}</AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+                                        </div>
+                                        )}
+                                    </div>
+                                </>
+                            </div>
+                            ))
+                        ) : (
+                            <div className="py-8 text-center text-muted-foreground">{t('no_bonus_records_for_date')}</div>
+                        )}
+                        </div>
+                    </CardContent>
+                    {dailyBonuses && dailyBonuses.length > 0 && (
+                        <CardFooter className="flex justify-between bg-muted/50 py-4 rounded-b-lg">
+                            <span>{t('total')}</span>
+                            <div className='text-right'>
+                                {isReadOnly ? (
+                                    <p className='font-bold'>***</p>
+                                ) : (
+                                    <>
+                                        <p>{totalLoads.toFixed(0)} {t('loads')}</p>
+                                        <p className="text-primary">{formatCurrency(totalAmount)}</p>
+                                    </>
+                                )}
+                            </div>
+                        </CardFooter>
+                    )}
+                    </Card>
+                </div>
+            </div>
         </main>
       </div>
     </>

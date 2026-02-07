@@ -122,7 +122,7 @@ export function DashboardClient() {
 
   return (
     <>
-      <main className="w-full max-w-7xl mx-auto p-4 md:p-8 space-y-8">
+      <main className="w-full p-4 md:p-8 space-y-8">
         {settings.dashboardBanner && (
             <div className="relative w-full rounded-lg overflow-hidden animate-fade-in-down"
                 style={{ height: `${settings.dashboardBannerHeight}px` }}

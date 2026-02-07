@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useRef, useEffect, Fragment } from 'react';
@@ -31,113 +30,21 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
-function EditableOvertimeRow({
-  record,
-  onSave,
-  onCancel,
-  isSaving,
-  getEmployeeName,
-  language,
-  t
-}: {
-  record: Overtime;
-  onSave: (updatedRecord: Overtime) => void;
-  onCancel: () => void;
-  isSaving: boolean;
-  getEmployeeName: (id: string, useKurdish?: boolean) => string;
-  language: string;
-  t: (key: string) => string;
-}) {
-  const [editedRecord, setEditedRecord] = useState(record);
-
-  useEffect(() => {
-    setEditedRecord(record);
-  }, [record]);
-
-  return (
-    <Fragment>
-      <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{getEmployeeName(record.employeeId, language === 'ku')}</TableCell>
-      <TableCell className='text-center'>
-        <Input
-          type="number"
-          value={editedRecord.hours}
-          onChange={(e) => setEditedRecord({ ...editedRecord, hours: parseFloat(e.target.value) || 0 })}
-          className="h-8 w-24 mx-auto text-center"
-        />
-      </TableCell>
-      <TableCell className='text-center'>{formatCurrency(editedRecord.hours * editedRecord.rate)}</TableCell>
-      <TableCell>
-        <Textarea
-          value={editedRecord.notes}
-          onChange={(e) => setEditedRecord({ ...editedRecord, notes: e.target.value })}
-          placeholder={t('notes_optional')}
-          className="h-8"
-        />
-      </TableCell>
-      <TableCell className="text-right print:hidden">
-        <div className="flex gap-1">
-          <Button size="icon" className="h-8 w-8" onClick={() => onSave(editedRecord)} disabled={isSaving}><Save className="h-4 w-4" /></Button>
-          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={onCancel}><X className="h-4 w-4" /></Button>
-        </div>
-      </TableCell>
-    </Fragment>
-  );
-}
-
-
-export default function AddOvertimePage() {
+function AddOvertimeForm({ onAdd }: { onAdd: (data: Omit<Overtime, 'id'|'date'>) => void }) {
   const { t, language } = useTranslation();
   const { toast } = useToast();
-  const searchParams = useSearchParams();
-  const router = useRouter();
+  const { employees, settings } = useAppContext();
+  const { salarySettings } = settings;
 
-  const { employees, overtime: allOvertimeRecords, setOvertime: setAllOvertimeRecords, settings } = useAppContext();
-  const { salarySettings, pdfSettings, customFont, appLogo } = settings;
-
-
-  const dateParam = searchParams.get('date');
-
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const pdfRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const getInitialDate = () => {
-      if (dateParam) {
-        const parsedDate = parseISO(dateParam);
-        if (!isNaN(parsedDate.getTime())) {
-          return parsedDate;
-        }
-      }
-      return new Date();
-    };
-    setSelectedDate(getInitialDate());
-  }, [dateParam]);
-  
-  // Form state
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [hours, setHours] = useState('');
   const [notes, setNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
-  // Editing state
-  const [editingRecord, setEditingRecord] = useState<Overtime | null>(null);
-  
   const warehouseEmployees = useMemo(() => {
     if (!employees) return [];
     return employees.filter(e => e.role !== 'Marketing');
   }, [employees]);
-
-  const overtimeRecords = useMemo(() => {
-    if (!allOvertimeRecords || !selectedDate) return [];
-    const start = startOfDay(selectedDate);
-    const end = endOfDay(selectedDate);
-    return allOvertimeRecords.filter(record => {
-        const recordDate = parseISO(record.date);
-        return isWithinInterval(recordDate, { start, end });
-    }).sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
-  }, [allOvertimeRecords, selectedDate]);
-
 
   const sortedEmployees = useMemo(() => {
     if (!warehouseEmployees) return [];
@@ -155,54 +62,129 @@ export default function AddOvertimePage() {
     setHours('');
     setNotes('');
   };
-  
-  const startEditing = (record: Overtime) => {
-    setEditingRecord(JSON.parse(JSON.stringify(record))); // Deep copy
-  };
-  
-  const cancelEditing = () => {
-    setEditingRecord(null);
-  };
-  
-  const handleUpdateRecord = (updatedRecord: Overtime) => {
-    if(!updatedRecord) return;
-    
-    setIsSaving(true);
-    
-    const updatedData = {
-        ...updatedRecord,
-        totalAmount: updatedRecord.hours * updatedRecord.rate,
-    };
-    
-    setAllOvertimeRecords(allOvertimeRecords.map(rec => rec.id === updatedData.id ? updatedData : rec));
-    toast({ title: t('save_changes'), description: t('overtime_record_updated') });
-    setEditingRecord(null);
-    setIsSaving(false);
-  };
-
 
   const handleAddOvertime = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedEmployee || !hours || !selectedDate) {
+    if (!selectedEmployee || !hours) {
       toast({ variant: 'destructive', title: t('missing_information'), description: t('add_overtime_validation_error') });
       return;
     }
     
     setIsSaving(true);
-    const overtimeData: Overtime = {
-      id: crypto.randomUUID(),
+    const overtimeData: Omit<Overtime, 'id'|'date'> = {
       employeeId: selectedEmployee,
-      date: selectedDate.toISOString(),
       hours: parseFloat(hours),
       rate: salarySettings.overtimeRate,
       totalAmount: parseFloat(hours) * salarySettings.overtimeRate,
       notes,
     };
+    onAdd(overtimeData);
+    resetForm();
+    setIsSaving(false);
+  };
+  
+  return (
+    <div className="lg:col-span-1 print:hidden">
+        <Card>
+        <CardHeader>
+            <CardTitle>{t('add_overtime_record')}</CardTitle>
+            <CardDescription>{t('add_overtime_record_desc')}</CardDescription>
+        </CardHeader>
+        <form onSubmit={handleAddOvertime}>
+            <CardContent className="space-y-4">
+            <div className="space-y-2">
+                <label htmlFor="employee">{t('employee')}</label>
+                <Select onValueChange={setSelectedEmployee} value={selectedEmployee} disabled={isSaving}>
+                <SelectTrigger id="employee">
+                    <SelectValue placeholder={t('select_an_employee')} />
+                </SelectTrigger>
+                <SelectContent>
+                    {sortedEmployees.map(emp => (
+                        <SelectItem key={emp.id} value={emp.id} dir={language === 'ku' ? 'rtl' : 'ltr'}>{getEmployeeName(emp.id, language === 'ku')}</SelectItem>
+                    ))
+                    }
+                </SelectContent>
+                </Select>
+            </div>
+            <div className="space-y-2">
+                <label htmlFor="hours">{t('overtime_hours')}</label>
+                <div className="relative">
+                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input id="hours" type="number" value={hours} onChange={e => setHours(e.target.value)} required placeholder="e.g., 2.5" className="pl-8" disabled={isSaving} />
+                </div>
+            </div>
+            <div className="space-y-2">
+                <label htmlFor="notes">{t('notes')}</label>
+                <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder={t('notes_optional_overtime')} disabled={isSaving}/>
+            </div>
+            <p className="text-sm text-muted-foreground">
+                {t('overtime_rate')}: {formatCurrency(salarySettings.overtimeRate)} / {t('hour')}
+            </p>
+            </CardContent>
+            <CardFooter>
+                <Button type="submit" className="w-full" disabled={isSaving}>
+                    <Plus className="mr-2 h-4 w-4" /> {t('add_record')}
+                </Button>
+            </CardFooter>
+        </form>
+        </Card>
+    </div>
+  );
+}
+
+export default function AddOvertimePage() {
+  const { t, language } = useTranslation();
+  const { toast } = useToast();
+  const searchParams = useSearchParams();
+
+  const { employees, overtime: allOvertimeRecords, setOvertime: setAllOvertimeRecords } = useAppContext();
+
+  const dateParam = searchParams.get('date');
+
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  
+  useEffect(() => {
+    const getInitialDate = () => {
+      if (dateParam) {
+        const parsedDate = parseISO(dateParam);
+        if (!isNaN(parsedDate.getTime())) {
+          return parsedDate;
+        }
+      }
+      return new Date();
+    };
+    setSelectedDate(getInitialDate());
+  }, [dateParam]);
+  
+
+  const overtimeRecords = useMemo(() => {
+    if (!allOvertimeRecords || !selectedDate) return [];
+    const start = startOfDay(selectedDate);
+    const end = endOfDay(selectedDate);
+    return allOvertimeRecords.filter(record => {
+        const recordDate = parseISO(record.date);
+        return isWithinInterval(recordDate, { start, end });
+    }).sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
+  }, [allOvertimeRecords, selectedDate]);
+
+
+  const getEmployeeName = (id: string, useKurdish: boolean = false) => {
+    const employee = employees?.find(e => e.id === id);
+    if (!employee) return t('unknown');
+    return useKurdish && employee.kurdishName ? employee.kurdishName : employee.name;
+  };
+
+  const handleAddOvertime = (overtimePayload: Omit<Overtime, 'id' | 'date'>) => {
+    if (!selectedDate) return;
+    const overtimeData: Overtime = {
+      id: crypto.randomUUID(),
+      date: selectedDate.toISOString(),
+      ...overtimePayload,
+    };
 
     setAllOvertimeRecords([...allOvertimeRecords, overtimeData]);
     toast({ title: t('overtime_added'), description: t('overtime_added_desc') });
-    resetForm();
-    setIsSaving(false);
   };
 
   const handleDelete = (record: Overtime) => {
@@ -244,147 +226,6 @@ export default function AddOvertimePage() {
     XLSX.writeFile(workbook, `Daily_Overtime_${format(selectedDate || new Date(), 'yyyy-MM-dd')}.xlsx`);
   };
   
-  const PageContent = () => (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-1 print:hidden">
-                <Card>
-                <CardHeader>
-                    <CardTitle>{t('add_overtime_record')}</CardTitle>
-                    <CardDescription>{t('add_overtime_record_desc')}</CardDescription>
-                </CardHeader>
-                <form onSubmit={handleAddOvertime}>
-                    <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                        <label htmlFor="employee">{t('employee')}</label>
-                        <Select onValueChange={setSelectedEmployee} value={selectedEmployee} disabled={isSaving}>
-                        <SelectTrigger id="employee">
-                            <SelectValue placeholder={t('select_an_employee')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {isLoading ? (
-                            <SelectItem value="loading" disabled>{t('loading')}...</SelectItem>
-                            ) : (
-                            sortedEmployees.map(emp => (
-                                <SelectItem key={emp.id} value={emp.id} dir={language === 'ku' ? 'rtl' : 'ltr'}>{getEmployeeName(emp.id, language === 'ku')}</SelectItem>
-                            ))
-                            )}
-                        </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="space-y-2">
-                        <label htmlFor="hours">{t('overtime_hours')}</label>
-                        <div className="relative">
-                        <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input id="hours" type="number" value={hours} onChange={e => setHours(e.target.value)} required placeholder="e.g., 2.5" className="pl-8" disabled={isSaving} />
-                        </div>
-                    </div>
-                    <div className="space-y-2">
-                        <label htmlFor="notes">{t('notes')}</label>
-                        <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder={t('notes_optional_overtime')} disabled={isSaving}/>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                        {t('overtime_rate')}: {formatCurrency(salarySettings.overtimeRate)} / {t('hour')}
-                    </p>
-                    </CardContent>
-                    <CardFooter>
-                        <Button type="submit" className="w-full" disabled={isSaving}>
-                            <Plus className="mr-2 h-4 w-4" /> {t('add_record')}
-                        </Button>
-                    </CardFooter>
-                </form>
-                </Card>
-            </div>
-
-            <div className="lg:col-span-2">
-                <Card>
-                <CardHeader>
-                    <div className="text-center">
-                        <CardTitle className='text-2xl'>{t('overtime_records_for_date', {date: selectedDate ? format(selectedDate, 'PPP') : '...'})}</CardTitle>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    {isLoading ? (
-                        <div className="p-8 text-center text-muted-foreground">{t('loading_records')}...</div>
-                    ) : overtimeRecords && overtimeRecords.length > 0 ? (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>{t('employee')}</TableHead>
-                                    <TableHead className="text-center">{t('overtime_hours')}</TableHead>
-                                    <TableHead className="text-center">{t('salary')}</TableHead>
-                                    <TableHead>{t('notes')}</TableHead>
-                                    <TableHead className="w-24 print:hidden"></TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {overtimeRecords.map(record => (
-                                    <TableRow key={record.id}>
-                                    {editingRecord?.id === record.id ? (
-                                        <EditableOvertimeRow
-                                            record={editingRecord}
-                                            onSave={handleUpdateRecord}
-                                            onCancel={cancelEditing}
-                                            isSaving={isSaving}
-                                            getEmployeeName={getEmployeeName}
-                                            language={language}
-                                            t={t}
-                                        />
-                                    ) : (
-                                        <>
-                                            <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{getEmployeeName(record.employeeId, language === 'ku')}</TableCell>
-                                            <TableCell className="text-center">{record.hours.toFixed(2)}</TableCell>
-                                            <TableCell className="text-center">{formatCurrency(record.totalAmount)}</TableCell>
-                                            <TableCell>{record.notes || t('na')}</TableCell>
-                                            <TableCell className="text-right print:hidden">
-                                                <div className="flex gap-1">
-                                                    <Button size="icon" variant="ghost" className="text-muted-foreground hover:text-primary h-8 w-8" onClick={() => startEditing(record)}>
-                                                        <Edit className="h-4 w-4"/>
-                                                    </Button>
-                                                    <AlertDialog>
-                                                        <AlertDialogTrigger asChild>
-                                                            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8">
-                                                                <Trash2 className="h-4 w-4"/>
-                                                            </Button>
-                                                        </AlertDialogTrigger>
-                                                        <AlertDialogContent>
-                                                            <AlertDialogHeader>
-                                                                <AlertDialogTitle>{t('delete_this_record')}</AlertDialogTitle>
-                                                                <AlertDialogDescription>
-                                                                {t('confirm_delete_overtime', {employeeName: getEmployeeName(record.employeeId, language === 'ku')})}
-                                                                </AlertDialogDescription>
-                                                            </AlertDialogHeader>
-                                                            <AlertDialogFooter>
-                                                                <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-                                                                <AlertDialogAction onClick={() => handleDelete(record)}>{t('delete')}</AlertDialogAction>
-                                                            </AlertDialogFooter>
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
-                                                </div>
-                                            </TableCell>
-                                        </>
-                                    )}
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    ) : (
-                        <div className="py-8 text-center text-muted-foreground">{t('no_overtime_records_for_date')}</div>
-                    )}
-                </CardContent>
-                {overtimeRecords && overtimeRecords.length > 0 && (
-                    <CardFooter className="justify-between bg-muted/50 py-4 rounded-b-lg">
-                        <span className="font-semibold">{t('total')}</span>
-                        <div className='text-right'>
-                            <p>{totalHours.toFixed(2)} {t('hours_short')}</p>
-                            <p className="font-semibold text-primary">{formatCurrency(totalAmount)}</p>
-                        </div>
-                    </CardFooter>
-                )}
-                </Card>
-            </div>
-            </div>
-  );
-
   if (!selectedDate) {
     return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
@@ -393,7 +234,7 @@ export default function AddOvertimePage() {
     <>
       <div className="hidden print:block">
         <ReportWrapper>
-          <PageContent />
+            { /* Print Content Here */ }
         </ReportWrapper>
       </div>
     <div className="h-[calc(100vh-80px)] flex flex-col print:hidden">
@@ -405,7 +246,7 @@ export default function AddOvertimePage() {
                 <ArrowLeft />
               </Link>
             </Button>
-            <h1 className="text-xl">{t('daily_overtime')}</h1>
+            <h1 className="text-xl">Daily Overtime</h1>
           </div>
           <div className="flex items-center gap-2">
             <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
@@ -435,7 +276,82 @@ export default function AddOvertimePage() {
       </header>
 
       <main className="container mx-auto p-4 md:p-8 flex-1 overflow-y-auto">
-        <PageContent />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <AddOvertimeForm onAdd={handleAddOvertime} />
+
+          <div className="lg:col-span-2">
+              <Card>
+              <CardHeader>
+                  <div className="text-center">
+                      <CardTitle className='text-2xl'>{t('overtime_records_for_date', {date: selectedDate ? format(selectedDate, 'PPP') : '...'})}</CardTitle>
+                  </div>
+              </CardHeader>
+              <CardContent>
+                  {isLoading ? (
+                      <div className="p-8 text-center text-muted-foreground">{t('loading_records')}...</div>
+                  ) : overtimeRecords && overtimeRecords.length > 0 ? (
+                      <Table>
+                          <TableHeader>
+                              <TableRow>
+                                  <TableHead>{t('employee')}</TableHead>
+                                  <TableHead className="text-center">{t('overtime_hours')}</TableHead>
+                                  <TableHead className="text-center">{t('salary')}</TableHead>
+                                  <TableHead>{t('notes')}</TableHead>
+                                  <TableHead className="w-24 print:hidden"></TableHead>
+                              </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                              {overtimeRecords.map(record => (
+                                  <TableRow key={record.id}>
+                                      <>
+                                          <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{getEmployeeName(record.employeeId, language === 'ku')}</TableCell>
+                                          <TableCell className="text-center">{record.hours.toFixed(2)}</TableCell>
+                                          <TableCell className="text-center">{formatCurrency(record.totalAmount)}</TableCell>
+                                          <TableCell>{record.notes || t('na')}</TableCell>
+                                          <TableCell className="text-right print:hidden">
+                                              <div className="flex gap-1">
+                                                  <AlertDialog>
+                                                      <AlertDialogTrigger asChild>
+                                                          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8">
+                                                              <Trash2 className="h-4 w-4"/>
+                                                          </Button>
+                                                      </AlertDialogTrigger>
+                                                      <AlertDialogContent>
+                                                          <AlertDialogHeader>
+                                                              <AlertDialogTitle>{t('delete_this_record')}</AlertDialogTitle>
+                                                              <AlertDialogDescription>
+                                                              {t('confirm_delete_overtime', {employeeName: getEmployeeName(record.employeeId, language === 'ku')})}
+                                                              </AlertDialogDescription>
+                                                          </AlertDialogHeader>
+                                                          <AlertDialogFooter>
+                                                              <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                                                              <AlertDialogAction onClick={() => handleDelete(record)}>{t('delete')}</AlertDialogAction>
+                                                          </AlertDialogFooter>
+                                                      </AlertDialogContent>
+                                                  </AlertDialog>
+                                              </div>
+                                          </TableCell>
+                                      </>
+                                  </TableRow>
+                              ))}
+                          </TableBody>
+                      </Table>
+                  ) : (
+                      <div className="py-8 text-center text-muted-foreground">{t('no_overtime_records_for_date')}</div>
+                  )}
+              </CardContent>
+              {overtimeRecords && overtimeRecords.length > 0 && (
+                  <CardFooter className="justify-between bg-muted/50 py-4 rounded-b-lg">
+                      <span className="font-semibold">{t('total')}</span>
+                      <div className='text-right'>
+                          <p>{totalHours.toFixed(2)} {t('hours_short')}</p>
+                          <p className="font-semibold text-primary">{formatCurrency(totalAmount)}</p>
+                      </div>
+                  </CardFooter>
+              )}
+              </Card>
+          </div>
+        </div>
       </main>
     </div>
     </>

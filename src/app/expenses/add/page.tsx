@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -27,7 +26,6 @@ import { useAuth } from '@/hooks/use-auth';
 const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'IQD', maximumFractionDigits: 0 }).format(amount);
 
 const mainExpenseTypes = ["Taxi Expenses", "Purchases (Buying Items)"];
-
 const taxiSubTypes = [
   "Taxi for warehouse organization",
   "Taxi for loading items",
@@ -37,153 +35,106 @@ const taxiSubTypes = [
   "Taxi for transporting furniture parts",
 ];
 
-const PageContent = ({
-  editingExpense,
-  t,
-  handleAddOrUpdateExpense,
-  isSaving,
-  selectedEmployee,
-  setSelectedEmployee,
-  warehouseEmployees,
-  language,
-  getEmployeeName,
-  expenseType,
-  setExpenseType,
-  expenseSubType,
-  setExpenseSubType,
-  amount,
-  setAmount,
-  description,
-  setDescription,
-  cancelEditing,
-  isLoading,
-  dailyExpenses,
-  date,
-  startEditing,
-  handleDelete,
-  grandTotal,
-}:any) => (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-1 print:hidden">
+function AddExpenseForm({ onAdd }: { onAdd: (expense: Omit<Expense, 'id' | 'date' | 'expenseReportId'>) => Promise<void> }) {
+    const { t, language } = useTranslation();
+    const { employees } = useAppContext();
+    
+    const [selectedEmployee, setSelectedEmployee] = useState('');
+    const [expenseType, setExpenseType] = useState('');
+    const [expenseSubType, setExpenseSubType] = useState('');
+    const [amount, setAmount] = useState('');
+    const [description, setDescription] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
+
+    const warehouseEmployees = useMemo(() => {
+        if (!employees) return [];
+        return employees.filter(e => e.role !== 'Marketing').sort((a, b) => a.name.localeCompare(b.name));
+    }, [employees]);
+
+    const resetForm = () => {
+        setSelectedEmployee('');
+        setExpenseType('');
+        setExpenseSubType('');
+        setAmount('');
+        setDescription('');
+    }
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const parsedAmount = parseFloat(amount);
+        if (!selectedEmployee || !amount || isNaN(parsedAmount) || parsedAmount <= 0 || !expenseType) {
+          toast({ variant: 'destructive', title: t('missing_information'), description: t('add_expense_validation_error') });
+          return;
+        }
+
+        setIsSaving(true);
+        const expensePayload = {
+          employeeId: selectedEmployee,
+          amount: parsedAmount,
+          notes: description,
+          expenseType: expenseType,
+          expenseSubType: expenseType === 'Taxi Expenses' ? expenseSubType : '',
+        };
+
+        await onAdd(expensePayload);
+        resetForm();
+        setIsSaving(false);
+    };
+
+    return (
         <Card>
             <CardHeader>
-            <CardTitle>{editingExpense ? t('edit_expense') : t('new_expense_entry')}</CardTitle>
-            <CardDescription>{editingExpense ? t('update_expense_details') : t('add_new_expense_for_date')}</CardDescription>
+                <CardTitle>{t('new_expense_entry')}</CardTitle>
+                <CardDescription>{t('add_new_expense_for_date')}</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-            <div className="space-y-2">
-                <Label htmlFor="employee">{t('employee')}</Label>
-                <Select value={selectedEmployee} onValueChange={setSelectedEmployee} disabled={isSaving}>
-                <SelectTrigger><SelectValue placeholder={t('select_an_employee')} /></SelectTrigger>
-                <SelectContent>{warehouseEmployees.map((e:any) => <SelectItem key={e.id} value={e.id} dir={language === 'ku' ? 'rtl' : 'ltr'}>{language==='ku' && e.kurdishName ? e.kurdishName : e.name}</SelectItem>)}</SelectContent>
-                </Select>
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="expense-type">{t('expense_type')}</Label>
-                <Select value={expenseType} onValueChange={setExpenseType} disabled={isSaving}>
-                    <SelectTrigger><SelectValue placeholder={t('select_expense_type')} /></SelectTrigger>
-                    <SelectContent>
-                        {mainExpenseTypes.map(type => <SelectItem key={type} value={type}>{t(type.toLowerCase().replace(/[\s()]/g, '_'))}</SelectItem>)}
-                    </SelectContent>
-                </Select>
-            </div>
-            {expenseType === 'Taxi Expenses' && (
-                <div className="space-y-2">
-                    <Label htmlFor="taxi-subtype">{t('taxi_sub_type')}</Label>
-                     <Select value={expenseSubType} onValueChange={setExpenseSubType} disabled={isSaving}>
-                        <SelectTrigger><SelectValue placeholder={t('select_taxi_sub_type')} /></SelectTrigger>
-                        <SelectContent>
-                            {taxiSubTypes.map(type => <SelectItem key={type} value={type}>{t(type.toLowerCase().replace(/\s/g, '_'))}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                </div>
-            )}
-            <div className="space-y-2">
-                <Label htmlFor="amount">{t('amount_iqd')}</Label>
-                <Input id="amount" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="e.g., 25000" disabled={isSaving}/>
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="description">{t('notes')}</Label>
-                <Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} placeholder={t('notes_optional_expense')} disabled={isSaving}/>
-            </div>
-            </CardContent>
-            <CardFooter className="flex gap-2">
-            <Button onClick={handleAddOrUpdateExpense} disabled={isSaving} className="w-full">
-                {isSaving ? <Loader2 className="animate-spin mr-2"/> : editingExpense ? <Save className="mr-2"/> : <Plus className="mr-2" />}
-                {editingExpense ? t('save_changes') : t('add_expense')}
-            </Button>
-            {editingExpense && <Button variant="ghost" onClick={cancelEditing}><X/></Button>}
-            </CardFooter>
-        </Card>
-        </div>
-        <div className="lg:col-span-2">
-             <Card>
-                <CardHeader>
-                    <CardTitle className="text-center text-2xl">
-                      {t('daily_expense_report')}
-                    </CardTitle>
-                    <CardDescription className="text-center">{date ? format(date, 'PPPP') : '...'}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {isLoading ? <div className="text-center py-8"><Loader2 className="h-6 w-6 animate-spin mx-auto"/></div> : (
-                        dailyExpenses.length > 0 ? (
-                            <Table>
-                                <TableHeader>
-                                  <TableRow>
-                                    <TableHead>{t('employee')}</TableHead>
-                                    <TableHead>{t('details')}</TableHead>
-                                    <TableHead className="text-right">{t('amount')}</TableHead>
-                                    <TableHead className="print:hidden w-24"></TableHead>
-                                  </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                  {dailyExpenses.map((exp: Expense) => (
-                                    <TableRow key={exp.id}>
-                                      <TableCell>{getEmployeeName(exp.employeeId, language === 'ku')}</TableCell>
-                                      <TableCell>
-                                        <p>{t(exp.expenseType.toLowerCase().replace(/[\s()]/g, '_'))}</p>
-                                        {exp.expenseSubType && <p className="text-xs text-muted-foreground">{t(exp.expenseSubType.toLowerCase().replace(/\s/g, '_'))}</p>}
-                                        {exp.notes && <p className="text-xs text-muted-foreground">{exp.notes}</p>}
-                                      </TableCell>
-                                      <TableCell className="text-right font-medium">{formatCurrency(exp.amount)}</TableCell>
-                                      <TableCell className="print:hidden">
-                                        {!editingExpense && (
-                                          <div className="flex gap-1">
-                                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEditing(exp)}><Edit className="h-4 w-4"/></Button>
-                                              <AlertDialog>
-                                                  <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"><Trash2 className="h-4 w-4"/></Button></AlertDialogTrigger>
-                                                  <AlertDialogContent>
-                                                      <AlertDialogHeader>
-                                                          <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
-                                                          <AlertDialogDescription>{t('confirm_delete_expense', {amount: exp.amount})}</AlertDialogDescription>
-                                                      </AlertDialogHeader>
-                                                      <AlertDialogFooter><AlertDialogCancel>{t('cancel')}</AlertDialogCancel><AlertDialogAction onClick={() => handleDelete(exp)}>{t('delete')}</AlertDialogAction></AlertDialogFooter>
-                                                  </AlertDialogContent>
-                                              </AlertDialog>
-                                          </div>
-                                        )}
-                                      </TableCell>
-                                    </TableRow>
-                                  ))}
-                                </TableBody>
-                            </Table>
-                        ) : (
-                            <p className="text-center text-muted-foreground py-8">{t('no_expense_items_added')}</p>
-                        )
-                    )}
-                </CardContent>
-                {dailyExpenses.length > 0 && (
-                    <CardFooter className="bg-muted/50 p-4 justify-end">
-                        <div className="text-lg font-bold">
-                            <span>{t('grand_total')}: </span>
-                            <span className="text-primary">{formatCurrency(grandTotal)}</span>
+            <form onSubmit={handleSubmit}>
+                <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="employee">{t('employee')}</Label>
+                        <Select value={selectedEmployee} onValueChange={setSelectedEmployee} disabled={isSaving}>
+                            <SelectTrigger><SelectValue placeholder={t('select_an_employee')} /></SelectTrigger>
+                            <SelectContent>{warehouseEmployees.map((e:any) => <SelectItem key={e.id} value={e.id} dir={language === 'ku' ? 'rtl' : 'ltr'}>{language==='ku' && e.kurdishName ? e.kurdishName : e.name}</SelectItem>)}</SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="expense-type">{t('expense_type')}</Label>
+                        <Select value={expenseType} onValueChange={setExpenseType} disabled={isSaving}>
+                            <SelectTrigger><SelectValue placeholder={t('select_expense_type')} /></SelectTrigger>
+                            <SelectContent>
+                                {mainExpenseTypes.map(type => <SelectItem key={type} value={type}>{t(type.toLowerCase().replace(/[\s()]/g, '_'))}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    {expenseType === 'Taxi Expenses' && (
+                        <div className="space-y-2">
+                            <Label htmlFor="taxi-subtype">{t('taxi_sub_type')}</Label>
+                            <Select value={expenseSubType} onValueChange={setExpenseSubType} disabled={isSaving}>
+                                <SelectTrigger><SelectValue placeholder={t('select_taxi_sub_type')} /></SelectTrigger>
+                                <SelectContent>
+                                    {taxiSubTypes.map(type => <SelectItem key={type} value={type}>{t(type.toLowerCase().replace(/\s/g, '_'))}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
                         </div>
-                    </CardFooter>
-                )}
-            </Card>
-        </div>
-    </div>
-  );
+                    )}
+                    <div className="space-y-2">
+                        <Label htmlFor="amount">{t('amount_iqd')}</Label>
+                        <Input id="amount" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="e.g., 25000" disabled={isSaving}/>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="description">{t('notes')}</Label>
+                        <Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} placeholder={t('notes_optional_expense')} disabled={isSaving}/>
+                    </div>
+                </CardContent>
+                <CardFooter>
+                    <Button type="submit" disabled={isSaving} className="w-full">
+                        {isSaving ? <Loader2 className="animate-spin mr-2"/> : <Plus className="mr-2" />}
+                        {t('add_expense')}
+                    </Button>
+                </CardFooter>
+            </form>
+        </Card>
+    );
+}
 
 export default function AddExpensePage() {
   const { t, language } = useTranslation();
@@ -196,14 +147,7 @@ export default function AddExpensePage() {
 
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const [selectedEmployee, setSelectedEmployee] = useState('');
-  const [expenseType, setExpenseType] = useState('');
-  const [expenseSubType, setExpenseSubType] = useState('');
-  const [amount, setAmount] = useState('');
-  const [description, setDescription] = useState('');
-  
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
   
   useEffect(() => {
     let initialDate = new Date();
@@ -217,11 +161,6 @@ export default function AddExpensePage() {
   }, [dateParam]);
   
   const isLoading = !employees || !expenses || !date;
-
-  const warehouseEmployees = useMemo(() => {
-    if (!employees) return [];
-    return employees.filter(e => e.role !== 'Marketing').sort((a, b) => a.name.localeCompare(b.name));
-  }, [employees]);
 
   const dailyExpenses = useMemo(() => {
     if (!expenses || !date) return [];
@@ -240,73 +179,21 @@ export default function AddExpensePage() {
   };
 
   const grandTotal = useMemo(() => dailyExpenses.reduce((sum, exp) => sum + exp.amount, 0), [dailyExpenses]);
-
-  const resetForm = () => {
-    setSelectedEmployee('');
-    setExpenseType('');
-    setExpenseSubType('');
-    setAmount('');
-    setDescription('');
-  }
   
-  const handleAddOrUpdateExpense = () => {
-    const parsedAmount = parseFloat(amount);
-    if (!selectedEmployee || !amount || !date || isNaN(parsedAmount) || parsedAmount <= 0 || !expenseType) {
-      toast({ variant: 'destructive', title: t('missing_information'), description: t('add_expense_validation_error') });
-      return;
-    }
-
-    setIsSaving(true);
-    
-    const expensePayload = {
-      employeeId: selectedEmployee,
+  const handleAddExpense = async (newExpenseData: Omit<Expense, 'id' | 'date' | 'expenseReportId'>) => {
+    if (!date) return;
+    const newExpense: Expense = {
+      id: crypto.randomUUID(),
       date: date.toISOString(),
-      amount: parsedAmount,
-      notes: description,
-      expenseType: expenseType,
-      expenseSubType: expenseType === 'Taxi Expenses' ? expenseSubType : '',
+      expenseReportId: '',
+      ...newExpenseData,
     };
-
-    if (editingExpense) {
-      const updatedExpense: Expense = { ...editingExpense, ...expensePayload };
-      setExpenses(expenses.map(e => e.id === editingExpense.id ? updatedExpense : e));
-      toast({ title: t('expense_updated'), description: t('expense_updated_desc') });
-      if(user) {
-          const log: ActivityLog = { id: crypto.randomUUID(), userId: user.id, username: user.username, action: 'update', entity: 'Expense', entityId: updatedExpense.id, description: `Updated expense for ${getEmployeeName(updatedExpense.employeeId)}`, timestamp: new Date().toISOString() };
-          setActivityLogs(prev => [...prev, log]);
-      }
-      setEditingExpense(null);
-    } else {
-      const newExpense: Expense = {
-        id: crypto.randomUUID(),
-        ...expensePayload,
-        expenseReportId: '' 
-      };
-      setExpenses([...expenses, newExpense]);
-      toast({ title: t('expense_added'), description: t('expense_added_desc', {amount: formatCurrency(newExpense.amount)})});
-      if(user) {
-          const log: ActivityLog = { id: crypto.randomUUID(), userId: user.id, username: user.username, action: 'create', entity: 'Expense', entityId: newExpense.id, description: `Added expense for ${getEmployeeName(newExpense.employeeId)}`, timestamp: new Date().toISOString() };
-          setActivityLogs(prev => [...prev, log]);
-      }
+    setExpenses([...expenses, newExpense]);
+    toast({ title: t('expense_added'), description: t('expense_added_desc', {amount: formatCurrency(newExpense.amount)})});
+    if(user) {
+        const log: ActivityLog = { id: crypto.randomUUID(), userId: user.id, username: user.username, action: 'create', entity: 'Expense', entityId: newExpense.id, description: `Added expense for ${getEmployeeName(newExpense.employeeId)}`, timestamp: new Date().toISOString() };
+        setActivityLogs(prev => [...prev, log]);
     }
-
-    resetForm();
-    setIsSaving(false);
-  }
-  
-  const startEditing = (expense: Expense) => {
-    setEditingExpense(expense);
-    setSelectedEmployee(expense.employeeId);
-    setExpenseType(expense.expenseType || '');
-    setExpenseSubType(expense.expenseSubType || '');
-    setAmount(String(expense.amount));
-    setDescription(expense.notes || '');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const cancelEditing = () => {
-    setEditingExpense(null);
-    resetForm();
   };
 
   const handleDelete = (expenseToDelete: Expense) => {
@@ -372,32 +259,74 @@ export default function AddExpensePage() {
             </header>
 
             <main className="w-full p-4 md:p-8">
-              <PageContent 
-                editingExpense={editingExpense}
-                t={t}
-                handleAddOrUpdateExpense={handleAddOrUpdateExpense}
-                isSaving={isSaving}
-                selectedEmployee={selectedEmployee}
-                setSelectedEmployee={setSelectedEmployee}
-                warehouseEmployees={warehouseEmployees}
-                language={language}
-                getEmployeeName={getEmployeeName}
-                expenseType={expenseType}
-                setExpenseType={setExpenseType}
-                expenseSubType={expenseSubType}
-                setExpenseSubType={setExpenseSubType}
-                amount={amount}
-                setAmount={setAmount}
-                description={description}
-                setDescription={setDescription}
-                cancelEditing={cancelEditing}
-                isLoading={isLoading}
-                dailyExpenses={dailyExpenses}
-                date={date}
-                startEditing={startEditing}
-                handleDelete={handleDelete}
-                grandTotal={grandTotal}
-              />
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  <div className="lg:col-span-1 print:hidden">
+                    <AddExpenseForm onAdd={handleAddExpense} />
+                  </div>
+                  <div className="lg:col-span-2">
+                      <Card>
+                          <CardHeader>
+                              <CardTitle className="text-center text-2xl">
+                                {t('daily_expense_report')}
+                              </CardTitle>
+                              <CardDescription className="text-center">{date ? format(date, 'PPPP') : '...'}</CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                              {isLoading ? <div className="text-center py-8"><Loader2 className="h-6 w-6 animate-spin mx-auto"/></div> : (
+                                  dailyExpenses.length > 0 ? (
+                                      <Table>
+                                          <TableHeader>
+                                            <TableRow>
+                                              <TableHead>{t('employee')}</TableHead>
+                                              <TableHead>{t('details')}</TableHead>
+                                              <TableHead className="text-right">{t('amount')}</TableHead>
+                                              <TableHead className="print:hidden w-24"></TableHead>
+                                            </TableRow>
+                                          </TableHeader>
+                                          <TableBody>
+                                            {dailyExpenses.map((exp: Expense) => (
+                                              <TableRow key={exp.id}>
+                                                <TableCell>{getEmployeeName(exp.employeeId, language === 'ku')}</TableCell>
+                                                <TableCell>
+                                                  <p>{t(exp.expenseType.toLowerCase().replace(/[\s()]/g, '_'))}</p>
+                                                  {exp.expenseSubType && <p className="text-xs text-muted-foreground">{t(exp.expenseSubType.toLowerCase().replace(/\s/g, '_'))}</p>}
+                                                  {exp.notes && <p className="text-xs text-muted-foreground">{exp.notes}</p>}
+                                                </TableCell>
+                                                <TableCell className="text-right font-medium">{formatCurrency(exp.amount)}</TableCell>
+                                                <TableCell className="print:hidden">
+                                                    <div className="flex gap-1">
+                                                        <AlertDialog>
+                                                            <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"><Trash2 className="h-4 w-4"/></Button></AlertDialogTrigger>
+                                                            <AlertDialogContent>
+                                                                <AlertDialogHeader>
+                                                                    <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
+                                                                    <AlertDialogDescription>{t('confirm_delete_expense', {amount: exp.amount})}</AlertDialogDescription>
+                                                                </AlertDialogHeader>
+                                                                <AlertDialogFooter><AlertDialogCancel>{t('cancel')}</AlertDialogCancel><AlertDialogAction onClick={() => handleDelete(exp)}>{t('delete')}</AlertDialogAction></AlertDialogFooter>
+                                                            </AlertDialogContent>
+                                                        </AlertDialog>
+                                                    </div>
+                                                </TableCell>
+                                              </TableRow>
+                                            ))}
+                                          </TableBody>
+                                      </Table>
+                                  ) : (
+                                      <p className="text-center text-muted-foreground py-8">{t('no_expense_items_added')}</p>
+                                  )
+                              )}
+                          </CardContent>
+                          {dailyExpenses.length > 0 && (
+                              <CardFooter className="bg-muted/50 p-4 justify-end">
+                                  <div className="text-lg font-bold">
+                                      <span>{t('grand_total')}: </span>
+                                      <span className="text-primary">{formatCurrency(grandTotal)}</span>
+                                  </div>
+                              </CardFooter>
+                          )}
+                      </Card>
+                  </div>
+              </div>
             </main>
         </div>
     </>

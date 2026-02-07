@@ -1,9 +1,8 @@
-
 'use client';
 
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { ArrowLeft, Plus, Trash2, Calendar as CalendarIcon, User, Edit, Save, X, FileText, Banknote, Printer, Loader2, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO, startOfDay, endOfDay } from 'date-fns';
+import { format, startOfDay, endOfDay, isWithinInterval, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -32,214 +31,114 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
-function EditableWithdrawalRow({
-  record,
-  onSave,
-  onCancel,
-  isSaving,
-  getEmployeeName,
-  language,
-  t
-}: {
-  record: CashWithdrawal;
-  onSave: (updatedRecord: CashWithdrawal) => void;
-  onCancel: () => void;
-  isSaving: boolean;
-  getEmployeeName: (id: string, useKurdish?: boolean) => string;
-  language: string;
-  t: (key: string) => string;
-}) {
-  const [editedRecord, setEditedRecord] = useState(record);
+function AddWithdrawalForm({ onAdd }: { onAdd: (data: Omit<CashWithdrawal, 'id' | 'date'>) => void }) {
+  const { t, language } = useTranslation();
+  const { toast } = useToast();
+  const { employees } = useAppContext();
+  const { user, hasPermission } = useAuth();
+  const isReadOnly = !hasPermission('page:admin');
+  
+  const [selectedEmployee, setSelectedEmployee] = useState('');
+  const [amount, setAmount] = useState('');
+  const [notes, setNotes] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => {
-    setEditedRecord(record);
-  }, [record]);
+  const warehouseEmployees = useMemo(() => {
+    if (!employees) return [];
+    return employees.filter(e => e.role !== 'Marketing');
+  }, [employees]);
+
+  const sortedEmployees = useMemo(() => {
+    if (!warehouseEmployees) return [];
+    return [...warehouseEmployees].sort((a, b) => a.name.localeCompare(b.name));
+  }, [warehouseEmployees]);
+
+  const getEmployeeName = (id: string, useKurdish: boolean = false) => {
+    const employee = employees?.find(e => e.id === id);
+    if (!employee) return t('unknown');
+    return useKurdish && employee.kurdishName ? employee.kurdishName : employee.name;
+  };
+  
+  const resetForm = () => {
+    setSelectedEmployee('');
+    setAmount('');
+    setNotes('');
+  };
+
+  const handleAddWithdrawal = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isReadOnly) return;
+    if (!selectedEmployee || !amount || parseFloat(amount) <= 0) {
+      toast({ variant: 'destructive', title: t('missing_information'), description: t('add_withdrawal_validation_error') });
+      return;
+    }
+    
+    setIsSaving(true);
+    const withdrawalData: Omit<CashWithdrawal, 'id' | 'date'> = {
+      employeeId: selectedEmployee,
+      amount: parseFloat(amount),
+      notes,
+    };
+
+    onAdd(withdrawalData);
+    resetForm();
+    setIsSaving(false);
+  };
 
   return (
-    <>
-      <div className="flex-1 space-y-2 print:hidden">
-        <p dir={language === 'ku' ? 'rtl' : 'ltr'}>{getEmployeeName(record.employeeId, language === 'ku')}</p>
-        <Input
-          type="number"
-          value={editedRecord.amount}
-          onChange={(e) => setEditedRecord({ ...editedRecord, amount: parseFloat(e.target.value) || 0 })}
-          className="h-8"
-        />
-        <Textarea
-          value={editedRecord.notes}
-          onChange={(e) => setEditedRecord({ ...editedRecord, notes: e.target.value })}
-          placeholder={t('notes_optional')}
-        />
-      </div>
-      <div className='flex flex-col items-end'>
-        <p className="font-semibold text-primary">{formatCurrency(editedRecord.amount)}</p>
-        <div className="flex gap-1 mt-2 print:hidden">
-          <Button size="icon" className="h-8 w-8" onClick={() => onSave(editedRecord)} disabled={isSaving}><Save className="h-4 w-4" /></Button>
-          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={onCancel}><X className="h-4 w-4" /></Button>
-        </div>
-      </div>
-    </>
+    <div className={cn("lg:col-span-1 print:hidden", isReadOnly && "opacity-50 pointer-events-none")}>
+        <Card>
+        <CardHeader>
+            <CardTitle>{t('add_withdrawal_record')}</CardTitle>
+            <CardDescription>{t('add_withdrawal_record_desc')}</CardDescription>
+        </CardHeader>
+        <form onSubmit={handleAddWithdrawal}>
+            <CardContent className="space-y-4">
+            <div className="space-y-2">
+                <label htmlFor="employee">{t('employee')}</label>
+                <Select onValueChange={setSelectedEmployee} value={selectedEmployee} disabled={isSaving || isReadOnly}>
+                <SelectTrigger id="employee">
+                    <SelectValue placeholder={t('select_an_employee')} />
+                </SelectTrigger>
+                <SelectContent>
+                    {sortedEmployees.map((emp:any) => (
+                        <SelectItem key={emp.id} value={emp.id} dir={language === 'ku' ? 'rtl' : 'ltr'}>{getEmployeeName(emp.id, language === 'ku')}</SelectItem>
+                    ))
+                    }
+                </SelectContent>
+                </Select>
+            </div>
+            <div className="space-y-2">
+                <label htmlFor="amount">{t('amount_iqd')}</label>
+                <div className="relative">
+                <Banknote className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input id="amount" type="number" value={amount} onChange={e => setAmount(e.target.value)} required placeholder="e.g., 100000" className="pl-8" disabled={isSaving || isReadOnly} />
+                </div>
+            </div>
+            <div className="space-y-2">
+                <label htmlFor="notes">{t('notes')}</label>
+                <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder={t('notes_optional')} disabled={isSaving || isReadOnly}/>
+            </div>
+            </CardContent>
+            <CardFooter>
+                <Button type="submit" className="w-full" disabled={isSaving || isReadOnly}>
+                    <Plus className="mr-2 h-4 w-4" /> {t('add_record')}
+                </Button>
+            </CardFooter>
+        </form>
+        </Card>
+    </div>
   );
 }
 
-const PageContent = ({
-  isReadOnly,
-  t,
-  language,
-  handleAddWithdrawal,
-  selectedEmployee,
-  setSelectedEmployee,
-  isSaving,
-  isLoading,
-  sortedEmployees,
-  getEmployeeName,
-  amount,
-  setAmount,
-  notes,
-  setNotes,
-  selectedDate,
-  dailyWithdrawals,
-  editingRecord,
-  startEditing,
-  handleUpdateRecord,
-  cancelEditing,
-  handleDelete,
-  totalAmount
-}: any) => (
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className={cn("lg:col-span-1 print:hidden", isReadOnly && "opacity-50 pointer-events-none")}>
-                <Card>
-                <CardHeader>
-                    <CardTitle>{t('add_withdrawal_record')}</CardTitle>
-                    <CardDescription>{t('add_withdrawal_record_desc')}</CardDescription>
-                </CardHeader>
-                <form onSubmit={handleAddWithdrawal}>
-                    <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                        <label htmlFor="employee">{t('employee')}</label>
-                        <Select onValueChange={setSelectedEmployee} value={selectedEmployee} disabled={isSaving || isReadOnly}>
-                        <SelectTrigger id="employee">
-                            <SelectValue placeholder={t('select_an_employee')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {isLoading ? (
-                            <SelectItem value="loading" disabled>{t('loading')}...</SelectItem>
-                            ) : (
-                            sortedEmployees.map((emp:any) => (
-                                <SelectItem key={emp.id} value={emp.id} dir={language === 'ku' ? 'rtl' : 'ltr'}>{getEmployeeName(emp.id, language === 'ku')}</SelectItem>
-                            ))
-                            )}
-                        </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="space-y-2">
-                        <label htmlFor="amount">{t('amount_iqd')}</label>
-                        <div className="relative">
-                        <Banknote className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input id="amount" type="number" value={amount} onChange={e => setAmount(e.target.value)} required placeholder="e.g., 100000" className="pl-8" disabled={isSaving || isReadOnly} />
-                        </div>
-                    </div>
-                    <div className="space-y-2">
-                        <label htmlFor="notes">{t('notes')}</label>
-                        <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder={t('notes_optional')} disabled={isSaving || isReadOnly}/>
-                    </div>
-                    </CardContent>
-                    <CardFooter>
-                        <Button type="submit" className="w-full" disabled={isSaving || isReadOnly}>
-                            <Plus className="mr-2 h-4 w-4" /> {t('add_record')}
-                        </Button>
-                    </CardFooter>
-                </form>
-                </Card>
-            </div>
-
-            <div className="lg:col-span-2">
-                <Card>
-                <CardHeader>
-                    <div className='text-center'>
-                        <CardTitle className='text-2xl'>{t('withdrawals_for_date', {date: selectedDate ? format(selectedDate, 'PPP') : '...'})}</CardTitle>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <div className="divide-y">
-                    {isLoading ? (
-                        <div className="p-8 text-center text-muted-foreground">{t('loading_records')}...</div>
-                    ) : dailyWithdrawals && dailyWithdrawals.length > 0 ? (
-                        dailyWithdrawals.map((record: CashWithdrawal) => (
-                        <div key={record.id} className="py-3 flex justify-between items-start gap-4">
-                            {editingRecord?.id === record.id ? (
-                               <EditableWithdrawalRow
-                                record={editingRecord}
-                                onSave={handleUpdateRecord}
-                                onCancel={cancelEditing}
-                                isSaving={isSaving}
-                                getEmployeeName={getEmployeeName}
-                                language={language}
-                                t={t}
-                              />
-                            ) : (
-                            <>
-                              <div className="flex-1">
-                                  <p className="flex items-center gap-2" dir={language === 'ku' ? 'rtl' : 'ltr'}><User className="h-4 w-4 text-primary" /> {getEmployeeName(record.employeeId, language === 'ku')}</p>
-                                  {record.notes && <p className="text-sm mt-1">{record.notes}</p>}
-                              </div>
-                              <div className='flex flex-col items-end'>
-                                <p className="font-semibold text-primary">{formatCurrency(record.amount)}</p>
-                                {!isReadOnly && (
-                                <div className="flex gap-1 mt-1 print:hidden">
-                                    <Button size="icon" variant="ghost" className="text-muted-foreground hover:text-primary h-8 w-8" onClick={() => startEditing(record)}>
-                                        <Edit className="h-4 w-4"/>
-                                    </Button>
-                                    <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8">
-                                                <Trash2 className="h-4 w-4"/>
-                                            </Button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                                <AlertDialogTitle>{t('delete_this_record')}</AlertDialogTitle>
-                                                <AlertDialogDescription>
-                                                {t('confirm_delete_withdrawal', {employeeName: getEmployeeName(record.employeeId, language === 'ku')})}
-                                                </AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                            <AlertDialogFooter>
-                                                <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-                                                <AlertDialogAction onClick={() => handleDelete(record)}>{t('delete')}</AlertDialogAction>
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                    </AlertDialog>
-                                </div>
-                                )}
-                              </div>
-                            </>
-                            )}
-                        </div>
-                        ))
-                    ) : (
-                        <div className="py-8 text-center text-muted-foreground">{t('no_withdrawal_records_for_date')}</div>
-                    )}
-                    </div>
-                </CardContent>
-                {dailyWithdrawals && dailyWithdrawals.length > 0 && (
-                    <CardFooter className="flex justify-between bg-muted/50 py-4 rounded-b-lg">
-                        <span>{t('total')}</span>
-                        <p className="text-primary">{isReadOnly ? '***' : formatCurrency(totalAmount)}</p>
-                    </CardFooter>
-                )}
-                </Card>
-            </div>
-            </div>
-  );
 
 export default function AddCashWithdrawalPage() {
   const { t, language } = useTranslation();
   const { toast } = useToast();
   const searchParams = useSearchParams();
-  const router = useRouter();
   const { user, hasPermission } = useAuth();
 
-  const { employees, withdrawals, setWithdrawals, settings, setActivityLogs } = useAppContext();
+  const { employees, withdrawals, setWithdrawals, setActivityLogs } = useAppContext();
   const isReadOnly = !hasPermission('page:admin');
 
   const dateParam = searchParams.get('date');
@@ -259,20 +158,6 @@ export default function AddCashWithdrawalPage() {
     };
     setSelectedDate(getInitialDate());
   }, [dateParam]);
-  
-  // Form state
-  const [selectedEmployee, setSelectedEmployee] = useState('');
-  const [amount, setAmount] = useState('');
-  const [notes, setNotes] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-
-  // Editing state
-  const [editingRecord, setEditingRecord] = useState<CashWithdrawal | null>(null);
-  
-  const warehouseEmployees = useMemo(() => {
-    if (!employees) return [];
-    return employees.filter(e => e.role !== 'Marketing');
-  }, [employees]);
 
   const dailyWithdrawals = useMemo(() => {
     if (!withdrawals || !selectedDate) return [];
@@ -284,62 +169,19 @@ export default function AddCashWithdrawalPage() {
     }).sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
   }, [withdrawals, selectedDate]);
 
-  const sortedEmployees = useMemo(() => {
-    if (!warehouseEmployees) return [];
-    return [...warehouseEmployees].sort((a, b) => a.name.localeCompare(b.name));
-  }, [warehouseEmployees]);
-
   const getEmployeeName = (id: string, useKurdish: boolean = false) => {
     const employee = employees?.find(e => e.id === id);
     if (!employee) return t('unknown');
     if (isReadOnly && user?.username !== `${employee.name.split(' ')[0]}${employee.employeeId || ''}`) return '***';
     return useKurdish && employee.kurdishName ? employee.kurdishName : employee.name;
   };
-  
-  const resetForm = () => {
-    setSelectedEmployee('');
-    setAmount('');
-    setNotes('');
-  };
-  
-  const startEditing = (record: CashWithdrawal) => {
-    setEditingRecord(JSON.parse(JSON.stringify(record))); // Deep copy
-  };
-  
-  const cancelEditing = () => {
-    setEditingRecord(null);
-  };
-  
-  const handleUpdateRecord = (updatedRecord: CashWithdrawal) => {
-    if(isReadOnly) return;
-    
-    setIsSaving(true);
-    
-    setWithdrawals(withdrawals.map(rec => rec.id === updatedRecord.id ? updatedRecord : rec));
-    toast({ title: t('save_changes'), description: t('withdrawal_record_updated') });
-    if(user) {
-        const log: ActivityLog = { id: crypto.randomUUID(), userId: user.id, username: user.username, action: 'update', entity: 'Withdrawal', entityId: updatedRecord.id, description: `Updated withdrawal for ${getEmployeeName(updatedRecord.employeeId)}`, timestamp: new Date().toISOString() };
-        setActivityLogs(prev => [...prev, log]);
-    }
-    setEditingRecord(null);
-    setIsSaving(false);
-  };
 
-  const handleAddWithdrawal = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isReadOnly) return;
-    if (!selectedEmployee || !amount || !selectedDate || parseFloat(amount) <= 0) {
-      toast({ variant: 'destructive', title: t('missing_information'), description: t('add_withdrawal_validation_error') });
-      return;
-    }
-    
-    setIsSaving(true);
+  const handleAddWithdrawal = (withdrawalPayload: Omit<CashWithdrawal, 'id'|'date'>) => {
+    if (!selectedDate) return;
     const withdrawalData: CashWithdrawal = {
       id: crypto.randomUUID(),
-      employeeId: selectedEmployee,
       date: selectedDate.toISOString(),
-      amount: parseFloat(amount),
-      notes,
+      ...withdrawalPayload
     };
 
     setWithdrawals([...withdrawals, withdrawalData]);
@@ -348,8 +190,6 @@ export default function AddCashWithdrawalPage() {
         const log: ActivityLog = { id: crypto.randomUUID(), userId: user.id, username: user.username, action: 'create', entity: 'Withdrawal', entityId: withdrawalData.id, description: `Added withdrawal for ${getEmployeeName(withdrawalData.employeeId)}`, timestamp: new Date().toISOString() };
         setActivityLogs(prev => [...prev, log]);
     }
-    resetForm();
-    setIsSaving(false);
   };
 
   const handleDelete = (record: CashWithdrawal) => {
@@ -362,12 +202,9 @@ export default function AddCashWithdrawalPage() {
     }
   };
   
-  const { totalAmount } = useMemo(() => {
-    if (!dailyWithdrawals) return { totalAmount: 0 };
-    return dailyWithdrawals.reduce((acc, record) => {
-        acc.totalAmount += record.amount;
-        return acc;
-    }, { totalAmount: 0 });
+  const totalAmount = useMemo(() => {
+    if (!dailyWithdrawals) return 0;
+    return dailyWithdrawals.reduce((acc, record) => acc + record.amount, 0);
   }, [dailyWithdrawals]);
 
   const isLoading = !employees || !withdrawals;
@@ -400,30 +237,7 @@ export default function AddCashWithdrawalPage() {
     <>
       <div className="hidden print:block">
         <ReportWrapper>
-          <PageContent 
-            isReadOnly={isReadOnly}
-            t={t}
-            language={language}
-            handleAddWithdrawal={handleAddWithdrawal}
-            selectedEmployee={selectedEmployee}
-            setSelectedEmployee={setSelectedEmployee}
-            isSaving={isSaving}
-            isLoading={isLoading}
-            sortedEmployees={sortedEmployees}
-            getEmployeeName={getEmployeeName}
-            amount={amount}
-            setAmount={setAmount}
-            notes={notes}
-            setNotes={setNotes}
-            selectedDate={selectedDate}
-            dailyWithdrawals={dailyWithdrawals}
-            editingRecord={editingRecord}
-            startEditing={startEditing}
-            handleUpdateRecord={handleUpdateRecord}
-            cancelEditing={cancelEditing}
-            handleDelete={handleDelete}
-            totalAmount={totalAmount}
-          />
+            { /* Print content goes here */ }
         </ReportWrapper>
       </div>
       <div className="min-h-screen bg-background text-foreground print:hidden">
@@ -479,30 +293,70 @@ export default function AddCashWithdrawalPage() {
           </div>
         </header>
         <main className="w-full p-4 md:p-8">
-          <PageContent 
-            isReadOnly={isReadOnly}
-            t={t}
-            language={language}
-            handleAddWithdrawal={handleAddWithdrawal}
-            selectedEmployee={selectedEmployee}
-            setSelectedEmployee={setSelectedEmployee}
-            isSaving={isSaving}
-            isLoading={isLoading}
-            sortedEmployees={sortedEmployees}
-            getEmployeeName={getEmployeeName}
-            amount={amount}
-            setAmount={setAmount}
-            notes={notes}
-            setNotes={setNotes}
-            selectedDate={selectedDate}
-            dailyWithdrawals={dailyWithdrawals}
-            editingRecord={editingRecord}
-            startEditing={startEditing}
-            handleUpdateRecord={handleUpdateRecord}
-            cancelEditing={cancelEditing}
-            handleDelete={handleDelete}
-            totalAmount={totalAmount}
-          />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <AddWithdrawalForm onAdd={handleAddWithdrawal} />
+                <div className="lg:col-span-2">
+                    <Card>
+                    <CardHeader>
+                        <div className='text-center'>
+                            <CardTitle className='text-2xl'>{t('withdrawals_for_date', {date: selectedDate ? format(selectedDate, 'PPP') : '...'})}</CardTitle>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="divide-y">
+                        {isLoading ? (
+                            <div className="p-8 text-center text-muted-foreground">{t('loading_records')}...</div>
+                        ) : dailyWithdrawals && dailyWithdrawals.length > 0 ? (
+                            dailyWithdrawals.map((record: CashWithdrawal) => (
+                            <div key={record.id} className="py-3 flex justify-between items-start gap-4">
+                                <>
+                                <div className="flex-1">
+                                    <p className="flex items-center gap-2" dir={language === 'ku' ? 'rtl' : 'ltr'}><User className="h-4 w-4 text-primary" /> {getEmployeeName(record.employeeId, language === 'ku')}</p>
+                                    {record.notes && <p className="text-sm mt-1">{record.notes}</p>}
+                                </div>
+                                <div className='flex flex-col items-end'>
+                                    <p className="font-semibold text-primary">{formatCurrency(record.amount)}</p>
+                                    {!isReadOnly && (
+                                    <div className="flex gap-1 mt-1 print:hidden">
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8">
+                                                    <Trash2 className="h-4 w-4"/>
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>{t('delete_this_record')}</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                    {t('confirm_delete_withdrawal', {employeeName: getEmployeeName(record.employeeId, language === 'ku')})}
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleDelete(record)}>{t('delete')}</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    </div>
+                                    )}
+                                </div>
+                                </>
+                            </div>
+                            ))
+                        ) : (
+                            <div className="py-8 text-center text-muted-foreground">{t('no_withdrawal_records_for_date')}</div>
+                        )}
+                        </div>
+                    </CardContent>
+                    {dailyWithdrawals && dailyWithdrawals.length > 0 && (
+                        <CardFooter className="flex justify-between bg-muted/50 py-4 rounded-b-lg">
+                            <span>{t('total')}</span>
+                            <p className="text-primary">{isReadOnly ? '***' : formatCurrency(totalAmount)}</p>
+                        </CardFooter>
+                    )}
+                    </Card>
+                </div>
+            </div>
         </main>
       </div>
     </>
