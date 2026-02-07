@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -54,11 +55,10 @@ export default function LoginPage() {
                 priority
             />
         )}
-        <div className="absolute inset-0 bg-black/50" />
-        <Card className="relative z-10 w-full max-w-sm bg-background/80 backdrop-blur-sm animate-fade-in-down">
-            <CardHeader className="text-center">
+        <Card className="relative z-10 w-full max-w-sm">
+            <CardHeader className="items-center text-center">
                 {settings.appLogo && (
-                    <div className="relative w-full h-20 mb-4">
+                    <div className="relative w-16 h-16 mb-2">
                         <Image
                             key={settings.appLogo}
                             src={settings.appLogo}
@@ -72,7 +72,7 @@ export default function LoginPage() {
                 <CardDescription>{t('login_description')}</CardDescription>
             </CardHeader>
             <CardContent>
-                <form onSubmit={handleLogin} className="space-y-6">
+                <form onSubmit={handleLogin} className="space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="username">Username</Label>
                         <Input
@@ -97,7 +97,7 @@ export default function LoginPage() {
                             disabled={isLoading}
                         />
                     </div>
-                    <Button type="submit" className="w-full" disabled={isLoading}>
+                    <Button type="submit" className="w-full !mt-6" disabled={isLoading}>
                         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Login
                     </Button>
