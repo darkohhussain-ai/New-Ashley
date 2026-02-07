@@ -12,6 +12,7 @@ import { Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { useAppContext } from '@/context/app-provider';
 import { useTranslation } from '@/hooks/use-translation';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 
 export default function LoginPage() {
@@ -44,74 +45,74 @@ export default function LoginPage() {
   };
 
   return (
-     <div className="w-full min-h-screen lg:grid lg:grid-cols-2">
-      <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto w-full max-w-md space-y-8">
-          <div>
-            {settings.appLogo && (
-              <div className="relative w-full h-20 mb-6">
-                <Image
-                  key={settings.appLogo}
-                  src={settings.appLogo}
-                  alt="App Logo"
-                  fill
-                  className="object-contain"
-                />
-              </div>
-            )}
-            <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-foreground">
-              {t('login_title')}
-            </h2>
-            <p className="mt-2 text-center text-sm text-muted-foreground">
-              {t('login_description')}
-            </p>
-          </div>
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                type="text"
-                placeholder="Enter your username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-                disabled={isLoading}
-                className="h-12 text-base"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={isLoading}
-                className="h-12 text-base"
-              />
-            </div>
-            <Button type="submit" className="w-full h-12 text-lg" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Login
-            </Button>
-          </form>
-        </div>
-      </div>
-      <div className="hidden lg:block relative">
+     <div className="relative flex min-h-screen w-full items-center justify-center p-4">
         {settings.loginBackground && (
           <Image
             key={settings.loginBackground}
             src={settings.loginBackground}
             alt="Login background"
             fill
-            className="object-cover"
+            className="object-cover -z-10"
             priority
           />
         )}
-      </div>
+        <div className="absolute inset-0 bg-black/50 -z-10" />
+        
+        <Card className="w-full max-w-md">
+            <CardHeader className="text-center">
+                {settings.appLogo && (
+                  <div className="relative w-full h-20 mb-4">
+                    <Image
+                      key={settings.appLogo}
+                      src={settings.appLogo}
+                      alt="App Logo"
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
+                )}
+                <CardTitle className="text-3xl">
+                  {t('login_title')}
+                </CardTitle>
+                <CardDescription>
+                  {t('login_description')}
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <form onSubmit={handleLogin} className="space-y-6">
+                    <div className="space-y-2">
+                    <Label htmlFor="username">Username</Label>
+                    <Input
+                        id="username"
+                        type="text"
+                        placeholder="Enter your username"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        required
+                        disabled={isLoading}
+                        className="h-12 text-base"
+                    />
+                    </div>
+                    <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <Input
+                        id="password"
+                        type="password"
+                        placeholder="Enter your password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        disabled={isLoading}
+                        className="h-12 text-base"
+                    />
+                    </div>
+                    <Button type="submit" className="w-full h-12 text-lg" disabled={isLoading}>
+                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Login
+                    </Button>
+                </form>
+            </CardContent>
+        </Card>
     </div>
   );
 }
