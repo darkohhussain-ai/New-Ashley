@@ -1,11 +1,9 @@
-
 "use client"
 
 import { createContext, useContext, useEffect, useState, useMemo, ReactNode, useCallback } from "react"
 import { useAuth } from "@/hooks/use-auth"
 import { useAppContext } from "@/context/app-provider"
-import { useDoc, useFirestore, useMemoFirebase, setDocumentNonBlocking } from "@/firebase"
-import { doc } from 'firebase/firestore'
+import { useDoc, useFirestore, useMemoFirebase, setDocumentNonBlocking, doc } from "@/firebase"
 
 type Theme = "dark" | "light"
 
@@ -27,7 +25,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     return doc(db, 'users', user.id, 'settings', 'main');
   }, [db, user]);
 
-  const { data: userSettings, isLoading: isUserSettingsLoading } = useDoc<{ darkModeEnabled: boolean }>(userSettingsRef);
+  const { data: userSettings } = useDoc<{ darkModeEnabled: boolean }>(userSettingsRef);
   
   // Determine the effective theme
   const theme = useMemo(() => {
@@ -53,11 +51,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
   }, [userSettingsRef]);
   
-  // The main AppProvider handles the initial splash screen
-  if (isAppLoading || isAuthLoading) {
-    return null;
-  }
-
   return (
     <ThemeProviderContext.Provider value={{ theme, setTheme }}>
       {children}

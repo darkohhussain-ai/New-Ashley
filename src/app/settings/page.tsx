@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -32,6 +31,12 @@ import {
   ClipboardList,
   Printer,
   FileSpreadsheet,
+  Plus,
+  Users,
+  KeyRound,
+  History,
+  Cloud,
+  Edit,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -72,9 +77,11 @@ import type {
   AppSettings,
   BranchColors,
   ItemForTransfer,
-  ActivityLog
+  ActivityLog,
+  User,
+  Role,
 } from '@/lib/types';
-import { format, formatISO } from 'date-fns';
+import { format, formatISO, parseISO } from 'date-fns';
 import {
   Select,
   SelectContent,
@@ -96,58 +103,6 @@ import { useAppContext } from '@/context/app-provider';
 import { useAuth } from '@/hooks/use-auth';
 import { initialSettings, initialData } from '@/context/initial-data';
 import { TransmitReportPdf } from '@/components/transmit/TransmitReportPdf';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
-
-const reportTypes = [
-  { value: 'general', label: 'General' },
-  { value: 'expense', label: 'Expense' },
-  { value: 'overtime', label: 'Overtime' },
-  { value: 'bonus', label: 'Bonus' },
-  { value: 'withdrawal', label: 'Withdrawal' },
-];
-
-const destinations = ["Erbil", "Baghdad", "Dohuk", "Diwan"];
-
-// Mock data for previews
-const mockEmployee: Employee = {
-  id: 'preview-123',
-  name: 'John Doe',
-  employeeId: 'EMP-007',
-  role: 'Manager',
-  photoUrl: 'https://picsum.photos/seed/johndoe/400',
-  email: 'john.doe@example.com',
-  phone: '555-1234',
-  employmentStartDate: '2022-01-15T00:00:00.000Z',
-  dateOfBirth: '1985-05-20T00:00:00.000Z',
-  isActive: true,
-};
-
-const mockTransfer: Transfer = {
-  id: 'transfer-prev-123',
-  transferDate: formatISO(new Date()),
-  cargoName: 'Preview Cargo to Erbil',
-  destinationCity: 'Erbil',
-  driverName: 'Driver Name',
-  warehouseManagerName: 'Manager Name',
-  itemIds: ['item1', 'item2', 'item3'],
-  invoiceNumber: 1,
-};
-
-const mockTransferItems: ItemForTransfer[] = [
-  { id: '1', model: 'Sofa Model X', quantity: 1, notes: 'Handle with care', destination: 'Erbil', createdAt: new Date().toISOString(), status: 'Pending' },
-  { id: '2', model: 'Dining Table', quantity: 1, notes: '', destination: 'Erbil', createdAt: new Date().toISOString(), status: 'Prepared' },
-  { id: '3', model: 'Chair Model Y', quantity: 4, notes: 'Packed separately', destination: 'Erbil', createdAt: new Date().toISOString(), storage: 'Huana', status: 'Approved' },
-];
-
-function parseHsl(hsl: string): { h: string; s: string; l: string } {
-  if (typeof hsl !== 'string' || hsl.split(' ').length !== 3) {
-    const [h, s, l] = '0 0% 0%'.replace(/%/g, '').split(' ').map(s => s.trim());
-    return { h, s, l };
-  }
-  const [h, s, l] = hsl.replace(/%/g, '').split(' ').map(s => s.trim());
-  return { h, s, l };
-}
 
 function ColorPicker({
   label,
@@ -159,6 +114,16 @@ function ColorPicker({
   onChange: (value: string) => void;
 }) {
   const { t } = useTranslation();
+  
+  // Minimal HSL parser
+  const parseHsl = (hsl: string) => {
+    if (typeof hsl !== 'string' || hsl.split(' ').length !== 3) {
+      return { h: '0', s: '0', l: '0' };
+    }
+    const [h, s, l] = hsl.replace(/%/g, '').split(' ').map(s => s.trim());
+    return { h, s, l };
+  };
+
   const { h, s, l } = parseHsl(value);
 
   const handleHslChange = (part: 'h' | 's' | 'l', newValue: string) => {
@@ -179,50 +144,6 @@ function ColorPicker({
       .join('')}`;
   };
 
-  const handleHexChange = (hex: string) => {
-    let r = 0,
-      g = 0,
-      b = 0;
-    if (hex.length === 4) {
-      r = parseInt(hex[1] + hex[1], 16);
-      g = parseInt(hex[2] + hex[2], 16);
-      b = parseInt(hex[3] + hex[3], 16);
-    } else if (hex.length === 7) {
-      r = parseInt(hex.substring(1, 3), 16);
-      g = parseInt(hex.substring(3, 5), 16);
-      b = parseInt(hex.substring(5, 7), 16);
-    }
-    r /= 255;
-    g /= 255;
-    b /= 255;
-    const max = Math.max(r, g, b),
-      min = Math.min(r, g, b);
-    let hue = 0,
-      sat = 0,
-      light = (max + min) / 2;
-
-    if (max !== min) {
-      const d = max - min;
-      sat = light > 0.5 ? d / (2 - max - min) : d / (max + min);
-      switch (max) {
-        case r:
-          hue = (g - b) / d + (g < b ? 6 : 0);
-          break;
-        case g:
-          hue = (b - r) / d + 2;
-          break;
-        case b:
-          hue = (r - g) / d + 4;
-          break;
-      }
-      hue /= 6;
-    }
-    hue = Math.round(hue * 360);
-    sat = Math.round(sat * 100);
-    light = Math.round(light * 100);
-    onChange(`${hue} ${sat}% ${light}%`);
-  };
-
   return (
     <div className="flex items-center justify-between">
       <Label className="capitalize text-sm">
@@ -232,8 +153,8 @@ function ColorPicker({
         <Input
           type="color"
           value={hslToHex(Number(h), Number(s), Number(l))}
-          onChange={e => handleHexChange(e.target.value)}
-          className="w-8 h-8 p-1 rounded-md"
+          onChange={() => {}} // Controlled by text inputs
+          className="w-8 h-8 p-1 rounded-md pointer-events-none"
         />
         <div className="flex items-center gap-1 text-xs">
           <Input
@@ -260,193 +181,56 @@ function ColorPicker({
   );
 }
 
-function LoginTextEditor({ draftSettings, setDraftSettings }: {
-  draftSettings: AppSettings;
-  setDraftSettings: React.Dispatch<React.SetStateAction<AppSettings>>;
-}) {
-  const handleTranslationChange = (lang: 'en' | 'ku', key: string, value: string) => {
-    setDraftSettings(prev => ({
-      ...prev,
-      translations: {
-        ...prev.translations,
-        [lang]: {
-          ...prev.translations[lang],
-          [key]: value,
-        },
-      },
-    }));
-  };
-
+function UserManagement() {
+  const { users, roles, t } = useAppContext();
+  
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <LogIn /> Login Page Text
-        </CardTitle>
-        <CardDescription>
-          Customize the title and description on the login screen.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="space-y-4">
-          <h3 className="text-sm text-muted-foreground">
-            English
-          </h3>
-          <div className="space-y-2">
-            <Label htmlFor="login-title-en">Login Title</Label>
-            <Input
-              id="login-title-en"
-              value={draftSettings.translations.en.login_title || ''}
-              onChange={e => handleTranslationChange('en', 'login_title', e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="login-desc-en">Login Description</Label>
-            <Input
-              id="login-desc-en"
-              value={draftSettings.translations.en.login_description || ''}
-              onChange={e => handleTranslationChange('en', 'login_description', e.target.value)}
-            />
-          </div>
+    <div className="space-y-4">
+        <div className="flex justify-between items-center">
+            <h3 className="text-lg font-bold">User Accounts</h3>
+            <Button disabled>
+                <Plus className="mr-2 h-4 w-4" /> Add User
+            </Button>
         </div>
-        <div className="space-y-4">
-          <h3 className="text-sm text-muted-foreground">
-            Kurdish
-          </h3>
-          <div className="space-y-2">
-            <Label htmlFor="login-title-ku">Sernivîsa Têketinê</Label>
-            <Input
-              id="login-title-ku"
-              value={draftSettings.translations.ku.login_title || ''}
-              onChange={e => handleTranslationChange('ku', 'login_title', e.target.value)}
-              dir="rtl"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="login-desc-ku">Danasîna Têketinê</Label>
-            <Input
-              id="login-desc-ku"
-              value={draftSettings.translations.ku.login_description || ''}
-              onChange={e => handleTranslationChange('ku', 'login_description', e.target.value)}
-              dir="rtl"
-            />
-          </div>
+        <div className="border rounded-xl overflow-hidden">
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>Username</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {users.map(user => (
+                        <TableRow key={user.id}>
+                            <TableCell className="font-medium">{user.username}</TableCell>
+                            <TableCell>{roles.find(r => r.id === user.roleId)?.name || 'Unknown'}</TableCell>
+                            <TableCell className="text-right">
+                                <Button variant="ghost" size="icon" disabled>
+                                    <Edit className="h-4 w-4" />
+                                </Button>
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
         </div>
-      </CardContent>
-    </Card>
+    </div>
   );
 }
-
-function TranslationEditor({ onSave, draftSettings, setDraftSettings }: {
-  onSave: () => void;
-  draftSettings: AppSettings;
-  setDraftSettings: React.Dispatch<React.SetStateAction<AppSettings>>;
-}) {
-  const { t } = useTranslation();
-  const [search, setSearch] = useState('');
-
-  const handleTranslationChange = (lang: 'en' | 'ku', key: string, value: string) => {
-    setDraftSettings(prev => ({
-      ...prev,
-      translations: {
-        ...prev.translations,
-        [lang]: {
-          ...prev.translations[lang],
-          [key]: value
-        }
-      }
-    }));
-  };
-
-  const filteredKeys = Object.keys(draftSettings.translations.en)
-    .filter(
-      key =>
-        !['login_title', 'login_description'].includes(key) &&
-        (key.toLowerCase().includes(search.toLowerCase()) ||
-          draftSettings.translations.en[key].toLowerCase().includes(search.toLowerCase()) ||
-          (draftSettings.translations.ku[key] &&
-            draftSettings.translations.ku[key].toLowerCase().includes(search.toLowerCase())))
-    )
-    .sort();
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Languages /> {t('app_text')}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="flex gap-4">
-          <div className="relative flex-grow">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search keys or values..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </div>
-        <div className="max-h-[60vh] overflow-y-auto border rounded-lg p-4">
-          <div className="grid grid-cols-[1fr_2fr_2fr] gap-x-4 gap-y-2 sticky top-0 bg-background pb-2 border-b mb-2">
-            <Label>Key</Label>
-            <Label>English</Label>
-            <Label>Kurdish</Label>
-          </div>
-          <div className="space-y-3">
-            {filteredKeys.map(key => (
-              <div
-                key={key}
-                className="grid grid-cols-[1fr_2fr_2fr] gap-x-4 items-center"
-              >
-                <Label
-                  htmlFor={`key-${key}`}
-                  className="text-xs text-muted-foreground truncate"
-                >
-                  {key}
-                </Label>
-                <Input
-                  id={`en-${key}`}
-                  value={draftSettings.translations.en[key] || ''}
-                  onChange={e => handleTranslationChange('en', key, e.target.value)}
-                />
-                <Input
-                  id={`ku-${key}`}
-                  value={draftSettings.translations.ku[key] || ''}
-                  onChange={e => handleTranslationChange('ku', key, e.target.value)}
-                  dir="rtl"
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
 
 function SettingsPage() {
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
   const { t } = useTranslation();
-  const { settings, setSettings, setEmployees, setItems, setExcelFiles, setLocations, setExpenses, setExpenseReports, setOvertime, setBonuses, setWithdrawals, setReceipts, setItemCategories, setTransfers, setTransferItems, setMarketingFeedbacks, setEvaluationQuestions, setUsers, setRoles, setActivityLogs } = useAppContext();
-  const { user, hasPermission } = useAuth();
+  const { settings, setSettings } = useAppContext();
+  const { hasPermission } = useAuth();
 
-  const [draftSettings, setDraftSettings] =
-    useState<AppSettings>(initialSettings);
+  const [draftSettings, setDraftSettings] = useState<AppSettings>(initialSettings);
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isUploading, setIsUploading] = useState<string | null>(null);
-
-  const [activePdfTab, setActivePdfTab] = useState<'report' | 'invoice' | 'card' | 'datasheet'>('report');
-  const [selectedReportType, setSelectedReportType] =
-    useState<keyof NonNullable<AllPdfSettings['report']['reportColors']>>('general');
-  const [importFile, setImportFile] = useState<File | null>(null);
-  const importInputRef = useRef<HTMLInputElement>(null);
   const [resetConfirmText, setResetConfirmText] = useState("");
-  const pdfPreviewRef = useRef<HTMLDivElement>(null);
   
   const isAdmin = hasPermission('admin:all');
 
@@ -464,35 +248,11 @@ function SettingsPage() {
     }
   }, [settings, draftSettings]);
 
-  const applyColors = (colors: ThemeColors) => {
-    const root = document.documentElement;
-    if (!colors) return;
-    Object.entries(colors).forEach(([key, value]) => {
-      const cssVar = `--${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`;
-      if (key && value) {
-        root.style.setProperty(cssVar, value);
-      }
-    });
-  };
-
-  useEffect(() => {
-    if (draftSettings) {
-      if (theme === 'dark') {
-        applyColors(draftSettings.darkThemeColors);
-      } else {
-        applyColors(draftSettings.lightThemeColors);
-      }
-    }
-  }, [draftSettings?.lightThemeColors, draftSettings?.darkThemeColors, theme, draftSettings]);
-
   const handleDraftChange = (key: keyof AppSettings, value: any) => {
     setDraftSettings(prev => ({ ...prev, [key]: value }));
   };
   
-  const handleFileUpload = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    settingKeyPath: string
-  ) => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, settingKeyPath: string) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -513,23 +273,11 @@ function SettingsPage() {
         });
       }
     };
-    reader.onerror = () => {
-      toast({
-        variant: 'destructive',
-        title: 'File Read Error',
-        description: 'Could not read the selected file.',
-      });
-    };
     reader.readAsDataURL(file);
   };
 
-  const handleThemeColorChange = (
-    mode: 'light' | 'dark',
-    property: keyof ThemeColors,
-    value: string
-  ) => {
-    const themeKey =
-      mode === 'light' ? 'lightThemeColors' : 'darkThemeColors';
+  const handleThemeColorChange = (mode: 'light' | 'dark', property: keyof ThemeColors, value: string) => {
+    const themeKey = mode === 'light' ? 'lightThemeColors' : 'darkThemeColors';
     setDraftSettings(prev => ({
       ...prev,
       [themeKey]: {
@@ -539,199 +287,27 @@ function SettingsPage() {
     }));
   };
 
-  const handlePdfSettingChange = <K extends keyof PdfSettings>(
-    key: K,
-    value: PdfSettings[K]
-  ) => {
-    setDraftSettings(prev => ({
-      ...prev,
-      pdfSettings: {
-        ...prev.pdfSettings,
-        [activePdfTab]: {
-          ...prev.pdfSettings[activePdfTab],
-          [key]: value,
-        },
-      },
-    }));
-  };
-
-  const handleReportColorChange = (
-    reportType: keyof NonNullable<AllPdfSettings['report']['reportColors']>,
-    color: string
-  ) => {
-    setDraftSettings(prev => ({
-      ...prev,
-      pdfSettings: {
-        ...prev.pdfSettings,
-        report: {
-          ...prev.pdfSettings.report,
-          reportColors: {
-            ...prev.pdfSettings.report.reportColors,
-            [reportType]: color,
-          },
-        },
-      },
-    }));
-  };
-
-   const handleBranchColorChange = (branch: keyof BranchColors, color: string) => {
-    setDraftSettings(prev => ({
-      ...prev,
-      pdfSettings: {
-        ...prev.pdfSettings,
-        invoice: {
-          ...prev.pdfSettings.invoice,
-          branchColors: {
-            ...prev.pdfSettings.invoice.branchColors,
-            [branch]: color,
-          },
-        },
-      },
-    }));
-  };
-
-
   const handleSave = async () => {
     if (!isAdmin) return;
     setIsSaving(true);
-    
-    const savingToast = toast({
-      title: 'Saving Settings...',
-      description: 'Your changes are being saved and applied.',
-      duration: 5000,
-    });
-
     try {
         await setSettings(draftSettings);
-        if(user) {
-            const log: ActivityLog = { id: crypto.randomUUID(), userId: user.id, username: user.username, action: 'update', entity: 'System Settings', description: `Updated application settings`, timestamp: new Date().toISOString() };
-            setActivityLogs(prev => [...prev, log]);
-        }
-        
-        savingToast.update({ id: savingToast.id, title: 'Settings Saved', description: 'Your changes have been applied across the application.' });
-
-    } catch (err: any) {
-        console.error("Error saving settings:", err);
-        let description = 'An error occurred while saving. Check the console for details.';
-        if (err.message?.includes('exceeds the maximum allowed size')) {
-           description = "A file is too large. Please use smaller images/fonts and try again.";
-        } else if (err.code === 'permission-denied') {
-            description = "Permission denied. Ensure Firebase Storage CORS rules are configured correctly."
-        }
-        
-        savingToast.update({ id: savingToast.id, variant: 'destructive', title: 'Save Failed', description });
+        toast({ title: 'Settings Saved', description: 'Your changes have been applied.' });
+    } catch (err) {
+        toast({ variant: 'destructive', title: 'Save Failed', description: 'An error occurred while saving.' });
     } finally {
         setIsSaving(false);
     }
   };
 
-
-  const handleCancel = () => {
-    setDraftSettings(settings);
-    toast({
-      title: 'Cancelled',
-      description: 'Your changes have been discarded.',
-    });
-  };
-
   const handleResetToDefault = async () => {
-    const toastId = toast({
-      title: "Resetting Data...",
-      description: "This process can take up to a minute. Please don't close this tab.",
-      duration: 60000,
-    }).id;
-
-    setResetConfirmText("");
-
-    try {
-        const resetOperations = [
-            () => setUsers(initialData.users),
-            () => setRoles(initialData.roles),
-            () => setEmployees(initialData.employees),
-            () => setExcelFiles(initialData.excelFiles),
-            () => setItems(initialData.items),
-            () => setLocations(initialData.locations),
-            () => setExpenses(initialData.expenses),
-            () => setExpenseReports(initialData.expenseReports),
-            () => setOvertime(initialData.overtime),
-            () => setBonuses(initialData.bonuses),
-            () => setWithdrawals(initialData.withdrawals),
-            () => setItemCategories(initialData.itemCategories),
-            () => setTransfers(initialData.transfers),
-            () => setTransferItems(initialData.transferItems),
-            () => setMarketingFeedbacks(initialData.marketingFeedbacks),
-            () => setEvaluationQuestions(initialData.evaluationQuestions),
-        ];
-
-        for (const op of resetOperations) {
-            op();
-            await new Promise(resolve => setTimeout(resolve, 200)); // Throttle writes
-        }
-        
-        await setSettings(initialSettings);
-        setDraftSettings(initialSettings);
-        
-        if (user) {
-            const log: ActivityLog = { id: crypto.randomUUID(), userId: user.id, username: user.username, action: 'delete', entity: 'System', description: 'Performed a full system data reset.', timestamp: new Date().toISOString() };
-            setActivityLogs(prev => [log]); // Overwrite logs
-        }
-
-        toast({
-          id: toastId,
-          title: t('settings_reset'),
-          description: "Reset complete. The application will now reload.",
-        });
-
-        setTimeout(() => {
-            window.location.reload();
-        }, 2000);
-
-    } catch (error) {
-        console.error("Reset failed:", error);
-        toast({
-            id: toastId,
-            variant: "destructive",
-            title: "Reset Failed",
-            description: "An error occurred during the reset process.",
-        });
-    }
+    if (resetConfirmText !== "RESET") return;
+    await setSettings(initialSettings);
+    window.location.reload();
   };
-
-
-  const handleImportFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImportFile(file);
-    }
-  };
-
-
-  if (!settings || !draftSettings) {
-    return (
-      <div className="h-screen bg-background text-foreground flex flex-col">
-        <header className="flex items-center gap-4 mb-8 p-4 border-b">
-            <Button variant="outline" size="icon" asChild>
-                <Link href="/"><ArrowLeft /></Link>
-            </Button>
-            <h1 className="text-2xl md:text-3xl">{t('settings')}</h1>
-        </header>
-        <div className="flex items-center justify-center flex-1">
-          {t('loading')}
-        </div>
-      </div>
-    );
-  }
-
-  const currentPdfSettings = draftSettings.pdfSettings[activePdfTab];
 
   return (
-    <div className={cn("min-h-screen bg-background text-foreground flex flex-col", !isAdmin && "pointer-events-none opacity-60")}>
-       <style>{`
-            @font-face {
-              font-family: 'CustomAppFont';
-              src: ${draftSettings.customFont ? `url(${draftSettings.customFont})` : ''};
-            }
-        `}</style>
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
       <header className="bg-card border-b p-4">
         <div className="w-full flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -747,853 +323,135 @@ function SettingsPage() {
               {isSaving ? <Loader2 className="animate-spin mr-2"/> : <Save className="mr-2 h-4 w-4" />}
               {t('save_all_changes')}
             </Button>
-            <Button onClick={handleCancel} disabled={!isDirty || isSaving} variant="ghost">
-              <X className="mr-2 h-4 w-4" /> {t('cancel')}
-            </Button>
           </div>
         </div>
       </header>
       <main className="flex-1 overflow-y-auto p-4 md:p-6 w-full">
-        {!isAdmin && (
-             <div className="absolute inset-0 bg-background/50 backdrop-blur-sm z-10 flex items-center justify-center">
-                <Card className="max-w-md text-center">
-                    <CardHeader>
-                        <CardTitle>Permissions Required</CardTitle>
-                        <CardDescription>You must be an administrator to change these settings.</CardDescription>
-                    </CardHeader>
-                </Card>
-            </div>
-        )}
         <Tabs defaultValue="design" className="w-full">
           <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="design">
-              <Palette className="mr-2" />
-              {t('design')}
-            </TabsTrigger>
-            <TabsTrigger value="images">
-              <ImageIcon className="mr-2" />
-              {t('images')}
-            </TabsTrigger>
-            <TabsTrigger value="language">
-              <Languages className="mr-2" />
-              {t('language_text')}
-            </TabsTrigger>
-            <TabsTrigger value="pdf">
-              <FileText className="mr-2" />
-              {t('pdf_reports')}
-            </TabsTrigger>
-            <TabsTrigger value="data">
-              <ShieldCheck className="mr-2" />
-              {t('data_management')}
-            </TabsTrigger>
+            <TabsTrigger value="design"><Palette className="mr-2 h-4 w-4" /> {t('design')}</TabsTrigger>
+            <TabsTrigger value="images"><ImageIconLucide className="mr-2 h-4 w-4" /> {t('images')}</TabsTrigger>
+            <TabsTrigger value="language"><Languages className="mr-2 h-4 w-4" /> {t('language_text')}</TabsTrigger>
+            <TabsTrigger value="pdf"><FileText className="mr-2 h-4 w-4" /> {t('pdf_reports')}</TabsTrigger>
+            {isAdmin && <TabsTrigger value="admin"><ShieldCheck className="mr-2 h-4 w-4" /> Admin Control</TabsTrigger>}
           </TabsList>
 
-          <TabsContent value="design" className="pt-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Palette /> {t('general')}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="news-ticker-text">News Ticker Text</Label>
-                    <Input
-                      id="news-ticker-text"
-                      value={draftSettings.newsTickerText}
-                      onChange={e =>
-                        handleDraftChange('newsTickerText', e.target.value)
-                      }
-                      placeholder="Enter scrolling text for the dashboard..."
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="banner-height">
-                      {t('banner_height')}: {draftSettings.dashboardBannerHeight}
-                      px
-                    </Label>
-                    <Slider
-                      id="banner-height"
-                      min={80}
-                      max={300}
-                      step={10}
-                      value={[draftSettings.dashboardBannerHeight]}
-                      onValueChange={value =>
-                        handleDraftChange('dashboardBannerHeight', value[0])
-                      }
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Palette /> {t('color_palette')}
-                  </CardTitle>
-                  <CardDescription>{t('color_palette_desc')}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Tabs defaultValue="light" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="light">{t('light_mode')}</TabsTrigger>
-                      <TabsTrigger value="dark">{t('dark_mode')}</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="light" className="space-y-4 pt-4">
-                      <ColorPicker
-                        label="Background"
-                        value={draftSettings.lightThemeColors.background}
-                        onChange={c =>
-                          handleThemeColorChange('light', 'background', c)
-                        }
-                      />
-                      <ColorPicker
-                        label="Foreground"
-                        value={draftSettings.lightThemeColors.foreground}
-                        onChange={c =>
-                          handleThemeColorChange('light', 'foreground', c)
-                        }
-                      />
-                      <ColorPicker
-                        label="Primary"
-                        value={draftSettings.lightThemeColors.primary}
-                        onChange={c =>
-                          handleThemeColorChange('light', 'primary', c)
-                        }
-                      />
-                      <ColorPicker
-                        label="Accent"
-                        value={draftSettings.lightThemeColors.accent}
-                        onChange={c =>
-                          handleThemeColorChange('light', 'accent', c)
-                        }
-                      />
-                      <ColorPicker
-                        label="Card"
-                        value={draftSettings.lightThemeColors.card}
-                        onChange={c => handleThemeColorChange('light', 'card', c)}
-                      />
-                      <ColorPicker
-                        label="Active Tab Background"
-                        value={
-                          draftSettings.lightThemeColors.tabActiveBackground
-                        }
-                        onChange={c =>
-                          handleThemeColorChange(
-                            'light',
-                            'tabActiveBackground',
-                            c
-                          )
-                        }
-                      />
-                      <ColorPicker
-                        label="Active Tab Foreground"
-                        value={
-                          draftSettings.lightThemeColors.tabActiveForeground
-                        }
-                        onChange={c =>
-                          handleThemeColorChange(
-                            'light',
-                            'tabActiveForeground',
-                            c
-                          )
-                        }
-                      />
-                    </TabsContent>
-                    <TabsContent value="dark" className="space-y-4 pt-4">
-                      <ColorPicker
-                        label="Background"
-                        value={draftSettings.darkThemeColors.background}
-                        onChange={c =>
-                          handleThemeColorChange('dark', 'background', c)
-                        }
-                      />
-                      <ColorPicker
-                        label="Foreground"
-                        value={draftSettings.darkThemeColors.foreground}
-                        onChange={c =>
-                          handleThemeColorChange('dark', 'foreground', c)
-                        }
-                      />
-                      <ColorPicker
-                        label="Primary"
-                        value={draftSettings.darkThemeColors.primary}
-                        onChange={c =>
-                          handleThemeColorChange('dark', 'primary', c)
-                        }
-                      />
-                      <ColorPicker
-                        label="Accent"
-                        value={draftSettings.darkThemeColors.accent}
-                        onChange={c =>
-                          handleThemeColorChange('dark', 'accent', c)
-                        }
-                      />
-                      <ColorPicker
-                        label="Card"
-                        value={draftSettings.darkThemeColors.card}
-                        onChange={c => handleThemeColorChange('dark', 'card', c)}
-                      />
-                      <ColorPicker
-                        label="Active Tab Background"
-                        value={draftSettings.darkThemeColors.tabActiveBackground}
-                        onChange={c =>
-                          handleThemeColorChange(
-                            'dark',
-                            'tabActiveBackground',
-                            c
-                          )
-                        }
-                      />
-                      <ColorPicker
-                        label="Active Tab Foreground"
-                        value={
-                          draftSettings.darkThemeColors.tabActiveForeground
-                        }
-                        onChange={c =>
-                          handleThemeColorChange('dark', 'tabActiveForeground', c)
-                        }
-                      />
-                    </TabsContent>
-                  </Tabs>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="images" className="pt-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <ImageIconLucide /> {t('app_logo')}
-                  </CardTitle>
-                  <CardDescription>{t('app_logo_desc')}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="relative w-full h-24 mt-2 border rounded-md p-2 flex justify-center items-center bg-muted/30">
-                    {draftSettings.appLogo ? (
-                      <Image
-                        key={draftSettings.appLogo}
-                        src={draftSettings.appLogo}
-                        alt="Logo Preview"
-                        fill
-                        className="object-contain"
-                      />
-                    ) : (
-                      <span className="text-sm text-muted-foreground">
-                        Logo Preview
-                      </span>
-                    )}
-                  </div>
-                  <Input
-                    id="logo-upload"
-                    type="file"
-                    accept="image/*"
-                    onChange={e =>
-                      handleFileUpload(e, 'appLogo')
-                    }
-                  />
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <LogIn /> {t('login_background')}
-                  </CardTitle>
-                  <CardDescription>{t('login_background_desc')}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="relative w-full h-24 mt-2 border rounded-md p-2 flex justify-center items-center bg-muted/30 overflow-hidden">
-                    {draftSettings.loginBackground ? (
-                      <Image
-                        key={draftSettings.loginBackground}
-                        src={draftSettings.loginBackground}
-                        alt="Login BG Preview"
-                        fill
-                        className="object-cover"
-                      />
-                    ) : (
-                      <span className="text-sm text-muted-foreground">
-                        Login BG Preview
-                      </span>
-                    )}
-                  </div>
-                  <Input
-                    id="login-bg-upload"
-                    type="file"
-                    accept="image/*"
-                    onChange={e =>
-                      handleFileUpload(
-                        e,
-                        'loginBackground'
-                      )
-                    }
-                  />
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <LayoutDashboard /> {t('main_dashboard_background')}
-                  </CardTitle>
-                  <CardDescription>{t('main_dashboard_background_desc')}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="relative w-full h-24 mt-2 border rounded-md p-2 flex justify-center items-center bg-muted/30 overflow-hidden">
-                    {draftSettings.mainBackground ? (
-                      <Image
-                        key={draftSettings.mainBackground}
-                        src={draftSettings.mainBackground}
-                        alt="Main BG Preview"
-                        fill
-                        className="object-cover"
-                      />
-                    ) : (
-                      <span className="text-sm text-muted-foreground">
-                        Main BG Preview
-                      </span>
-                    )}
-                  </div>
-                  <Input
-                    id="main-bg-upload"
-                    type="file"
-                    accept="image/*"
-                    onChange={e =>
-                      handleFileUpload(
-                        e,
-                        'mainBackground'
-                      )
-                    }
-                  />
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <ImageIcon /> {t('dashboard_banner')}
-                  </CardTitle>
-                  <CardDescription>{t('dashboard_banner_desc')}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="relative w-full h-24 mt-2 border rounded-md p-2 flex justify-center items-center bg-muted/30 overflow-hidden">
-                    {draftSettings.dashboardBanner ? (
-                      <Image
-                        key={draftSettings.dashboardBanner}
-                        src={draftSettings.dashboardBanner}
-                        alt="Banner Preview"
-                        fill
-                        className="object-contain"
-                      />
-                    ) : (
-                      <span className="text-sm text-muted-foreground">
-                        Banner Preview
-                      </span>
-                    )}
-                  </div>
-                  <Input
-                    id="banner-upload"
-                    type="file"
-                    accept="image/*"
-                    onChange={e =>
-                      handleFileUpload(
-                        e,
-                        'dashboardBanner'
-                      )
-                    }
-                  />
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Printer /> Print Header & Footer
-                    </CardTitle>
-                    <CardDescription>
-                        Upload images to appear at the top and bottom of your printed documents.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <div className="space-y-2">
-                        <Label>Header Image</Label>
-                         <div className="relative w-full h-24 mt-2 border rounded-md p-2 flex justify-center items-center bg-muted/30 overflow-hidden">
-                            {draftSettings.printHeaderImage ? (
-                                <Image
-                                    key={draftSettings.printHeaderImage}
-                                    src={draftSettings.printHeaderImage}
-                                    alt="Print Header Preview"
-                                    fill
-                                    className="object-contain"
-                                />
-                            ) : (
-                                <span className="text-sm text-muted-foreground">Header Preview</span>
-                            )}
-                        </div>
-                        <Input
-                            type="file"
-                            accept="image/*"
-                            onChange={e => handleFileUpload(e, 'printHeaderImage')}
-                        />
-                    </div>
-                     <div className="space-y-2">
-                        <Label>Footer Image</Label>
-                        <div className="relative w-full h-24 mt-2 border rounded-md p-2 flex justify-center items-center bg-muted/30 overflow-hidden">
-                            {draftSettings.printFooterImage ? (
-                                <Image
-                                    key={draftSettings.printFooterImage}
-                                    src={draftSettings.printFooterImage}
-                                    alt="Print Footer Preview"
-                                    fill
-                                    className="object-contain"
-                                />
-                            ) : (
-                                <span className="text-sm text-muted-foreground">Footer Preview</span>
-                            )}
-                        </div>
-                        <Input
-                            type="file"
-                            accept="image/*"
-                            onChange={e => handleFileUpload(e, 'printFooterImage')}
-                        />
-                    </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="language" className="pt-6 space-y-6">
-            <LoginTextEditor
-              draftSettings={draftSettings}
-              setDraftSettings={setDraftSettings}
-            />
+          <TabsContent value="design" className="pt-6 space-y-6">
             <Card>
-              <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                  <Type /> {t('custom_app_font')}
-                  </CardTitle>
-              </CardHeader>
+              <CardHeader><CardTitle>Theme Colors</CardTitle></CardHeader>
               <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                      <Label htmlFor="font-upload">{t('upload_font_file')}</Label>
-                      <Input
-                          id="font-upload"
-                          type="file"
-                          accept=".ttf,.otf,.woff,.woff2"
-                          onChange={e => handleFileUpload(e, 'customFont')}
-                      />
-                  </div>
-                  <div className="space-y-2">
-                      <Label htmlFor="font-select">Fallback Font</Label>
-                      <Select value={draftSettings.fontFamily} onValueChange={(value) => handleDraftChange('fontFamily', value)}>
-                          <SelectTrigger id="font-select">
-                          <SelectValue placeholder="Select a fallback font" />
-                          </SelectTrigger>
-                          <SelectContent>
-                          <SelectItem value="Arial">Arial</SelectItem>
-                          <SelectItem value="Times New Roman">Times New Roman</SelectItem>
-                          <SelectItem value="Calibri">Calibri</SelectItem>
-                          <SelectItem value="Cambria">Cambria</SelectItem>
-                          </SelectContent>
-                      </Select>
-                  </div>
-              </CardContent>
-            </Card>
-            <TranslationEditor
-              onSave={handleSave}
-              draftSettings={draftSettings}
-              setDraftSettings={setDraftSettings}
-            />
-          </TabsContent>
-
-          <TabsContent value="pdf" className="pt-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-1 space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>{t('pdf_template')}</CardTitle>
-                    <CardDescription>{t('pdf_template_desc')}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Tabs
-                      value={activePdfTab}
-                      onValueChange={v =>
-                        setActivePdfTab(v as 'report' | 'invoice' | 'card' | 'datasheet')
-                      }
-                      className="w-full"
-                    >
-                      <TabsList className="grid w-full grid-cols-4">
-                        <TabsTrigger value="report">
-                          <FileText className="mr-2" />
-                          {t('report')}
-                        </TabsTrigger>
-                        <TabsTrigger value="invoice">
-                          <Receipt className="mr-2" />
-                          {t('invoice')}
-                        </TabsTrigger>
-                        <TabsTrigger value="card">
-                          <CreditCard className="mr-2" />
-                          {t('id_card')}
-                        </TabsTrigger>
-                        <TabsTrigger value="datasheet">
-                          <ClipboardList className="mr-2" />
-                          {t('Datasheet')}
-                        </TabsTrigger>
+                  <Tabs defaultValue="light">
+                      <TabsList className="grid w-full grid-cols-2">
+                          <TabsTrigger value="light">Light</TabsTrigger>
+                          <TabsTrigger value="dark">Dark</TabsTrigger>
                       </TabsList>
-                    </Tabs>
-                  </CardContent>
-                </Card>
-                 <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <FileText /> {t('content')}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <Label htmlFor="logo-upload-pdf">{t('company_logo')}</Label>
-                      <Input
-                        id="logo-upload-pdf"
-                        type="file"
-                        accept="image/*"
-                        onChange={e =>
-                          handleFileUpload(
-                            e,
-                            `pdfSettings.${activePdfTab}.logo`
-                          )
-                        }
-                      />
-                    </div>
-                     {activePdfTab === 'invoice' && (
-                        <div className="space-y-2">
-                            <Label htmlFor="title-template">Title Template</Label>
-                            <Input
-                                id="title-template"
-                                value={draftSettings.pdfSettings.invoice.titleTemplate || ''}
-                                onChange={(e) => handlePdfSettingChange('titleTemplate', e.target.value)}
-                                placeholder="e.g. Transmit to {city}"
-                            />
-                            <p className="text-xs text-muted-foreground">Use {'{city}'} as a placeholder for the destination.</p>
-                        </div>
-                    )}
-                    <div className="space-y-2">
-                      <Label htmlFor="header-text">
-                        {t('header_text_optional')}
-                      </Label>
-                      <Input
-                        id="header-text"
-                        value={currentPdfSettings.headerText}
-                        onChange={e =>
-                          handlePdfSettingChange('headerText', e.target.value)
-                        }
-                        placeholder="e.g. Confidential Document"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="footer-text">
-                        {t('footer_text_optional')}
-                      </Label>
-                      <Input
-                        id="footer-text"
-                        value={currentPdfSettings.footerText}
-                        onChange={e =>
-                          handlePdfSettingChange('footerText', e.target.value)
-                        }
-                        placeholder="e.g. Generated by Ashley DRP"
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <Palette /> {t('styling')}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    {activePdfTab === 'report' ? (
-                      <div className="space-y-4">
-                        <CardDescription>
-                          {t('report_color_desc')}
-                        </CardDescription>
-                        <div className="space-y-2">
-                          <Label htmlFor="report-type-select">
-                            {t('report_section')}
-                          </Label>
-                          <Select
-                            value={selectedReportType}
-                            onValueChange={(
-                              v: keyof NonNullable<
-                                AllPdfSettings['report']['reportColors']
-                              >
-                            ) => setSelectedReportType(v)}
-                          >
-                            <SelectTrigger id="report-type-select">
-                              <SelectValue placeholder="Select a report type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {reportTypes.map(type => (
-                                <SelectItem key={type.value} value={type.value}>
-                                  {type.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="theme-color">{t('theme_color')}</Label>
-                          <Input
-                            id="theme-color"
-                            type="color"
-                            value={
-                              draftSettings.pdfSettings.report.reportColors?.[
-                                selectedReportType
-                              ] ?? '#000000'
-                            }
-                            onChange={e =>
-                              handleReportColorChange(
-                                selectedReportType,
-                                e.target.value
-                              )
-                            }
-                            className="w-10 h-10 p-1"
-                          />
-                        </div>
-                      </div>
-                    ) : activePdfTab === 'invoice' ? (
-                        <div className="space-y-4">
-                           <div className="flex items-center justify-between">
-                                <Label htmlFor="secondary-color">{t('header_table_color')}</Label>
-                                <Input
-                                id="secondary-color"
-                                type="color"
-                                value={currentPdfSettings.secondaryColor ?? '#0F172A'}
-                                onChange={e => handlePdfSettingChange('secondaryColor', e.target.value)}
-                                className="w-10 h-10 p-1"
-                                />
-                            </div>
-                        </div>
-                    ) : (
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="theme-color">{t('theme_color')}</Label>
-                        <Input
-                          id="theme-color"
-                          type="color"
-                          value={currentPdfSettings.themeColor}
-                          onChange={e =>
-                            handlePdfSettingChange('themeColor', e.target.value)
-                          }
-                          className="w-10 h-10 p-1"
-                        />
-                      </div>
-                    )}
-                    {(activePdfTab === 'report' || activePdfTab === 'invoice' || activePdfTab === 'datasheet') && (
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="table-theme-select">
-                          {t('table_theme')}
-                        </Label>
-                        <Select
-                          value={currentPdfSettings.tableTheme}
-                          onValueChange={(v: 'striped' | 'grid') =>
-                            handlePdfSettingChange('tableTheme', v)
-                          }
-                        >
-                          <SelectTrigger className="w-[180px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="striped">{t('striped')}</SelectItem>
-                            <SelectItem value="grid">{t('grid')}</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-                {activePdfTab === 'invoice' && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>{t('branch_colors')}</CardTitle>
-                      <CardDescription>{t('branch_colors_desc')}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {destinations.map(dest => (
-                        <div key={dest} className="flex items-center justify-between">
-                          <Label>{dest}</Label>
-                          <Input
-                            type="color"
-                            value={(draftSettings.pdfSettings.invoice.branchColors as any)?.[dest] ?? '#000000'}
-                            onChange={e => handleBranchColorChange(dest as any, e.target.value)}
-                            className="w-10 h-10 p-1"
-                          />
-                        </div>
-                      ))}
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-              <div className="lg:col-span-2">
-                <Card>
-                  <CardHeader className='flex-row items-center justify-between'>
-                    <div>
-                      <CardTitle>{t('live_preview')}</CardTitle>
-                      <CardDescription>
-                        {t('live_preview_desc', { type: activePdfTab })}
-                      </CardDescription>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="bg-muted/50 p-6 rounded-b-lg flex justify-center items-start overflow-auto">
-                    <div
-                      className="w-full max-w-3xl bg-white shadow-lg transform origin-top overflow-hidden flex flex-col"
-                      ref={pdfPreviewRef}
-                    >
-                      {activePdfTab === 'report' && (
-                        <ReportWrapper
-                            title="Example Report Title"
-                            date="This is an example subtitle"
-                            logoSrc={currentPdfSettings.logo ?? draftSettings.appLogo}
-                        >
-                            <div className="p-6 flex-grow" style={{fontFamily: `${draftSettings.fontFamily}, sans-serif`}}>
-                                <h3 className="mb-2">{t('sample_section')}</h3>
-                                <p className="text-sm text-gray-600 mb-4">{t('sample_body_text')}</p>
-                                <Table className={cn(currentPdfSettings.tableTheme === 'grid' && 'border')}>
-                                    <TableHeader>
-                                        <TableRow style={{backgroundColor: draftSettings.pdfSettings.report.reportColors?.[selectedReportType], color: 'white'}} className="hover:bg-primary/90">
-                                            <TableHead className="text-white">{t('column_1')}</TableHead>
-                                            <TableHead className="text-white">{t('column_2')}</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        <TableRow className={cn(currentPdfSettings.tableTheme === 'striped' && 'odd:bg-muted/50')}><TableCell>Data A1</TableCell><TableCell>Data A2</TableCell></TableRow>
-                                        <TableRow className={cn(currentPdfSettings.tableTheme === 'striped' && 'odd:bg-muted/50')}><TableCell>Data B1</TableCell><TableCell>Data B2</TableCell></TableRow>
-                                    </TableBody>
-                                </Table>
-                            </div>
-                        </ReportWrapper>
-                      )}
-                      {activePdfTab === 'invoice' && (
-                        <TransmitReportPdf 
-                           transfer={{...mockTransfer, destinationCity: 'Erbil'}}
-                           items={mockTransferItems}
-                           settings={{...currentPdfSettings, logo: currentPdfSettings.logo ?? draftSettings.appLogo}}
-                           invoiceNumber={124}
-                           totalYearlyInvoices={123}
-                        />
-                      )}
-                      {activePdfTab === 'card' && (
-                        <div className="flex justify-center items-center h-full p-4">
-                          <EmployeePdfCard
-                            employee={mockEmployee}
-                            settings={{...currentPdfSettings, logo: currentPdfSettings.logo ?? draftSettings.appLogo}}
-                          />
-                        </div>
-                      )}
-                       {activePdfTab === 'datasheet' && (
-                        <ReportWrapper
-                            title="Product Datasheet"
-                            date={format(new Date(), 'PPP')}
-                            logoSrc={currentPdfSettings.logo ?? draftSettings.appLogo}
-                        >
-                            <div className="p-6" style={{fontFamily: `${draftSettings.fontFamily}, sans-serif`}}>
-                                <h3 className="text-lg font-bold mb-2">Sample Product: Ergonomic Chair</h3>
-                                <p className="text-sm text-gray-600 mb-4">This is a detailed datasheet for the selected product, including specifications and inventory status.</p>
-                                <div className="grid grid-cols-2 gap-4 mb-4 text-xs">
-                                    <div><p className="text-gray-500">Item Code</p><p className="font-medium">CH-ERG-001</p></div>
-                                    <div><p className="text-gray-500">Category</p><p className="font-medium">Office Furniture</p></div>
-                                    <div><p className="text-gray-500">Total Stock</p><p className="font-medium">128 units</p></div>
-                                    <div><p className="text-gray-500">Warehouse</p><p className="font-medium">Ashley, Huana</p></div>
-                                </div>
-                                <Table className={cn(currentPdfSettings.tableTheme === 'grid' && 'border')}>
-                                    <TableHeader>
-                                        <TableRow style={{backgroundColor: draftSettings.pdfSettings.datasheet.themeColor, color: 'white'}} className="hover:bg-primary/90">
-                                            <TableHead className="text-white">Specification</TableHead>
-                                            <TableHead className="text-white">Value</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        <TableRow className={cn(currentPdfSettings.tableTheme === 'striped' && 'odd:bg-muted/50')}><TableCell>Material</TableCell><TableCell>Mesh, Aluminum</TableCell></TableRow>
-                                        <TableRow className={cn(currentPdfSettings.tableTheme === 'striped' && 'odd:bg-muted/50')}><TableCell>Color</TableCell><TableCell>Black</TableCell></TableRow>
-                                        <TableRow className={cn(currentPdfSettings.tableTheme === 'striped' && 'odd:bg-muted/50')}><TableCell>Warranty</TableCell><TableCell>5 Years</TableCell></TableRow>
-                                    </TableBody>
-                                </Table>
-                            </div>
-                        </ReportWrapper>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="data" className="pt-6 space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <ShieldCheck /> {t('data_management')}
-                </CardTitle>
-                <CardDescription>{t('data_management_desc')}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-              
-                <div className="p-4 border rounded-lg space-y-4">
-                  <p className="">{t('import_data_title')}</p>
-                  <p className="text-sm text-destructive">
-                    {t('import_data_warning')}
-                  </p>
-                  <div className="flex flex-col sm:flex-row items-center gap-4">
-                    <Input
-                      type="file"
-                      ref={importInputRef}
-                      className="max-w-xs"
-                      accept=".json"
-                      onChange={handleImportFileSelect}
-                    />
-                  </div>
-                </div>
+                      <TabsContent value="light" className="space-y-4 pt-4">
+                          <ColorPicker label="Primary" value={draftSettings.lightThemeColors.primary} onChange={c => handleThemeColorChange('light', 'primary', c)} />
+                          <ColorPicker label="Background" value={draftSettings.lightThemeColors.background} onChange={c => handleThemeColorChange('light', 'background', c)} />
+                          <ColorPicker label="Accent" value={draftSettings.lightThemeColors.accent} onChange={c => handleThemeColorChange('light', 'accent', c)} />
+                      </TabsContent>
+                      <TabsContent value="dark" className="space-y-4 pt-4">
+                          <ColorPicker label="Primary" value={draftSettings.darkThemeColors.primary} onChange={c => handleThemeColorChange('dark', 'primary', c)} />
+                          <ColorPicker label="Background" value={draftSettings.darkThemeColors.background} onChange={c => handleThemeColorChange('dark', 'background', c)} />
+                          <ColorPicker label="Accent" value={draftSettings.darkThemeColors.accent} onChange={c => handleThemeColorChange('dark', 'accent', c)} />
+                      </TabsContent>
+                  </Tabs>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="images" className="pt-6 space-y-6">
             <Card>
-                <CardHeader>
-                    <CardTitle className="text-destructive flex items-center gap-2">{t('reset_system')}</CardTitle>
-                    <CardDescription>{t('reset_system_desc')}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-sm text-destructive font-bold">{t('reset_system_warning')}</p>
-                </CardContent>
-                <CardFooter>
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button variant="destructive">
-                                <RefreshCcw className="mr-2 h-4 w-4" /> {t('reset_application')}
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
-                                <AlertDialogDescription>{t('reset_confirmation_prompt')}</AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <div className="py-2">
-                                <Input 
-                                    value={resetConfirmText}
-                                    onChange={(e) => setResetConfirmText(e.target.value)}
-                                    placeholder={t('type_reset_to_confirm')}
-                                />
-                            </div>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel onClick={() => setResetConfirmText("")}>{t('cancel')}</AlertDialogCancel>
-                                <AlertDialogAction
-                                    disabled={resetConfirmText !== "RESET"}
-                                    onClick={handleResetToDefault}
-                                >
-                                    {t('reset_application')}
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                </CardFooter>
+              <CardHeader><CardTitle>{t('app_logo')}</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
+                <div className="relative w-full h-24 border rounded-md p-2 flex justify-center bg-muted/30">
+                  {draftSettings.appLogo && <Image src={draftSettings.appLogo} alt="Logo" fill className="object-contain" unoptimized />}
+                </div>
+                <Input type="file" accept="image/*" onChange={e => handleFileUpload(e, 'appLogo')} />
+              </CardContent>
             </Card>
           </TabsContent>
+
+          <TabsContent value="language" className="pt-6">
+             <Card>
+                <CardHeader><CardTitle>{t('custom_app_font')}</CardTitle></CardHeader>
+                <CardContent className="space-y-4">
+                    <Input type="file" accept=".ttf,.otf" onChange={e => handleFileUpload(e, 'customFont')} />
+                    <p className="text-xs text-muted-foreground">Upload a .ttf or .otf font file to use custom typography across the terminal.</p>
+                </CardContent>
+             </Card>
+          </TabsContent>
+
+          {isAdmin && (
+            <TabsContent value="admin" className="pt-6 space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="lg:col-span-2 space-y-6">
+                      <Card>
+                          <CardHeader>
+                              <CardTitle className="flex items-center gap-2">
+                                  <Users /> User Management
+                              </CardTitle>
+                              <CardDescription>Manage terminal operators and their access roles.</CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                              <UserManagement />
+                          </CardContent>
+                      </Card>
+
+                      <Card>
+                          <CardHeader>
+                              <CardTitle className="flex items-center gap-2">
+                                  <Cloud /> Deployment & Cloud Bridge
+                              </CardTitle>
+                              <CardDescription>Troubleshooting guide for terminal publishing.</CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-6">
+                              <div className="p-5 rounded-2xl border-2 bg-amber-50 border-amber-100 space-y-2 text-amber-900">
+                                  <p className="text-sm font-bold flex items-center gap-2"><ShieldCheck className="h-4 w-4" /> Missing Supabase Credentials</p>
+                                  <p className="text-xs leading-relaxed opacity-80">
+                                      The build will fail if environment variables are missing. In the Firebase Console, go to <strong>App Hosting &gt; Your Backend &gt; Settings &gt; Environment Variables</strong> and add:
+                                  </p>
+                                  <div className="bg-white/50 p-2 rounded font-mono text-[10px]">
+                                      NEXT_PUBLIC_SUPABASE_URL<br/>
+                                      NEXT_PUBLIC_SUPABASE_ANON_KEY
+                                  </div>
+                              </div>
+                              
+                              <div className="space-y-4">
+                                  <h4 className="text-sm font-bold flex items-center gap-2"><Play className="h-4 w-4" /> Publishing Checklist</h4>
+                                  <ul className="space-y-2 text-xs text-muted-foreground list-disc pl-4">
+                                      <li>Ensure your Firebase Project is on the <strong>Blaze Plan</strong>.</li>
+                                      <li>Push this project to a <strong>GitHub Repository</strong>.</li>
+                                      <li>Connect the repo via the <strong>Firebase App Hosting</strong> dashboard.</li>
+                                      <li>Add your Supabase keys to the <strong>Environment Variables</strong> tab in Firebase.</li>
+                                  </ul>
+                              </div>
+                          </CardContent>
+                      </Card>
+                  </div>
+
+                  <div className="lg:col-span-1 space-y-6">
+                      <Card className="border-destructive/20">
+                          <CardHeader>
+                              <CardTitle className="text-destructive flex items-center gap-2">
+                                  <RefreshCcw className="h-4 w-4" /> Reset Terminal
+                              </CardTitle>
+                              <CardDescription>Permanently wipe all cloud and local data.</CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                              <p className="text-xs text-muted-foreground">Type <strong>RESET</strong> below to confirm. This will delete all employees, inventory, and settings records.</p>
+                              <Input value={resetConfirmText} onChange={e => setResetConfirmText(e.target.value)} placeholder="Type RESET to confirm" />
+                          </CardContent>
+                          <CardFooter>
+                              <Button variant="destructive" className="w-full" disabled={resetConfirmText !== "RESET"} onClick={handleResetToDefault}>
+                                Execute Full Reset
+                              </Button>
+                          </CardFooter>
+                      </Card>
+                  </div>
+              </div>
+            </TabsContent>
+          )}
         </Tabs>
       </main>
     </div>

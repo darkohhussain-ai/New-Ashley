@@ -1,10 +1,9 @@
-
 'use client';
 
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore'
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, query, where, getDoc, getDocs, setDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage';
 
 export async function initializeFirebase() {
@@ -28,6 +27,21 @@ export async function getSdks(firebaseApp: FirebaseApp) {
     storage: getStorage(firebaseApp)
   };
 }
+
+// Export common Firestore functions from a central place to improve module resolution stability
+export {
+  doc,
+  collection,
+  query,
+  where,
+  getDoc,
+  getDocs,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  onSnapshot,
+  serverTimestamp
+};
 
 export * from './provider';
 export * from './client-provider';
