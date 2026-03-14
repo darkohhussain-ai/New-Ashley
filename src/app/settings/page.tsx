@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -63,6 +62,7 @@ import { format, parseISO } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { allPermissions } from '@/lib/permissions';
 import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
 
 const themes = [
   { name: 'default', color: 'bg-blue-500', label: 'Default Blue' },
@@ -462,6 +462,16 @@ function SettingsPage() {
                   {draftSettings.appLogo && <Image src={draftSettings.appLogo} alt="Logo" fill className="object-contain" unoptimized />}
                 </div>
                 <Input type="file" accept="image/*" onChange={e => handleFileUpload(e, 'appLogo')} />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader><CardTitle>{t('main_dashboard_background')}</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
+                <div className="relative w-full h-32 border rounded-md overflow-hidden bg-muted/30">
+                  {draftSettings.mainBackground && <Image src={draftSettings.mainBackground} alt="Background" fill className="object-cover" unoptimized />}
+                </div>
+                <Input type="file" accept="image/*" onChange={e => handleFileUpload(e, 'mainBackground')} />
               </CardContent>
             </Card>
           </TabsContent>
