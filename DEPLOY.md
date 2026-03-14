@@ -15,7 +15,7 @@ git init -b main
 
 # Stage and commit all files
 git add .
-git commit -m "build: initialize terminal for Firebase rollout"
+git commit -m "build: finalize terminal for Firebase rollout"
 
 # Connect to your GitHub repository
 # Replace <YOUR_URL> with the URL from the repo you just created on GitHub

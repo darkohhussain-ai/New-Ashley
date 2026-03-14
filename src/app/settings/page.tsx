@@ -427,11 +427,13 @@ function SettingsPage() {
                             <ColorPicker label="Primary Accent (Frontend)" value={draftSettings.lightThemeColors.primary} onChange={c => handleThemeColorChange('light', 'primary', c)} />
                             <ColorPicker label="System Background" value={draftSettings.lightThemeColors.background} onChange={c => handleThemeColorChange('light', 'background', c)} />
                             <ColorPicker label="Interface Accent" value={draftSettings.lightThemeColors.accent} onChange={c => handleThemeColorChange('light', 'accent', c)} />
+                            <ColorPicker label="Card Surface" value={draftSettings.lightThemeColors.card} onChange={c => handleThemeColorChange('light', 'card', c)} />
                         </TabsContent>
                         <TabsContent value="dark" className="space-y-2 pt-4">
                             <ColorPicker label="Primary Accent (Frontend)" value={draftSettings.darkThemeColors.primary} onChange={c => handleThemeColorChange('dark', 'primary', c)} />
                             <ColorPicker label="System Background" value={draftSettings.darkThemeColors.background} onChange={c => handleThemeColorChange('dark', 'background', c)} />
                             <ColorPicker label="Interface Accent" value={draftSettings.darkThemeColors.accent} onChange={c => handleThemeColorChange('dark', 'accent', c)} />
+                            <ColorPicker label="Card Surface" value={draftSettings.darkThemeColors.card} onChange={c => handleThemeColorChange('dark', 'card', c)} />
                         </TabsContent>
                     </Tabs>
                   </div>
@@ -513,9 +515,9 @@ function SettingsPage() {
                       <Card>
                           <CardHeader>
                               <CardTitle className="flex items-center gap-2 text-primary">
-                                  <Cloud className="h-5 w-5" /> Firebase Rollout Hub
+                                  <Cloud className="h-5 w-5" /> Firebase Operational Hub
                               </CardTitle>
-                              <CardDescription>Troubleshooting guide for successful cloud deployment on Firebase.</CardDescription>
+                              <CardDescription>Technical roadmap for 100% Firebase-powered rollout.</CardDescription>
                           </CardHeader>
                           <CardContent className="space-y-6">
                               <div className="p-5 rounded-2xl border-2 bg-amber-50 border-amber-100 space-y-2 text-amber-900 shadow-sm">
