@@ -41,7 +41,7 @@
     "date-fns": "latest",
     "dotenv": "latest",
     "embla-carousel-react": "latest",
-    "firebase": "latest",
+    "firebase": "^11.0.0",
     "react-firebase-hooks": "latest",
     "genkit": "^1.20.0",
     "idb-keyval": "latest",

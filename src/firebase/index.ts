@@ -18,7 +18,16 @@ import {
   updateDoc, 
   deleteDoc, 
   onSnapshot, 
-  serverTimestamp 
+  serverTimestamp,
+  type DocumentData,
+  type Query,
+  type Firestore,
+  type CollectionReference,
+  type DocumentReference,
+  type SetOptions,
+  type FirestoreError,
+  type QuerySnapshot,
+  type DocumentSnapshot
 } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
@@ -45,7 +54,7 @@ export async function getSdks(firebaseApp: FirebaseApp) {
   };
 }
 
-// Export common Firestore functions from a central place
+// Export common Firestore functions and types from a central place
 export {
   doc,
   collection,
@@ -58,6 +67,18 @@ export {
   deleteDoc,
   onSnapshot,
   serverTimestamp
+};
+
+export type {
+  DocumentData,
+  Query,
+  Firestore,
+  CollectionReference,
+  DocumentReference,
+  SetOptions,
+  FirestoreError,
+  QuerySnapshot,
+  DocumentSnapshot
 };
 
 export * from './provider';

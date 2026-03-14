@@ -11,11 +11,12 @@ import { useState, useEffect } from 'react';
 import { SplashScreen } from '@/components/shared/splash-screen';
 import { AppHeader } from '@/components/shared/app-header';
 import { usePathname } from 'next/navigation';
-import { FirebaseClientProvider, doc } from '@/firebase';
+import { FirebaseClientProvider } from '@/firebase';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
-import { SidebarProvider } from '@/components/ui/sidebar';
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+import { AppSidebar } from '@/components/layout/app-sidebar';
 
 
 function CustomFontInjector() {
@@ -42,7 +43,7 @@ function CustomFontInjector() {
     }
 
     return (
-        <style>{fontStyles}</style>
+        <style dangerouslySetInnerHTML={{ __html: fontStyles }} />
     );
 }
 
@@ -108,12 +109,15 @@ function AppContent({ children }: { children: React.ReactNode }) {
         <SidebarProvider>
             <CustomFontInjector />
 
-            {!isLoginPage && <MainBackground />}
+            {!isLoginPage && <AppSidebar />}
             
-            {!isLoginPage && <AppHeader />}
-            <div key={pathname} className="animate-fade-in-down">
-                {children}
-            </div>
+            <SidebarInset className="flex flex-col">
+                {!isLoginPage && <MainBackground />}
+                {!isLoginPage && <AppHeader />}
+                <div key={pathname} className="animate-fade-in-down flex-1 overflow-auto">
+                    {children}
+                </div>
+            </SidebarInset>
         </SidebarProvider>
     );
 }
