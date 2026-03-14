@@ -1,8 +1,9 @@
+
 'use client';
 
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
-import { ThemeProvider } from "@/components/shared/theme-provider";
+import { ThemeProvider, useTheme } from "@/components/shared/theme-provider";
 import { AppProvider, useAppContext } from '@/context/app-provider';
 import { AuthProvider } from '@/hooks/use-auth';
 import { LanguageProvider } from '@/context/language-provider';
@@ -18,6 +19,29 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/app-sidebar';
 
+function DynamicThemeInjector() {
+    const { settings } = useAppContext();
+    const { theme } = useTheme();
+
+    if (settings.selectedTheme !== 'custom') return null;
+
+    const colors = theme === 'dark' ? settings.darkThemeColors : settings.lightThemeColors;
+
+    const styleString = `
+        :root {
+            --background: ${colors.background};
+            --foreground: ${colors.foreground};
+            --primary: ${colors.primary};
+            --accent: ${colors.accent};
+            --card: ${colors.card};
+            --title-bar-bg: ${colors.primary};
+            --card-header-bg: ${colors.accent};
+            --table-header-bg: ${colors.primary};
+        }
+    `;
+
+    return <style dangerouslySetInnerHTML={{ __html: styleString }} />;
+}
 
 function CustomFontInjector() {
     const { settings } = useAppContext();
@@ -95,6 +119,7 @@ function AppContent({ children }: { children: React.ReactNode }) {
     return (
         <SidebarProvider defaultOpen={isDashboard}>
             <CustomFontInjector />
+            <DynamicThemeInjector />
 
             {!isLoginPage && isDashboard && <AppSidebar />}
             

@@ -424,12 +424,12 @@ function SettingsPage() {
                             <TabsTrigger value="dark">Dark Mode Palettes</TabsTrigger>
                         </TabsList>
                         <TabsContent value="light" className="space-y-2 pt-4">
-                            <ColorPicker label="Primary Accent" value={draftSettings.lightThemeColors.primary} onChange={c => handleThemeColorChange('light', 'primary', c)} />
+                            <ColorPicker label="Primary Accent (Frontend)" value={draftSettings.lightThemeColors.primary} onChange={c => handleThemeColorChange('light', 'primary', c)} />
                             <ColorPicker label="System Background" value={draftSettings.lightThemeColors.background} onChange={c => handleThemeColorChange('light', 'background', c)} />
                             <ColorPicker label="Interface Accent" value={draftSettings.lightThemeColors.accent} onChange={c => handleThemeColorChange('light', 'accent', c)} />
                         </TabsContent>
                         <TabsContent value="dark" className="space-y-2 pt-4">
-                            <ColorPicker label="Primary Accent" value={draftSettings.darkThemeColors.primary} onChange={c => handleThemeColorChange('dark', 'primary', c)} />
+                            <ColorPicker label="Primary Accent (Frontend)" value={draftSettings.darkThemeColors.primary} onChange={c => handleThemeColorChange('dark', 'primary', c)} />
                             <ColorPicker label="System Background" value={draftSettings.darkThemeColors.background} onChange={c => handleThemeColorChange('dark', 'background', c)} />
                             <ColorPicker label="Interface Accent" value={draftSettings.darkThemeColors.accent} onChange={c => handleThemeColorChange('dark', 'accent', c)} />
                         </TabsContent>
