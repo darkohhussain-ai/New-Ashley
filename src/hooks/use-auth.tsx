@@ -37,13 +37,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (currentUser) {
-      // ADMINISTRATIVE BYPASS: 
-      // If the email matches your specific identity, grant full admin access immediately.
       const username = currentUser.username.toLowerCase();
+      // ADMINISTRATIVE BYPASS: Direct mapping for your specific identities
       const isAdminEmail = 
         username === 'darko.h.hussain@gmail.com' || 
         username === 'darko.h.husssain@gmail.com' || 
-        username === 'darko_admin07';
+        username === 'darko_admin07' ||
+        username === 'admin';
 
       if (isAdminEmail || currentUser.roleId === 'role-admin') {
         setUserPermissions(new Set(['admin:all']));

@@ -1,4 +1,3 @@
-
 'use client';
 
 import './globals.css';
@@ -12,7 +11,7 @@ import { useState, useEffect } from 'react';
 import { SplashScreen } from '@/components/shared/splash-screen';
 import { AppHeader } from '@/components/shared/app-header';
 import { usePathname } from 'next/navigation';
-import { FirebaseClientProvider } from '@/firebase';
+import { FirebaseClientProvider, doc } from '@/firebase';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';

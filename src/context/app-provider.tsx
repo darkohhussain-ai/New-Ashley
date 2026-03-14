@@ -1,9 +1,7 @@
-
 'use client';
 
 import React, { createContext, useContext, ReactNode, useMemo, useEffect, useState, useCallback } from 'react';
-import { useCollection, useMemoFirebase } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { useCollection, useMemoFirebase, collection, doc } from '@/firebase';
 import { useFirestore, useUser, useDoc } from '@/firebase';
 import { 
     Employee, 
@@ -29,7 +27,6 @@ import {
 } from '@/lib/types';
 import { setDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { initialData, initialSettings } from './initial-data';
-import { SplashScreen } from '@/components/shared/splash-screen';
 
 // Define the shape of our application state
 interface AppState {

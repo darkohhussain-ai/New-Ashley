@@ -3,12 +3,29 @@
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, query, where, getDoc, getDocs, setDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp } from 'firebase/firestore'
+import { 
+  getFirestore, 
+  initializeFirestore, 
+  persistentLocalCache, 
+  persistentMultipleTabManager, 
+  doc, 
+  collection, 
+  query, 
+  where, 
+  getDoc, 
+  getDocs, 
+  setDoc, 
+  updateDoc, 
+  deleteDoc, 
+  onSnapshot, 
+  serverTimestamp 
+} from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 export async function initializeFirebase() {
   if (getApps().length) {
-    return await getSdks(getApp());
+    const app = getApp();
+    return await getSdks(app);
   }
 
   const firebaseApp = initializeApp(firebaseConfig);
@@ -28,7 +45,7 @@ export async function getSdks(firebaseApp: FirebaseApp) {
   };
 }
 
-// Export common Firestore functions from a central place to improve module resolution stability
+// Export common Firestore functions from a central place
 export {
   doc,
   collection,

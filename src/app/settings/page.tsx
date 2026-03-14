@@ -1,46 +1,29 @@
 'use client';
 
 import * as React from 'react';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
   ArrowLeft,
-  Download,
-  Upload,
   Save,
   Palette,
-  Type,
   ShieldCheck,
-  ImageIcon,
-  LayoutDashboard,
-  RefreshCcw,
-  Play,
-  Newspaper,
-  Building,
-  FileText,
-  Receipt,
-  CreditCard,
+  ImageIcon as ImageIconLucide,
   Languages,
-  Search,
-  LogIn,
-  Image as ImageIconLucide,
-  X,
-  Home,
+  FileText,
   Loader2,
-  ClipboardList,
-  Printer,
-  FileSpreadsheet,
-  Plus,
   Users,
-  KeyRound,
-  History,
   Cloud,
+  Play,
+  RefreshCcw,
+  Plus,
   Edit,
+  Trash2,
+  KeyRound,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import {
   Card,
   CardContent,
@@ -53,42 +36,14 @@ import { useTheme } from '@/components/shared/theme-provider';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Slider } from '@/components/ui/slider';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
 import { useTranslation } from '@/hooks/use-translation';
-import { ReportWrapper } from '@/components/reports/ReportWrapper';
-import { EmployeePdfCard } from '@/components/employees/employee-pdf-card';
 import type {
-  PdfSettings,
-  AllPdfSettings,
-  Employee,
-  Transfer,
   ThemeColors,
   AppSettings,
-  BranchColors,
-  ItemForTransfer,
-  ActivityLog,
   User,
+  ActivityLog,
   Role,
 } from '@/lib/types';
-import { format, formatISO, parseISO } from 'date-fns';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -97,12 +52,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { cn } from '@/lib/utils';
+import { Checkbox } from '@/components/ui/checkbox';
 import withAuth from '@/hooks/withAuth';
 import { useAppContext } from '@/context/app-provider';
 import { useAuth } from '@/hooks/use-auth';
-import { initialSettings, initialData } from '@/context/initial-data';
-import { TransmitReportPdf } from '@/components/transmit/TransmitReportPdf';
+import { initialSettings } from '@/context/initial-data';
+import { format, parseISO } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
+import { allPermissions } from '@/lib/permissions';
 
 function ColorPicker({
   label,
@@ -115,7 +72,6 @@ function ColorPicker({
 }) {
   const { t } = useTranslation();
   
-  // Minimal HSL parser
   const parseHsl = (hsl: string) => {
     if (typeof hsl !== 'string' || hsl.split(' ').length !== 3) {
       return { h: '0', s: '0', l: '0' };
@@ -153,7 +109,7 @@ function ColorPicker({
         <Input
           type="color"
           value={hslToHex(Number(h), Number(s), Number(l))}
-          onChange={() => {}} // Controlled by text inputs
+          readOnly
           className="w-8 h-8 p-1 rounded-md pointer-events-none"
         />
         <div className="flex items-center gap-1 text-xs">
@@ -181,14 +137,15 @@ function ColorPicker({
   );
 }
 
-function UserManagement() {
-  const { users, roles, t } = useAppContext();
+function UserManagementTab() {
+  const { users, roles } = useAppContext();
+  const { t } = useTranslation();
   
   return (
     <div className="space-y-4">
         <div className="flex justify-between items-center">
             <h3 className="text-lg font-bold">User Accounts</h3>
-            <Button disabled>
+            <Button size="sm">
                 <Plus className="mr-2 h-4 w-4" /> Add User
             </Button>
         </div>
@@ -207,7 +164,7 @@ function UserManagement() {
                             <TableCell className="font-medium">{user.username}</TableCell>
                             <TableCell>{roles.find(r => r.id === user.roleId)?.name || 'Unknown'}</TableCell>
                             <TableCell className="text-right">
-                                <Button variant="ghost" size="icon" disabled>
+                                <Button variant="ghost" size="icon">
                                     <Edit className="h-4 w-4" />
                                 </Button>
                             </TableCell>
@@ -220,9 +177,108 @@ function UserManagement() {
   );
 }
 
+function RoleManagementTab() {
+    const { roles } = useAppContext();
+    const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+
+    useEffect(() => {
+        if (roles.length > 0 && !selectedRole) {
+            setSelectedRole(roles[0]);
+        }
+    }, [roles, selectedRole]);
+
+    return (
+        <div className="space-y-4">
+            <div className="flex items-center gap-4">
+                <Label>Select Role:</Label>
+                <div className="flex gap-2">
+                    {roles.map(role => (
+                        <Button 
+                            key={role.id} 
+                            variant={selectedRole?.id === role.id ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setSelectedRole(role)}
+                        >
+                            {role.name}
+                        </Button>
+                    ))}
+                </div>
+            </div>
+
+            {selectedRole && (
+                <div className="border p-4 rounded-xl space-y-4 bg-muted/30">
+                    <h4 className="font-bold text-sm">Permissions for {selectedRole.name}</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[300px] overflow-y-auto pr-2">
+                        {allPermissions.map(permission => (
+                            <div key={permission.id} className="flex items-center space-x-2">
+                                <Checkbox 
+                                    id={`perm-${permission.id}`} 
+                                    checked={selectedRole.permissions.includes(permission.id)}
+                                    disabled
+                                />
+                                <Label htmlFor={`perm-${permission.id}`} className="text-xs">{permission.description}</Label>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function ActivityLogsTab() {
+    const { t } = useTranslation();
+    const { activityLogs } = useAppContext();
+
+    const sortedLogs = useMemo(() => {
+        return [...activityLogs].sort((a, b) => parseISO(b.timestamp).getTime() - parseISO(a.timestamp).getTime());
+    }, [activityLogs]);
+
+    const getActionBadgeVariant = (action: string) => {
+        switch (action) {
+            case 'create': return 'default';
+            case 'update': return 'secondary';
+            case 'delete': return 'destructive';
+            case 'login': return 'outline';
+            default: return 'outline';
+        }
+    };
+
+    return (
+        <div className="space-y-4">
+            <h3 className="text-lg font-bold">{t('activity_log')}</h3>
+            <div className="border rounded-xl overflow-hidden max-h-[400px] overflow-y-auto">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>{t('user')}</TableHead>
+                            <TableHead>{t('action')}</TableHead>
+                            <TableHead>{t('description')}</TableHead>
+                            <TableHead className="text-right">{t('timestamp')}</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {sortedLogs.length > 0 ? (
+                            sortedLogs.map(log => (
+                                <TableRow key={log.id}>
+                                    <TableCell className="font-medium">{log.username}</TableCell>
+                                    <TableCell><Badge variant={getActionBadgeVariant(log.action)}>{log.action}</Badge></TableCell>
+                                    <TableCell className="text-xs">{log.description}</TableCell>
+                                    <TableCell className="text-right text-xs whitespace-nowrap">{format(parseISO(log.timestamp), 'PP p')}</TableCell>
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow><TableCell colSpan={4} className="text-center h-24 text-muted-foreground">No logs found.</TableCell></TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </div>
+        </div>
+    );
+}
+
 function SettingsPage() {
   const { toast } = useToast();
-  const { theme, setTheme } = useTheme();
   const { t } = useTranslation();
   const { settings, setSettings } = useAppContext();
   const { hasPermission } = useAuth();
@@ -248,10 +304,6 @@ function SettingsPage() {
     }
   }, [settings, draftSettings]);
 
-  const handleDraftChange = (key: keyof AppSettings, value: any) => {
-    setDraftSettings(prev => ({ ...prev, [key]: value }));
-  };
-  
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, settingKeyPath: string) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -382,48 +434,71 @@ function SettingsPage() {
              </Card>
           </TabsContent>
 
-          {isAdmin && (
-            <TabsContent value="admin" className="pt-6 space-y-6">
+          <TabsContent value="admin" className="pt-6 space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   <div className="lg:col-span-2 space-y-6">
                       <Card>
                           <CardHeader>
                               <CardTitle className="flex items-center gap-2">
-                                  <Users /> User Management
+                                  <Users className="h-5 w-5" /> User Management
                               </CardTitle>
                               <CardDescription>Manage terminal operators and their access roles.</CardDescription>
                           </CardHeader>
                           <CardContent>
-                              <UserManagement />
+                              <UserManagementTab />
                           </CardContent>
                       </Card>
 
                       <Card>
                           <CardHeader>
                               <CardTitle className="flex items-center gap-2">
-                                  <Cloud /> Deployment & Cloud Bridge
+                                  <ShieldCheck className="h-5 w-5" /> Role &amp; Permission Management
                               </CardTitle>
-                              <CardDescription>Troubleshooting guide for terminal publishing.</CardDescription>
+                              <CardDescription>Configure system access levels for different roles.</CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                              <RoleManagementTab />
+                          </CardContent>
+                      </Card>
+
+                      <Card>
+                          <CardHeader>
+                              <CardTitle className="flex items-center gap-2">
+                                  <RefreshCcw className="h-5 w-5" /> System Activity
+                              </CardTitle>
+                              <CardDescription>Monitor important system actions performed by users.</CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                              <ActivityLogsTab />
+                          </CardContent>
+                      </Card>
+
+                      <Card>
+                          <CardHeader>
+                              <CardTitle className="flex items-center gap-2">
+                                  <Cloud className="h-5 w-5" /> Cloud Rollout &amp; Publishing Hub
+                              </CardTitle>
+                              <CardDescription>Troubleshooting guide for successful cloud deployment.</CardDescription>
                           </CardHeader>
                           <CardContent className="space-y-6">
                               <div className="p-5 rounded-2xl border-2 bg-amber-50 border-amber-100 space-y-2 text-amber-900">
-                                  <p className="text-sm font-bold flex items-center gap-2"><ShieldCheck className="h-4 w-4" /> Missing Supabase Credentials</p>
+                                  <p className="text-sm font-bold flex items-center gap-2"><ShieldCheck className="h-4 w-4" /> Resolving "Rollout Error"</p>
                                   <p className="text-xs leading-relaxed opacity-80">
-                                      The build will fail if environment variables are missing. In the Firebase Console, go to <strong>App Hosting &gt; Your Backend &gt; Settings &gt; Environment Variables</strong> and add:
+                                      If you see "Something went wrong creating your App Hosting rollout", it usually means environment variables are missing. In the Firebase Console, go to:
+                                      <br/><strong>App Hosting &gt; Your Backend &gt; Settings &gt; Environment Variables</strong>
                                   </p>
                                   <div className="bg-white/50 p-2 rounded font-mono text-[10px]">
-                                      NEXT_PUBLIC_SUPABASE_URL<br/>
-                                      NEXT_PUBLIC_SUPABASE_ANON_KEY
+                                      Add: NEXT_PUBLIC_SUPABASE_URL<br/>
+                                      Add: NEXT_PUBLIC_SUPABASE_ANON_KEY
                                   </div>
                               </div>
                               
                               <div className="space-y-4">
-                                  <h4 className="text-sm font-bold flex items-center gap-2"><Play className="h-4 w-4" /> Publishing Checklist</h4>
+                                  <h4 className="text-sm font-bold flex items-center gap-2"><Play className="h-4 w-4" /> Deployment Steps</h4>
                                   <ul className="space-y-2 text-xs text-muted-foreground list-disc pl-4">
-                                      <li>Ensure your Firebase Project is on the <strong>Blaze Plan</strong>.</li>
-                                      <li>Push this project to a <strong>GitHub Repository</strong>.</li>
-                                      <li>Connect the repo via the <strong>Firebase App Hosting</strong> dashboard.</li>
-                                      <li>Add your Supabase keys to the <strong>Environment Variables</strong> tab in Firebase.</li>
+                                      <li>Push code to a private GitHub Repository.</li>
+                                      <li>Connect the repo via Firebase App Hosting dashboard.</li>
+                                      <li>Ensure your project is on the <strong>Blaze Plan</strong>.</li>
                                   </ul>
                               </div>
                           </CardContent>
@@ -450,8 +525,7 @@ function SettingsPage() {
                       </Card>
                   </div>
               </div>
-            </TabsContent>
-          )}
+          </TabsContent>
         </Tabs>
       </main>
     </div>
