@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -11,6 +12,77 @@ import { StorageSummaryChart } from '@/components/dashboard/StorageSummaryChart'
 import { FinancialSummaries } from '@/components/dashboard/FinancialSummaries';
 import { StagedItemsSummary } from '@/components/dashboard/StagedItemsSummary';
 import { OrderRequestsSummary } from '@/components/dashboard/OrderRequestsSummary';
+import { DashboardCard } from '@/components/dashboard/dashboard-card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import {
+  Users,
+  Box,
+  Settings as SettingsIcon,
+  CreditCard,
+  PackagePlus,
+  Star,
+  UserCircle,
+  ShieldCheck,
+} from 'lucide-react';
+
+const allMenuItems = [
+    {
+      title: 'ashley_employees_management',
+      icon: CreditCard,
+      href: '/ashley-expenses',
+      color: 'bg-blue-500',
+      permission: 'page:ashley-expenses:view',
+    },
+    {
+      title: 'transmit_cargo',
+      icon: PackagePlus,
+      href: '/transmit',
+      color: 'bg-yellow-500',
+      permission: 'page:transmit:view',
+    },
+    {
+      title: 'placement_storage',
+      icon: Box,
+      href: '/items',
+      color: 'bg-green-500',
+      permission: 'page:items:view',
+    },
+    {
+      title: 'marketing_feedback',
+      icon: Star,
+      href: '/marketing-feedback',
+      color: 'bg-cyan-500',
+      permission: 'page:marketing-feedback:view',
+    },
+    {
+        title: 'admin_panel',
+        icon: ShieldCheck,
+        href: '/settings?tab=admin',
+        color: 'bg-red-500',
+        permission: 'page:admin',
+    },
+    {
+      title: 'settings',
+      icon: SettingsIcon,
+      href: '/settings',
+      color: 'bg-purple-500',
+      permission: 'page:settings',
+    },
+    {
+      title: 'employees',
+      icon: Users,
+      href: '/employees',
+      color: 'bg-pink-500',
+      permission: 'page:employees:view',
+    },
+    {
+      title: 'my_account',
+      icon: UserCircle,
+      href: '/account',
+      color: 'bg-gray-500',
+      permission: 'page:account',
+    },
+];
 
 const NewsTicker = () => {
     const { settings } = useAppContext();
@@ -42,6 +114,8 @@ export function DashboardClient() {
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  const menuItems = allMenuItems.filter(item => hasPermission(item.permission));
 
   if (!isMounted) {
       return null;
@@ -96,6 +170,24 @@ export function DashboardClient() {
                 </Link>
             )}
         </div>
+
+        <Card className="animate-fade-in-down" style={{ animationDelay: '500ms' }}>
+            <CardHeader>
+                <CardTitle>{t('services')}</CardTitle>
+                <CardDescription>{t('select_service')}</CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {menuItems.map((item) => (
+                    <DashboardCard
+                    key={item.title}
+                    title={t(item.title)}
+                    icon={item.icon}
+                    href={item.href}
+                    color={item.color}
+                    />
+                ))}
+            </CardContent>
+        </Card>
       </main>
       <NewsTicker />
     </>

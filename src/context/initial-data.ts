@@ -23,6 +23,12 @@ const initialUsers: User[] = [
         username: 'admin',
         password: 'password',
         roleId: 'role-admin'
+    },
+    {
+        id: 'user-darko-admin',
+        username: 'Darko_admin07',
+        password: '123',
+        roleId: 'role-admin'
     }
 ];
 
