@@ -57,7 +57,7 @@ const allMenuItems = [
     {
         title: 'admin_panel',
         icon: ShieldCheck,
-        href: '/admin',
+        href: '/settings?tab=admin',
         color: 'bg-red-500',
         permission: 'page:admin',
     },
@@ -134,7 +134,7 @@ export function DashboardClient() {
                     alt="Dashboard Banner"
                     fill
                     className="object-cover"
-                    data-ai-hint="banner abstract"
+                    unoptimized
                 />
             </div>
         )}

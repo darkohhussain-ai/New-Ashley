@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -27,9 +28,9 @@ import { Label } from '@/components/ui/label';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
+  CardDescription,
   CardFooter,
 } from '@/components/ui/card';
 import { useTheme } from '@/components/shared/theme-provider';
@@ -488,8 +489,8 @@ function SettingsPage() {
                                       <br/><strong>App Hosting &gt; Your Backend &gt; Settings &gt; Environment Variables</strong>
                                   </p>
                                   <div className="bg-white/50 p-2 rounded font-mono text-[10px]">
-                                      Add: NEXT_PUBLIC_SUPABASE_URL<br/>
-                                      Add: NEXT_PUBLIC_SUPABASE_ANON_KEY
+                                      Add: FIREBASE_CONFIG (Auto-generated)<br/>
+                                      Ensure: Project is on Blaze Plan
                                   </div>
                               </div>
                               
