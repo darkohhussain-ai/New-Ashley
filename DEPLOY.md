@@ -1,81 +1,61 @@
-# How to Deploy Your Website to GitHub Pages
+# How to Deploy Your Terminal to Firebase App Hosting
 
-This guide provides the step-by-step instructions to automatically deploy your website to GitHub Pages and connect a custom domain.
-
----
-
-### Step 1: Create a GitHub Repository
-
-1.  **Sign up or log in** to your account at [github.com](https://github.com).
-2.  Create a **new repository**. You can name it whatever you like (e.g., `my-website`). Make sure it is "Public".
+Follow these exact steps to push your code to GitHub and deploy it to the cloud.
 
 ---
 
-### Step 2: Push Your Code to GitHub
+### Step 1: Connect to GitHub
 
-Open a terminal on your local computer, navigate to your project's root directory, and run the following commands.
-
-*Replace `<YOUR_GITHUB_URL>` with the URL of the repository you just created.*
+Open your local terminal in the project root and run:
 
 ```bash
-# Initialize git if you haven't already
+# Initialize the repository
 git init -b main
 
-# Add all your project files
+# Stage and commit all files (except those in .gitignore)
 git add .
+git commit -m "build: initialize terminal for cloud rollout"
 
-# Save your changes
-git commit -m "Initial commit"
+# Connect to your GitHub repository
+# Replace <YOUR_URL> with the URL from the repo you just created on GitHub
+git remote add origin <YOUR_GITHUB_REPO_URL>
 
-# Connect your local project to your GitHub repository
-git remote add origin <YOUR_GITHUB_URL>
-
-# Upload your code
+# Push the code
 git push -u origin main
 ```
 
 ---
 
-### Step 3: Enable GitHub Pages
+### Step 2: Enable Firebase App Hosting
 
-1.  Go to your repository on GitHub.
-2.  Click on the **"Settings"** tab.
-3.  In the left sidebar, click on **"Pages"**.
-4.  Under "Build and deployment", change the "Source" from "Deploy from a branch" to **"GitHub Actions"**.
-
-That's it! GitHub will now automatically build and deploy your website. Wait a few minutes, and your site will be live at a URL like `https://your-username.github.io/your-repository-name/`.
-
-**Every time you `git push` new changes to your `main` branch, your website will be automatically updated.**
+1.  Go to the [Firebase Console](https://console.firebase.google.com/).
+2.  Select your project: **ashley-drp-manager-2-119-42612**.
+3.  In the left sidebar, go to **Build > App Hosting**.
+4.  Click **Get Started** and connect the GitHub repository you just pushed to.
+5.  Follow the setup wizard. **IMPORTANT:** Select the `main` branch.
 
 ---
 
-### Step 4 (Optional): Connect Your Custom Domain
+### Step 3: Configure Environment Variables (CRITICAL)
 
-To use a custom domain (like `www.yourcompany.com`) with your GitHub Pages site, follow these steps.
+Your terminal requires Supabase to function. Without these variables in the Firebase Console, the build will fail.
 
-#### Part A: Add Your Domain to GitHub
+1.  In the App Hosting dashboard, click on your backend.
+2.  Go to the **Settings** tab.
+3.  Click **Environment Variables**.
+4.  Add the following keys (copy values from your local `.env`):
+    *   `NEXT_PUBLIC_SUPABASE_URL`
+    *   `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+5.  Trigger a new rollout to apply these changes.
 
-1.  Go to your repository's **"Settings" > "Pages"** page on GitHub.
-2.  Under the **"Custom domain"** section, enter your domain name (e.g., `www.yourcompany.com`) and click **"Save"**.
-3.  After saving, GitHub may display a message with the DNS records you need. It typically asks you to point your domain to specific IP addresses.
+---
 
-#### Part B: Configure Your DNS Records
+### Step 4: Billing
 
-Now, go to your domain registrar's website (where you bought the domain, like GoDaddy or Namecheap) and find the DNS settings page. You will need to add or edit the following records:
+Firebase App Hosting requires the **Blaze (Pay-as-you-go) Plan**. Ensure your project is upgraded in the "Usage and Billing" section of the Firebase Console to avoid deployment errors.
 
-1.  **Add `A` Records:**
-    Create four `A` records that point your bare domain (e.g., `yourcompany.com`) to GitHub's IP addresses.
-    
-    *   `185.199.108.153`
-    *   `185.199.109.153`
-    *   `185.199.110.153`
-    *   `185.199.111.153`
+---
 
-    *An `A` record maps a domain name to an IP address.*
+### Step 5: Custom Domain
 
-2.  **Add a `CNAME` Record:**
-    Create one `CNAME` record that points your `www` subdomain (e.g., `www.yourcompany.com`) to your GitHub Pages URL (e.g., `your-username.github.io`).
-    
-    *A `CNAME` record maps one domain name to another.*
-
-It may take a few hours for these DNS changes to take effect. Once they do, GitHub will automatically secure your site with HTTPS, and your website will be accessible via your custom domain!
+Once your rollout is "Live", go to **App Hosting > Settings** and click **Add Custom Domain** to link your official URL.
