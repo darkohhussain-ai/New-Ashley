@@ -11,54 +11,22 @@
     --card-foreground: 224 71.4% 4.1%;
     --popover: 0 0% 100%;
     --popover-foreground: 224 71.4% 4.1%;
-    --primary: 220 82% 55%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 220 13% 91%;
-    --secondary-foreground: 220 9% 38%;
-    --muted: 220 13% 91%;
-    --muted-foreground: 220 9% 38%;
-    --accent: 220 13% 91%;
-    --accent-foreground: 220 9% 38%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 220 13% 88%;
-    --input: 220 13% 85%;
-    --ring: 220 82% 55%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --radius: 0.8rem;
-
-    /* Custom Added Colors */
-    --tab-active-background: hsl(var(--background));
-    --tab-active-foreground: hsl(var(--foreground));
-    --table-row-primary: hsl(var(--background));
-    --table-row-secondary: hsl(var(--secondary));
-    --huana-highlight: 54 90% 92%;
-    --location-occupied-border: 210 100% 70%;
-    --location-occupied-bg: 210 100% 96%;
-
-    /* Custom Status Colors */
-    --status-correct-bg: 142 90% 92%;
-    --status-less-bg: 38 92% 90%; /* Darker Orange */
-    --status-more-bg: 221 83% 92%; /* Darker Blue */
-    --status-wrapped-bg: 54 100% 92%;
-    --status-damaged-bg: 0 100% 94%;
-    
-    --status-new-bg: 48 96% 89%; /* Strong Yellow */
-    --status-updated-bg: 142 80% 92%;
-    
-    /* Map Area Colors */
-    --ashley-floor4-bg: 220 10% 97%;
-    --ashley-floor3-area1-bg: 210 20% 97%;
-    --ashley-floor3-office-bg: 190 20% 97%;
-    --huana-h1-bg: 30 50% 97%;
-    --huana-h2-bg: 130 30% 97%;
-    --huana-h3-bg: 200 40% 97%;
-    --huana-k-bg: 330 50% 97%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.75rem;
   }
+
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
@@ -67,7 +35,7 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
     --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 84% 4.9%;
+    --primary-foreground: 222.2 47.4% 11.2%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217.2 32.6% 17.5%;
@@ -78,38 +46,19 @@
     --destructive-foreground: 210 40% 98%;
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 217.2 91.2% 59.8%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-
-    /* Custom Added Colors */
-    --tab-active-background: hsl(var(--background));
-    --tab-active-foreground: hsl(var(--foreground));
-
-    /* Custom Status Colors */
-    --status-correct-bg: 142 76% 15%; 
-    --status-less-bg: 25 95% 20%;
-    --status-more-bg: 210 100% 20%;
-    --status-wrapped-bg: 54 92% 15%;
-    --status-damaged-bg: 0 84% 15%;
-    --location-occupied-border: 217.2 91.2% 50%;
-    --location-occupied-bg: 217.2 91.2% 15%;
-    
-    --status-new-bg: 48 96% 25%; /* Strong Yellow */
-    --status-updated-bg: 142 76% 20%;
-    
-    /* Map Area Colors */
-    --ashley-floor4-bg: 220 10% 12%;
-    --ashley-floor3-area1-bg: 210 20% 12%;
-    --ashley-floor3-office-bg: 190 20% 12%;
-    --huana-h1-bg: 30 20% 12%;
-    --huana-h2-bg: 130 20% 12%;
-    --huana-h3-bg: 200 20% 12%;
-    --huana-k-bg: 330 20% 12%;
+    --ring: 224.3 76.3% 48%;
   }
+
+  /* 10 Professional Themes */
+  [data-theme='emerald'] { --primary: 142.1 70.6% 45.3%; --ring: 142.1 70.6% 45.3%; }
+  [data-theme='rose'] { --primary: 346.8 77.2% 49.8%; --ring: 346.8 77.2% 49.8%; }
+  [data-theme='amber'] { --primary: 37.9 92.1% 50%; --ring: 37.9 92.1% 50%; }
+  [data-theme='violet'] { --primary: 262.1 83.3% 57.8%; --ring: 262.1 83.3% 57.8%; }
+  [data-theme='orange'] { --primary: 24.6 95% 53.1%; --ring: 24.6 95% 53.1%; }
+  [data-theme='cyan'] { --primary: 188.7 94.5% 42.7%; --ring: 188.7 94.5% 42.7%; }
+  [data-theme='indigo'] { --primary: 238.7 83.5% 66.7%; --ring: 238.7 83.5% 66.7%; }
+  [data-theme='zinc'] { --primary: 240 5.9% 10%; --ring: 240 5.9% 10%; }
+  [data-theme='crimson'] { --primary: 348 83% 47%; --ring: 348 83% 47%; }
 }
 
 @layer base {
@@ -118,46 +67,11 @@
   }
   body {
     @apply bg-background text-foreground font-sans;
-    word-spacing: normal;
   }
-  @keyframes highlight {
-    from { @apply bg-primary/30; }
-    to { @apply bg-transparent; }
-  }
-  :target {
-    animation: highlight 1.5s ease-out;
-  }
-}
-
-@layer utilities {
-  .bg-status-correct { @apply bg-[hsl(var(--status-correct-bg))]; }
-  .bg-status-less { @apply bg-[hsl(var(--status-less-bg))]; }
-  .bg-status-more { @apply bg-[hsl(var(--status-more-bg))]; }
-  .bg-status-wrapped { @apply bg-[hsl(var(--status-wrapped-bg))]; }
-  .bg-status-damaged { @apply bg-[hsl(var(--status-damaged-bg))]; }
-  /* Update Statuses */
-  .bg-status-new { @apply bg-[hsl(var(--status-new-bg))]; }
-  .bg-status-updated { @apply bg-[hsl(var(--status-updated-bg))]; }
-
-  /* Custom row/item colors */
-  .bg-table-row-primary { @apply bg-[hsl(var(--table-row-primary))]; }
-  .bg-table-row-secondary { @apply bg-[hsl(var(--table-row-secondary))]; }
-  .bg-huana-highlight { @apply bg-[hsl(var(--huana-highlight))]; }
-  .border-location-occupied-border { @apply border-[hsl(var(--location-occupied-border))]; }
-  .bg-location-occupied-bg { @apply bg-[hsl(var(--location-occupied-bg))]; }
 }
 
 @media print {
-  body {
-    background-color: white;
-    color: black;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-  .pdf-table {
-    font-size: 8pt !important;
-  }
-  .pdf-table th, .pdf-table td {
-    padding: 2px 4px !important;
+  .print-hidden {
+    display: none !important;
   }
 }

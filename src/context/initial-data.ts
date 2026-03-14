@@ -49,7 +49,7 @@ const defaultBranchColors: BranchColors = {
 
 const defaultReportSettings: PdfSettings = {
     logo: null,
-    themeColor: '#22c55e', // Green
+    themeColor: '#22c55e',
     reportColors: defaultReportColors,
     tableTheme: 'striped',
     headerText: '',
@@ -61,7 +61,7 @@ const defaultReportSettings: PdfSettings = {
 
 const defaultInvoiceSettings: PdfSettings = {
     logo: null,
-    themeColor: '#f97316', // Orange for invoices
+    themeColor: '#f97316',
     secondaryColor: '#0F172A',
     titleTemplate: 'Transmit to {city}',
     tableTheme: 'grid',
@@ -75,7 +75,7 @@ const defaultInvoiceSettings: PdfSettings = {
 
 const defaultCardSettings: PdfSettings = {
     logo: null,
-    themeColor: '#8b5cf6', // Violet
+    themeColor: '#8b5cf6',
     headerText: 'Employee ID',
     footerText: 'Official Company ID',
     scale: 3,
@@ -85,7 +85,7 @@ const defaultCardSettings: PdfSettings = {
 
 const defaultDatasheetSettings: PdfSettings = {
     logo: null,
-    themeColor: '#059669', // Emerald
+    themeColor: '#059669',
     tableTheme: 'grid',
     headerText: 'Product Datasheet',
     footerText: 'Internal Use Only',
@@ -127,7 +127,15 @@ export const initialSettings: AppSettings = {
         overtimeRate: 5000,
         bonusRate: 5000,
     },
+    reportHeaderColors: {
+        ashleyExpenses: '#3b82f6',
+        transmitCargo: '#eab308',
+        placementStorage: '#22c55e',
+        marketingFeedback: '#06b6d4',
+        employees: '#ec4899',
+    },
     theme: 'light',
+    selectedTheme: 'default',
     language: 'en',
 };
 
@@ -197,10 +205,5 @@ export const initialData: {
     users: initialUsers,
     roles: initialRoles,
     soldItemsLists: [],
-    activityLogs: [
-      { id: 'log1', userId: 'user-admin-default', username: 'admin', action: 'update', entity: 'Employee', entityId: 'emp-01', description: 'Updated employee Darko details', timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString() },
-      { id: 'log2', userId: 'user-admin-default', username: 'admin', action: 'create', entity: 'Expense', entityId: 'exp-123', description: 'Created new expense for 25000 IQD', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString() },
-      { id: 'log3', userId: 'user-admin-default', username: 'admin', action: 'delete', entity: 'Item', entityId: 'item-abc', description: 'Deleted item "Old Chair" from file "Warehouse Check"', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 25).toISOString() },
-      { id: 'log4', userId: 'user-admin-default', username: 'admin', action: 'login', entity: 'User', description: 'User admin logged in successfully.', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString() },
-    ],
+    activityLogs: [],
 };

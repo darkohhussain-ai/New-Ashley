@@ -15,6 +15,8 @@ import {
   LogOut,
   Sun,
   Moon,
+  ArrowLeft,
+  Printer,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format } from 'date-fns';
@@ -37,14 +39,12 @@ function DateTimeDisplay() {
   const [time, setTime] = useState<Date | null>(null);
 
   useEffect(() => {
-    // This code runs only on the client, after the component has mounted.
     setTime(new Date());
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
-  }, []); // The empty dependency array ensures this effect runs only once on mount.
+  }, []);
 
   if (!time) {
-    // On the server and during initial client render, show a placeholder.
     return (
       <>
         <div className="flex items-center gap-2">
@@ -59,7 +59,6 @@ function DateTimeDisplay() {
     );
   }
 
-  // Once mounted on the client, render the actual time.
   return (
     <>
       <div className="flex items-center gap-2">
@@ -105,10 +104,26 @@ export function AppHeader() {
       <div className="w-full px-4">
         <div className="flex items-center justify-between h-20">
             <div className="flex-1 flex items-center justify-start gap-2">
-                 {isDashboard && <SidebarTrigger className="-ml-2" />}
-                 <div className="hidden md:flex items-center gap-4 text-sm text-muted-foreground">
-                    <DateTimeDisplay />
-                </div>
+                 {isDashboard ? (
+                    <>
+                        <SidebarTrigger className="-ml-2" />
+                        <div className="hidden md:flex items-center gap-4 text-sm text-muted-foreground">
+                            <DateTimeDisplay />
+                        </div>
+                    </>
+                 ) : (
+                    <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="icon" onClick={() => router.back()} title={t('back')}>
+                            <ArrowLeft className="w-5 h-5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" asChild title={t('home')}>
+                            <Link href="/"><Home className="w-5 h-5" /></Link>
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => window.print()} title={t('print')}>
+                            <Printer className="w-5 h-5" />
+                        </Button>
+                    </div>
+                 )}
             </div>
           
             <div className="flex-1 flex items-center justify-center">
@@ -129,9 +144,6 @@ export function AppHeader() {
             </div>
 
             <div className="flex-1 flex items-center justify-end gap-2">
-                <Button variant="ghost" size="icon" asChild>
-                    <Link href="/"><Home className="w-5 h-5 text-muted-foreground hover:text-primary" /></Link>
-                </Button>
                 <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon">
@@ -172,13 +184,11 @@ export function AppHeader() {
                 >
                 <RefreshCcw className="w-5 h-5 text-muted-foreground hover:text-primary" />
                 </Button>
-                <Bell className="w-6 h-6 text-muted-foreground hover:text-primary cursor-pointer" />
                 
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <div className="flex items-center gap-2 cursor-pointer">
-                            <Avatar className="w-10 h-10">
-                            <AvatarImage src={undefined} />
+                        <div className="flex items-center gap-2 cursor-pointer ml-2">
+                            <Avatar className="w-10 h-10 border-2 border-primary/20">
                             <AvatarFallback>{user?.username?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
                             </Avatar>
                             <ChevronDown className="w-4 h-4 text-muted-foreground" />

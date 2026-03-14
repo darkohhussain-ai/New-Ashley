@@ -1,3 +1,4 @@
+
 'use client';
 
 import './globals.css';
@@ -73,26 +74,13 @@ function AppContent({ children }: { children: React.ReactNode }) {
     const { language } = useTranslation();
     const pathname = usePathname();
     const isLoginPage = pathname === '/login';
+    const isDashboard = pathname === '/';
 
     useEffect(() => {
         document.documentElement.lang = language;
         document.documentElement.dir = language === 'ku' ? 'rtl' : 'ltr';
-
-        const channel = new BroadcastChannel('settings-update');
-        const handleMessage = (event: MessageEvent) => {
-            if (event.data === 'reload') {
-                setTimeout(() => {
-                    window.location.reload();
-                }, 500);
-            }
-        };
-        channel.addEventListener('message', handleMessage);
-
-        return () => {
-            channel.removeEventListener('message', handleMessage);
-            channel.close();
-        };
-    }, [language]);
+        document.documentElement.setAttribute('data-theme', settings.selectedTheme || 'default');
+    }, [language, settings.selectedTheme]);
     
     if (isLoading) {
         if (pathname === '/login') {
@@ -106,10 +94,10 @@ function AppContent({ children }: { children: React.ReactNode }) {
     }
 
     return (
-        <SidebarProvider>
+        <SidebarProvider defaultOpen={isDashboard}>
             <CustomFontInjector />
 
-            {!isLoginPage && <AppSidebar />}
+            {!isLoginPage && isDashboard && <AppSidebar />}
             
             <SidebarInset className="flex flex-col">
                 {!isLoginPage && <MainBackground />}

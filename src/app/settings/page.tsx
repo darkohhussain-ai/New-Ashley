@@ -22,6 +22,7 @@ import {
   Edit,
   Trash2,
   KeyRound,
+  Check,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -61,6 +62,20 @@ import { initialSettings } from '@/context/initial-data';
 import { format, parseISO } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { allPermissions } from '@/lib/permissions';
+import { cn } from '@/lib/utils';
+
+const themes = [
+  { name: 'default', color: 'bg-blue-500', label: 'Default Blue' },
+  { name: 'emerald', color: 'bg-emerald-500', label: 'Emerald Green' },
+  { name: 'rose', color: 'bg-rose-500', label: 'Rose Pink' },
+  { name: 'amber', color: 'bg-amber-500', label: 'Amber Gold' },
+  { name: 'violet', color: 'bg-violet-500', label: 'Violet Purple' },
+  { name: 'orange', color: 'bg-orange-500', label: 'Sunset Orange' },
+  { name: 'cyan', color: 'bg-cyan-500', label: 'Sky Cyan' },
+  { name: 'indigo', color: 'bg-indigo-500', label: 'Indigo Night' },
+  { name: 'zinc', color: 'bg-zinc-800', label: 'Industrial Zinc' },
+  { name: 'crimson', color: 'bg-red-700', label: 'Crimson Red' },
+];
 
 function ColorPicker({
   label,
@@ -192,7 +207,7 @@ function RoleManagementTab() {
         <div className="space-y-4">
             <div className="flex items-center gap-4">
                 <Label>Select Role:</Label>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                     {roles.map(role => (
                         <Button 
                             key={role.id} 
@@ -369,7 +384,7 @@ function SettingsPage() {
                 <ArrowLeft />
               </Link>
             </Button>
-            <h1 className="text-xl">{t('settings')}</h1>
+            <h1 className="text-xl font-bold">{t('settings')}</h1>
           </div>
           <div className="ml-auto flex items-center gap-4">
             <Button onClick={handleSave} disabled={!isDirty || isSaving || !isAdmin}>
@@ -391,12 +406,38 @@ function SettingsPage() {
 
           <TabsContent value="design" className="pt-6 space-y-6">
             <Card>
-              <CardHeader><CardTitle>Theme Colors</CardTitle></CardHeader>
-              <CardContent className="space-y-4">
+              <CardHeader>
+                <CardTitle>Color Palette & System Themes</CardTitle>
+                <CardDescription>Select a professional theme for your terminal workspace.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-8">
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+                    {themes.map((theme) => (
+                      <button
+                        key={theme.name}
+                        onClick={() => setDraftSettings(prev => ({ ...prev, selectedTheme: theme.name }))}
+                        className={cn(
+                          "relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all hover:bg-muted/50",
+                          draftSettings.selectedTheme === theme.name ? "border-primary bg-primary/5" : "border-transparent"
+                        )}
+                      >
+                        <div className={cn("w-12 h-12 rounded-full shadow-inner", theme.color)} />
+                        <span className="text-xs font-medium">{theme.label}</span>
+                        {draftSettings.selectedTheme === theme.name && (
+                          <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-0.5">
+                            <Check className="w-3 h-3" />
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+
+                  <Separator />
+
                   <Tabs defaultValue="light">
                       <TabsList className="grid w-full grid-cols-2">
-                          <TabsTrigger value="light">Light</TabsTrigger>
-                          <TabsTrigger value="dark">Dark</TabsTrigger>
+                          <TabsTrigger value="light">Light Mode Overrides</TabsTrigger>
+                          <TabsTrigger value="dark">Dark Mode Overrides</TabsTrigger>
                       </TabsList>
                       <TabsContent value="light" className="space-y-4 pt-4">
                           <ColorPicker label="Primary" value={draftSettings.lightThemeColors.primary} onChange={c => handleThemeColorChange('light', 'primary', c)} />
@@ -477,7 +518,7 @@ function SettingsPage() {
                       <Card>
                           <CardHeader>
                               <CardTitle className="flex items-center gap-2">
-                                  <Cloud className="h-5 w-5" /> Cloud Rollout &amp; Publishing Hub
+                                  <Cloud className="h-5 w-5" /> Cloud Rollout Hub
                               </CardTitle>
                               <CardDescription>Troubleshooting guide for successful cloud deployment.</CardDescription>
                           </CardHeader>
@@ -512,10 +553,10 @@ function SettingsPage() {
                               <CardTitle className="text-destructive flex items-center gap-2">
                                   <RefreshCcw className="h-4 w-4" /> Reset Terminal
                               </CardTitle>
-                              <CardDescription>Permanently wipe all cloud and local data.</CardDescription>
+                              <CardDescription>Permanently wipe all data.</CardDescription>
                           </CardHeader>
                           <CardContent className="space-y-4">
-                              <p className="text-xs text-muted-foreground">Type <strong>RESET</strong> below to confirm. This will delete all employees, inventory, and settings records.</p>
+                              <p className="text-xs text-muted-foreground">Type <strong>RESET</strong> below to confirm. This will delete all records.</p>
                               <Input value={resetConfirmText} onChange={e => setResetConfirmText(e.target.value)} placeholder="Type RESET to confirm" />
                           </CardContent>
                           <CardFooter>

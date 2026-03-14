@@ -1,5 +1,4 @@
 
-
 export type Translations = Record<string, string>;
 
 export type Language = 'en' | 'ku';
@@ -7,7 +6,7 @@ export type Language = 'en' | 'ku';
 export type User = {
     id: string;
     username: string;
-    password?: string; // Should not be stored long-term, used for creation/reset
+    password?: string;
     roleId: string;
 };
 
@@ -100,7 +99,7 @@ export type Expense = {
   amount: number;
   date: string;
   notes?: string;
-  expenseReportId: string; // Link to the parent report
+  expenseReportId: string;
   expenseType: string;
   expenseSubType?: string;
 };
@@ -156,7 +155,6 @@ export type Transfer = {
   invoiceNumber: number;
 };
 
-// For items we are sending out
 export type ItemForTransfer = {
   id: string;
   model: string;
@@ -169,7 +167,6 @@ export type ItemForTransfer = {
   storage?: string;
 };
 
-// For items we need to receive
 export type OrderRequest = {
   id: string;
   requestedBy: string;
@@ -295,5 +292,6 @@ export type AppSettings = {
   salarySettings: SalarySettings;
   reportHeaderColors: ReportHeaderColors;
   theme: 'light' | 'dark';
+  selectedTheme: string;
   language: Language;
 };
