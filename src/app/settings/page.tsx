@@ -376,24 +376,6 @@ function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <header className="bg-card border-b p-4">
-        <div className="w-full flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="icon" asChild>
-              <Link href="/">
-                <ArrowLeft />
-              </Link>
-            </Button>
-            <h1 className="text-xl font-bold">{t('settings')}</h1>
-          </div>
-          <div className="ml-auto flex items-center gap-4">
-            <Button onClick={handleSave} disabled={!isDirty || isSaving || !isAdmin}>
-              {isSaving ? <Loader2 className="animate-spin mr-2"/> : <Save className="mr-2 h-4 w-4" />}
-              {t('save_all_changes')}
-            </Button>
-          </div>
-        </div>
-      </header>
       <main className="flex-1 overflow-y-auto p-4 md:p-6 w-full">
         <Tabs defaultValue="design" className="w-full">
           <TabsList className="grid w-full grid-cols-5">
@@ -408,7 +390,7 @@ function SettingsPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Color Palette & System Themes</CardTitle>
-                <CardDescription>Select a professional theme for your terminal workspace.</CardDescription>
+                <CardDescription>Select a professional theme for your terminal workspace. Backgrounds, headers, and cards will synchronize.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-8">
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
@@ -418,11 +400,11 @@ function SettingsPage() {
                         onClick={() => setDraftSettings(prev => ({ ...prev, selectedTheme: theme.name }))}
                         className={cn(
                           "relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all hover:bg-muted/50",
-                          draftSettings.selectedTheme === theme.name ? "border-primary bg-primary/5" : "border-transparent"
+                          draftSettings.selectedTheme === theme.name ? "border-primary bg-primary/5 shadow-inner" : "border-transparent"
                         )}
                       >
-                        <div className={cn("w-12 h-12 rounded-full shadow-inner", theme.color)} />
-                        <span className="text-xs font-medium">{theme.label}</span>
+                        <div className={cn("w-12 h-12 rounded-full shadow-lg border-2 border-white", theme.color)} />
+                        <span className="text-xs font-bold uppercase tracking-tighter">{theme.label}</span>
                         {draftSettings.selectedTheme === theme.name && (
                           <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-0.5">
                             <Check className="w-3 h-3" />
@@ -491,7 +473,7 @@ function SettingsPage() {
                   <div className="lg:col-span-2 space-y-6">
                       <Card>
                           <CardHeader>
-                              <CardTitle className="flex items-center gap-2">
+                              <CardTitle className="flex items-center gap-2 text-primary">
                                   <Users className="h-5 w-5" /> User Management
                               </CardTitle>
                               <CardDescription>Manage terminal operators and their access roles.</CardDescription>
@@ -503,7 +485,7 @@ function SettingsPage() {
 
                       <Card>
                           <CardHeader>
-                              <CardTitle className="flex items-center gap-2">
+                              <CardTitle className="flex items-center gap-2 text-primary">
                                   <ShieldCheck className="h-5 w-5" /> Role &amp; Permission Management
                               </CardTitle>
                               <CardDescription>Configure system access levels for different roles.</CardDescription>
@@ -515,7 +497,7 @@ function SettingsPage() {
 
                       <Card>
                           <CardHeader>
-                              <CardTitle className="flex items-center gap-2">
+                              <CardTitle className="flex items-center gap-2 text-primary">
                                   <RefreshCcw className="h-5 w-5" /> System Activity
                               </CardTitle>
                               <CardDescription>Monitor important system actions performed by users.</CardDescription>
@@ -527,19 +509,19 @@ function SettingsPage() {
 
                       <Card>
                           <CardHeader>
-                              <CardTitle className="flex items-center gap-2">
+                              <CardTitle className="flex items-center gap-2 text-primary">
                                   <Cloud className="h-5 w-5" /> Cloud Rollout Hub
                               </CardTitle>
                               <CardDescription>Troubleshooting guide for successful cloud deployment.</CardDescription>
                           </CardHeader>
                           <CardContent className="space-y-6">
-                              <div className="p-5 rounded-2xl border-2 bg-amber-50 border-amber-100 space-y-2 text-amber-900">
+                              <div className="p-5 rounded-2xl border-2 bg-amber-50 border-amber-100 space-y-2 text-amber-900 shadow-sm">
                                   <p className="text-sm font-bold flex items-center gap-2"><ShieldCheck className="h-4 w-4" /> Resolving "Rollout Error"</p>
                                   <p className="text-xs leading-relaxed opacity-80">
                                       If you see "Something went wrong creating your App Hosting rollout", it usually means environment variables are missing. In the Firebase Console, go to:
                                       <br/><strong>App Hosting &gt; Your Backend &gt; Settings &gt; Environment Variables</strong>
                                   </p>
-                                  <div className="bg-white/50 p-2 rounded font-mono text-[10px]">
+                                  <div className="bg-white/50 p-2 rounded font-mono text-[10px] border">
                                       Add: FIREBASE_CONFIG (Auto-generated)<br/>
                                       Ensure: Project is on Blaze Plan
                                   </div>
@@ -558,19 +540,19 @@ function SettingsPage() {
                   </div>
 
                   <div className="lg:col-span-1 space-y-6">
-                      <Card className="border-destructive/20">
-                          <CardHeader>
+                      <Card className="border-destructive/20 shadow-lg">
+                          <CardHeader className="bg-destructive/5 border-b border-destructive/10">
                               <CardTitle className="text-destructive flex items-center gap-2">
                                   <RefreshCcw className="h-4 w-4" /> Reset Terminal
                               </CardTitle>
                               <CardDescription>Permanently wipe all data.</CardDescription>
                           </CardHeader>
-                          <CardContent className="space-y-4">
+                          <CardContent className="space-y-4 pt-6">
                               <p className="text-xs text-muted-foreground">Type <strong>RESET</strong> below to confirm. This will delete all records.</p>
                               <Input value={resetConfirmText} onChange={e => setResetConfirmText(e.target.value)} placeholder="Type RESET to confirm" />
                           </CardContent>
                           <CardFooter>
-                              <Button variant="destructive" className="w-full" disabled={resetConfirmText !== "RESET"} onClick={handleResetToDefault}>
+                              <Button variant="destructive" className="w-full font-bold" disabled={resetConfirmText !== "RESET"} onClick={handleResetToDefault}>
                                 Execute Full Reset
                               </Button>
                           </CardFooter>

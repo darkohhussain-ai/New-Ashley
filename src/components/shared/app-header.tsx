@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -100,26 +99,26 @@ export function AppHeader() {
   const isDashboard = pathname === '/';
 
   return (
-    <header className="bg-card border-b top-0 z-10 print:hidden">
+    <header className="bg-[hsl(var(--title-bar-bg))] text-[hsl(var(--title-bar-foreground))] shadow-lg top-0 z-10 print:hidden">
       <div className="w-full px-4">
         <div className="flex items-center justify-between h-20">
             <div className="flex-1 flex items-center justify-start gap-2">
                  {isDashboard ? (
                     <>
-                        <SidebarTrigger className="-ml-2" />
-                        <div className="hidden md:flex items-center gap-4 text-sm text-muted-foreground">
+                        <SidebarTrigger className="-ml-2 text-inherit hover:bg-white/10" />
+                        <div className="hidden md:flex items-center gap-4 text-sm opacity-90">
                             <DateTimeDisplay />
                         </div>
                     </>
                  ) : (
                     <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => router.back()} title={t('back')}>
+                        <Button variant="ghost" size="icon" onClick={() => router.back()} title={t('back')} className="text-inherit hover:bg-white/10">
                             <ArrowLeft className="w-5 h-5" />
                         </Button>
-                        <Button variant="ghost" size="icon" asChild title={t('home')}>
+                        <Button variant="ghost" size="icon" asChild title={t('home')} className="text-inherit hover:bg-white/10">
                             <Link href="/"><Home className="w-5 h-5" /></Link>
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => window.print()} title={t('print')}>
+                        <Button variant="ghost" size="icon" onClick={() => window.print()} title={t('print')} className="text-inherit hover:bg-white/10">
                             <Printer className="w-5 h-5" />
                         </Button>
                     </div>
@@ -135,7 +134,7 @@ export function AppHeader() {
                         src={settings.appLogo}
                         alt="App Logo"
                         fill
-                        className="object-contain"
+                        className="object-contain brightness-0 invert"
                         data-ai-hint="logo"
                     />
                     </div>
@@ -146,8 +145,8 @@ export function AppHeader() {
             <div className="flex-1 flex items-center justify-end gap-2">
                 <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                    <Languages className="w-5 h-5 text-muted-foreground hover:text-primary" />
+                    <Button variant="ghost" size="icon" className="text-inherit hover:bg-white/10">
+                    <Languages className="w-5 h-5" />
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -171,6 +170,7 @@ export function AppHeader() {
                   size="icon"
                   onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
                   aria-label={t('toggle_theme')}
+                  className="text-inherit hover:bg-white/10"
                 >
                   <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
                   <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
@@ -181,17 +181,18 @@ export function AppHeader() {
                 size="icon"
                 onClick={handleRefresh}
                 aria-label={t('refresh_page')}
+                className="text-inherit hover:bg-white/10"
                 >
-                <RefreshCcw className="w-5 h-5 text-muted-foreground hover:text-primary" />
+                <RefreshCcw className="w-5 h-5" />
                 </Button>
                 
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <div className="flex items-center gap-2 cursor-pointer ml-2">
-                            <Avatar className="w-10 h-10 border-2 border-primary/20">
-                            <AvatarFallback>{user?.username?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
+                            <Avatar className="w-10 h-10 border-2 border-white/20">
+                            <AvatarFallback className="bg-white/10 text-inherit">{user?.username?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
                             </Avatar>
-                            <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                            <ChevronDown className="w-4 h-4 opacity-70" />
                         </div>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
