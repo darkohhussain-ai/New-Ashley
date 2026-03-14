@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -22,6 +23,7 @@ import {
   Trash2,
   KeyRound,
   Check,
+  Monitor,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -75,6 +77,7 @@ const themes = [
   { name: 'indigo', color: 'bg-indigo-500', label: 'Indigo Night' },
   { name: 'zinc', color: 'bg-zinc-800', label: 'Industrial Zinc' },
   { name: 'crimson', color: 'bg-red-700', label: 'Crimson Red' },
+  { name: 'custom', color: 'bg-gradient-to-tr from-gray-400 to-gray-200', label: 'Custom Architect' },
 ];
 
 function ColorPicker({
@@ -117,36 +120,43 @@ function ColorPicker({
   };
 
   return (
-    <div className="flex items-center justify-between">
-      <Label className="capitalize text-sm">
-        {t(label.toLowerCase().replace(/ /g, '_'))}
-      </Label>
-      <div className="flex items-center gap-2">
-        <Input
-          type="color"
-          value={hslToHex(Number(h), Number(s), Number(l))}
-          readOnly
-          className="w-8 h-8 p-1 rounded-md pointer-events-none"
+    <div className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/30 transition-colors">
+      <div className="space-y-0.5">
+        <Label className="capitalize text-sm font-bold tracking-tight">
+          {t(label.toLowerCase().replace(/ /g, '_'))}
+        </Label>
+        <p className="text-[10px] text-muted-foreground uppercase font-mono">{value}</p>
+      </div>
+      <div className="flex items-center gap-3">
+        <div 
+            className="w-10 h-10 rounded-full border-2 border-background shadow-sm" 
+            style={{ backgroundColor: `hsl(${value})` }}
         />
-        <div className="flex items-center gap-1 text-xs">
-          <Input
-            className="h-7 w-14 text-xs"
-            placeholder="H"
-            value={h}
-            onChange={e => handleHslChange('h', e.target.value)}
-          />
-          <Input
-            className="h-7 w-12 text-xs"
-            placeholder="S"
-            value={s}
-            onChange={e => handleHslChange('s', e.target.value)}
-          />
-          <Input
-            className="h-7 w-12 text-xs"
-            placeholder="L"
-            value={l}
-            onChange={e => handleHslChange('l', e.target.value)}
-          />
+        <div className="flex items-center gap-1">
+          <div className="flex flex-col gap-1">
+            <span className="text-[9px] text-center font-bold text-muted-foreground">H</span>
+            <Input
+                className="h-8 w-14 text-xs font-mono"
+                value={h}
+                onChange={e => handleHslChange('h', e.target.value)}
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <span className="text-[9px] text-center font-bold text-muted-foreground">S</span>
+            <Input
+                className="h-8 w-12 text-xs font-mono"
+                value={s}
+                onChange={e => handleHslChange('s', e.target.value)}
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <span className="text-[9px] text-center font-bold text-muted-foreground">L</span>
+            <Input
+                className="h-8 w-12 text-xs font-mono"
+                value={l}
+                onChange={e => handleHslChange('l', e.target.value)}
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -375,7 +385,7 @@ function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
+    <div className="min-h-screen bg-background text-foreground flex flex-col pb-24">
       <main className="flex-1 overflow-y-auto p-4 md:p-6 w-full">
         <Tabs defaultValue="design" className="w-full">
           <TabsList className="grid w-full grid-cols-5">
@@ -389,11 +399,11 @@ function SettingsPage() {
           <TabsContent value="design" className="pt-6 space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Color Palette & System Themes</CardTitle>
-                <CardDescription>Select a professional theme for your terminal workspace. Backgrounds, headers, and cards will synchronize.</CardDescription>
+                <CardTitle>System Theme Architect</CardTitle>
+                <CardDescription>Select a professional preset or use "Custom Architect" to design your own color space.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-8">
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4">
                     {themes.map((theme) => (
                       <button
                         key={theme.name}
@@ -404,7 +414,7 @@ function SettingsPage() {
                         )}
                       >
                         <div className={cn("w-12 h-12 rounded-full shadow-lg border-2 border-white", theme.color)} />
-                        <span className="text-xs font-bold uppercase tracking-tighter">{theme.label}</span>
+                        <span className="text-[10px] font-bold uppercase tracking-tighter text-center">{theme.label}</span>
                         {draftSettings.selectedTheme === theme.name && (
                           <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-0.5">
                             <Check className="w-3 h-3" />
@@ -416,22 +426,29 @@ function SettingsPage() {
 
                   <Separator />
 
-                  <Tabs defaultValue="light">
-                      <TabsList className="grid w-full grid-cols-2">
-                          <TabsTrigger value="light">Light Mode Overrides</TabsTrigger>
-                          <TabsTrigger value="dark">Dark Mode Overrides</TabsTrigger>
-                      </TabsList>
-                      <TabsContent value="light" className="space-y-4 pt-4">
-                          <ColorPicker label="Primary" value={draftSettings.lightThemeColors.primary} onChange={c => handleThemeColorChange('light', 'primary', c)} />
-                          <ColorPicker label="Background" value={draftSettings.lightThemeColors.background} onChange={c => handleThemeColorChange('light', 'background', c)} />
-                          <ColorPicker label="Accent" value={draftSettings.lightThemeColors.accent} onChange={c => handleThemeColorChange('light', 'accent', c)} />
-                      </TabsContent>
-                      <TabsContent value="dark" className="space-y-4 pt-4">
-                          <ColorPicker label="Primary" value={draftSettings.darkThemeColors.primary} onChange={c => handleThemeColorChange('dark', 'primary', c)} />
-                          <ColorPicker label="Background" value={draftSettings.darkThemeColors.background} onChange={c => handleThemeColorChange('dark', 'background', c)} />
-                          <ColorPicker label="Accent" value={draftSettings.darkThemeColors.accent} onChange={c => handleThemeColorChange('dark', 'accent', c)} />
-                      </TabsContent>
-                  </Tabs>
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-2 text-primary font-bold">
+                        <Monitor className="w-5 h-5" />
+                        <h3>Advanced Color Customization</h3>
+                    </div>
+                    
+                    <Tabs defaultValue="light">
+                        <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="light">Light Mode Palettes</TabsTrigger>
+                            <TabsTrigger value="dark">Dark Mode Palettes</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="light" className="space-y-2 pt-4">
+                            <ColorPicker label="Primary Accent" value={draftSettings.lightThemeColors.primary} onChange={c => handleThemeColorChange('light', 'primary', c)} />
+                            <ColorPicker label="System Background" value={draftSettings.lightThemeColors.background} onChange={c => handleThemeColorChange('light', 'background', c)} />
+                            <ColorPicker label="Interface Accent" value={draftSettings.lightThemeColors.accent} onChange={c => handleThemeColorChange('light', 'accent', c)} />
+                        </TabsContent>
+                        <TabsContent value="dark" className="space-y-2 pt-4">
+                            <ColorPicker label="Primary Accent" value={draftSettings.darkThemeColors.primary} onChange={c => handleThemeColorChange('dark', 'primary', c)} />
+                            <ColorPicker label="System Background" value={draftSettings.darkThemeColors.background} onChange={c => handleThemeColorChange('dark', 'background', c)} />
+                            <ColorPicker label="Interface Accent" value={draftSettings.darkThemeColors.accent} onChange={c => handleThemeColorChange('dark', 'accent', c)} />
+                        </TabsContent>
+                    </Tabs>
+                  </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -562,6 +579,26 @@ function SettingsPage() {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* Sticky Save Footer */}
+      <footer className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-md border-t p-4 z-50 flex justify-center">
+          <div className="w-full max-w-4xl flex items-center justify-between gap-4">
+              <div className="hidden md:block">
+                  <p className="text-sm font-medium text-muted-foreground">
+                      {isDirty ? "You have unsaved changes." : "All configurations are synchronized."}
+                  </p>
+              </div>
+              <div className="flex items-center gap-2 w-full md:w-auto">
+                  <Button variant="outline" className="flex-1 md:flex-none" onClick={() => setDraftSettings(settings)} disabled={!isDirty || isSaving}>
+                      <X className="mr-2 h-4 w-4" /> Discard
+                  </Button>
+                  <Button className="flex-1 md:flex-none shadow-lg px-8" onClick={handleSave} disabled={!isDirty || isSaving || !isAdmin}>
+                      {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                      {t('save_all_changes')}
+                  </Button>
+              </div>
+          </div>
+      </footer>
     </div>
   );
 }

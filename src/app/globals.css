@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -26,10 +27,10 @@
     --radius: 0.75rem;
 
     /* Extended Theme Variables */
-    --title-bar-bg: 221.2 83.2% 53.3%;
-    --title-bar-foreground: 210 40% 98%;
-    --card-header-bg: 210 40% 96.1%;
-    --table-header-bg: 221.2 83.2% 53.3%;
+    --title-bar-bg: var(--primary);
+    --title-bar-foreground: var(--primary-foreground);
+    --card-header-bg: var(--muted);
+    --table-header-bg: var(--primary);
   }
 
   .dark {
@@ -53,66 +54,48 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 224.3 76.3% 48%;
 
-    --title-bar-bg: 217.2 91.2% 59.8%;
-    --title-bar-foreground: 222.2 47.4% 11.2%;
-    --card-header-bg: 217.2 32.6% 17.5%;
-    --table-header-bg: 217.2 91.2% 59.8%;
+    --title-bar-bg: var(--primary);
+    --title-bar-foreground: var(--primary-foreground);
+    --card-header-bg: var(--secondary);
+    --table-header-bg: var(--primary);
   }
 
   /* 10 Professional Themes */
   [data-theme='emerald'] { 
     --primary: 142.1 70.6% 45.3%; 
     --background: 142 30% 98%;
-    --title-bar-bg: 142.1 70.6% 45.3%;
-    --card-header-bg: 142 30% 95%;
   }
   [data-theme='rose'] { 
     --primary: 346.8 77.2% 49.8%; 
     --background: 346 30% 98%;
-    --title-bar-bg: 346.8 77.2% 49.8%;
-    --card-header-bg: 346 30% 95%;
   }
   [data-theme='amber'] { 
     --primary: 37.9 92.1% 50%; 
     --background: 38 30% 98%;
-    --title-bar-bg: 37.9 92.1% 50%;
-    --card-header-bg: 38 30% 95%;
   }
   [data-theme='violet'] { 
     --primary: 262.1 83.3% 57.8%; 
     --background: 262 30% 98%;
-    --title-bar-bg: 262.1 83.3% 57.8%;
-    --card-header-bg: 262 30% 95%;
   }
   [data-theme='orange'] { 
     --primary: 24.6 95% 53.1%; 
     --background: 24 30% 98%;
-    --title-bar-bg: 24.6 95% 53.1%;
-    --card-header-bg: 24 30% 95%;
   }
   [data-theme='cyan'] { 
     --primary: 188.7 94.5% 42.7%; 
     --background: 188 30% 98%;
-    --title-bar-bg: 188.7 94.5% 42.7%;
-    --card-header-bg: 188 30% 95%;
   }
   [data-theme='indigo'] { 
     --primary: 238.7 83.5% 66.7%; 
     --background: 238 30% 98%;
-    --title-bar-bg: 238.7 83.5% 66.7%;
-    --card-header-bg: 238 30% 95%;
   }
   [data-theme='zinc'] { 
     --primary: 240 5.9% 10%; 
     --background: 240 5% 96%;
-    --title-bar-bg: 240 5.9% 10%;
-    --card-header-bg: 240 5% 90%;
   }
   [data-theme='crimson'] { 
     --primary: 348 83% 47%; 
     --background: 348 30% 98%;
-    --title-bar-bg: 348 83% 47%;
-    --card-header-bg: 348 30% 95%;
   }
 }
 
