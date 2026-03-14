@@ -24,6 +24,7 @@ import {
   KeyRound,
   Check,
   Monitor,
+  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -35,7 +36,6 @@ import {
   CardDescription,
   CardFooter,
 } from '@/components/ui/card';
-import { useTheme } from '@/components/shared/theme-provider';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -43,8 +43,6 @@ import { useTranslation } from '@/hooks/use-translation';
 import type {
   ThemeColors,
   AppSettings,
-  User,
-  ActivityLog,
   Role,
 } from '@/lib/types';
 import {
@@ -105,18 +103,6 @@ function ColorPicker({
     const current = parseHsl(value);
     current[part] = newValue;
     onChange(`${current.h} ${current.s}% ${current.l}%`);
-  };
-
-  const hslToHex = (h: number, s: number, l: number): string => {
-    s /= 100;
-    l /= 100;
-    const k = (n: number) => (n + h / 30) % 12;
-    const a = s * Math.min(l, 1 - l);
-    const f = (n: number) =>
-      l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1));
-    return `#${[0, 8, 4]
-      .map(n => Math.round(f(n) * 255).toString(16).padStart(2, '0'))
-      .join('')}`;
   };
 
   return (
@@ -539,8 +525,8 @@ function SettingsPage() {
                                       <br/><strong>App Hosting &gt; Your Backend &gt; Settings &gt; Environment Variables</strong>
                                   </p>
                                   <div className="bg-white/50 p-2 rounded font-mono text-[10px] border">
-                                      Add: FIREBASE_CONFIG (Auto-generated)<br/>
-                                      Ensure: Project is on Blaze Plan
+                                      Add: NEXT_PUBLIC_SUPABASE_URL<br/>
+                                      Add: NEXT_PUBLIC_SUPABASE_ANON_KEY
                                   </div>
                               </div>
                               
