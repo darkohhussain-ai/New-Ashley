@@ -64,54 +64,63 @@
   [data-theme='emerald'] { 
     --primary: 142.1 70.6% 45.3%; 
     --background: 142 30% 98%;
+    --accent: 142 30% 94%;
     --title-bar-bg: 142.1 70.6% 45.3%;
     --card-header-bg: 142 30% 94%;
   }
   [data-theme='rose'] { 
     --primary: 346.8 77.2% 49.8%; 
     --background: 346 30% 98%;
+    --accent: 346 30% 94%;
     --title-bar-bg: 346.8 77.2% 49.8%;
     --card-header-bg: 346 30% 94%;
   }
   [data-theme='amber'] { 
     --primary: 37.9 92.1% 50%; 
     --background: 38 30% 98%;
+    --accent: 38 30% 94%;
     --title-bar-bg: 37.9 92.1% 50%;
     --card-header-bg: 38 30% 94%;
   }
   [data-theme='violet'] { 
     --primary: 262.1 83.3% 57.8%; 
     --background: 262 30% 98%;
+    --accent: 262 30% 94%;
     --title-bar-bg: 262.1 83.3% 57.8%;
     --card-header-bg: 262 30% 94%;
   }
   [data-theme='orange'] { 
     --primary: 24.6 95% 53.1%; 
     --background: 24 30% 98%;
+    --accent: 24 30% 94%;
     --title-bar-bg: 24.6 95% 53.1%;
     --card-header-bg: 24 30% 94%;
   }
   [data-theme='cyan'] { 
     --primary: 188.7 94.5% 42.7%; 
     --background: 188 30% 98%;
+    --accent: 188 30% 94%;
     --title-bar-bg: 188.7 94.5% 42.7%;
     --card-header-bg: 188 30% 94%;
   }
   [data-theme='indigo'] { 
     --primary: 238.7 83.5% 66.7%; 
     --background: 238 30% 98%;
+    --accent: 238 30% 94%;
     --title-bar-bg: 238.7 83.5% 66.7%;
     --card-header-bg: 238 30% 94%;
   }
   [data-theme='zinc'] { 
     --primary: 240 5.9% 10%; 
     --background: 240 5% 96%;
+    --accent: 240 5% 90%;
     --title-bar-bg: 240 5.9% 10%;
     --card-header-bg: 240 5% 90%;
   }
   [data-theme='crimson'] { 
     --primary: 348 83% 47%; 
     --background: 348 30% 98%;
+    --accent: 348 30% 94%;
     --title-bar-bg: 348 83% 47%;
     --card-header-bg: 348 30% 94%;
   }

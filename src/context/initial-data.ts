@@ -101,8 +101,8 @@ const defaultPdfSettings: AllPdfSettings = {
     datasheet: defaultDatasheetSettings,
 };
 
-const defaultLightColors: ThemeColors = { background: '0 0% 100%', foreground: '224 71.4% 4.1%', primary: '220 82% 55%', accent: '220 13% 91%', card: '0 0% 100%', tabActiveBackground: '0 0% 100%', tabActiveForeground: '224 71.4% 4.1%', tableRowPrimary: '0 0% 100%', tableRowSecondary: '220 13% 96%', huanaHighlight: '210 100% 96%', locationOccupiedBorder: '210 100% 70%', locationOccupiedBg: '210 100% 96%'};
-const defaultDarkColors: ThemeColors = { background: '222.2 84% 4.9%', foreground: '210 40% 98%', primary: '217.2 91.2% 59.8%', accent: '217.2 32.6% 17.5%', card: '222.2 84% 4.9%', tabActiveBackground: '222.2 84% 4.9%', tabActiveForeground: '210 40% 98%', tableRowPrimary: '222.2 84% 4.9%', tableRowSecondary: '217.2 32.6% 17.5%', huanaHighlight: '217.2 91.2% 15%', locationOccupiedBorder: '217.2 91.2% 50%', locationOccupiedBg: '217.2 91.2% 15%' };
+const defaultLightColors: ThemeColors = { background: '0 0% 100%', foreground: '224 71.4% 4.1%', primary: '220 82% 55%', accent: '220 13% 91%', card: '0 0% 100%', titleBar: '220 82% 55%', tabActiveBackground: '0 0% 100%', tabActiveForeground: '224 71.4% 4.1%', tableRowPrimary: '0 0% 100%', tableRowSecondary: '220 13% 96%', huanaHighlight: '210 100% 96%', locationOccupiedBorder: '210 100% 70%', locationOccupiedBg: '210 100% 96%'};
+const defaultDarkColors: ThemeColors = { background: '222.2 84% 4.9%', foreground: '210 40% 98%', primary: '217.2 91.2% 59.8%', accent: '217.2 32.6% 17.5%', card: '222.2 84% 4.9%', titleBar: '217.2 91.2% 59.8%', tabActiveBackground: '222.2 84% 4.9%', tabActiveForeground: '210 40% 98%', tableRowPrimary: '222.2 84% 4.9%', tableRowSecondary: '217.2 32.6% 17.5%', huanaHighlight: '217.2 91.2% 15%', locationOccupiedBorder: '217.2 91.2% 50%', locationOccupiedBg: '217.2 91.2% 15%' };
 
 
 export const initialSettings: AppSettings = {

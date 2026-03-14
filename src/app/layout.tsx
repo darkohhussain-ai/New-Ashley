@@ -34,7 +34,7 @@ function DynamicThemeInjector() {
             --primary: ${colors.primary};
             --accent: ${colors.accent};
             --card: ${colors.card};
-            --title-bar-bg: ${colors.primary};
+            --title-bar-bg: ${colors.titleBar || colors.primary};
             --card-header-bg: ${colors.accent};
             --table-header-bg: ${colors.primary};
         }

@@ -249,6 +249,7 @@ export type ThemeColors = {
   primary: string;
   accent: string;
   card: string;
+  titleBar: string;
   tabActiveBackground: string;
   tabActiveForeground: string;
   tableRowPrimary: string;
