@@ -513,29 +513,25 @@ function SettingsPage() {
                       <Card>
                           <CardHeader>
                               <CardTitle className="flex items-center gap-2 text-primary">
-                                  <Cloud className="h-5 w-5" /> Cloud Rollout Hub
+                                  <Cloud className="h-5 w-5" /> Firebase Rollout Hub
                               </CardTitle>
-                              <CardDescription>Troubleshooting guide for successful cloud deployment.</CardDescription>
+                              <CardDescription>Troubleshooting guide for successful cloud deployment on Firebase.</CardDescription>
                           </CardHeader>
                           <CardContent className="space-y-6">
                               <div className="p-5 rounded-2xl border-2 bg-amber-50 border-amber-100 space-y-2 text-amber-900 shadow-sm">
-                                  <p className="text-sm font-bold flex items-center gap-2"><ShieldCheck className="h-4 w-4" /> Resolving "Rollout Error"</p>
+                                  <p className="text-sm font-bold flex items-center gap-2"><ShieldCheck className="h-4 w-4" /> Resolving Rollout Errors</p>
                                   <p className="text-xs leading-relaxed opacity-80">
-                                      If you see "Something went wrong creating your App Hosting rollout", it usually means environment variables are missing. In the Firebase Console, go to:
-                                      <br/><strong>App Hosting &gt; Your Backend &gt; Settings &gt; Environment Variables</strong>
+                                      If your build fails or the site doesn't load after deployment, ensure your Firebase environment is correctly configured in the Firebase Console under:
+                                      <br/><strong>App Hosting &gt; Your Backend &gt; Settings</strong>
                                   </p>
-                                  <div className="bg-white/50 p-2 rounded font-mono text-[10px] border">
-                                      Add: NEXT_PUBLIC_SUPABASE_URL<br/>
-                                      Add: NEXT_PUBLIC_SUPABASE_ANON_KEY
-                                  </div>
                               </div>
                               
                               <div className="space-y-4">
                                   <h4 className="text-sm font-bold flex items-center gap-2"><Play className="h-4 w-4" /> Deployment Steps</h4>
                                   <ul className="space-y-2 text-xs text-muted-foreground list-disc pl-4">
-                                      <li>Push code to a private GitHub Repository.</li>
-                                      <li>Connect the repo via Firebase App Hosting dashboard.</li>
-                                      <li>Ensure your project is on the <strong>Blaze Plan</strong>.</li>
+                                      <li>Push your code to a GitHub Repository.</li>
+                                      <li>Connect the repo via the Firebase Console App Hosting dashboard.</li>
+                                      <li>Ensure your project is on the <strong>Blaze Plan</strong> for App Hosting.</li>
                                   </ul>
                               </div>
                           </CardContent>

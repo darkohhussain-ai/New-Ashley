@@ -1,6 +1,7 @@
+
 # How to Deploy Your Terminal to Firebase App Hosting
 
-Follow these exact steps to push your code to GitHub and deploy it to the cloud.
+Follow these exact steps to push your code to GitHub and deploy it to Firebase.
 
 ---
 
@@ -12,9 +13,9 @@ Open your local terminal in the project root and run:
 # Initialize the repository
 git init -b main
 
-# Stage and commit all files (except those in .gitignore)
+# Stage and commit all files
 git add .
-git commit -m "build: initialize terminal for cloud rollout"
+git commit -m "build: initialize terminal for Firebase rollout"
 
 # Connect to your GitHub repository
 # Replace <YOUR_URL> with the URL from the repo you just created on GitHub
@@ -36,17 +37,14 @@ git push -u origin main
 
 ---
 
-### Step 3: Configure Environment Variables (CRITICAL)
+### Step 3: Configure Environment (If Required)
 
-Your terminal requires Supabase to function. Without these variables in the Firebase Console, the build will fail.
+Firebase App Hosting automatically handles standard Next.js builds. If your application requires specific build-time secrets or environment variables, you can add them in the Firebase Console:
 
 1.  In the App Hosting dashboard, click on your backend.
 2.  Go to the **Settings** tab.
 3.  Click **Environment Variables**.
-4.  Add the following keys (copy values from your local `.env`):
-    *   `NEXT_PUBLIC_SUPABASE_URL`
-    *   `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-5.  Trigger a new rollout to apply these changes.
+4.  Add any required keys from your local `.env`.
 
 ---
 
