@@ -165,6 +165,8 @@ export type ItemForTransfer = {
   createdAt: string;
   invoiceNo?: string;
   storage?: string;
+  requestDate?: string;
+  status?: string;
 };
 
 export type OrderRequest = {
