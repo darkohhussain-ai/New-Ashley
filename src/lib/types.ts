@@ -281,6 +281,7 @@ export type AppSettings = {
   loginBackgroundVideo: string | null;
   loginBackgroundEmbed: string | null;
   loginCardUpperImage: string | null;
+  loginButtonColor: string | null;
   dashboardBanner: string | null;
   dashboardBannerHeight: number;
   newsTickerText: string;

@@ -44,17 +44,19 @@ export default function LoginPage() {
   };
 
   return (
-     <div className="relative min-h-screen w-full flex items-center justify-center p-4 overflow-hidden">
+     <div className="relative min-h-screen w-full flex items-center justify-center p-4 overflow-hidden bg-black">
         {/* Background Layer: Embed, Video, or Image */}
-        <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 z-0 overflow-hidden">
             {settings.loginBackgroundEmbed ? (
-                <iframe
-                    key={settings.loginBackgroundEmbed}
-                    src={settings.loginBackgroundEmbed}
-                    className="absolute inset-0 w-full h-full border-0 pointer-events-none"
-                    allow="autoplay; encrypted-media"
-                    title="Background Video"
-                />
+                <div className="absolute inset-0 w-full h-full pointer-events-none scale-110">
+                    <iframe
+                        key={settings.loginBackgroundEmbed}
+                        src={settings.loginBackgroundEmbed}
+                        className="w-full h-full border-0"
+                        allow="autoplay; encrypted-media"
+                        title="Background Video"
+                    />
+                </div>
             ) : settings.loginBackgroundVideo ? (
                 <video
                     key={settings.loginBackgroundVideo}
@@ -85,7 +87,7 @@ export default function LoginPage() {
 
         <Card className="relative z-10 w-full max-w-sm border-2 border-primary shadow-2xl bg-background/95 backdrop-blur-md overflow-hidden">
             {settings.loginCardUpperImage && (
-                <div className="relative w-full h-32 shadow-lg">
+                <div className="relative w-full h-32 shadow-xl border-b border-white/10">
                     <Image
                         src={settings.loginCardUpperImage}
                         alt="Card Header"
@@ -96,7 +98,7 @@ export default function LoginPage() {
                     <div className="absolute inset-0 bg-gradient-to-t from-background/95 to-transparent" />
                 </div>
             )}
-            <CardHeader className="items-center text-center pb-2">
+            <CardHeader className="items-center text-center pb-2 pt-6">
                 {settings.appLogo && (
                     <div className="relative w-20 h-20 mb-4 bg-white/10 rounded-2xl p-2 backdrop-blur-sm border border-white/20 shadow-xl">
                         <Image
@@ -116,7 +118,7 @@ export default function LoginPage() {
                     Warehouse Manager
                 </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-4">
                 <form onSubmit={handleLogin} className="space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="username" className="text-[10px] font-black uppercase tracking-widest opacity-60">Username</Label>
@@ -144,7 +146,12 @@ export default function LoginPage() {
                             className="bg-muted/50 border-primary/10 focus-visible:ring-primary"
                         />
                     </div>
-                    <Button type="submit" className="w-full !mt-8 shadow-lg font-bold uppercase tracking-widest transition-all hover:scale-[1.02]" disabled={isLoading}>
+                    <Button 
+                        type="submit" 
+                        className="w-full !mt-8 shadow-lg font-bold uppercase tracking-widest transition-all hover:scale-[1.02]" 
+                        disabled={isLoading}
+                        style={{ backgroundColor: settings.loginButtonColor ? `hsl(${settings.loginButtonColor})` : undefined }}
+                    >
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Initiate Login"}
                     </Button>
                 </form>

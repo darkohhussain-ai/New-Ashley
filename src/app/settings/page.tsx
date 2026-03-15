@@ -18,6 +18,7 @@ import {
   Type,
   ScrollText,
   Code,
+  Brush,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -258,7 +259,7 @@ function SettingsPage() {
                 <Card className="border-none shadow-sm">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2"><Video className="w-4 h-4"/> Login Portal Media</CardTitle>
-                    <CardDescription>Configure dynamic backgrounds for the login portal.</CardDescription>
+                    <CardDescription>Configure dynamic backgrounds and custom button overrides for the login portal.</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div className="space-y-2">
@@ -280,6 +281,18 @@ function SettingsPage() {
                             value={draftSettings.loginBackgroundVideo || ''} 
                             onChange={e => setDraftSettings(prev => ({ ...prev, loginBackgroundVideo: e.target.value }))}
                             placeholder="Enter direct .mp4 URL"
+                        />
+                    </div>
+                    <Separator />
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-2">
+                            <Brush className="w-4 h-4 text-primary" />
+                            <Label>Login Button Accent (HSL)</Label>
+                        </div>
+                        <ColorPicker 
+                            label="Button Background" 
+                            value={draftSettings.loginButtonColor || draftSettings.lightThemeColors.primary} 
+                            onChange={v => setDraftSettings(prev => ({ ...prev, loginButtonColor: v }))} 
                         />
                     </div>
                     <Separator />
