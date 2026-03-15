@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -137,9 +136,6 @@ export default function LoginPage() {
                     </Button>
                 </form>
             </CardContent>
-            <div className="bg-primary/5 py-3 border-t border-primary/10 text-center">
-                <p className="text-[8px] font-black uppercase tracking-[0.3em] opacity-40">DRP Terminal Access Point</p>
-            </div>
         </Card>
     </div>
   );
