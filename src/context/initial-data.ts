@@ -1,3 +1,4 @@
+
 import { Employee, ExcelFile, Item, StorageLocation, Expense, ExpenseReport, Overtime, Bonus, CashWithdrawal, SoldItemsList, Transfer, ItemForTransfer, MarketingFeedback, EvaluationQuestion, AnswerOption, User, Role, AppSettings, AllPdfSettings, PdfSettings, ThemeColors, ItemCategory, BranchColors, ActivityLog, OrderRequest } from '@/lib/types';
 import { adminPermissions, adminAssistantPermissions, viewerPermissions, employeePermissions } from '@/lib/permissions';
 import en from '@/locales/en.json';
@@ -109,6 +110,7 @@ export const initialSettings: AppSettings = {
     mainBackground: null,
     loginBackground: null,
     loginBackgroundVideo: null,
+    loginBackgroundEmbed: null,
     loginCardUpperImage: null,
     dashboardBanner: "https://images.unsplash.com/photo-1685973323988-666a38e0acc2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxhYnN0cmFjdCUyMGJhbm5lcnxlbnwwfHx8fDE3NzAyMDU0NTh8MA&ixlib=rb-4.1.0&q=80&w=1080",
     dashboardBannerHeight: 150,

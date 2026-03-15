@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -44,33 +45,43 @@ export default function LoginPage() {
 
   return (
      <div className="relative min-h-screen w-full flex items-center justify-center p-4 overflow-hidden">
-        {/* Background Layer: Video or Image */}
-        {settings.loginBackgroundVideo ? (
-            <video
-                key={settings.loginBackgroundVideo}
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="absolute inset-0 w-full h-full object-cover"
-            >
-                <source src={settings.loginBackgroundVideo} type="video/mp4" />
-            </video>
-        ) : settings.loginBackground ? (
-            <Image
-                key={settings.loginBackground}
-                src={settings.loginBackground}
-                alt="Login background"
-                fill
-                className="object-cover"
-                priority
-                unoptimized
-            />
-        ) : (
-            <div className="absolute inset-0 bg-muted" />
-        )}
+        {/* Background Layer: Embed, Video, or Image */}
+        <div className="absolute inset-0 z-0">
+            {settings.loginBackgroundEmbed ? (
+                <iframe
+                    key={settings.loginBackgroundEmbed}
+                    src={settings.loginBackgroundEmbed}
+                    className="absolute inset-0 w-full h-full border-0 pointer-events-none"
+                    allow="autoplay; encrypted-media"
+                    title="Background Video"
+                />
+            ) : settings.loginBackgroundVideo ? (
+                <video
+                    key={settings.loginBackgroundVideo}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="absolute inset-0 w-full h-full object-cover"
+                >
+                    <source src={settings.loginBackgroundVideo} type="video/mp4" />
+                </video>
+            ) : settings.loginBackground ? (
+                <Image
+                    key={settings.loginBackground}
+                    src={settings.loginBackground}
+                    alt="Login background"
+                    fill
+                    className="object-cover"
+                    priority
+                    unoptimized
+                />
+            ) : (
+                <div className="absolute inset-0 bg-muted" />
+            )}
+        </div>
 
-        <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] z-[1]" />
 
         <Card className="relative z-10 w-full max-w-sm border-2 border-primary shadow-2xl bg-background/95 backdrop-blur-md overflow-hidden">
             {settings.loginCardUpperImage && (
@@ -133,7 +144,7 @@ export default function LoginPage() {
                             className="bg-muted/50 border-primary/10 focus-visible:ring-primary"
                         />
                     </div>
-                    <Button type="submit" className="w-full !mt-8 shadow-lg font-bold uppercase tracking-widest" disabled={isLoading}>
+                    <Button type="submit" className="w-full !mt-8 shadow-lg font-bold uppercase tracking-widest transition-all hover:scale-[1.02]" disabled={isLoading}>
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Initiate Login"}
                     </Button>
                 </form>

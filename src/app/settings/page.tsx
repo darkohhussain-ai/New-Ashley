@@ -17,6 +17,7 @@ import {
   Video,
   Type,
   ScrollText,
+  Code,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -30,6 +31,7 @@ import {
 } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTranslation } from '@/hooks/use-translation';
 import type { AppSettings, ThemeColors } from '@/lib/types';
@@ -256,20 +258,29 @@ function SettingsPage() {
                 <Card className="border-none shadow-sm">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2"><Video className="w-4 h-4"/> Login Portal Media</CardTitle>
-                    <CardDescription>Configure the cinematic background and card banner for the login portal.</CardDescription>
+                    <CardDescription>Configure dynamic backgrounds for the login portal.</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div className="space-y-2">
-                        <Label>Background Video URL (Direct .mp4 Only)</Label>
+                        <div className="flex items-center gap-2">
+                            <Code className="w-4 h-4 text-primary" />
+                            <Label>Video Embed URL (YouTube/Vimeo)</Label>
+                        </div>
+                        <Input 
+                            value={draftSettings.loginBackgroundEmbed || ''} 
+                            onChange={e => setDraftSettings(prev => ({ ...prev, loginBackgroundEmbed: e.target.value }))}
+                            placeholder="e.g., https://www.youtube.com/embed/VIDEO_ID"
+                        />
+                        <p className="text-[10px] opacity-60">Paste the <strong>src</strong> URL from an embed code. Example: <code>https://www.youtube.com/embed/ScMzIvxBSi4?autoplay=1&mute=1&loop=1</code></p>
+                    </div>
+                    <Separator />
+                    <div className="space-y-2">
+                        <Label>Direct MP4 Video URL</Label>
                         <Input 
                             value={draftSettings.loginBackgroundVideo || ''} 
                             onChange={e => setDraftSettings(prev => ({ ...prev, loginBackgroundVideo: e.target.value }))}
                             placeholder="Enter direct .mp4 URL"
                         />
-                        <div className="p-3 bg-muted/50 rounded-lg space-y-2 border">
-                            <p className="text-[10px] font-bold uppercase text-primary">Pro Tip: Use Firebase Storage</p>
-                            <p className="text-[10px] leading-relaxed opacity-70">YouTube links will not work. Upload your video to <strong>Firebase Storage</strong>, Cloudinary, or Imgur, and paste the "Download URL" here for a perfect autoplay background.</p>
-                        </div>
                     </div>
                     <Separator />
                     <div className="space-y-4">
