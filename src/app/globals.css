@@ -11,7 +11,7 @@
     --card-foreground: 224 71.4% 4.1%;
     --popover: 0 0% 100%;
     --popover-foreground: 224 71.4% 4.1%;
-    --primary: 221.2 83.2% 53.3%;
+    --primary: 262 83% 58%;
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -23,10 +23,12 @@
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.75rem;
+    --ring: 262 83% 58%;
+    --radius: 1rem;
 
-    /* Extended Theme Variables */
+    /* Theme Variables */
+    --sidebar-background: 262 83% 58%;
+    --sidebar-foreground: 0 0% 100%;
     --title-bar-bg: var(--primary);
     --title-bar-foreground: var(--primary-foreground);
     --card-header-bg: var(--muted);
@@ -54,75 +56,21 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 224.3 76.3% 48%;
 
-    --title-bar-bg: var(--primary);
-    --title-bar-foreground: var(--primary-foreground);
-    --card-header-bg: var(--secondary);
-    --table-header-bg: var(--primary);
+    --sidebar-background: 222.2 84% 4.9%;
+    --sidebar-foreground: 210 40% 98%;
   }
 
-  /* Professional Theme Definitions */
-  [data-theme='emerald'] { 
+  [data-theme='purple'] { 
+    --primary: 262 83% 58%; 
+    --sidebar-background: 262 83% 58%;
+  }
+  [data-theme='blue'] { 
+    --primary: 221.2 83.2% 53.3%; 
+    --sidebar-background: 221.2 83.2% 53.3%;
+  }
+  [data-theme='green'] { 
     --primary: 142.1 70.6% 45.3%; 
-    --background: 142 30% 98%;
-    --accent: 142 30% 94%;
-    --title-bar-bg: 142.1 70.6% 45.3%;
-    --card-header-bg: 142 30% 94%;
-  }
-  [data-theme='rose'] { 
-    --primary: 346.8 77.2% 49.8%; 
-    --background: 346 30% 98%;
-    --accent: 346 30% 94%;
-    --title-bar-bg: 346.8 77.2% 49.8%;
-    --card-header-bg: 346 30% 94%;
-  }
-  [data-theme='amber'] { 
-    --primary: 37.9 92.1% 50%; 
-    --background: 38 30% 98%;
-    --accent: 38 30% 94%;
-    --title-bar-bg: 37.9 92.1% 50%;
-    --card-header-bg: 38 30% 94%;
-  }
-  [data-theme='violet'] { 
-    --primary: 262.1 83.3% 57.8%; 
-    --background: 262 30% 98%;
-    --accent: 262 30% 94%;
-    --title-bar-bg: 262.1 83.3% 57.8%;
-    --card-header-bg: 262 30% 94%;
-  }
-  [data-theme='orange'] { 
-    --primary: 24.6 95% 53.1%; 
-    --background: 24 30% 98%;
-    --accent: 24 30% 94%;
-    --title-bar-bg: 24.6 95% 53.1%;
-    --card-header-bg: 24 30% 94%;
-  }
-  [data-theme='cyan'] { 
-    --primary: 188.7 94.5% 42.7%; 
-    --background: 188 30% 98%;
-    --accent: 188 30% 94%;
-    --title-bar-bg: 188.7 94.5% 42.7%;
-    --card-header-bg: 188 30% 94%;
-  }
-  [data-theme='indigo'] { 
-    --primary: 238.7 83.5% 66.7%; 
-    --background: 238 30% 98%;
-    --accent: 238 30% 94%;
-    --title-bar-bg: 238.7 83.5% 66.7%;
-    --card-header-bg: 238 30% 94%;
-  }
-  [data-theme='zinc'] { 
-    --primary: 240 5.9% 10%; 
-    --background: 240 5% 96%;
-    --accent: 240 5% 90%;
-    --title-bar-bg: 240 5.9% 10%;
-    --card-header-bg: 240 5% 90%;
-  }
-  [data-theme='crimson'] { 
-    --primary: 348 83% 47%; 
-    --background: 348 30% 98%;
-    --accent: 348 30% 94%;
-    --title-bar-bg: 348 83% 47%;
-    --card-header-bg: 348 30% 94%;
+    --sidebar-background: 142.1 70.6% 45.3%;
   }
 }
 

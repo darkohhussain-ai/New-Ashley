@@ -5,12 +5,12 @@ import { useMemo, useState } from 'react';
 import { useAppContext } from '@/context/app-provider';
 import { useTranslation } from '@/hooks/use-translation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
-import { Calendar as CalendarIcon } from 'lucide-react';
+import { Calendar as CalendarIcon, FileChartLine } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const formatCurrency = (amount: number) => {
@@ -24,11 +24,9 @@ const formatCurrency = (amount: number) => {
 export function MonthlyFinancialChart() {
   const { t } = useTranslation();
   const { expenses, overtime, bonuses, withdrawals, settings } = useAppContext();
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   const monthlyTotals = useMemo(() => {
-    if (!selectedDate) return { expenses: 0, overtime: 0, bonuses: 0, withdrawals: 0 };
-    
     const start = startOfMonth(selectedDate);
     const end = endOfMonth(selectedDate);
 
@@ -47,48 +45,52 @@ export function MonthlyFinancialChart() {
   }, [selectedDate, expenses, overtime, bonuses, withdrawals]);
 
   const chartData = useMemo(() => [
-      { name: t('expenses'), total: monthlyTotals.expenses, fill: settings.pdfSettings.report.reportColors?.expense || 'hsl(var(--chart-1))' },
-      { name: t('overtime'), total: monthlyTotals.overtime, fill: settings.pdfSettings.report.reportColors?.overtime || 'hsl(var(--chart-2))' },
-      { name: t('bonuses'), total: monthlyTotals.bonuses, fill: settings.pdfSettings.report.reportColors?.bonus || 'hsl(var(--chart-3))' },
-      { name: t('cash_withdrawals'), total: monthlyTotals.withdrawals, fill: settings.pdfSettings.report.reportColors?.withdrawal || 'hsl(var(--chart-4))' },
-  ], [t, monthlyTotals, settings.pdfSettings.report.reportColors]);
+      { name: t('expenses'), total: monthlyTotals.expenses, fill: '#3b82f6' },
+      { name: t('overtime'), total: monthlyTotals.overtime, fill: '#f97316' },
+      { name: t('bonuses'), total: monthlyTotals.bonuses, fill: '#a855f7' },
+      { name: t('cash_withdrawals'), total: monthlyTotals.withdrawals, fill: '#ef4444' },
+  ], [t, monthlyTotals]);
 
   const hasData = useMemo(() => chartData.some(d => d.total > 0), [chartData]);
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+    <Card className="border-none shadow-sm">
+      <CardHeader className="bg-muted/30 flex flex-row items-center justify-between">
         <div>
-          <CardTitle>{t('monthly_overview')}</CardTitle>
-          <CardDescription>{t('monthly_overview_desc', { month: selectedDate ? format(selectedDate, 'MMMM yyyy') : ''})}</CardDescription>
+          <CardTitle className="text-xl flex items-center gap-2">
+            <FileChartLine className="w-5 h-5 text-primary" />
+            {t('monthly_overview')}
+          </CardTitle>
+          <CardDescription>{t('monthly_overview_desc', { month: format(selectedDate, 'MMMM yyyy') })}</CardDescription>
         </div>
         <Popover>
             <PopoverTrigger asChild>
-                <Button variant={"outline"} className={cn("w-48 justify-start text-left font-normal", !selectedDate && "text-muted-foreground")}>
+                <Button variant={"outline"} size="sm" className={cn("w-40 justify-start text-left font-normal bg-background")}>
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {selectedDate ? format(selectedDate, "MMMM yyyy") : <span>{t('pick_a_month')}</span>}
+                {format(selectedDate, "MMMM yyyy")}
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="end">
-                <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} captionLayout="dropdown-nav" fromYear={2020} toYear={2040} />
+                <Calendar mode="single" selected={selectedDate} onSelect={(d) => d && setSelectedDate(d)} captionLayout="dropdown-nav" fromYear={2020} toYear={2040} />
             </PopoverContent>
         </Popover>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-6">
         {hasData ? (
-            <ResponsiveContainer width="100%" height={350}>
-                <BarChart data={chartData}>
-                    <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => formatCurrency(value)} />
+            <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={chartData} margin={{ top: 20 }}>
+                    <XAxis dataKey="name" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
+                    <YAxis stroke="#888888" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(value) => `${(value/1000).toFixed(0)}k`} />
                     <Tooltip 
                         formatter={(value: number) => formatCurrency(value)} 
                         cursor={{ fill: 'hsl(var(--accent))' }} 
                         contentStyle={{
                           backgroundColor: 'hsl(var(--background))',
-                          borderColor: 'hsl(var(--border))'
+                          borderRadius: '8px',
+                          border: '1px solid hsl(var(--border))'
                         }}
                     />
-                    <Bar dataKey="total" name={t('total_amount')} radius={[4, 4, 0, 0]}>
+                    <Bar dataKey="total" radius={[4, 4, 0, 0]}>
                         {chartData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.fill} />
                         ))}
@@ -96,8 +98,11 @@ export function MonthlyFinancialChart() {
                 </BarChart>
             </ResponsiveContainer>
         ) : (
-            <div className="flex h-[350px] items-center justify-center">
-                <p className="text-muted-foreground">{t('no_records_found_for_month', { month: selectedDate ? format(selectedDate, 'MMMM yyyy') : t('the_selected_month') })}</p>
+            <div className="flex h-[300px] flex-col items-center justify-center space-y-3">
+                <CalendarIcon className="w-10 h-10 text-muted-foreground opacity-20" />
+                <p className="text-sm font-medium text-muted-foreground">
+                    {t('no_records_found_for_month', { month: format(selectedDate, 'MMMM yyyy') })}
+                </p>
             </div>
         )}
       </CardContent>

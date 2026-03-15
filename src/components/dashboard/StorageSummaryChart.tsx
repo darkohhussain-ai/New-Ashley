@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo } from 'react';
@@ -5,8 +6,7 @@ import { useAppContext } from '@/context/app-provider';
 import { useTranslation } from '@/hooks/use-translation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Box } from 'lucide-react';
-import { Item } from '@/lib/types';
+import { Box, PackageCheck } from 'lucide-react';
 
 const COLORS = {
   'Correct': 'hsl(var(--chart-2))',
@@ -28,7 +28,7 @@ export function StorageSummaryChart() {
   const { items } = useAppContext();
 
   const chartData = useMemo(() => {
-    if (!items) return [];
+    if (!items || items.length === 0) return [];
 
     const statusCounts = items.reduce((acc, item) => {
       const status = item.storageStatus || '';
@@ -47,42 +47,49 @@ export function StorageSummaryChart() {
   }, [items, t]);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2"><Box /> {t('storage_status_overview')}</CardTitle>
+    <Card className="border-none shadow-sm h-full">
+      <CardHeader className="bg-muted/30">
+        <CardTitle className="text-xl flex items-center gap-2">
+            <Box className="w-5 h-5 text-primary" />
+            {t('storage_status_overview')}
+        </CardTitle>
         <CardDescription>{t('storage_status_overview_desc')}</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-6">
         {chartData.length > 0 ? (
-          <ResponsiveContainer width="100%" height={350}>
+          <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
                 data={chartData}
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                outerRadius={120}
+                outerRadius={100}
+                innerRadius={60}
                 fill="#8884d8"
                 dataKey="value"
                 nameKey="name"
+                paddingAngle={5}
               >
                 {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.fill} />
+                  <Cell key={`cell-${index}`} fill={entry.fill} stroke="transparent" />
                 ))}
               </Pie>
               <Tooltip
                 formatter={(value: number) => [`${value} items`, 'Count']}
                 contentStyle={{
                   backgroundColor: 'hsl(var(--background))',
-                  borderColor: 'hsl(var(--border))'
+                  borderRadius: '8px',
+                  border: '1px solid hsl(var(--border))'
                 }}
               />
-              <Legend />
+              <Legend verticalAlign="bottom" align="center" wrapperStyle={{ paddingTop: '20px' }} />
             </PieChart>
           </ResponsiveContainer>
         ) : (
-          <div className="text-center py-16">
-            <p className="text-muted-foreground">{t('no_storage_data_available')}</p>
+          <div className="flex h-[300px] flex-col items-center justify-center space-y-3">
+            <PackageCheck className="w-10 h-10 text-muted-foreground opacity-20" />
+            <p className="text-sm font-medium text-muted-foreground">{t('no_storage_data_available')}</p>
           </div>
         )}
       </CardContent>

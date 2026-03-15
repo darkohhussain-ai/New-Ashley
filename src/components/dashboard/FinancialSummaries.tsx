@@ -1,7 +1,7 @@
+
 'use client';
 
-import { useMemo, useState } from 'react';
-import Link from 'next/link';
+import { useMemo } from 'react';
 import { useAppContext } from '@/context/app-provider';
 import { useTranslation } from '@/hooks/use-translation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,18 +18,24 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
-const SummaryCard = ({ title, value, Icon, color }: { title: string, value: number, Icon: LucideIcon, color: string }) => (
-    <Card className="transition-transform hover:-translate-y-1 h-full flex flex-col">
+const SummaryCard = ({ title, value, Icon, color, progressColor }: { title: string, value: number, Icon: LucideIcon, color: string, progressColor: string }) => (
+    <Card className="transition-all hover:-translate-y-1 hover:shadow-md h-full flex flex-col border-none shadow-sm">
         <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Icon className="w-4 h-4" style={{ color }} />
+            <CardTitle className="text-xs font-bold uppercase tracking-wider flex items-center gap-2 opacity-70">
+                <div className="p-2 rounded-lg bg-muted text-foreground">
+                    <Icon className="w-4 h-4" style={{ color }} />
+                </div>
                 {title}
             </CardTitle>
         </CardHeader>
         <CardContent className="flex-grow pt-0 flex flex-col justify-end">
-            <div>
-                <div className="text-2xl font-bold h-8 flex items-center">{formatCurrency(value)}</div>
-                <Progress value={Math.min((value / 1000000) * 100, 100)} className="h-2 mt-2" indicatorClassName="bg-primary" style={{ backgroundColor: color }} />
+            <div className="space-y-3">
+                <div className="text-2xl font-bold">{formatCurrency(value)}</div>
+                <Progress 
+                    value={Math.min((value / 1000000) * 100, 100)} 
+                    className="h-1.5" 
+                    indicatorClassName={progressColor}
+                />
             </div>
         </CardContent>
     </Card>
@@ -37,14 +43,12 @@ const SummaryCard = ({ title, value, Icon, color }: { title: string, value: numb
 
 export function FinancialSummaries() {
   const { t } = useTranslation();
-  const { expenses, overtime, bonuses, withdrawals, settings } = useAppContext();
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const { expenses, overtime, bonuses, withdrawals } = useAppContext();
+  const now = new Date();
 
   const monthlyTotals = useMemo(() => {
-    if (!selectedDate) return { expenses: 0, overtime: 0, bonuses: 0, withdrawals: 0 };
-    
-    const start = startOfMonth(selectedDate);
-    const end = endOfMonth(selectedDate);
+    const start = startOfMonth(now);
+    const end = endOfMonth(now);
 
     const filterAndSum = (data: any[], amountField: string) => {
         if (!data) return 0;
@@ -58,16 +62,38 @@ export function FinancialSummaries() {
         bonuses: filterAndSum(bonuses, 'totalAmount'),
         withdrawals: filterAndSum(withdrawals, 'amount'),
     }
-  }, [selectedDate, expenses, overtime, bonuses, withdrawals]);
-  
-  const colors = settings.pdfSettings.report.reportColors;
+  }, [expenses, overtime, bonuses, withdrawals]);
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Link href="/expenses" className="flex"><SummaryCard title={t('expenses')} value={monthlyTotals.expenses} Icon={DollarSign} color={colors?.expense || 'hsl(var(--chart-1))'} /></Link>
-        <Link href="/overtime" className="flex"><SummaryCard title={t('overtime')} value={monthlyTotals.overtime} Icon={Clock} color={colors?.overtime || 'hsl(var(--chart-2))'} /></Link>
-        <Link href="/bonuses" className="flex"><SummaryCard title={t('bonuses')} value={monthlyTotals.bonuses} Icon={Gift} color={colors?.bonus || 'hsl(var(--chart-3))'} /></Link>
-        <Link href="/cash-withdrawal" className="flex"><SummaryCard title={t('cash_withdrawals')} value={monthlyTotals.withdrawals} Icon={Banknote} color={colors?.withdrawal || 'hsl(var(--chart-4))'} /></Link>
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <SummaryCard 
+            title={t('expenses')} 
+            value={monthlyTotals.expenses} 
+            Icon={DollarSign} 
+            color="#3b82f6" 
+            progressColor="bg-blue-500" 
+        />
+        <SummaryCard 
+            title={t('overtime')} 
+            value={monthlyTotals.overtime} 
+            Icon={Clock} 
+            color="#f97316" 
+            progressColor="bg-orange-500" 
+        />
+        <SummaryCard 
+            title={t('bonuses')} 
+            value={monthlyTotals.bonuses} 
+            Icon={Gift} 
+            color="#a855f7" 
+            progressColor="bg-purple-500" 
+        />
+        <SummaryCard 
+            title={t('cash_withdrawals')} 
+            value={monthlyTotals.withdrawals} 
+            Icon={Banknote} 
+            color="#ef4444" 
+            progressColor="bg-red-500" 
+        />
     </div>
   );
 }

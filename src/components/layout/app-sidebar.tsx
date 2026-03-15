@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -26,7 +27,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  useSidebar,
 } from '@/components/ui/sidebar';
 import { useTranslation } from '@/hooks/use-translation';
 import { useAuth } from '@/hooks/use-auth';
@@ -45,7 +45,7 @@ export function AppSidebar() {
           title: 'Dashboard',
           icon: LayoutDashboard,
           href: '/',
-          permission: 'admin:all', // Everyone logged in can see dashboard
+          permission: 'admin:all',
         },
       ],
     },
@@ -85,19 +85,13 @@ export function AppSidebar() {
       ],
     },
     {
-      label: 'Management Hub',
+      label: 'System Control',
       items: [
         {
           title: 'my_account',
           icon: UserCircle,
           href: '/account',
           permission: 'page:account',
-        },
-        {
-          title: 'admin_panel',
-          icon: ShieldCheck,
-          href: '/settings?tab=admin',
-          permission: 'page:admin',
         },
         {
           title: 'settings',
@@ -110,28 +104,34 @@ export function AppSidebar() {
   ];
 
   return (
-    <Sidebar collapsible="icon">
-      <SidebarHeader className="h-20 border-b flex items-center justify-center">
-        <div className="font-bold text-xl px-4 truncate">ASHLEY STAFF</div>
+    <Sidebar collapsible="icon" className="border-r-0 shadow-xl overflow-hidden">
+      <SidebarHeader className="h-20 bg-primary flex items-center justify-center border-b border-white/10">
+        <div className="font-black text-xl px-4 text-white tracking-tighter">ASHLEY STAFF</div>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="bg-primary text-white pt-4">
         {navigation.map((group) => (
           <SidebarGroup key={group.label}>
-            <SidebarGroupLabel>{t(group.label.toLowerCase().replace(/ /g, '_')) || group.label}</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-white/50 text-[10px] uppercase font-black tracking-widest px-4 mb-2">
+                {t(group.label.toLowerCase().replace(/ /g, '_')) || group.label}
+            </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {group.items
                   .filter((item) => hasPermission(item.permission))
                   .map((item) => (
-                    <SidebarMenuItem key={item.href}>
+                    <SidebarMenuItem key={item.href} className="px-2">
                       <SidebarMenuButton
                         asChild
                         isActive={pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))}
                         tooltip={t(item.title)}
+                        className={cn(
+                            "rounded-xl transition-all duration-300 hover:bg-white/10 active:scale-95",
+                            "data-[active=true]:bg-white data-[active=true]:text-primary data-[active=true]:shadow-lg"
+                        )}
                       >
                         <Link href={item.href}>
-                          <item.icon />
-                          <span>{t(item.title)}</span>
+                          <item.icon className="w-5 h-5" />
+                          <span className="font-bold">{t(item.title)}</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -141,9 +141,9 @@ export function AppSidebar() {
           </SidebarGroup>
         ))}
       </SidebarContent>
-      <SidebarFooter className="border-t p-4">
-        <div className="text-[10px] text-muted-foreground text-center uppercase tracking-widest">
-          DRP Terminal v1.2
+      <SidebarFooter className="bg-primary border-t border-white/10 p-6">
+        <div className="text-[10px] text-white/40 text-center uppercase font-black tracking-[0.2em]">
+          DRP Terminal v2.0
         </div>
       </SidebarFooter>
     </Sidebar>
