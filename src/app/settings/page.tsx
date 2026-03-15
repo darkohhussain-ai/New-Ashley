@@ -253,12 +253,13 @@ function SettingsPage() {
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div className="space-y-2">
-                        <Label>Background Video URL (mp4)</Label>
+                        <Label>Background Video URL (Direct .mp4 Only)</Label>
                         <Input 
                             value={draftSettings.loginBackgroundVideo || ''} 
                             onChange={e => setDraftSettings(prev => ({ ...prev, loginBackgroundVideo: e.target.value }))}
-                            placeholder="Enter .mp4 URL for video background"
+                            placeholder="Enter direct .mp4 URL (YouTube links not supported)"
                         />
+                        <p className="text-[10px] text-muted-foreground italic">Note: Use a direct link to an MP4 file. YouTube page links will not render.</p>
                     </div>
                     <Separator />
                     <div className="space-y-4">
@@ -302,7 +303,7 @@ function SettingsPage() {
             </div>
           </TabsContent>
 
-          <TabsContent value="pdf" className="pt-6 space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
+          <TabsContent value="pd" className="pt-6 space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card className="border-none shadow-sm">
                   <CardHeader><CardTitle>Global Report Headers</CardTitle><CardDescription>Custom images for the upper part of all printed pages.</CardDescription></CardHeader>

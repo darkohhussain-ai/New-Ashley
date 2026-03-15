@@ -73,7 +73,7 @@ export default function LoginPage() {
 
         <Card className="relative z-10 w-full max-w-sm border-2 border-primary/30 shadow-2xl bg-background/95 backdrop-blur-md overflow-hidden">
             {settings.loginCardUpperImage && (
-                <div className="relative w-full h-32 shadow-inner">
+                <div className="relative w-full h-32 shadow-lg">
                     <Image
                         src={settings.loginCardUpperImage}
                         alt="Card Header"
@@ -96,7 +96,7 @@ export default function LoginPage() {
                         />
                     </div>
                 )}
-                <CardTitle className="text-2xl font-black tracking-tighter uppercase text-primary">
+                <CardTitle className="text-xl font-black tracking-tighter uppercase text-primary">
                     Ashley Staff
                 </CardTitle>
                 <CardDescription className="font-bold text-[10px] uppercase tracking-[0.2em] opacity-70">
