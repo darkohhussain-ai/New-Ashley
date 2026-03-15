@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -43,16 +43,28 @@ export default function LoginPage() {
     }
   };
 
+  // Helper to build a high-performance background embed URL
+  const backgroundEmbedSrc = useMemo(() => {
+    if (!settings.loginBackgroundEmbed) return '';
+    
+    // Extract base URL and ID for the required loop/playlist parameter
+    const cleanUrl = settings.loginBackgroundEmbed.split('?')[0];
+    const videoId = cleanUrl.split('/').pop();
+    
+    return `${cleanUrl}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&disablekb=1`;
+  }, [settings.loginBackgroundEmbed]);
+
   return (
      <div className="relative min-h-screen w-full flex items-center justify-center p-4 overflow-hidden bg-black">
         {/* Background Layer: Embed, Video, or Image */}
-        <div className="absolute inset-0 z-0 overflow-hidden">
+        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
             {settings.loginBackgroundEmbed ? (
-                <div className="absolute inset-0 w-full h-full pointer-events-none scale-110">
+                <div className="relative w-full h-full overflow-hidden">
                     <iframe
-                        key={settings.loginBackgroundEmbed}
-                        src={settings.loginBackgroundEmbed}
-                        className="w-full h-full border-0"
+                        key={backgroundEmbedSrc}
+                        src={backgroundEmbedSrc}
+                        // Mathematical scaling to ensure "object-cover" effect for 16:9 video on any screen
+                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[100vw] h-[56.25vw] min-h-[100vh] min-w-[177.77vh] border-0"
                         allow="autoplay; encrypted-media"
                         title="Background Video"
                     />
@@ -83,6 +95,7 @@ export default function LoginPage() {
             )}
         </div>
 
+        {/* Cinematic Overlays */}
         <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] z-[1]" />
 
         <Card className="relative z-10 w-full max-w-sm border-2 border-primary shadow-2xl bg-background/95 backdrop-blur-md overflow-hidden">
