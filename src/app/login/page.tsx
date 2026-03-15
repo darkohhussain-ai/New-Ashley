@@ -43,7 +43,7 @@ export default function LoginPage() {
     }
   };
 
-  // Helper to build a high-performance background embed URL
+  // Helper to build a high-performance background embed URL with optimal parameters
   const backgroundEmbedSrc = useMemo(() => {
     if (!settings.loginBackgroundEmbed) return '';
     
@@ -63,7 +63,7 @@ export default function LoginPage() {
                     <iframe
                         key={backgroundEmbedSrc}
                         src={backgroundEmbedSrc}
-                        // Mathematical scaling to ensure "object-cover" effect for 16:9 video on any screen
+                        // Mathematical scaling to ensure "object-cover" effect for 16:9 video on any screen size
                         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[100vw] h-[56.25vw] min-h-[100vh] min-w-[177.77vh] border-0"
                         allow="autoplay; encrypted-media"
                         title="Background Video"
@@ -98,7 +98,7 @@ export default function LoginPage() {
         {/* Cinematic Overlays */}
         <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] z-[1]" />
 
-        <Card className="relative z-10 w-full max-w-sm border-2 border-primary shadow-2xl bg-background/95 backdrop-blur-md overflow-hidden">
+        <Card className="relative z-10 w-full max-w-sm border-2 border-primary shadow-2xl bg-background/95 backdrop-blur-md overflow-hidden animate-in zoom-in-95 duration-500">
             {settings.loginCardUpperImage && (
                 <div className="relative w-full h-32 shadow-xl border-b border-white/10">
                     <Image
@@ -143,7 +143,7 @@ export default function LoginPage() {
                             onChange={(e) => setUsername(e.target.value)}
                             required
                             disabled={isLoading}
-                            className="bg-muted/50 border-primary/10 focus-visible:ring-primary"
+                            className="bg-muted/50 border-primary/10 focus-visible:ring-primary h-11"
                         />
                     </div>
                     <div className="space-y-2">
@@ -156,12 +156,12 @@ export default function LoginPage() {
                             onChange={(e) => setPassword(e.target.value)}
                             required
                             disabled={isLoading}
-                            className="bg-muted/50 border-primary/10 focus-visible:ring-primary"
+                            className="bg-muted/50 border-primary/10 focus-visible:ring-primary h-11"
                         />
                     </div>
                     <Button 
                         type="submit" 
-                        className="w-full !mt-8 shadow-lg font-bold uppercase tracking-widest transition-all hover:scale-[1.02]" 
+                        className="w-full !mt-8 shadow-lg font-bold uppercase tracking-widest transition-all hover:scale-[1.02] h-12" 
                         disabled={isLoading}
                         style={{ backgroundColor: settings.loginButtonColor ? `hsl(${settings.loginButtonColor})` : undefined }}
                     >

@@ -35,6 +35,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTranslation } from '@/hooks/use-translation';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import type { AppSettings, ThemeColors } from '@/lib/types';
 import withAuth from '@/hooks/withAuth';
 import { useAppContext } from '@/context/app-provider';
@@ -42,8 +44,6 @@ import { useAuth } from '@/hooks/use-auth';
 import { initialSettings } from '@/context/initial-data';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
 
 const themes = [
   { name: 'purple', color: 'bg-purple-600', label: 'Corporate Purple' },
@@ -66,14 +66,14 @@ function ColorPicker({ label, value, onChange }: { label: string, value: string,
             <Label className="text-[10px] font-bold uppercase tracking-wider opacity-70">{label}</Label>
             <div className="flex items-center gap-2">
                 <div 
-                    className="w-8 h-8 rounded-lg border shadow-sm shrink-0" 
+                    className="w-10 h-10 rounded-lg border shadow-sm shrink-0" 
                     style={{ backgroundColor: `hsl(${value})` }}
                 />
                 <Input 
                     value={value} 
                     onChange={e => onChange(e.target.value)} 
                     placeholder="e.g. 220 80% 50%"
-                    className="h-8 text-xs font-mono"
+                    className="h-9 text-xs font-mono"
                 />
             </div>
         </div>
@@ -258,8 +258,8 @@ function SettingsPage() {
 
                 <Card className="border-none shadow-sm">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Video className="w-4 h-4"/> Login Portal Media</CardTitle>
-                    <CardDescription>Configure dynamic backgrounds and custom button overrides for the login portal.</CardDescription>
+                    <CardTitle className="flex items-center gap-2"><Video className="w-4 h-4"/> Login Portal Branding</CardTitle>
+                    <CardDescription>Configure the cinematic entry portal background and card identity.</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div className="space-y-2">
@@ -272,32 +272,23 @@ function SettingsPage() {
                             onChange={e => setDraftSettings(prev => ({ ...prev, loginBackgroundEmbed: e.target.value }))}
                             placeholder="e.g., https://www.youtube.com/embed/VIDEO_ID"
                         />
-                        <p className="text-[10px] opacity-60">Paste the <strong>src</strong> URL from an embed code. Example: <code>https://www.youtube.com/embed/ScMzIvxBSi4?autoplay=1&mute=1&loop=1</code></p>
-                    </div>
-                    <Separator />
-                    <div className="space-y-2">
-                        <Label>Direct MP4 Video URL</Label>
-                        <Input 
-                            value={draftSettings.loginBackgroundVideo || ''} 
-                            onChange={e => setDraftSettings(prev => ({ ...prev, loginBackgroundVideo: e.target.value }))}
-                            placeholder="Enter direct .mp4 URL"
-                        />
+                        <p className="text-[10px] opacity-60">Paste the <strong>src</strong> URL from an embed code. The terminal will automatically optimize it for full-screen playback.</p>
                     </div>
                     <Separator />
                     <div className="space-y-4">
                         <div className="flex items-center gap-2">
                             <Brush className="w-4 h-4 text-primary" />
-                            <Label>Login Button Accent (HSL)</Label>
+                            <Label>Login Action Button (HSL Color)</Label>
                         </div>
                         <ColorPicker 
-                            label="Button Background" 
+                            label="Button Accent" 
                             value={draftSettings.loginButtonColor || draftSettings.lightThemeColors.primary} 
                             onChange={v => setDraftSettings(prev => ({ ...prev, loginButtonColor: v }))} 
                         />
                     </div>
                     <Separator />
                     <div className="space-y-4">
-                        <Label>Login Card Header Image</Label>
+                        <Label>Login Card Banner Image</Label>
                         <div className="relative w-full h-24 border-2 border-dashed rounded-xl overflow-hidden bg-muted/30">
                             {draftSettings.loginCardUpperImage && <Image src={draftSettings.loginCardUpperImage} alt="Login Header" fill className="object-cover" unoptimized />}
                         </div>
@@ -305,7 +296,7 @@ function SettingsPage() {
                     </div>
                     <Separator />
                     <div className="space-y-4">
-                        <Label>{t('login_background')}</Label>
+                        <Label>{t('login_background')} (Static Fallback)</Label>
                         <div className="relative w-full h-24 border-2 border-dashed rounded-xl overflow-hidden bg-muted/30">
                             {draftSettings.loginBackground && <Image src={draftSettings.loginBackground} alt="Login Background" fill className="object-cover" unoptimized />}
                         </div>
@@ -341,8 +332,8 @@ function SettingsPage() {
              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card className="border-none shadow-sm">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><ScrollText className="w-4 h-4"/> Global News Ticker</CardTitle>
-                        <CardDescription>Enter the scrolling text that appears at the bottom of the dashboard.</CardDescription>
+                        <CardTitle className="flex items-center gap-2"><ScrollText className="w-4 h-4"/> Dashboard News Ticker</CardTitle>
+                        <CardDescription>Define the scrolling intelligence that appears on the main terminal hub.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
@@ -354,13 +345,21 @@ function SettingsPage() {
                                 className="min-h-[100px]"
                             />
                         </div>
+                        <div className="p-3 bg-primary/5 rounded-lg border border-primary/10">
+                            <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-2">Live Preview</p>
+                            <div className="relative h-6 bg-primary/10 rounded overflow-hidden flex items-center">
+                                <div className="animate-marquee whitespace-nowrap text-[9px] font-bold text-primary">
+                                    {draftSettings.newsTickerText || "Waiting for input..."}
+                                </div>
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
 
                 <Card className="border-none shadow-sm">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Type className="w-4 h-4"/> Neural Typography</CardTitle>
-                        <CardDescription>Embed a custom TrueType Font (.ttf) to be used across the entire terminal.</CardDescription>
+                        <CardTitle className="flex items-center gap-2"><Type className="w-4 h-4"/> Terminal Typography</CardTitle>
+                        <CardDescription>Upload a custom TrueType Font (.ttf) to transform the entire terminal's look.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="p-4 border-2 border-dashed rounded-xl bg-muted/30 text-center space-y-3">
@@ -369,15 +368,15 @@ function SettingsPage() {
                             {draftSettings.customFont && (
                                 <div className="pt-2">
                                     <Badge variant="secondary" className="bg-green-500/10 text-green-600 border-green-500/20">
-                                        <Check className="w-3 h-3 mr-1"/> Custom Font Loaded
+                                        <Check className="w-3 h-3 mr-1"/> Neural Font Active
                                     </Badge>
                                 </div>
                             )}
                         </div>
                         <div className="p-3 bg-muted/20 rounded-lg">
-                            <p className="text-[10px] font-bold uppercase opacity-60 mb-1">Preview</p>
+                            <p className="text-[10px] font-bold uppercase opacity-60 mb-1">Typography Audit</p>
                             <p className="text-sm font-bold" style={{ fontFamily: draftSettings.customFont ? 'CustomAppFont' : 'inherit' }}>
-                                The quick brown fox jumps over the lazy dog. 1234567890
+                                THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG. 1234567890
                             </p>
                         </div>
                     </CardContent>
@@ -388,7 +387,7 @@ function SettingsPage() {
           <TabsContent value="pdf" className="pt-6 space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card className="border-none shadow-sm">
-                  <CardHeader><CardTitle>Global Report Headers</CardTitle><CardDescription>Custom images for the upper part of all printed pages.</CardDescription></CardHeader>
+                  <CardHeader><CardTitle>Report Letterheads</CardTitle><CardDescription>Custom images for the upper part of all generated PDF reports.</CardDescription></CardHeader>
                   <CardContent className="space-y-4">
                     <div className="relative w-full h-24 border-2 border-dashed rounded-xl bg-muted/30 overflow-hidden">
                       {draftSettings.printHeaderImage && <Image src={draftSettings.printHeaderImage} alt="Header" fill className="object-contain" unoptimized />}
@@ -398,7 +397,7 @@ function SettingsPage() {
                 </Card>
 
                 <Card className="border-none shadow-sm">
-                  <CardHeader><CardTitle>Global Report Footers</CardTitle><CardDescription>Custom images for the lower part of all printed pages.</CardDescription></CardHeader>
+                  <CardHeader><CardTitle>Report Footers</CardTitle><CardDescription>Custom images for the lower part of all generated PDF reports.</CardDescription></CardHeader>
                   <CardContent className="space-y-4">
                     <div className="relative w-full h-24 border-2 border-dashed rounded-xl bg-muted/30 overflow-hidden">
                       {draftSettings.printFooterImage && <Image src={draftSettings.printFooterImage} alt="Footer" fill className="object-contain" unoptimized />}
@@ -419,9 +418,9 @@ function SettingsPage() {
                           <CardDescription>Permanently wipe all application data and return to initial factory state.</CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-4 pt-6">
-                          <p className="text-xs text-muted-foreground italic">This action is irreversible. All employees, reports, themes, and images will be permanently deleted.</p>
+                          <p className="text-xs text-muted-foreground italic">This action is irreversible. All employees, reports, themes, and images will be permanently deleted from the database.</p>
                           <div className="space-y-2">
-                              <Label className="text-[10px] font-bold uppercase tracking-widest opacity-60">Verification</Label>
+                              <Label className="text-[10px] font-bold uppercase tracking-widest opacity-60">Authentication Required</Label>
                               <Input 
                                 value={resetConfirmText} 
                                 onChange={e => setResetConfirmText(e.target.value)} 
@@ -445,7 +444,7 @@ function SettingsPage() {
           <div className="w-full max-w-4xl flex items-center justify-between gap-4">
               <div className="hidden md:block">
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-60">
-                      {isDirty ? "Configuration pending save..." : "All settings synchronized."}
+                      {isDirty ? "Configuration pending synchronization..." : "Terminal synchronized with Firestore."}
                   </p>
               </div>
               <div className="flex items-center gap-2 w-full md:w-auto">
