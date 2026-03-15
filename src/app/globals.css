@@ -24,11 +24,18 @@
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 262 83% 58%;
-    --radius: 1rem;
+    --radius: 1.25rem;
 
-    /* Theme Variables */
-    --sidebar-background: 262 83% 58%;
+    /* Sidebar Variables */
+    --sidebar-background: hsl(var(--primary));
     --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 0 0% 100%;
+    --sidebar-primary-foreground: hsl(var(--primary));
+    --sidebar-accent: 0 0% 100% / 0.1;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 100% / 0.1;
+    --sidebar-ring: 0 0% 100% / 0.2;
+
     --title-bar-bg: var(--primary);
     --title-bar-foreground: var(--primary-foreground);
     --card-header-bg: var(--muted);
@@ -60,18 +67,17 @@
     --sidebar-foreground: 210 40% 98%;
   }
 
-  [data-theme='purple'] { 
-    --primary: 262 83% 58%; 
-    --sidebar-background: 262 83% 58%;
-  }
-  [data-theme='blue'] { 
-    --primary: 221.2 83.2% 53.3%; 
-    --sidebar-background: 221.2 83.2% 53.3%;
-  }
-  [data-theme='green'] { 
-    --primary: 142.1 70.6% 45.3%; 
-    --sidebar-background: 142.1 70.6% 45.3%;
-  }
+  [data-theme='purple'] { --primary: 262 83% 58%; }
+  [data-theme='blue'] { --primary: 221.2 83.2% 53.3%; }
+  [data-theme='green'] { --primary: 142.1 70.6% 45.3%; }
+  [data-theme='rose'] { --primary: 346.8 77.2% 49.8%; }
+  [data-theme='amber'] { --primary: 37.9 94% 53.9%; }
+  [data-theme='violet'] { --primary: 262.1 83.3% 57.8%; }
+  [data-theme='orange'] { --primary: 24.6 95% 53.1%; }
+  [data-theme='cyan'] { --primary: 188.7 94.5% 42.7%; }
+  [data-theme='indigo'] { --primary: 238.7 83.5% 66.7%; }
+  [data-theme='zinc'] { --primary: 240 5.9% 10%; }
+  [data-theme='crimson'] { --primary: 348 83.3% 47.1%; }
 }
 
 @layer base {
@@ -81,6 +87,11 @@
   body {
     @apply bg-background text-foreground font-sans transition-colors duration-300;
   }
+}
+
+/* RTL Support for Sidebar and Layout */
+[dir="rtl"] .sidebar-trigger {
+  transform: scaleX(-1);
 }
 
 @media print {

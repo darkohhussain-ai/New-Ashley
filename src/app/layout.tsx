@@ -10,13 +10,12 @@ import { LanguageProvider } from '@/context/language-provider';
 import { useTranslation } from '@/hooks/use-translation';
 import { useState, useEffect } from 'react';
 import { SplashScreen } from '@/components/shared/splash-screen';
-import { AppHeader } from '@/components/shared/app-header';
 import { usePathname } from 'next/navigation';
 import { FirebaseClientProvider } from '@/firebase';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/app-sidebar';
 
 function DynamicThemeInjector() {
@@ -97,7 +96,6 @@ function AppContent({ children }: { children: React.ReactNode }) {
     const { language } = useTranslation();
     const pathname = usePathname();
     const isLoginPage = pathname === '/login';
-    const isDashboard = pathname === '/';
 
     useEffect(() => {
         document.documentElement.lang = language;
@@ -117,15 +115,25 @@ function AppContent({ children }: { children: React.ReactNode }) {
     }
 
     return (
-        <SidebarProvider defaultOpen={isDashboard}>
+        <SidebarProvider defaultOpen={true}>
             <CustomFontInjector />
             <DynamicThemeInjector />
 
-            {!isLoginPage && isDashboard && <AppSidebar />}
+            {!isLoginPage && <AppSidebar />}
             
-            <SidebarInset className="flex flex-col">
+            <SidebarInset className="flex flex-col relative">
                 {!isLoginPage && <MainBackground />}
-                {!isLoginPage && <AppHeader />}
+                
+                {/* Floating Mobile Trigger */}
+                {!isLoginPage && (
+                    <div className={cn(
+                        "fixed top-4 z-50 md:hidden",
+                        language === 'ku' ? "right-4" : "left-4"
+                    )}>
+                        <SidebarTrigger className="bg-primary text-white shadow-lg rounded-full h-12 w-12" />
+                    </div>
+                )}
+
                 <div key={pathname} className="animate-fade-in-down flex-1 overflow-auto">
                     {children}
                 </div>

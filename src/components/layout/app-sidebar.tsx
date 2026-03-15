@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   CreditCard,
@@ -14,6 +14,16 @@ import {
   UserCircle,
   ShieldCheck,
   Settings,
+  Calendar,
+  Clock,
+  Home,
+  ArrowLeft,
+  Printer,
+  Languages,
+  Sun,
+  Moon,
+  LogOut,
+  ChevronDown,
 } from 'lucide-react';
 
 import {
@@ -27,19 +37,64 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { useTranslation } from '@/hooks/use-translation';
 import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
+import { useAppContext } from '@/context/app-provider';
+import { useTheme } from '@/components/shared/theme-provider';
+import { format } from 'date-fns';
+import Image from 'next/image';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+
+function DateTimeDisplay() {
+  const [time, setTime] = React.useState<Date | null>(null);
+
+  React.useEffect(() => {
+    setTime(new Date());
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  if (!time) return <div className="h-10 animate-pulse bg-white/10 rounded-lg w-full" />;
+
+  return (
+    <div className="space-y-1 text-white/80">
+      <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
+        <Calendar className="w-3 h-3" />
+        <span>{format(time, 'MMMM d, yyyy')}</span>
+      </div>
+      <div className="flex items-center gap-2 text-lg font-black tabular-nums">
+        <Clock className="w-4 h-4" />
+        <span>{format(time, 'h:mm:ss a')}</span>
+      </div>
+    </div>
+  );
+}
 
 export function AppSidebar() {
-  const { t } = useTranslation();
-  const { hasPermission } = useAuth();
+  const { t, language, setLanguage } = useTranslation();
+  const { user, logout, hasPermission } = useAuth();
+  const { settings } = useAppContext();
+  const { theme, setTheme } = useTheme();
   const pathname = usePathname();
+  const router = useRouter();
+
+  const side = language === 'ku' ? 'right' : 'left';
 
   const navigation = [
     {
-      label: 'Dashboard',
+      label: 'Main',
       items: [
         {
           title: 'Dashboard',
@@ -85,7 +140,7 @@ export function AppSidebar() {
       ],
     },
     {
-      label: 'System Control',
+      label: 'System',
       items: [
         {
           title: 'my_account',
@@ -104,34 +159,141 @@ export function AppSidebar() {
   ];
 
   return (
-    <Sidebar collapsible="icon" className="border-r-0 shadow-xl overflow-hidden">
-      <SidebarHeader className="h-20 bg-primary flex items-center justify-center border-b border-white/10">
-        <div className="font-black text-xl px-4 text-white tracking-tighter">ASHLEY STAFF</div>
+    <Sidebar side={side} collapsible="icon" className="border-none shadow-2xl">
+      <SidebarHeader className="min-h-20 bg-primary flex flex-col items-stretch justify-center p-4 gap-4 border-b border-white/10">
+        <div className="flex items-center justify-between">
+            <div className="font-black text-xl text-white tracking-tighter group-data-[collapsible=icon]:hidden">
+                ASHLEY STAFF
+            </div>
+            <SidebarTrigger className="text-white hover:bg-white/10" />
+        </div>
+        
+        <div className="group-data-[collapsible=icon]:hidden space-y-4 animate-in fade-in slide-in-from-top-2 duration-500">
+            {settings.appLogo && (
+                <div className="relative w-full h-12">
+                    <Image
+                        src={settings.appLogo}
+                        alt="Logo"
+                        fill
+                        className="object-contain brightness-0 invert"
+                        unoptimized
+                    />
+                </div>
+            )}
+            <DateTimeDisplay />
+        </div>
       </SidebarHeader>
-      <SidebarContent className="bg-primary text-white pt-4">
+
+      <SidebarContent className="bg-primary text-white pt-2">
+        {/* User Card */}
+        <div className="px-4 mb-4 group-data-[collapsible=icon]:hidden">
+            <div className="bg-white/10 rounded-2xl p-3 flex items-center gap-3 border border-white/5">
+                <Avatar className="w-10 h-10 border-2 border-white/20">
+                    <AvatarFallback className="bg-white/20 text-white font-bold">
+                        {user?.username?.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 overflow-hidden">
+                    <p className="text-sm font-bold truncate">{user?.username}</p>
+                    <p className="text-[10px] text-white/60 uppercase font-black tracking-widest truncate">
+                        {t('administrator')}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        {/* Global Actions Hub */}
+        <div className="px-4 mb-6 grid grid-cols-2 gap-2 group-data-[collapsible=icon]:hidden">
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="bg-white/5 hover:bg-white/20 text-white border border-white/10 justify-start h-9 px-2">
+                        <Languages className="w-4 h-4 mr-2" />
+                        <span className="text-xs">{language === 'ku' ? 'کوردی' : 'English'}</span>
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                    <DropdownMenuItem onClick={() => setLanguage('en')}>English</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setLanguage('ku')}>کوردی (Soranî)</DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+                className="bg-white/5 hover:bg-white/20 text-white border border-white/10 justify-start h-9 px-2"
+            >
+                {theme === 'light' ? <Moon className="w-4 h-4 mr-2" /> : <Sun className="w-4 h-4 mr-2" />}
+                <span className="text-xs">{t('theme')}</span>
+            </Button>
+
+            <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => router.push('/')}
+                className="bg-white/5 hover:bg-white/20 text-white border border-white/10 justify-start h-9 px-2"
+            >
+                <Home className="w-4 h-4 mr-2" />
+                <span className="text-xs">{t('home')}</span>
+            </Button>
+
+            <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => router.back()}
+                className="bg-white/5 hover:bg-white/20 text-white border border-white/10 justify-start h-9 px-2"
+            >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                <span className="text-xs">{t('back')}</span>
+            </Button>
+
+            <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => window.print()}
+                className="bg-white/5 hover:bg-white/20 text-white border border-white/10 justify-start h-9 px-2"
+            >
+                <Printer className="w-4 h-4 mr-2" />
+                <span className="text-xs">{t('print')}</span>
+            </Button>
+
+            <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={logout}
+                className="bg-red-500/20 hover:bg-red-500/40 text-red-200 border border-red-500/20 justify-start h-9 px-2"
+            >
+                <LogOut className="w-4 h-4 mr-2" />
+                <span className="text-xs">{t('logout')}</span>
+            </Button>
+        </div>
+
+        <Separator className="bg-white/10 mb-4 mx-4 w-auto group-data-[collapsible=icon]:hidden" />
+
         {navigation.map((group) => (
           <SidebarGroup key={group.label}>
-            <SidebarGroupLabel className="text-white/50 text-[10px] uppercase font-black tracking-widest px-4 mb-2">
-                {t(group.label.toLowerCase().replace(/ /g, '_')) || group.label}
+            <SidebarGroupLabel className="text-white/40 text-[10px] uppercase font-black tracking-widest px-4 mb-2 group-data-[collapsible=icon]:hidden">
+                {t(group.label.toLowerCase()) || group.label}
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {group.items
                   .filter((item) => hasPermission(item.permission))
                   .map((item) => (
-                    <SidebarMenuItem key={item.href} className="px-2">
+                    <SidebarMenuItem key={item.href} className="px-2 mb-1">
                       <SidebarMenuButton
                         asChild
                         isActive={pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))}
                         tooltip={t(item.title)}
                         className={cn(
-                            "rounded-xl transition-all duration-300 hover:bg-white/10 active:scale-95",
-                            "data-[active=true]:bg-white data-[active=true]:text-primary data-[active=true]:shadow-lg"
+                            "rounded-xl transition-all duration-300 hover:bg-white/10 active:scale-95 h-11",
+                            "data-[active=true]:bg-white data-[active=true]:text-primary data-[active=true]:shadow-xl shadow-primary/20",
+                            "group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0"
                         )}
                       >
-                        <Link href={item.href}>
-                          <item.icon className="w-5 h-5" />
-                          <span className="font-bold">{t(item.title)}</span>
+                        <Link href={item.href} className="flex items-center gap-3">
+                          <item.icon className="w-5 h-5 shrink-0" />
+                          <span className="font-bold truncate group-data-[collapsible=icon]:hidden">{t(item.title)}</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -141,9 +303,9 @@ export function AppSidebar() {
           </SidebarGroup>
         ))}
       </SidebarContent>
-      <SidebarFooter className="bg-primary border-t border-white/10 p-6">
+      <SidebarFooter className="bg-primary border-t border-white/10 p-6 group-data-[collapsible=icon]:hidden">
         <div className="text-[10px] text-white/40 text-center uppercase font-black tracking-[0.2em]">
-          DRP Terminal v2.0
+          DRP Terminal v2.5
         </div>
       </SidebarFooter>
     </Sidebar>
