@@ -92,13 +92,13 @@ const NewsTicker = () => {
     }
     
     return (
-        <div className="relative flex items-center overflow-x-hidden bg-primary/80 text-primary-foreground py-2">
+        <div className="relative flex items-center overflow-x-hidden bg-primary/80 text-primary-foreground py-1.5">
             <div className="animate-marquee whitespace-nowrap">
-                <span className="mx-4">{settings.newsTickerText}</span>
+                <span className="mx-4 text-xs font-bold uppercase tracking-widest">{settings.newsTickerText}</span>
             </div>
 
             <div className="absolute inset-y-0 flex items-center animate-marquee2 whitespace-nowrap">
-                 <span className="mx-4">{settings.newsTickerText}</span>
+                 <span className="mx-4 text-xs font-bold uppercase tracking-widest">{settings.newsTickerText}</span>
             </div>
         </div>
     );
@@ -123,10 +123,10 @@ export function DashboardClient() {
 
   return (
     <>
-      <main className="w-full p-4 md:p-8 space-y-8">
+      <main className="w-full p-4 md:p-6 space-y-6">
         {settings.dashboardBanner && (
-            <div className="relative w-full rounded-lg overflow-hidden animate-fade-in-down"
-                style={{ height: `${settings.dashboardBannerHeight}px` }}
+            <div className="relative w-full rounded-xl overflow-hidden animate-fade-in-down shadow-sm"
+                style={{ height: `${settings.dashboardBannerHeight - 20}px` }}
             >
                 <Image
                     key={settings.dashboardBanner}
@@ -145,7 +145,7 @@ export function DashboardClient() {
             </div>
         )}
         
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {hasPermission('page:transmit:view') && (
                 <div className="animate-fade-in-down" style={{ animationDelay: '200ms' }}>
                     <StagedItemsSummary />
@@ -158,7 +158,7 @@ export function DashboardClient() {
             )}
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             {hasPermission('admin:all') && (
                 <Link href="/ashley-expenses" className="block animate-fade-in-down hover:-translate-y-1 transition-transform" style={{ animationDelay: '300ms' }}>
                     <MonthlyFinancialChart />
@@ -171,12 +171,12 @@ export function DashboardClient() {
             )}
         </div>
 
-         <Card className="animate-fade-in-down" style={{ animationDelay: '500ms' }}>
-            <CardHeader>
-                <CardTitle>{t('services')}</CardTitle>
-                <CardDescription>{t('select_service')}</CardDescription>
+         <Card className="animate-fade-in-down border-none shadow-sm" style={{ animationDelay: '500ms' }}>
+            <CardHeader className="py-3 px-4">
+                <CardTitle className="text-base">{t('services')}</CardTitle>
+                <CardDescription className="text-[11px]">{t('select_service')}</CardDescription>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 p-4">
                 {menuItems.map((item) => (
                     <DashboardCard
                     key={item.title}

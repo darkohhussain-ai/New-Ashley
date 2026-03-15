@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/context/app-provider';
 import { useTranslation } from '@/hooks/use-translation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ListOrdered, History, Building, PackageSearch } from 'lucide-react';
+import { ListOrdered, Building, PackageSearch } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 
 const destinations = ["Erbil", "Baghdad", "Dohuk", "Diwan"];
@@ -36,41 +36,41 @@ export function OrderRequestsSummary() {
 
   return (
     <Card className="border-none shadow-sm">
-      <CardHeader className="bg-muted/30">
-        <CardTitle className="text-xl flex items-center gap-2">
-            <ListOrdered className="w-5 h-5 text-primary" />
+      <CardHeader className="bg-muted/30 py-3 px-4">
+        <CardTitle className="text-base flex items-center gap-2">
+            <ListOrdered className="w-4 h-4 text-primary" />
             {t('order_requests')}
         </CardTitle>
-        <CardDescription>{t('order_requests_summary_desc')}</CardDescription>
+        <CardDescription className="text-[11px]">{t('order_requests_summary_desc')}</CardDescription>
       </CardHeader>
-      <CardContent className="p-6">
+      <CardContent className="p-4">
         {hasData ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {destinationStats.filter(s => s.requestCount > 0).map(stat => (
                     <div 
                       key={stat.destination} 
-                      className="p-4 flex flex-col justify-between hover:bg-muted/50 cursor-pointer transition-all rounded-xl border border-primary/10" 
+                      className="p-3 flex flex-col justify-between hover:bg-muted/50 cursor-pointer transition-all rounded-xl border border-primary/5" 
                       onClick={() => router.push(`/transmit/view-requests`)}
                     >
                         <div>
-                            <p className="font-bold text-md flex items-center gap-2 mb-1">
-                                <Building className="w-4 h-4 text-muted-foreground"/> 
+                            <p className="font-bold text-xs flex items-center gap-1.5 mb-0.5">
+                                <Building className="w-3 h-3 text-muted-foreground"/> 
                                 {stat.destination}
                             </p>
-                            <p className="text-2xl font-bold">{stat.requestCount} <span className="text-xs font-normal text-muted-foreground uppercase">{t('requests')}</span></p>
+                            <p className="text-xl font-black">{stat.requestCount} <span className="text-[9px] font-bold text-muted-foreground uppercase">{t('requests')}</span></p>
                         </div>
-                         <div className="text-[10px] font-bold text-muted-foreground mt-2 opacity-60">
+                         <div className="text-[9px] font-black text-muted-foreground mt-2 opacity-60 uppercase">
                             {t('last_request')}: {stat.lastRequestDate ? format(parseISO(stat.lastRequestDate), 'PP') : t('na')}
                         </div>
                     </div>
                 ))}
             </div>
         ) : (
-             <div className="text-center py-12 space-y-3">
-                <div className="mx-auto w-12 h-12 rounded-full bg-muted flex items-center justify-center opacity-50">
-                    <PackageSearch className="w-6 h-6" />
+             <div className="text-center py-10 space-y-2">
+                <div className="mx-auto w-10 h-10 rounded-full bg-muted flex items-center justify-center opacity-50">
+                    <PackageSearch className="w-5 h-5" />
                 </div>
-                <p className="text-sm font-medium text-muted-foreground">{t('no_open_order_requests')}</p>
+                <p className="text-[11px] font-bold text-muted-foreground">{t('no_open_order_requests')}</p>
              </div>
         )}
       </CardContent>

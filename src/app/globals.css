@@ -24,7 +24,7 @@
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 262 83% 58%;
-    --radius: 1.25rem;
+    --radius: 1rem;
 
     /* Sidebar Variables */
     --sidebar-background: hsl(var(--primary));
@@ -78,6 +78,10 @@
   [data-theme='indigo'] { --primary: 238.7 83.5% 66.7%; }
   [data-theme='zinc'] { --primary: 240 5.9% 10%; }
   [data-theme='crimson'] { --primary: 348 83.3% 47.1%; }
+
+  html {
+    font-size: 14px; /* Reduced global base font size */
+  }
 }
 
 @layer base {

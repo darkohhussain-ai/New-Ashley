@@ -20,20 +20,20 @@ const formatCurrency = (amount: number) => {
 
 const SummaryCard = ({ title, value, Icon, color, progressColor }: { title: string, value: number, Icon: LucideIcon, color: string, progressColor: string }) => (
     <Card className="transition-all hover:-translate-y-1 hover:shadow-md h-full flex flex-col border-none shadow-sm">
-        <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-bold uppercase tracking-wider flex items-center gap-2 opacity-70">
-                <div className="p-2 rounded-lg bg-muted text-foreground">
-                    <Icon className="w-4 h-4" style={{ color }} />
+        <CardHeader className="pb-1.5 pt-4 px-4">
+            <CardTitle className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 opacity-70">
+                <div className="p-1.5 rounded-md bg-muted text-foreground">
+                    <Icon className="w-3.5 h-3.5" style={{ color }} />
                 </div>
                 {title}
             </CardTitle>
         </CardHeader>
-        <CardContent className="flex-grow pt-0 flex flex-col justify-end">
-            <div className="space-y-3">
-                <div className="text-2xl font-bold">{formatCurrency(value)}</div>
+        <CardContent className="flex-grow pt-0 pb-4 px-4 flex flex-col justify-end">
+            <div className="space-y-2">
+                <div className="text-xl font-black">{formatCurrency(value)}</div>
                 <Progress 
                     value={Math.min((value / 1000000) * 100, 100)} 
-                    className="h-1.5" 
+                    className="h-1" 
                     indicatorClassName={progressColor}
                 />
             </div>
@@ -65,7 +65,7 @@ export function FinancialSummaries() {
   }, [expenses, overtime, bonuses, withdrawals]);
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <SummaryCard 
             title={t('expenses')} 
             value={monthlyTotals.expenses} 
