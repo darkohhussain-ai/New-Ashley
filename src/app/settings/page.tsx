@@ -257,9 +257,12 @@ function SettingsPage() {
                         <Input 
                             value={draftSettings.loginBackgroundVideo || ''} 
                             onChange={e => setDraftSettings(prev => ({ ...prev, loginBackgroundVideo: e.target.value }))}
-                            placeholder="Enter direct .mp4 URL (YouTube links not supported)"
+                            placeholder="Enter direct .mp4 URL"
                         />
-                        <p className="text-[10px] text-muted-foreground italic">Note: Use a direct link to an MP4 file. YouTube page links will not render.</p>
+                        <div className="p-3 bg-muted/50 rounded-lg space-y-2 border">
+                            <p className="text-[10px] font-bold uppercase text-primary">Pro Tip: Use Firebase Storage</p>
+                            <p className="text-[10px] leading-relaxed opacity-70">YouTube links will not work. Upload your video to <strong>Firebase Storage</strong>, Cloudinary, or Imgur, and paste the "Download URL" here for a perfect autoplay background.</p>
+                        </div>
                     </div>
                     <Separator />
                     <div className="space-y-4">
@@ -303,7 +306,7 @@ function SettingsPage() {
             </div>
           </TabsContent>
 
-          <TabsContent value="pd" className="pt-6 space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
+          <TabsContent value="pdf" className="pt-6 space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card className="border-none shadow-sm">
                   <CardHeader><CardTitle>Global Report Headers</CardTitle><CardDescription>Custom images for the upper part of all printed pages.</CardDescription></CardHeader>

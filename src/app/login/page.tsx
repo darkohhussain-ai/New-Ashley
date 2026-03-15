@@ -64,6 +64,7 @@ export default function LoginPage() {
                 fill
                 className="object-cover"
                 priority
+                unoptimized
             />
         ) : (
             <div className="absolute inset-0 bg-muted" />
@@ -71,7 +72,7 @@ export default function LoginPage() {
 
         <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
 
-        <Card className="relative z-10 w-full max-w-sm border-2 border-primary/30 shadow-2xl bg-background/95 backdrop-blur-md overflow-hidden">
+        <Card className="relative z-10 w-full max-w-sm border-2 border-primary shadow-2xl bg-background/95 backdrop-blur-md overflow-hidden">
             {settings.loginCardUpperImage && (
                 <div className="relative w-full h-32 shadow-lg">
                     <Image
@@ -93,6 +94,7 @@ export default function LoginPage() {
                             alt="App Logo"
                             fill
                             className="object-contain"
+                            unoptimized
                         />
                     </div>
                 )}
