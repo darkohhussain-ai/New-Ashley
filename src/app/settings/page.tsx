@@ -1,8 +1,7 @@
-
 'use client';
 
 import * as React from 'react';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Save,
   Palette,
@@ -11,12 +10,9 @@ import {
   Languages,
   FileText,
   Loader2,
-  Users,
-  RefreshCcw,
-  Monitor,
   X,
-  Check,
   Plus,
+  Check,
   Video,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -41,6 +37,7 @@ import { initialSettings } from '@/context/initial-data';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 
 const themes = [
   { name: 'purple', color: 'bg-purple-600', label: 'Corporate Purple' },
@@ -334,7 +331,7 @@ function SettingsPage() {
                   <Card className="border-destructive/20 shadow-sm">
                       <CardHeader className="bg-destructive/5 border-b border-destructive/10">
                           <CardTitle className="text-destructive flex items-center gap-2">
-                              <RefreshCcw className="h-4 w-4" /> Full Terminal Reset
+                              <ShieldCheck className="h-4 w-4" /> Full Terminal Reset
                           </CardTitle>
                           <CardDescription>Permanently wipe all application data and return to initial factory state.</CardDescription>
                       </CardHeader>
