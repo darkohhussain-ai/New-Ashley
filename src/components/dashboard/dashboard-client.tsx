@@ -92,13 +92,13 @@ const NewsTicker = () => {
     }
     
     return (
-        <div className="relative flex items-center overflow-x-hidden bg-primary/80 text-primary-foreground py-1.5">
+        <div className="relative flex items-center overflow-x-hidden bg-primary/80 text-primary-foreground py-1.5 border-t border-white/10">
             <div className="animate-marquee whitespace-nowrap">
-                <span className="mx-4 text-xs font-bold uppercase tracking-widest">{settings.newsTickerText}</span>
+                <span className="mx-4 text-[10px] font-black uppercase tracking-[0.2em]">{settings.newsTickerText}</span>
             </div>
 
             <div className="absolute inset-y-0 flex items-center animate-marquee2 whitespace-nowrap">
-                 <span className="mx-4 text-xs font-bold uppercase tracking-widest">{settings.newsTickerText}</span>
+                 <span className="mx-4 text-[10px] font-black uppercase tracking-[0.2em]">{settings.newsTickerText}</span>
             </div>
         </div>
     );
@@ -122,8 +122,8 @@ export function DashboardClient() {
   }
 
   return (
-    <>
-      <main className="w-full p-4 md:p-6 space-y-6">
+    <div className="flex flex-col min-h-full">
+      <main className="w-full p-4 md:p-6 space-y-6 flex-1">
         {settings.dashboardBanner && (
             <div className="relative w-full rounded-xl overflow-hidden animate-fade-in-down shadow-sm"
                 style={{ height: `${settings.dashboardBannerHeight - 20}px` }}
@@ -188,9 +188,10 @@ export function DashboardClient() {
                 ))}
             </CardContent>
         </Card>
-
       </main>
-      <NewsTicker />
-    </>
+      <div className="sticky bottom-0 z-20">
+        <NewsTicker />
+      </div>
+    </div>
   );
 }

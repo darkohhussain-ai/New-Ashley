@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -14,6 +15,8 @@ import {
   Plus,
   Check,
   Video,
+  Type,
+  ScrollText,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -205,6 +208,8 @@ function SettingsPage() {
                                   <ColorPicker label="Interface Accent" value={draftSettings.lightThemeColors.accent} onChange={v => updateCustomColor('light', 'accent', v)} />
                                   <ColorPicker label="Card Surface" value={draftSettings.lightThemeColors.card} onChange={v => updateCustomColor('light', 'card', v)} />
                                   <ColorPicker label="Title Bar" value={draftSettings.lightThemeColors.titleBar} onChange={v => updateCustomColor('light', 'titleBar', v)} />
+                                  <ColorPicker label="Table Row Primary" value={draftSettings.lightThemeColors.tableRowPrimary} onChange={v => updateCustomColor('light', 'tableRowPrimary', v)} />
+                                  <ColorPicker label="Table Row Secondary" value={draftSettings.lightThemeColors.tableRowSecondary} onChange={v => updateCustomColor('light', 'tableRowSecondary', v)} />
                               </div>
                           </div>
                           <div className="space-y-6">
@@ -216,6 +221,8 @@ function SettingsPage() {
                                   <ColorPicker label="Interface Accent" value={draftSettings.darkThemeColors.accent} onChange={v => updateCustomColor('dark', 'accent', v)} />
                                   <ColorPicker label="Card Surface" value={draftSettings.darkThemeColors.card} onChange={v => updateCustomColor('dark', 'card', v)} />
                                   <ColorPicker label="Title Bar" value={draftSettings.darkThemeColors.titleBar} onChange={v => updateCustomColor('dark', 'titleBar', v)} />
+                                  <ColorPicker label="Table Row Primary" value={draftSettings.darkThemeColors.tableRowPrimary} onChange={v => updateCustomColor('dark', 'tableRowPrimary', v)} />
+                                  <ColorPicker label="Table Row Secondary" value={draftSettings.darkThemeColors.tableRowSecondary} onChange={v => updateCustomColor('dark', 'tableRowSecondary', v)} />
                               </div>
                           </div>
                       </div>
@@ -304,6 +311,54 @@ function SettingsPage() {
                   </CardContent>
                 </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="language" className="pt-6 space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
+             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card className="border-none shadow-sm">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><ScrollText className="w-4 h-4"/> Global News Ticker</CardTitle>
+                        <CardDescription>Enter the scrolling text that appears at the bottom of the dashboard.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                            <Label>Announcement Text</Label>
+                            <Textarea 
+                                value={draftSettings.newsTickerText || ''} 
+                                onChange={e => setDraftSettings(prev => ({ ...prev, newsTickerText: e.target.value }))}
+                                placeholder="Enter text to scroll on the dashboard..."
+                                className="min-h-[100px]"
+                            />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="border-none shadow-sm">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Type className="w-4 h-4"/> Neural Typography</CardTitle>
+                        <CardDescription>Embed a custom TrueType Font (.ttf) to be used across the entire terminal.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="p-4 border-2 border-dashed rounded-xl bg-muted/30 text-center space-y-3">
+                            <Label className="block">Upload TTF Font File</Label>
+                            <Input type="file" accept=".ttf" onChange={e => handleFileUpload(e, 'customFont')} className="max-w-xs mx-auto" />
+                            {draftSettings.customFont && (
+                                <div className="pt-2">
+                                    <Badge variant="secondary" className="bg-green-500/10 text-green-600 border-green-500/20">
+                                        <Check className="w-3 h-3 mr-1"/> Custom Font Loaded
+                                    </Badge>
+                                </div>
+                            )}
+                        </div>
+                        <div className="p-3 bg-muted/20 rounded-lg">
+                            <p className="text-[10px] font-bold uppercase opacity-60 mb-1">Preview</p>
+                            <p className="text-sm font-bold" style={{ fontFamily: draftSettings.customFont ? 'CustomAppFont' : 'inherit' }}>
+                                The quick brown fox jumps over the lazy dog. 1234567890
+                            </p>
+                        </div>
+                    </CardContent>
+                </Card>
+             </div>
           </TabsContent>
 
           <TabsContent value="pdf" className="pt-6 space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">

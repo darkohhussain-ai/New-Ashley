@@ -36,6 +36,11 @@ function DynamicThemeInjector() {
             --title-bar-bg: ${colors.titleBar || colors.primary};
             --card-header-bg: ${colors.accent};
             --table-header-bg: ${colors.primary};
+            --table-row-primary: ${colors.tableRowPrimary};
+            --table-row-secondary: ${colors.tableRowSecondary};
+            --huana-highlight: ${colors.huanaHighlight};
+            --location-occupied-border: ${colors.locationOccupiedBorder};
+            --location-occupied-bg: ${colors.locationOccupiedBg};
         }
     `;
 
