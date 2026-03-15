@@ -17,6 +17,7 @@ import {
   X,
   Check,
   Plus,
+  Video,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -249,12 +250,35 @@ function SettingsPage() {
                 </Card>
 
                 <Card className="border-none shadow-sm">
-                  <CardHeader><CardTitle>{t('login_background')}</CardTitle><CardDescription>{t('login_background_desc')}</CardDescription></CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="relative w-full h-32 border-2 border-dashed rounded-xl overflow-hidden bg-muted/30">
-                      {draftSettings.loginBackground && <Image src={draftSettings.loginBackground} alt="Login Background" fill className="object-cover" unoptimized />}
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Video className="w-4 h-4"/> Login Portal Media</CardTitle>
+                    <CardDescription>Configure the cinematic background and card banner for the login portal.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="space-y-2">
+                        <Label>Background Video URL (mp4)</Label>
+                        <Input 
+                            value={draftSettings.loginBackgroundVideo || ''} 
+                            onChange={e => setDraftSettings(prev => ({ ...prev, loginBackgroundVideo: e.target.value }))}
+                            placeholder="Enter .mp4 URL for video background"
+                        />
                     </div>
-                    <Input type="file" accept="image/*" onChange={e => handleFileUpload(e, 'loginBackground')} />
+                    <Separator />
+                    <div className="space-y-4">
+                        <Label>Login Card Header Image</Label>
+                        <div className="relative w-full h-24 border-2 border-dashed rounded-xl overflow-hidden bg-muted/30">
+                            {draftSettings.loginCardUpperImage && <Image src={draftSettings.loginCardUpperImage} alt="Login Header" fill className="object-cover" unoptimized />}
+                        </div>
+                        <Input type="file" accept="image/*" onChange={e => handleFileUpload(e, 'loginCardUpperImage')} />
+                    </div>
+                    <Separator />
+                    <div className="space-y-4">
+                        <Label>{t('login_background')}</Label>
+                        <div className="relative w-full h-24 border-2 border-dashed rounded-xl overflow-hidden bg-muted/30">
+                            {draftSettings.loginBackground && <Image src={draftSettings.loginBackground} alt="Login Background" fill className="object-cover" unoptimized />}
+                        </div>
+                        <Input type="file" accept="image/*" onChange={e => handleFileUpload(e, 'loginBackground')} />
+                    </div>
                   </CardContent>
                 </Card>
 

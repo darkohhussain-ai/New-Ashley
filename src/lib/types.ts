@@ -278,6 +278,8 @@ export type AppSettings = {
   appLogo: string | null;
   mainBackground: string | null;
   loginBackground: string | null;
+  loginBackgroundVideo: string | null;
+  loginCardUpperImage: string | null;
   dashboardBanner: string | null;
   dashboardBannerHeight: number;
   newsTickerText: string;
