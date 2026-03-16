@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -40,6 +39,17 @@
     --title-bar-foreground: var(--primary-foreground);
     --card-header-bg: var(--muted);
     --table-header-bg: var(--primary);
+
+    /* Tab and Status Colors */
+    --tab-active-background: hsl(var(--background));
+    --tab-active-foreground: hsl(var(--foreground));
+    --status-correct-bg: 142 90% 92%;
+    --status-less-bg: 38 92% 90%;
+    --status-more-bg: 221 83% 92%;
+    --status-wrapped-bg: 54 100% 92%;
+    --status-damaged-bg: 0 100% 94%;
+    --status-new-bg: 48 96% 89%;
+    --status-updated-bg: 142 80% 92%;
   }
 
   .dark {
@@ -65,6 +75,14 @@
 
     --sidebar-background: 222.2 84% 4.9%;
     --sidebar-foreground: 210 40% 98%;
+
+    --status-correct-bg: 142 76% 15%; 
+    --status-less-bg: 25 95% 20%;
+    --status-more-bg: 210 100% 20%;
+    --status-wrapped-bg: 54 92% 15%;
+    --status-damaged-bg: 0 84% 15%;
+    --status-new-bg: 48 96% 25%;
+    --status-updated-bg: 142 76% 20%; 
   }
 
   [data-theme='purple'] { --primary: 262 83% 58%; }
@@ -80,7 +98,7 @@
   [data-theme='crimson'] { --primary: 348 83.3% 47.1%; }
 
   html {
-    font-size: 14px; /* Reduced global base font size */
+    font-size: 14px;
   }
 }
 
@@ -93,9 +111,30 @@
   }
 }
 
-/* RTL Support for Sidebar and Layout */
-[dir="rtl"] .sidebar-trigger {
-  transform: scaleX(-1);
+@layer utilities {
+  .bg-status-correct { @apply bg-[hsl(var(--status-correct-bg))]; }
+  .bg-status-less { @apply bg-[hsl(var(--status-less-bg))]; }
+  .bg-status-more { @apply bg-[hsl(var(--status-more-bg))]; }
+  .bg-status-wrapped { @apply bg-[hsl(var(--status-wrapped-bg))]; }
+  .bg-status-damaged { @apply bg-[hsl(var(--status-damaged-bg))]; }
+  .bg-status-new { @apply bg-[hsl(var(--status-new-bg))]; }
+  .bg-status-updated { @apply bg-[hsl(var(--status-updated-bg))]; }
+  
+  .animate-marquee {
+    animation: marquee 25s linear infinite;
+  }
+  .animate-marquee2 {
+    animation: marquee2 25s linear infinite;
+  }
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-100%); }
+}
+@keyframes marquee2 {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
 }
 
 @media print {
