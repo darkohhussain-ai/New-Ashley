@@ -155,23 +155,20 @@ export function AppSidebar() {
   ];
 
   return (
-    <Sidebar side={side} collapsible="icon" className="border-none shadow-2xl bg-primary/50 backdrop-blur-xl">
+    <Sidebar side={side} collapsible="icon" className="border-none shadow-2xl bg-black/40 backdrop-blur-xl">
       <SidebarHeader className="p-3 bg-transparent border-b border-white/5">
-        <div className="flex items-center justify-between mb-3">
-            <div className="font-black text-sm text-white tracking-tighter group-data-[collapsible=icon]:hidden uppercase">
-                Ashley Terminal
-            </div>
+        <div className="flex items-center justify-center mb-4">
             <SidebarTrigger className="text-white/70 hover:text-white hover:bg-white/10" />
         </div>
         
-        <div className="group-data-[collapsible=icon]:hidden flex flex-col gap-3 animate-in fade-in duration-500">
+        <div className="group-data-[collapsible=icon]:hidden flex flex-col items-center gap-4 animate-in fade-in duration-500">
             {settings.appLogo && (
-                <div className="relative w-full h-10 bg-white/5 rounded-lg p-1.5">
+                <div className="relative w-full h-24 bg-white/10 rounded-xl p-3 backdrop-blur-sm border border-white/10 shadow-xl">
                     <Image
                         src={settings.appLogo}
                         alt="Logo"
                         fill
-                        className="object-contain brightness-0 invert"
+                        className="object-contain"
                         unoptimized
                     />
                 </div>
@@ -191,9 +188,6 @@ export function AppSidebar() {
                 </Avatar>
                 <div className="flex-1 overflow-hidden">
                     <p className="text-[11px] font-bold truncate leading-tight">{user?.username}</p>
-                    <p className="text-[8px] text-white/40 uppercase font-black tracking-widest truncate">
-                        {t('administrator')}
-                    </p>
                 </div>
             </div>
         </div>
