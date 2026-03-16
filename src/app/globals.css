@@ -107,7 +107,8 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground font-sans transition-colors duration-300;
+    @apply text-foreground font-sans transition-colors duration-300;
+    background-color: transparent !important;
   }
 }
 
