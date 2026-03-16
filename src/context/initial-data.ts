@@ -1,4 +1,3 @@
-
 import { Employee, User, Role, AppSettings, AllPdfSettings, PdfSettings, ThemeColors, BranchColors, AnswerOption } from '@/lib/types';
 import { adminPermissions, adminAssistantPermissions, viewerPermissions, employeePermissions, financeManagerPermissions, inventoryManagerPermissions, hrManagerPermissions } from '@/lib/permissions';
 import en from '@/locales/en.json';
