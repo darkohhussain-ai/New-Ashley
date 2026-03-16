@@ -68,15 +68,19 @@ export function DailyExpenseReportPdf({ records, date, settings, getEmployeeName
                   <TableCell className="text-right border p-1">{formatCurrency(exp.amount)}</TableCell>
                 </TableRow>
               ))}
-              <TableRow className="bg-muted/50 font-semibold">
-                <TableCell colSpan={3} className="text-right border p-1">{group.employeeName} {t('total')}</TableCell>
-                <TableCell className="text-right border p-1">{formatCurrency(group.total)}</TableCell>
+              <TableRow className="bg-yellow-400 print:bg-yellow-400 font-bold">
+                <TableCell colSpan={3} className="text-right border p-1">
+                  {group.employeeName} {t('total')}
+                </TableCell>
+                <TableCell className="text-right border p-1">
+                  {formatCurrency(group.total)}
+                </TableCell>
               </TableRow>
             </Fragment>
           ))}
         </TableBody>
         <TableFooter>
-          <TableRow className="font-bold text-base bg-muted">
+          <TableRow className="font-black text-sm bg-green-500 print:bg-green-500 text-white print:text-black">
             <TableCell colSpan={3} className="text-right border p-2">{t('grand_total')}</TableCell>
             <TableCell className="text-right border p-2">{formatCurrency(grandTotal)}</TableCell>
           </TableRow>

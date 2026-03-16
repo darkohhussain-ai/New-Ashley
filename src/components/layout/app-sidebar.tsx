@@ -155,7 +155,7 @@ export function AppSidebar() {
   ];
 
   return (
-    <Sidebar side={side} collapsible="icon" className="border-none shadow-2xl bg-sidebar/68 backdrop-blur-xl">
+    <Sidebar side={side} collapsible="icon" className="border-none shadow-2xl bg-sidebar/68 backdrop-blur-xl print:hidden">
       <SidebarHeader className="p-3 bg-transparent border-b border-white/5">
         <div className="flex items-center justify-center mb-4">
             <SidebarTrigger className="text-white/70 hover:text-white hover:bg-white/10" />
