@@ -50,6 +50,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { AppSettings, ThemeColors, User, Role, Employee, ActivityLog } from '@/lib/types';
 import withAuth from '@/hooks/withAuth';
 import { useAppContext } from '@/context/app-provider';
@@ -227,9 +228,9 @@ function AdminPowerSuite() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="text-[10px] uppercase font-black tracking-widest">Username</TableHead>
-                                    <TableHead className="text-[10px] uppercase font-black tracking-widest">Role</TableHead>
-                                    <TableHead className="text-right text-[10px] uppercase font-black tracking-widest">Actions</TableHead>
+                                    <TableHead className="text-[9px] uppercase font-black tracking-widest">Username</TableHead>
+                                    <TableHead className="text-[9px] uppercase font-black tracking-widest">Role</TableHead>
+                                    <TableHead className="text-right text-[9px] uppercase font-black tracking-widest">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
