@@ -1,6 +1,6 @@
 
-import { Employee, ExcelFile, Item, StorageLocation, Expense, ExpenseReport, Overtime, Bonus, CashWithdrawal, SoldItemsList, Transfer, ItemForTransfer, MarketingFeedback, EvaluationQuestion, AnswerOption, User, Role, AppSettings, AllPdfSettings, PdfSettings, ThemeColors, ItemCategory, BranchColors, ActivityLog, OrderRequest } from '@/lib/types';
-import { adminPermissions, adminAssistantPermissions, viewerPermissions, employeePermissions } from '@/lib/permissions';
+import { Employee, User, Role, AppSettings, AllPdfSettings, PdfSettings, ThemeColors, BranchColors, AnswerOption } from '@/lib/types';
+import { adminPermissions, adminAssistantPermissions, viewerPermissions, employeePermissions, financeManagerPermissions, inventoryManagerPermissions, hrManagerPermissions } from '@/lib/permissions';
 import en from '@/locales/en.json';
 import ku from '@/locales/ku.json';
 
@@ -13,6 +13,9 @@ const defaultAnswers: [AnswerOption, AnswerOption, AnswerOption] = [
 const initialRoles: Role[] = [
     { id: 'role-admin', name: 'Admin', permissions: adminPermissions },
     { id: 'role-admin-assistant', name: 'Admin Assistant', permissions: adminAssistantPermissions },
+    { id: 'role-finance-manager', name: 'Finance Manager', permissions: financeManagerPermissions },
+    { id: 'role-inventory-manager', name: 'Inventory Manager', permissions: inventoryManagerPermissions },
+    { id: 'role-hr-manager', name: 'HR Manager', permissions: hrManagerPermissions },
     { id: 'role-viewer', name: 'Viewer', permissions: viewerPermissions },
     { id: 'role-employee', name: 'Employee', permissions: employeePermissions },
 ];
@@ -144,27 +147,7 @@ export const initialSettings: AppSettings = {
 };
 
 
-export const initialData: {
-    employees: Employee[],
-    excelFiles: ExcelFile[],
-    items: Item[],
-    locations: StorageLocation[],
-    expenses: Expense[],
-    expenseReports: ExpenseReport[],
-    overtime: Overtime[],
-    bonuses: Bonus[],
-    withdrawals: CashWithdrawal[],
-    itemCategories: ItemCategory[],
-    transfers: Transfer[],
-    transferItems: ItemForTransfer[],
-    orderRequests: OrderRequest[],
-    marketingFeedbacks: MarketingFeedback[],
-    evaluationQuestions: EvaluationQuestion[],
-    users: User[],
-    roles: Role[],
-    soldItemsLists: SoldItemsList[],
-    activityLogs: ActivityLog[],
-} = {
+export const initialData: any = {
     employees: [
       { id: 'emp-01', name: 'Darko', employeeId: '01', role: 'Super Manager', createdAt: '2023-01-01T00:00:00.000Z', isActive: true },
     ],

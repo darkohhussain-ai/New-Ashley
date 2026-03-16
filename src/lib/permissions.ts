@@ -1,5 +1,4 @@
 
-
 import type { Permission } from './types';
 
 export const allPermissions: Permission[] = [
@@ -76,7 +75,6 @@ export const inventoryManagerPermissions = [
     'page:items:new',
     'page:items:import',
     'page:items:archive',
-    'page:items:sold',
     'page:transmit:view',
     'page:transmit:add',
     'page:transmit:staged',

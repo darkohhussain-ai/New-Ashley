@@ -17,8 +17,6 @@ import {
   Video,
   Type,
   ScrollText,
-  Code,
-  Brush,
   Link as LinkIcon,
   Users,
   Users2,
@@ -28,6 +26,10 @@ import {
   Search,
   KeyRound,
   ShieldAlert,
+  Database,
+  Download,
+  Upload as UploadIcon,
+  RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -155,16 +157,32 @@ function ImageControl({
 
 function AdminPowerSuite() {
     const { t } = useTranslation();
-    const { users, setUsers, roles, setRoles, employees, activityLogs, setActivityLogs } = useAppContext();
+    const { 
+        users, setUsers, 
+        roles, setRoles, 
+        employees, setEmployees,
+        activityLogs, setActivityLogs,
+        excelFiles, setExcelFiles,
+        items, setItems,
+        expenses, setExpenses,
+        expenseReports, setExpenseReports,
+        transfers, setTransfers,
+        transferItems, setTransferItems,
+        orderRequests, setOrderRequests,
+        settings, setSettings
+    } = useAppContext();
     const { user: currentUser } = useAuth();
     const { toast } = useToast();
 
     // User State
     const [isUserDialogOpen, setIsUserDialogOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
+    const [newPassword, setNewPassword] = useState("");
     
     // Roles State
     const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+    const [isNewRoleOpen, setIsNewRoleOpen] = useState(false);
+    const [newRoleName, setNewRoleName] = useState("");
 
     useEffect(() => {
         if (roles.length > 0 && !selectedRole) {
@@ -203,19 +221,111 @@ function AdminPowerSuite() {
         toast({ title: t('users_created'), description: t('users_created_desc', { newUsersCount: newUsers.length }) });
     };
 
+    const handleSaveUserChanges = () => {
+        if (!editingUser) return;
+        const updatedUser = { ...editingUser };
+        if (newPassword) updatedUser.password = newPassword;
+        setUsers(users.map(u => u.id === updatedUser.id ? updatedUser : u));
+        toast({ title: "User Updated", description: `Member ${updatedUser.username} has been synchronized.` });
+        setIsUserDialogOpen(false);
+        setNewPassword("");
+    };
+
+    const handleCreateNewRole = () => {
+        if (!newRoleName.trim()) return;
+        const newRole: Role = {
+            id: `role-${Date.now()}`,
+            name: newRoleName.trim(),
+            permissions: []
+        };
+        setRoles([...roles, newRole]);
+        toast({ title: "Role Provisioned", description: `Architectural tier "${newRoleName}" has been added.` });
+        setNewRoleName("");
+        setIsNewRoleOpen(false);
+    };
+
     const handleSaveRole = () => {
         if (!selectedRole) return;
         setRoles(roles.map(r => r.id === selectedRole.id ? selectedRole : r));
         toast({ title: t("role_updated"), description: t('role_updated_desc', {roleName: selectedRole.name})});
     };
 
+    // DATA MANAGER FUNCTIONS
+    const exportAllData = () => {
+        const fullState = {
+            employees, excelFiles, items, expenses, expenseReports, transfers, transferItems, orderRequests, users, roles, settings
+        };
+        const blob = new Blob([JSON.stringify(fullState, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Ashley_Terminal_Backup_${format(new Date(), 'yyyy-MM-dd')}.json`;
+        a.click();
+        toast({ title: "Nexus Export Complete", description: "All terminal sectors have been backed up to JSON." });
+    };
+
+    const handleImportData = (e: React.ChangeEvent<HTMLInputElement>, mode: 'employees' | 'branch') => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            try {
+                const incoming = JSON.parse(event.target?.result as string);
+                
+                if (mode === 'employees') {
+                    if (incoming.employees) {
+                        setEmployees(incoming.employees);
+                        toast({ title: "Biometric Sync Success", description: "Employee database and image headers have been updated." });
+                    } else {
+                        throw new Error("No employee cluster found in backup.");
+                    }
+                } else if (mode === 'branch') {
+                    // Full Import EXCLUDING local branding
+                    const brandingKeys = [
+                        'appLogo', 'mainBackground', 'loginBackground', 'loginBackgroundVideo', 
+                        'loginBackgroundEmbed', 'loginCardUpperImage', 'dashboardBanner', 
+                        'printHeaderImage', 'printFooterImage', 'customFont'
+                    ];
+                    
+                    if (incoming.employees) setEmployees(incoming.employees);
+                    if (incoming.excelFiles) setExcelFiles(incoming.excelFiles);
+                    if (incoming.items) setItems(incoming.items);
+                    if (incoming.expenses) setExpenses(incoming.expenses);
+                    if (incoming.expenseReports) setExpenseReports(incoming.expenseReports);
+                    if (incoming.transfers) setTransfers(incoming.transfers);
+                    if (incoming.transferItems) setTransferItems(incoming.transferItems);
+                    if (incoming.orderRequests) setOrderRequests(incoming.orderRequests);
+                    if (incoming.users) setUsers(incoming.users);
+                    if (incoming.roles) setRoles(incoming.roles);
+                    
+                    if (incoming.settings) {
+                        const sanitizedSettings = { ...incoming.settings };
+                        brandingKeys.forEach(key => {
+                            if (settings[key as keyof AppSettings]) {
+                                sanitizedSettings[key] = settings[key as keyof AppSettings];
+                            }
+                        });
+                        setSettings(sanitizedSettings);
+                    }
+                    
+                    toast({ title: "Nexus Link Established", description: "Operational data synchronized. Local branding architecture protected." });
+                }
+            } catch (err) {
+                toast({ variant: "destructive", title: "Nexus Breach", description: "Could not parse data cluster. File may be corrupted." });
+            }
+        };
+        reader.readAsText(file);
+    };
+
     return (
         <div className="space-y-8">
             <Tabs defaultValue="users" className="w-full">
-                <TabsList className="bg-muted/30 p-1 mb-6">
-                    <TabsTrigger value="users" className="text-xs font-bold uppercase tracking-widest"><Users className="w-3 h-3 mr-2" /> Users</TabsTrigger>
-                    <TabsTrigger value="roles" className="text-xs font-bold uppercase tracking-widest"><ShieldCheck className="w-3 h-3 mr-2" /> Roles</TabsTrigger>
-                    <TabsTrigger value="activity" className="text-xs font-bold uppercase tracking-widest"><Activity className="w-3 h-3 mr-2" /> Logs</TabsTrigger>
+                <TabsList className="bg-muted/30 p-1 mb-6 flex overflow-x-auto h-auto">
+                    <TabsTrigger value="users" className="text-[10px] font-bold uppercase tracking-widest px-4 py-2"><Users className="w-3 h-3 mr-2" /> Members</TabsTrigger>
+                    <TabsTrigger value="roles" className="text-[10px] font-bold uppercase tracking-widest px-4 py-2"><ShieldCheck className="w-3 h-3 mr-2" /> Roles</TabsTrigger>
+                    <TabsTrigger value="activity" className="text-[10px] font-bold uppercase tracking-widest px-4 py-2"><Activity className="w-3 h-3 mr-2" /> Activity</TabsTrigger>
+                    <TabsTrigger value="data" className="text-[10px] font-bold uppercase tracking-widest px-4 py-2"><Database className="w-3 h-3 mr-2" /> Data Mgr</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="users" className="space-y-4">
@@ -255,7 +365,7 @@ function AdminPowerSuite() {
                 </TabsContent>
 
                 <TabsContent value="roles" className="space-y-6">
-                    <div className="flex items-center gap-4 bg-muted/20 p-4 rounded-xl border">
+                    <div className="flex flex-wrap items-center gap-4 bg-muted/20 p-4 rounded-xl border">
                         <Label className="text-xs font-bold uppercase tracking-widest">Select Role:</Label>
                         <Select value={selectedRole?.id || ''} onValueChange={(val) => setSelectedRole(roles.find(r => r.id === val) || null)}>
                             <SelectTrigger className="w-64 h-9 text-xs"><SelectValue /></SelectTrigger>
@@ -265,6 +375,10 @@ function AdminPowerSuite() {
                         </Select>
                         <Button size="sm" onClick={handleSaveRole} disabled={selectedRole?.name === 'Admin'}>
                             <Save className="w-3 h-3 mr-2" /> {t('save_changes')}
+                        </Button>
+                        <Separator orientation="vertical" className="h-6 hidden md:block" />
+                        <Button variant="outline" size="sm" onClick={() => setIsNewRoleOpen(true)}>
+                            <Plus className="w-3 h-3 mr-2" /> New Role
                         </Button>
                     </div>
 
@@ -332,7 +446,105 @@ function AdminPowerSuite() {
                         </Table>
                     </div>
                 </TabsContent>
+
+                <TabsContent value="data" className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <Card className="bg-card/20 border-none">
+                            <CardHeader>
+                                <CardTitle className="text-sm">Nexus Data Export</CardTitle>
+                                <CardDescription className="text-[10px]">Generate a complete encrypted backup of all terminal sectors.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <Button className="w-full font-black uppercase tracking-widest text-[10px]" onClick={exportAllData}>
+                                    <Download className="w-3.5 h-3.5 mr-2" /> Initiate Export
+                                </Button>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="bg-card/20 border-none">
+                            <CardHeader>
+                                <CardTitle className="text-sm">Nexus Data Import</CardTitle>
+                                <CardDescription className="text-[10px]">Synchronize data clusters from backups or other branches.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label className="text-[9px] uppercase font-black tracking-widest opacity-60">Strategy A: Biometric Sync</Label>
+                                    <div className="relative">
+                                        <Button variant="outline" className="w-full text-[9px] uppercase font-black tracking-widest h-9" asChild>
+                                            <label>
+                                                <Users className="w-3 h-3 mr-2" /> Import Employees Only
+                                                <input type="file" accept=".json" onChange={e => handleImportData(e, 'employees')} className="hidden" />
+                                            </label>
+                                        </Button>
+                                    </div>
+                                    <p className="text-[8px] text-muted-foreground italic">Imports employee list and photos only. Preserves all existing reports.</p>
+                                </div>
+                                <Separator />
+                                <div className="space-y-2">
+                                    <Label className="text-[9px] uppercase font-black tracking-widest opacity-60">Strategy B: Neural Branch Link</Label>
+                                    <div className="relative">
+                                        <Button variant="outline" className="w-full text-[9px] uppercase font-black tracking-widest h-9 border-primary/30" asChild>
+                                            <label>
+                                                <RefreshCw className="w-3 h-3 mr-2" /> Import Branch Data
+                                                <input type="file" accept=".json" onChange={e => handleImportData(e, 'branch')} className="hidden" />
+                                            </label>
+                                        </Button>
+                                    </div>
+                                    <p className="text-[8px] text-muted-foreground italic">Imports all operational data. <span className="text-primary">Strips and ignores all branding images</span> to protect this terminal's UI.</p>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </TabsContent>
             </Tabs>
+
+            {/* Dialogs */}
+            <Dialog open={isUserDialogOpen} onOpenChange={setIsUserDialogOpen}>
+                <DialogContent>
+                    <DialogHeader><DialogTitle>Edit Member Architecture: {editingUser?.username}</DialogTitle></DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label>Access Tier (Role)</Label>
+                            <Select value={editingUser?.roleId || ''} onValueChange={v => editingUser && setEditingUser({...editingUser, roleId: v})}>
+                                <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    {roles.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Overwrite Security Key (Password)</Label>
+                            <Input 
+                                type="password" 
+                                value={newPassword} 
+                                onChange={e => setNewPassword(e.target.value)} 
+                                placeholder="Leave blank to maintain current"
+                                className="h-9 text-xs"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="ghost" onClick={() => setIsUserDialogOpen(false)}>Abort</Button>
+                        <Button onClick={handleSaveUserChanges}>Save Configuration</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isNewRoleOpen} onOpenChange={setIsNewRoleOpen}>
+                <DialogContent>
+                    <DialogHeader><DialogTitle>Provision New Access Tier</DialogTitle></DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label>Role Designation Name</Label>
+                            <Input value={newRoleName} onChange={e => setNewRoleName(e.target.value)} placeholder="e.g. Finance Architect" />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="ghost" onClick={() => setIsNewRoleOpen(false)}>Abort</Button>
+                        <Button onClick={handleCreateNewRole}>Initialize Role</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
