@@ -90,7 +90,11 @@ const nextConfig = {
       }
     ],
   },
-  allowedDevOrigins: ['*.cloudworkstations.dev'],
+  allowedDevOrigins: [
+    'localhost:9002',
+    '*.cloudworkstations.dev',
+    '*.cluster-*.cloudworkstations.dev'
+  ],
 };
 
 module.exports = nextConfig;

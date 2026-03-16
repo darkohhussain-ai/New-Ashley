@@ -120,15 +120,14 @@ function AppContent({ children }: { children: React.ReactNode }) {
     }
 
     return (
-        <SidebarProvider defaultOpen={true}>
+        <SidebarProvider defaultOpen={true} className="bg-transparent">
             <CustomFontInjector />
             <DynamicThemeInjector />
+            {!isLoginPage && <MainBackground />}
 
             {!isLoginPage && <AppSidebar />}
             
             <SidebarInset className="flex flex-col relative bg-transparent overflow-hidden">
-                {!isLoginPage && <MainBackground />}
-                
                 {/* Floating Mobile Trigger */}
                 {!isLoginPage && (
                     <div className={cn(

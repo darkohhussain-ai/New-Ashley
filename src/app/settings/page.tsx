@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -772,7 +771,7 @@ function SettingsPage() {
                                   <ColorPicker label="Interface Accent" value={draftSettings.darkThemeColors.accent} onChange={v => updateCustomColor('dark', 'accent', v)} />
                                   <ColorPicker label="Card Surface" value={draftSettings.darkThemeColors.card} onChange={v => updateCustomColor('dark', 'card', v)} />
                                   <ColorPicker label="Title Bar" value={draftSettings.darkThemeColors.titleBar} onChange={v => updateCustomColor('dark', 'titleBar', v)} />
-                                  <ColorPicker label="Table Row Primary" value={draftSettings.darkThemeColors.tableRowPrimary} onChange={v => updateCustomColor('dark', 'tableRowPrimary', v)} />
+                                  <ColorPicker label="Table Row Primary" value={draftSettings.darkThemeColors.tableRowPrimary} onChange={v => updateCustomColor('light', 'tableRowPrimary', v)} />
                                   <ColorPicker label="Table Row Secondary" value={draftSettings.darkThemeColors.tableRowSecondary} onChange={v => updateCustomColor('dark', 'tableRowSecondary', v)} />
                               </div>
                           </div>
