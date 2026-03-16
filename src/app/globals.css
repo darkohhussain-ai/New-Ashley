@@ -26,7 +26,7 @@
     --radius: 1rem;
 
     /* Sidebar Variables */
-    --sidebar-background: transparent;
+    --sidebar-background: var(--primary);
     --sidebar-foreground: 0 0% 100%;
     --sidebar-primary: 0 0% 100%;
     --sidebar-primary-foreground: hsl(var(--primary));
@@ -40,9 +40,10 @@
     --card-header-bg: var(--muted);
     --table-header-bg: var(--primary);
 
-    /* Tab and Status Colors */
-    --tab-active-background: hsl(var(--background));
-    --tab-active-foreground: hsl(var(--foreground));
+    /* Transparency Opacity */
+    --ui-opacity: 0.68;
+
+    /* Status Colors */
     --status-correct-bg: 142 90% 92%;
     --status-less-bg: 38 92% 90%;
     --status-more-bg: 221 83% 92%;
@@ -73,7 +74,7 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 224.3 76.3% 48%;
 
-    --sidebar-background: transparent;
+    --sidebar-background: var(--primary);
     --sidebar-foreground: 210 40% 98%;
 
     --status-correct-bg: 142 76% 15%; 
@@ -84,18 +85,6 @@
     --status-new-bg: 48 96% 25%;
     --status-updated-bg: 142 76% 20%; 
   }
-
-  [data-theme='purple'] { --primary: 262 83% 58%; }
-  [data-theme='blue'] { --primary: 221.2 83.2% 53.3%; }
-  [data-theme='green'] { --primary: 142.1 70.6% 45.3%; }
-  [data-theme='rose'] { --primary: 346.8 77.2% 49.8%; }
-  [data-theme='amber'] { --primary: 37.9 94% 53.9%; }
-  [data-theme='violet'] { --primary: 262.1 83.3% 57.8%; }
-  [data-theme='orange'] { --primary: 24.6 95% 53.1%; }
-  [data-theme='cyan'] { --primary: 188.7 94.5% 42.7%; }
-  [data-theme='indigo'] { --primary: 238.7 83.5% 66.7%; }
-  [data-theme='zinc'] { --primary: 240 5.9% 10%; }
-  [data-theme='crimson'] { --primary: 348 83.3% 47.1%; }
 
   html {
     font-size: 14px;

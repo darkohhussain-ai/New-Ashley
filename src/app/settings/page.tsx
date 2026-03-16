@@ -114,7 +114,7 @@ function ImageControl({
 }) {
     const { t } = useTranslation();
     return (
-        <Card className="border-none shadow-sm bg-card/30 backdrop-blur-sm">
+        <Card className="border-none shadow-sm bg-card/68 backdrop-blur-sm">
             <CardHeader className="pb-3">
                 <CardTitle className="text-sm">{label}</CardTitle>
                 <CardDescription className="text-[10px]">{description}</CardDescription>
@@ -720,7 +720,7 @@ function SettingsPage() {
           </TabsList>
 
           <TabsContent value="design" className="pt-6 space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
-            <Card className="border-none shadow-sm bg-card/30 backdrop-blur-sm">
+            <Card className="border-none shadow-sm bg-card/68 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle>Global Theme Architecture</CardTitle>
                 <CardDescription>Select a professional preset or design your own unique color identity.</CardDescription>
@@ -820,7 +820,7 @@ function SettingsPage() {
                 />
             </div>
 
-            <Card className="border-none shadow-sm bg-card/30 backdrop-blur-sm mt-6">
+            <Card className="border-none shadow-sm bg-card/68 backdrop-blur-sm mt-6">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><Video className="w-4 h-4"/> Login Video Engineering</CardTitle>
                     <CardDescription>High-performance video streaming integration.</CardDescription>
@@ -846,7 +846,7 @@ function SettingsPage() {
 
           <TabsContent value="language" className="pt-6 space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="border-none shadow-sm bg-card/30 backdrop-blur-sm">
+                <Card className="border-none shadow-sm bg-card/68 backdrop-blur-sm">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><ScrollText className="w-4 h-4"/> Dashboard News Ticker</CardTitle>
                         <CardDescription>Define the scrolling intelligence that appears on the main terminal hub.</CardDescription>
@@ -872,7 +872,7 @@ function SettingsPage() {
                     </CardContent>
                 </Card>
 
-                <Card className="border-none shadow-sm bg-card/30 backdrop-blur-sm">
+                <Card className="border-none shadow-sm bg-card/68 backdrop-blur-sm">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><Type className="w-4 h-4"/> Terminal Typography</CardTitle>
                         <CardDescription>Upload a custom TrueType Font (.ttf) to transform the entire terminal's look.</CardDescription>
