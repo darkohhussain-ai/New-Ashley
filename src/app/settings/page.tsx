@@ -19,6 +19,7 @@ import {
   ScrollText,
   Code,
   Brush,
+  Link as LinkIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -80,6 +81,63 @@ function ColorPicker({ label, value, onChange }: { label: string, value: string,
     );
 }
 
+function ImageControl({ 
+    label, 
+    description, 
+    value, 
+    onValueChange, 
+    onFileUpload 
+}: { 
+    label: string, 
+    description: string, 
+    value: string | null, 
+    onValueChange: (val: string) => void,
+    onFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void 
+}) {
+    const { t } = useTranslation();
+    return (
+        <Card className="border-none shadow-sm">
+            <CardHeader className="pb-3">
+                <CardTitle className="text-sm">{label}</CardTitle>
+                <CardDescription className="text-[10px]">{description}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="relative w-full h-32 border-2 border-dashed rounded-xl p-2 flex justify-center bg-muted/30 overflow-hidden">
+                    {value ? (
+                        <Image src={value} alt={label} fill className="object-contain" unoptimized />
+                    ) : (
+                        <div className="flex items-center justify-center text-muted-foreground opacity-20">
+                            <ImageIconLucide className="w-12 h-12" />
+                        </div>
+                    )}
+                </div>
+                <div className="space-y-3">
+                    <div className="space-y-1.5">
+                        <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest opacity-60">
+                            <LinkIcon className="w-3 h-3" />
+                            {t('import_via_url')}
+                        </div>
+                        <Input 
+                            value={value || ''} 
+                            onChange={e => onValueChange(e.target.value)} 
+                            placeholder="https://example.com/image.png"
+                            className="h-9 text-xs"
+                        />
+                    </div>
+                    <Separator className="opacity-50" />
+                    <div className="space-y-1.5">
+                        <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest opacity-60">
+                            <Plus className="w-3 h-3" />
+                            {t('upload_manually')}
+                        </div>
+                        <Input type="file" accept="image/*" onChange={onFileUpload} className="h-9 text-xs cursor-pointer" />
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
 function SettingsPage() {
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -115,20 +173,24 @@ function SettingsPage() {
     reader.onload = event => {
       const localUrl = event.target?.result as string;
       if (localUrl) {
-        setDraftSettings(prev => {
-          const newSettings = JSON.parse(JSON.stringify(prev));
-          const keys = settingKeyPath.split('.');
-          let current: any = newSettings;
-          for (let i = 0; i < keys.length - 1; i++) {
-            if (!current[keys[i]]) current[keys[i]] = {};
-            current = current[keys[i]];
-          }
-          current[keys[keys.length - 1]] = localUrl;
-          return newSettings;
-        });
+        updateSetting(settingKeyPath, localUrl);
       }
     };
     reader.readAsDataURL(file);
+  };
+
+  const updateSetting = (path: string, value: any) => {
+    setDraftSettings(prev => {
+        const newSettings = JSON.parse(JSON.stringify(prev));
+        const keys = path.split('.');
+        let current: any = newSettings;
+        for (let i = 0; i < keys.length - 1; i++) {
+            if (!current[keys[i]]) current[keys[i]] = {};
+            current = current[keys[i]];
+        }
+        current[keys[keys.length - 1]] = value;
+        return newSettings;
+    });
   };
 
   const handleSave = async () => {
@@ -235,97 +297,66 @@ function SettingsPage() {
           </TabsContent>
 
           <TabsContent value="images" className="pt-6 space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="border-none shadow-sm">
-                  <CardHeader><CardTitle>{t('app_logo')}</CardTitle><CardDescription>{t('app_logo_desc')}</CardDescription></CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="relative w-full h-32 border-2 border-dashed rounded-xl p-2 flex justify-center bg-muted/30">
-                      {draftSettings.appLogo && <Image src={draftSettings.appLogo} alt="Logo" fill className="object-contain" unoptimized />}
-                    </div>
-                    <Input type="file" accept="image/*" onChange={e => handleFileUpload(e, 'appLogo')} />
-                  </CardContent>
-                </Card>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <ImageControl 
+                    label={t('app_logo')} 
+                    description={t('app_logo_desc')} 
+                    value={draftSettings.appLogo} 
+                    onValueChange={v => updateSetting('appLogo', v)}
+                    onFileUpload={e => handleFileUpload(e, 'appLogo')}
+                />
+                <ImageControl 
+                    label={t('main_dashboard_background')} 
+                    description={t('main_dashboard_background_desc')} 
+                    value={draftSettings.mainBackground} 
+                    onValueChange={v => updateSetting('mainBackground', v)}
+                    onFileUpload={e => handleFileUpload(e, 'mainBackground')}
+                />
+                <ImageControl 
+                    label="Login Card Banner" 
+                    description="The decorative image at the top of the login portal." 
+                    value={draftSettings.loginCardUpperImage} 
+                    onValueChange={v => updateSetting('loginCardUpperImage', v)}
+                    onFileUpload={e => handleFileUpload(e, 'loginCardUpperImage')}
+                />
+                <ImageControl 
+                    label="Login Portal Background" 
+                    description="Static fallback image for the login screen." 
+                    value={draftSettings.loginBackground} 
+                    onValueChange={v => updateSetting('loginBackground', v)}
+                    onFileUpload={e => handleFileUpload(e, 'loginBackground')}
+                />
+                <ImageControl 
+                    label={t('dashboard_banner')} 
+                    description={t('dashboard_banner_desc')} 
+                    value={draftSettings.dashboardBanner} 
+                    onValueChange={v => updateSetting('dashboardBanner', v)}
+                    onFileUpload={e => handleFileUpload(e, 'dashboardBanner')}
+                />
+            </div>
 
-                <Card className="border-none shadow-sm">
-                  <CardHeader><CardTitle>{t('main_dashboard_background')}</CardTitle><CardDescription>{t('main_dashboard_background_desc')}</CardDescription></CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="relative w-full h-32 border-2 border-dashed rounded-xl overflow-hidden bg-muted/30">
-                      {draftSettings.mainBackground && <Image src={draftSettings.mainBackground} alt="Background" fill className="object-cover" unoptimized />}
-                    </div>
-                    <Input type="file" accept="image/*" onChange={e => handleFileUpload(e, 'mainBackground')} />
-                  </CardContent>
-                </Card>
-
-                <Card className="border-none shadow-sm">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Video className="w-4 h-4"/> Login Portal Branding</CardTitle>
-                    <CardDescription>Configure the cinematic entry portal background and card identity.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
+            <Card className="border-none shadow-sm mt-6">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Video className="w-4 h-4"/> Login Video Engineering</CardTitle>
+                    <CardDescription>High-performance video streaming integration.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
                     <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                            <Code className="w-4 h-4 text-primary" />
-                            <Label>Video Embed URL (YouTube/Vimeo)</Label>
-                        </div>
+                        <Label>YouTube/Vimeo Embed URL</Label>
                         <Input 
                             value={draftSettings.loginBackgroundEmbed || ''} 
-                            onChange={e => setDraftSettings(prev => ({ ...prev, loginBackgroundEmbed: e.target.value }))}
-                            placeholder="e.g., https://www.youtube.com/embed/VIDEO_ID"
-                        />
-                        <p className="text-[10px] opacity-60">Paste the <strong>src</strong> URL from an embed code. The terminal will automatically optimize it for full-screen playback.</p>
-                    </div>
-                    <Separator />
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-2">
-                            <Brush className="w-4 h-4 text-primary" />
-                            <Label>Login Action Button (HSL Color)</Label>
-                        </div>
-                        <ColorPicker 
-                            label="Button Accent" 
-                            value={draftSettings.loginButtonColor || draftSettings.lightThemeColors.primary} 
-                            onChange={v => setDraftSettings(prev => ({ ...prev, loginButtonColor: v }))} 
+                            onChange={e => updateSetting('loginBackgroundEmbed', e.target.value)}
+                            placeholder="https://www.youtube.com/embed/VIDEO_ID"
                         />
                     </div>
                     <Separator />
-                    <div className="space-y-4">
-                        <Label>Login Card Banner Image</Label>
-                        <div className="relative w-full h-24 border-2 border-dashed rounded-xl overflow-hidden bg-muted/30">
-                            {draftSettings.loginCardUpperImage && <Image src={draftSettings.loginCardUpperImage} alt="Login Header" fill className="object-cover" unoptimized />}
-                        </div>
-                        <Input type="file" accept="image/*" onChange={e => handleFileUpload(e, 'loginCardUpperImage')} />
-                    </div>
-                    <Separator />
-                    <div className="space-y-4">
-                        <Label>{t('login_background')} (Static Fallback)</Label>
-                        <div className="relative w-full h-24 border-2 border-dashed rounded-xl overflow-hidden bg-muted/30">
-                            {draftSettings.loginBackground && <Image src={draftSettings.loginBackground} alt="Login Background" fill className="object-cover" unoptimized />}
-                        </div>
-                        <Input type="file" accept="image/*" onChange={e => handleFileUpload(e, 'loginBackground')} />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-none shadow-sm">
-                  <CardHeader>
-                      <CardTitle>{t('dashboard_banner')}</CardTitle>
-                      <CardDescription>{t('dashboard_banner_desc')}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="relative w-full h-32 border-2 border-dashed rounded-xl overflow-hidden bg-muted/30">
-                      {draftSettings.dashboardBanner && <Image src={draftSettings.dashboardBanner} alt="Banner" fill className="object-cover" unoptimized />}
-                    </div>
-                    <Input type="file" accept="image/*" onChange={e => handleFileUpload(e, 'dashboardBanner')} />
-                    <div className="space-y-2">
-                        <Label>{t('banner_height')} (px)</Label>
-                        <Input 
-                            type="number" 
-                            value={draftSettings.dashboardBannerHeight} 
-                            onChange={e => setDraftSettings(prev => ({ ...prev, dashboardBannerHeight: parseInt(e.target.value) || 150 }))} 
-                        />
-                    </div>
-                  </CardContent>
-                </Card>
-            </div>
+                    <ColorPicker 
+                        label="Login Button HSL" 
+                        value={draftSettings.loginButtonColor || draftSettings.lightThemeColors.primary} 
+                        onChange={v => updateSetting('loginButtonColor', v)} 
+                    />
+                </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="language" className="pt-6 space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
@@ -386,25 +417,20 @@ function SettingsPage() {
 
           <TabsContent value="pdf" className="pt-6 space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="border-none shadow-sm">
-                  <CardHeader><CardTitle>Report Letterheads</CardTitle><CardDescription>Custom images for the upper part of all generated PDF reports.</CardDescription></CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="relative w-full h-24 border-2 border-dashed rounded-xl bg-muted/30 overflow-hidden">
-                      {draftSettings.printHeaderImage && <Image src={draftSettings.printHeaderImage} alt="Header" fill className="object-contain" unoptimized />}
-                    </div>
-                    <Input type="file" accept="image/*" onChange={e => handleFileUpload(e, 'printHeaderImage')} />
-                  </CardContent>
-                </Card>
-
-                <Card className="border-none shadow-sm">
-                  <CardHeader><CardTitle>Report Footers</CardTitle><CardDescription>Custom images for the lower part of all generated PDF reports.</CardDescription></CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="relative w-full h-24 border-2 border-dashed rounded-xl bg-muted/30 overflow-hidden">
-                      {draftSettings.printFooterImage && <Image src={draftSettings.printFooterImage} alt="Footer" fill className="object-contain" unoptimized />}
-                    </div>
-                    <Input type="file" accept="image/*" onChange={e => handleFileUpload(e, 'printFooterImage')} />
-                  </CardContent>
-                </Card>
+                <ImageControl 
+                    label="Print Header" 
+                    description="Custom letterhead for all PDF reports." 
+                    value={draftSettings.printHeaderImage} 
+                    onValueChange={v => updateSetting('printHeaderImage', v)}
+                    onFileUpload={e => handleFileUpload(e, 'printHeaderImage')}
+                />
+                <ImageControl 
+                    label="Print Footer" 
+                    description="Global footer image for printed documents." 
+                    value={draftSettings.printFooterImage} 
+                    onValueChange={v => updateSetting('printFooterImage', v)}
+                    onFileUpload={e => handleFileUpload(e, 'printFooterImage')}
+                />
              </div>
           </TabsContent>
 

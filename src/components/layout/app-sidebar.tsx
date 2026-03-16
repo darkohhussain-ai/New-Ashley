@@ -156,8 +156,8 @@ export function AppSidebar() {
   ];
 
   return (
-    <Sidebar side={side} collapsible="icon" className="border-none shadow-2xl bg-primary">
-      <SidebarHeader className="p-3 bg-primary border-b border-white/5">
+    <Sidebar side={side} collapsible="icon" className="border-none shadow-2xl bg-primary/50 backdrop-blur-xl">
+      <SidebarHeader className="p-3 bg-transparent border-b border-white/5">
         <div className="flex items-center justify-between mb-3">
             <div className="font-black text-sm text-white tracking-tighter group-data-[collapsible=icon]:hidden uppercase">
                 Ashley Terminal
@@ -181,7 +181,7 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="bg-primary text-white custom-scrollbar scrollbar-none">
+      <SidebarContent className="bg-transparent text-white custom-scrollbar scrollbar-none">
         {/* Compact User Section */}
         <div className="px-3 py-2 group-data-[collapsible=icon]:hidden">
             <div className="bg-black/20 rounded-lg p-2 flex items-center gap-2 border border-white/5">
@@ -295,7 +295,7 @@ export function AppSidebar() {
           </SidebarGroup>
         ))}
       </SidebarContent>
-      <SidebarFooter className="bg-primary border-t border-white/5 p-3 group-data-[collapsible=icon]:hidden">
+      <SidebarFooter className="bg-transparent border-t border-white/5 p-3 group-data-[collapsible=icon]:hidden">
         <div className="text-[8px] text-white/20 text-center uppercase font-black tracking-[0.3em]">
           DRP CORE v2.8.0
         </div>

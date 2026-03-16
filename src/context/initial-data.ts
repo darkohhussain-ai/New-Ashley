@@ -106,12 +106,12 @@ const defaultDarkColors: ThemeColors = { background: '222.2 84% 4.9%', foregroun
 
 
 export const initialSettings: AppSettings = {
-    appLogo: null,
-    mainBackground: null,
-    loginBackground: null,
+    appLogo: 'https://scontent.fosm5-2.fna.fbcdn.net/v/t39.30808-6/359100421_1654543121624918_4357409764053776121_n.jpg?_nc_cat=111&ccb=1-7&_nc_sid=1d70fc&_nc_ohc=RRqHhfKktgwQ7kNvwGZ9wBA&_nc_oc=Adn-dOXsw6j30o0ZcGj3VZAs-bVt9v9JkUTmI2zw9OG1xr7gQCYPjQYGRSvcIQvMYgc&_nc_zt=23&_nc_ht=scontent.fosm5-2.fna&_nc_gid=_URzfjb9SusZKsrHeUvMZg&_nc_ss=8&oh=00_Afw3rq4v050pE5sZbjeVrqaa5k5g8wPxCOQ-jKJj1aSGgw&oe=69BD6DCD',
+    mainBackground: 'https://cdn.rencdn.com/ashley/high/50505-38-MOOD-H.jpg',
+    loginBackground: 'https://store.ashley.sa/cdn/shop/files/15602_63ed4394-41df-47b4-b450-eff960c05668.jpg?v=1709104619&width=1445',
     loginBackgroundVideo: null,
     loginBackgroundEmbed: 'https://www.youtube.com/embed/wJwZb9PJsNg',
-    loginCardUpperImage: null,
+    loginCardUpperImage: 'https://images2.imgix.net/p4dbimg/p20304/images/ashley-furniture-19202-55-49-amici-linen-loveseat-sofa-sectional_2.jpg?trim=color&trimtol=5&trimcolor=FFFFFF&w=1024&h=768&fm=pjpg&auto=format',
     loginButtonColor: null,
     dashboardBanner: "https://images.unsplash.com/photo-1685973323988-666a38e0acc2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
     dashboardBannerHeight: 150,

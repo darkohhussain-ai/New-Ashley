@@ -91,7 +91,7 @@ function MainBackground() {
                 unoptimized
                 crossOrigin="anonymous"
             />
-            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
+            <div className="absolute inset-0 bg-background/30 backdrop-blur-[2px]" />
         </div>
     )
 }
@@ -126,7 +126,7 @@ function AppContent({ children }: { children: React.ReactNode }) {
 
             {!isLoginPage && <AppSidebar />}
             
-            <SidebarInset className="flex flex-col relative">
+            <SidebarInset className="flex flex-col relative bg-transparent">
                 {!isLoginPage && <MainBackground />}
                 
                 {/* Floating Mobile Trigger */}
