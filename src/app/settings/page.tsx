@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import {
   Save,
   Palette,
@@ -20,6 +20,14 @@ import {
   Code,
   Brush,
   Link as LinkIcon,
+  Users,
+  Users2,
+  Activity,
+  Trash2,
+  Edit,
+  Search,
+  KeyRound,
+  ShieldAlert,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -38,13 +46,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTranslation } from '@/hooks/use-translation';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import type { AppSettings, ThemeColors } from '@/lib/types';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Checkbox } from '@/components/ui/checkbox';
+import type { AppSettings, ThemeColors, User, Role, Employee, ActivityLog } from '@/lib/types';
 import withAuth from '@/hooks/withAuth';
 import { useAppContext } from '@/context/app-provider';
 import { useAuth } from '@/hooks/use-auth';
 import { initialSettings } from '@/context/initial-data';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import { format, parseISO } from 'date-fns';
+import { allPermissions } from '@/lib/permissions';
 
 const themes = [
   { name: 'purple', color: 'bg-purple-600', label: 'Corporate Purple' },
@@ -96,7 +110,7 @@ function ImageControl({
 }) {
     const { t } = useTranslation();
     return (
-        <Card className="border-none shadow-sm">
+        <Card className="border-none shadow-sm bg-card/30 backdrop-blur-sm">
             <CardHeader className="pb-3">
                 <CardTitle className="text-sm">{label}</CardTitle>
                 <CardDescription className="text-[10px]">{description}</CardDescription>
@@ -135,6 +149,190 @@ function ImageControl({
                 </div>
             </CardContent>
         </Card>
+    );
+}
+
+function AdminPowerSuite() {
+    const { t } = useTranslation();
+    const { users, setUsers, roles, setRoles, employees, activityLogs, setActivityLogs } = useAppContext();
+    const { user: currentUser } = useAuth();
+    const { toast } = useToast();
+
+    // User State
+    const [isUserDialogOpen, setIsUserDialogOpen] = useState(false);
+    const [editingUser, setEditingUser] = useState<User | null>(null);
+    
+    // Roles State
+    const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+
+    useEffect(() => {
+        if (roles.length > 0 && !selectedRole) {
+            setSelectedRole(roles[0]);
+        }
+    }, [roles, selectedRole]);
+
+    // Activity Log Filtering
+    const [searchQuery, setSearchQuery] = useState('');
+    const filteredLogs = useMemo(() => {
+        return [...activityLogs]
+            .filter(log => log.username.toLowerCase().includes(searchQuery.toLowerCase()) || log.description.toLowerCase().includes(searchQuery.toLowerCase()))
+            .sort((a,b) => parseISO(b.timestamp).getTime() - parseISO(a.timestamp).getTime());
+    }, [activityLogs, searchQuery]);
+
+    const handleCreateAllUsers = () => {
+        const existingUsernames = new Set(users.map(u => u.username));
+        const employeesWithoutUsers = employees.filter(emp => {
+            const newUsername = `${emp.name.split(' ')[0]}${emp.employeeId || ''}`;
+            return !existingUsernames.has(newUsername);
+        });
+
+        if (employeesWithoutUsers.length === 0) {
+            toast({ title: t('no_new_users_to_create') });
+            return;
+        }
+
+        const newUsers: User[] = employeesWithoutUsers.map(emp => ({
+            id: `user-${emp.id}`,
+            username: `${emp.name.split(' ')[0]}${emp.employeeId || ''}`,
+            password: `${emp.name.split(' ')[0].toLowerCase()}123`,
+            roleId: 'role-viewer',
+        }));
+
+        setUsers([...users, ...newUsers]);
+        toast({ title: t('users_created'), description: t('users_created_desc', { newUsersCount: newUsers.length }) });
+    };
+
+    const handleSaveRole = () => {
+        if (!selectedRole) return;
+        setRoles(roles.map(r => r.id === selectedRole.id ? selectedRole : r));
+        toast({ title: t("role_updated"), description: t('role_updated_desc', {roleName: selectedRole.name})});
+    };
+
+    return (
+        <div className="space-y-8">
+            <Tabs defaultValue="users" className="w-full">
+                <TabsList className="bg-muted/30 p-1 mb-6">
+                    <TabsTrigger value="users" className="text-xs font-bold uppercase tracking-widest"><Users className="w-3 h-3 mr-2" /> Users</TabsTrigger>
+                    <TabsTrigger value="roles" className="text-xs font-bold uppercase tracking-widest"><ShieldCheck className="w-3 h-3 mr-2" /> Roles</TabsTrigger>
+                    <TabsTrigger value="activity" className="text-xs font-bold uppercase tracking-widest"><Activity className="w-3 h-3 mr-2" /> Logs</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="users" className="space-y-4">
+                    <div className="flex justify-end gap-2">
+                        <Button variant="outline" size="sm" onClick={handleCreateAllUsers}>
+                            <Users2 className="w-3 h-3 mr-2" /> {t('create_all_users')}
+                        </Button>
+                    </div>
+                    <div className="border rounded-xl overflow-hidden bg-card/30">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="text-[10px] uppercase font-black tracking-widest">Username</TableHead>
+                                    <TableHead className="text-[10px] uppercase font-black tracking-widest">Role</TableHead>
+                                    <TableHead className="text-right text-[10px] uppercase font-black tracking-widest">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {users.map(u => (
+                                    <TableRow key={u.id}>
+                                        <TableCell className="font-bold text-xs">{u.username}</TableCell>
+                                        <TableCell>
+                                            <Badge variant="outline" className="text-[9px] uppercase font-black tracking-tighter">
+                                                {roles.find(r => r.id === u.roleId)?.name || 'Unknown'}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingUser(u); setIsUserDialogOpen(true); }}>
+                                                <Edit className="w-3 h-3" />
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="roles" className="space-y-6">
+                    <div className="flex items-center gap-4 bg-muted/20 p-4 rounded-xl border">
+                        <Label className="text-xs font-bold uppercase tracking-widest">Select Role:</Label>
+                        <Select value={selectedRole?.id || ''} onValueChange={(val) => setSelectedRole(roles.find(r => r.id === val) || null)}>
+                            <SelectTrigger className="w-64 h-9 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                {roles.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                        <Button size="sm" onClick={handleSaveRole} disabled={selectedRole?.name === 'Admin'}>
+                            <Save className="w-3 h-3 mr-2" /> {t('save_changes')}
+                        </Button>
+                    </div>
+
+                    {selectedRole && (
+                        <Card className="bg-card/20 border-none shadow-none">
+                            <CardHeader>
+                                <CardTitle className="text-xs uppercase font-black tracking-widest text-primary">Permissions Architect: {selectedRole.name}</CardTitle>
+                            </CardHeader>
+                            <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[400px] overflow-y-auto">
+                                {allPermissions.map(p => (
+                                    <div key={p.id} className="flex items-center space-x-2 p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                                        <Checkbox 
+                                            id={`perm-${p.id}`} 
+                                            checked={selectedRole.permissions.includes(p.id)}
+                                            onCheckedChange={(checked) => {
+                                                const newPerms = checked 
+                                                    ? [...selectedRole.permissions, p.id]
+                                                    : selectedRole.permissions.filter(id => id !== p.id);
+                                                setSelectedRole({ ...selectedRole, permissions: newPerms });
+                                            }}
+                                            disabled={selectedRole.name === 'Admin'}
+                                        />
+                                        <label htmlFor={`perm-${p.id}`} className="text-[10px] font-bold leading-tight cursor-pointer opacity-80">{p.description}</label>
+                                    </div>
+                                ))}
+                            </CardContent>
+                        </Card>
+                    )}
+                </TabsContent>
+
+                <TabsContent value="activity">
+                    <div className="relative mb-4">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                        <Input 
+                            placeholder="Filter logs..." 
+                            value={searchQuery}
+                            onChange={e => setSearchQuery(e.target.value)}
+                            className="pl-10 h-9 text-xs"
+                        />
+                    </div>
+                    <div className="border rounded-xl overflow-hidden bg-card/30 max-h-[500px] overflow-y-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="text-[9px] uppercase font-black tracking-widest">Timestamp</TableHead>
+                                    <TableHead className="text-[9px] uppercase font-black tracking-widest">User</TableHead>
+                                    <TableHead className="text-[9px] uppercase font-black tracking-widest">Action</TableHead>
+                                    <TableHead className="text-[9px] uppercase font-black tracking-widest">Details</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {filteredLogs.map(log => (
+                                    <TableRow key={log.id}>
+                                        <TableCell className="text-[9px] font-mono opacity-60">{format(parseISO(log.timestamp), 'MMM d, HH:mm')}</TableCell>
+                                        <TableCell className="text-[10px] font-bold">{log.username}</TableCell>
+                                        <TableCell>
+                                            <Badge variant={log.action === 'delete' ? 'destructive' : 'outline'} className="text-[8px] h-4 px-1 uppercase font-black">
+                                                {log.action}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-[10px] font-medium opacity-80">{log.description}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </TabsContent>
+            </Tabs>
+        </div>
     );
 }
 
@@ -235,7 +433,7 @@ function SettingsPage() {
           </TabsList>
 
           <TabsContent value="design" className="pt-6 space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
-            <Card className="border-none shadow-sm">
+            <Card className="border-none shadow-sm bg-card/30 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle>Global Theme Architecture</CardTitle>
                 <CardDescription>Select a professional preset or design your own unique color identity.</CardDescription>
@@ -335,7 +533,7 @@ function SettingsPage() {
                 />
             </div>
 
-            <Card className="border-none shadow-sm mt-6">
+            <Card className="border-none shadow-sm bg-card/30 backdrop-blur-sm mt-6">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><Video className="w-4 h-4"/> Login Video Engineering</CardTitle>
                     <CardDescription>High-performance video streaming integration.</CardDescription>
@@ -361,7 +559,7 @@ function SettingsPage() {
 
           <TabsContent value="language" className="pt-6 space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="border-none shadow-sm">
+                <Card className="border-none shadow-sm bg-card/30 backdrop-blur-sm">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><ScrollText className="w-4 h-4"/> Dashboard News Ticker</CardTitle>
                         <CardDescription>Define the scrolling intelligence that appears on the main terminal hub.</CardDescription>
@@ -387,7 +585,7 @@ function SettingsPage() {
                     </CardContent>
                 </Card>
 
-                <Card className="border-none shadow-sm">
+                <Card className="border-none shadow-sm bg-card/30 backdrop-blur-sm">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><Type className="w-4 h-4"/> Terminal Typography</CardTitle>
                         <CardDescription>Upload a custom TrueType Font (.ttf) to transform the entire terminal's look.</CardDescription>
@@ -434,12 +632,16 @@ function SettingsPage() {
              </div>
           </TabsContent>
 
-          <TabsContent value="admin" className="pt-6 space-y-6">
+          <TabsContent value="admin" className="pt-6 space-y-8 animate-in fade-in slide-in-from-top-4 duration-500">
+              <AdminPowerSuite />
+              
+              <Separator />
+
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <Card className="border-destructive/20 shadow-sm">
-                      <CardHeader className="bg-destructive/5 border-b border-destructive/10">
+                  <Card className="border-destructive/20 shadow-sm bg-destructive/5">
+                      <CardHeader className="border-b border-destructive/10">
                           <CardTitle className="text-destructive flex items-center gap-2">
-                              <ShieldCheck className="h-4 w-4" /> Full Terminal Reset
+                              <ShieldAlert className="h-4 w-4" /> Full Terminal Reset
                           </CardTitle>
                           <CardDescription>Permanently wipe all application data and return to initial factory state.</CardDescription>
                       </CardHeader>
@@ -451,7 +653,7 @@ function SettingsPage() {
                                 value={resetConfirmText} 
                                 onChange={e => setResetConfirmText(e.target.value)} 
                                 placeholder="Type RESET to confirm"
-                                className="border-destructive/30 focus-visible:ring-destructive"
+                                className="border-destructive/30 focus-visible:ring-destructive bg-background/50 h-9 text-xs"
                               />
                           </div>
                       </CardContent>
