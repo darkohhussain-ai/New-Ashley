@@ -517,7 +517,7 @@ function AdminPowerSuite() {
                                     <p className="text-[8px] text-muted-foreground italic">Imports all operational data. <span className="text-primary">Strips all branding images</span> to protect this terminal's UI.</p>
                                 </div>
                             </CardContent>
-                        </div>
+                        </Card>
                     </div>
 
                     <Separator className="opacity-20" />
