@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -30,6 +29,7 @@ import {
   Download,
   Upload as UploadIcon,
   RefreshCw,
+  Bomb,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -52,12 +52,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { AppSettings, ThemeColors, User, Role, Employee, ActivityLog } from '@/lib/types';
 import withAuth from '@/hooks/withAuth';
 import { useAppContext } from '@/context/app-provider';
 import { useAuth } from '@/hooks/use-auth';
-import { initialSettings } from '@/context/initial-data';
+import { initialSettings, initialData } from '@/context/initial-data';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { format, parseISO } from 'date-fns';
@@ -132,7 +133,7 @@ function ImageControl({
                     <div className="space-y-1.5">
                         <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest opacity-60">
                             <LinkIcon className="w-3 h-3" />
-                            {t('import_via_url')}
+                            URL Import
                         </div>
                         <Input 
                             value={value || ''} 
@@ -145,7 +146,7 @@ function ImageControl({
                     <div className="space-y-1.5">
                         <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest opacity-60">
                             <Plus className="w-3 h-3" />
-                            {t('upload_manually')}
+                            File Upload
                         </div>
                         <Input type="file" accept="image/*" onChange={onFileUpload} className="h-9 text-xs cursor-pointer" />
                     </div>
@@ -183,6 +184,11 @@ function AdminPowerSuite() {
     const [selectedRole, setSelectedRole] = useState<Role | null>(null);
     const [isNewRoleOpen, setIsNewRoleOpen] = useState(false);
     const [newRoleName, setNewRoleName] = useState("");
+
+    // Multi-Factor Reset State
+    const [resetSafetyUnlocked, setResetSafetyUnlocked] = useState(false);
+    const [resetConfirmationChecked, setResetConfirmationChecked] = useState(false);
+    const [resetVerifyCode, setResetVerifyCode] = useState("");
 
     useEffect(() => {
         if (roles.length > 0 && !selectedRole) {
@@ -250,7 +256,6 @@ function AdminPowerSuite() {
         toast({ title: t("role_updated"), description: t('role_updated_desc', {roleName: selectedRole.name})});
     };
 
-    // DATA MANAGER FUNCTIONS
     const exportAllData = () => {
         const fullState = {
             employees, excelFiles, items, expenses, expenseReports, transfers, transferItems, orderRequests, users, roles, settings
@@ -281,7 +286,6 @@ function AdminPowerSuite() {
                         throw new Error("No employee cluster found in backup.");
                     }
                 } else if (mode === 'branch') {
-                    // Full Import EXCLUDING local branding
                     const brandingKeys = [
                         'appLogo', 'mainBackground', 'loginBackground', 'loginBackgroundVideo', 
                         'loginBackgroundEmbed', 'loginCardUpperImage', 'dashboardBanner', 
@@ -316,6 +320,25 @@ function AdminPowerSuite() {
             }
         };
         reader.readAsText(file);
+    };
+
+    const handleTerminalReset = async () => {
+        if (!resetSafetyUnlocked || !resetConfirmationChecked || resetVerifyCode !== "RESET") return;
+        
+        await setEmployees(initialData.employees);
+        await setExcelFiles([]);
+        await setItems([]);
+        await setExpenses([]);
+        await setExpenseReports([]);
+        await setTransfers([]);
+        await setTransferItems([]);
+        await setOrderRequests([]);
+        await setUsers(initialData.users);
+        await setRoles(initialData.roles);
+        await setSettings(initialSettings);
+        
+        toast({ title: "Factory Reset Successful", description: "Terminal has been purged and returned to initial state." });
+        window.location.reload();
     };
 
     return (
@@ -374,7 +397,7 @@ function AdminPowerSuite() {
                             </SelectContent>
                         </Select>
                         <Button size="sm" onClick={handleSaveRole} disabled={selectedRole?.name === 'Admin'}>
-                            <Save className="w-3 h-3 mr-2" /> {t('save_changes')}
+                            <Save className="w-3 h-3 mr-2" /> Save Tier
                         </Button>
                         <Separator orientation="vertical" className="h-6 hidden md:block" />
                         <Button variant="outline" size="sm" onClick={() => setIsNewRoleOpen(true)}>
@@ -447,7 +470,7 @@ function AdminPowerSuite() {
                     </div>
                 </TabsContent>
 
-                <TabsContent value="data" className="space-y-6">
+                <TabsContent value="data" className="space-y-10">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <Card className="bg-card/20 border-none">
                             <CardHeader>
@@ -490,11 +513,69 @@ function AdminPowerSuite() {
                                             </label>
                                         </Button>
                                     </div>
-                                    <p className="text-[8px] text-muted-foreground italic">Imports all operational data. <span className="text-primary">Strips and ignores all branding images</span> to protect this terminal's UI.</p>
+                                    <p className="text-[8px] text-muted-foreground italic">Imports all operational data. <span className="text-primary">Strips all branding images</span> to protect this terminal's UI.</p>
                                 </div>
                             </CardContent>
-                        </Card>
+                        </div>
                     </div>
+
+                    <Separator className="opacity-20" />
+
+                    <Card className="border-destructive/20 shadow-xl bg-destructive/5 overflow-hidden">
+                        <CardHeader className="bg-destructive/10 border-b border-destructive/10">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-destructive text-white rounded-lg shadow-lg">
+                                    <Bomb className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <CardTitle className="text-destructive font-black uppercase tracking-widest text-base">Terminal Purge Protocol</CardTitle>
+                                    <CardDescription className="text-destructive/70 text-[10px] font-bold">CRITICAL: This action wipes all database sectors and resets identity anchors.</CardDescription>
+                                </div>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="p-6 space-y-6">
+                            <div className="flex items-center justify-between p-4 bg-background/40 rounded-xl border border-destructive/20">
+                                <div className="space-y-0.5">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest">Factor 1: Neural Safety Interlock</Label>
+                                    <p className="text-[9px] text-muted-foreground">Unlock the primary reset circuit.</p>
+                                </div>
+                                <Switch checked={resetSafetyUnlocked} onCheckedChange={setResetSafetyUnlocked} className="data-[state=checked]:bg-destructive" />
+                            </div>
+
+                            <div className={cn("space-y-6 transition-all duration-500", resetSafetyUnlocked ? "opacity-100 scale-100" : "opacity-20 scale-[0.98] pointer-events-none grayscale")}>
+                                <div className="flex items-start space-x-3 p-4 bg-background/40 rounded-xl border border-destructive/10">
+                                    <Checkbox id="confirm-wipe" checked={resetConfirmationChecked} onCheckedChange={(v) => setResetConfirmationChecked(!!v)} />
+                                    <div className="grid gap-1.5 leading-none">
+                                        <label htmlFor="confirm-wipe" className="text-[10px] font-black uppercase tracking-widest cursor-pointer">Factor 2: Confirmation of Data Loss</label>
+                                        <p className="text-[9px] text-muted-foreground italic">I acknowledge that all reports, items, and biometric headers will be permanently deleted.</p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest ml-1">Factor 3: Verification Sequence</Label>
+                                    <div className="relative">
+                                        <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground opacity-50" />
+                                        <Input 
+                                            value={resetVerifyCode} 
+                                            onChange={e => setResetVerifyCode(e.target.value)} 
+                                            placeholder="Enter 'RESET' to authorize"
+                                            className="pl-10 border-destructive/30 focus-visible:ring-destructive bg-background/50 h-10 font-mono text-xs"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </CardContent>
+                        <CardFooter className="bg-destructive/5 p-6 border-t border-destructive/10">
+                            <Button 
+                                variant="destructive" 
+                                className="w-full font-black uppercase tracking-widest h-12 shadow-2xl transition-all" 
+                                disabled={!resetSafetyUnlocked || !resetConfirmationChecked || resetVerifyCode !== "RESET"}
+                                onClick={handleTerminalReset}
+                            >
+                                <ShieldAlert className="w-4 h-4 mr-2" /> Execute Factory Purge
+                            </Button>
+                        </CardFooter>
+                    </Card>
                 </TabsContent>
             </Tabs>
 
@@ -558,7 +639,6 @@ function SettingsPage() {
   const [draftSettings, setDraftSettings] = useState<AppSettings>(initialSettings);
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [resetConfirmText, setResetConfirmText] = useState("");
   
   const isAdmin = hasPermission('admin:all');
 
@@ -625,12 +705,6 @@ function SettingsPage() {
               [key]: value
           }
       }));
-  };
-
-  const handleResetToDefault = async () => {
-    if (resetConfirmText !== "RESET") return;
-    await setSettings(initialSettings);
-    window.location.reload();
   };
 
   return (
@@ -847,36 +921,6 @@ function SettingsPage() {
 
           <TabsContent value="admin" className="pt-6 space-y-8 animate-in fade-in slide-in-from-top-4 duration-500">
               <AdminPowerSuite />
-              
-              <Separator />
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <Card className="border-destructive/20 shadow-sm bg-destructive/5">
-                      <CardHeader className="border-b border-destructive/10">
-                          <CardTitle className="text-destructive flex items-center gap-2">
-                              <ShieldAlert className="h-4 w-4" /> Full Terminal Reset
-                          </CardTitle>
-                          <CardDescription>Permanently wipe all application data and return to initial factory state.</CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-4 pt-6">
-                          <p className="text-xs text-muted-foreground italic">This action is irreversible. All employees, reports, themes, and images will be permanently deleted from the database.</p>
-                          <div className="space-y-2">
-                              <Label className="text-[10px] font-bold uppercase tracking-widest opacity-60">Authentication Required</Label>
-                              <Input 
-                                value={resetConfirmText} 
-                                onChange={e => setResetConfirmText(e.target.value)} 
-                                placeholder="Type RESET to confirm"
-                                className="border-destructive/30 focus-visible:ring-destructive bg-background/50 h-9 text-xs"
-                              />
-                          </div>
-                      </CardContent>
-                      <CardFooter>
-                          <Button variant="destructive" className="w-full font-black uppercase tracking-widest" disabled={resetConfirmText !== "RESET"} onClick={handleResetToDefault}>
-                            Reset Terminal
-                          </Button>
-                      </CardFooter>
-                  </Card>
-              </div>
           </TabsContent>
         </Tabs>
       </main>
