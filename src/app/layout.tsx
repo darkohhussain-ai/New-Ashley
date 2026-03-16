@@ -81,7 +81,7 @@ function MainBackground() {
         return null;
     }
     return (
-        <div className="fixed inset-0 z-[-1]">
+        <div className="fixed inset-0 z-[-1] overflow-hidden">
             <Image
                 key={settings.mainBackground}
                 src={settings.mainBackground}
@@ -90,8 +90,9 @@ function MainBackground() {
                 className="object-cover"
                 unoptimized
                 crossOrigin="anonymous"
+                priority
             />
-            <div className="absolute inset-0 bg-background/10 backdrop-blur-[2px]" />
+            <div className="absolute inset-0 bg-background/5 backdrop-blur-[1px]" />
         </div>
     )
 }
@@ -126,7 +127,7 @@ function AppContent({ children }: { children: React.ReactNode }) {
 
             {!isLoginPage && <AppSidebar />}
             
-            <SidebarInset className="flex flex-col relative bg-transparent">
+            <SidebarInset className="flex flex-col relative bg-transparent overflow-hidden">
                 {!isLoginPage && <MainBackground />}
                 
                 {/* Floating Mobile Trigger */}
