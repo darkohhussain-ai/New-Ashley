@@ -3,19 +3,20 @@
 
 import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { Loader2, Building2, Search, User, Mail, MapPin, Package, Globe, Smartphone } from 'lucide-react';
+import { Loader2, Building2, Search, User, Mail, Smartphone } from 'lucide-react';
 import Image from 'next/image';
 import { useAppContext } from '@/context/app-provider';
 import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 
 export default function LoginPage() {
   const { t } = useTranslation();
@@ -98,7 +99,7 @@ export default function LoginPage() {
                 <Image src={settings.appLogo} alt="Logo" fill className="object-contain" unoptimized />
               </div>
             )}
-            <div className="hidden sm:block">
+            <div className="hidden sm:block text-foreground">
               <h1 className="text-sm font-black uppercase tracking-widest text-primary">ERP Nexus</h1>
               <p className="text-[9px] uppercase tracking-tighter opacity-60">Corporate Intelligence</p>
             </div>
@@ -189,23 +190,23 @@ export default function LoginPage() {
           <Card className="bg-card/68 backdrop-blur-md border-primary/20 shadow-2xl overflow-hidden">
             <CardHeader className="bg-primary/5 border-b border-primary/10">
               <CardTitle className="text-sm flex items-center gap-2">
-                <Search className="w-4 h-4" /> Nexus Quick-Search
+                <Search className="w-4 h-4 text-foreground" /> Nexus Quick-Search
               </CardTitle>
               <CardDescription className="text-[10px]">Verify item status across the global inventory architecture.</CardDescription>
             </CardHeader>
             <CardContent className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-2">
                 <Label className="text-[9px] uppercase font-black tracking-widest opacity-60">Item Designation (Name)</Label>
-                <Input placeholder="e.g. Luxury Leather Sofa" className="bg-muted/30 border-primary/10 h-10" />
+                <Input placeholder="e.g. Luxury Leather Sofa" className="bg-muted/30 border-primary/10 h-10 text-foreground" />
               </div>
               <div className="space-y-2">
                 <Label className="text-[9px] uppercase font-black tracking-widest opacity-60">System SKU (Code)</Label>
-                <Input placeholder="e.g. SKU-9920-X" className="bg-muted/30 border-primary/10 h-10" />
+                <Input placeholder="e.g. SKU-9920-X" className="bg-muted/30 border-primary/10 h-10 text-foreground" />
               </div>
               <div className="space-y-2">
                 <Label className="text-[9px] uppercase font-black tracking-widest opacity-60">Inventory Sector (Category)</Label>
                 <Select>
-                  <SelectTrigger className="bg-muted/30 border-primary/10 h-10">
+                  <SelectTrigger className="bg-muted/30 border-primary/10 h-10 text-foreground">
                     <SelectValue placeholder="Select Category" />
                   </SelectTrigger>
                   <SelectContent>
