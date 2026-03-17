@@ -24,6 +24,7 @@ function DynamicThemeInjector() {
 
     const colors = theme === 'dark' ? settings.darkThemeColors : settings.lightThemeColors;
     const dashboard = settings.dashboard;
+    const sidebar = settings.sidebar || { fontSize: 12, textTransform: 'none' };
 
     const styleString = `
         :root {
@@ -47,6 +48,11 @@ function DynamicThemeInjector() {
             --dashboard-title-color: ${dashboard?.titleColor || colors.primary};
             --dashboard-text-color: ${dashboard?.textColor || colors.foreground};
             --dashboard-accent-color: ${dashboard?.accentColor || colors.accent};
+            --dashboard-text-transform: ${dashboard?.textTransform || 'none'};
+
+            /* Sidebar Injections */
+            --sidebar-custom-font-size: ${sidebar.fontSize}px;
+            --sidebar-text-transform: ${sidebar.textTransform};
         }
     `;
 

@@ -34,6 +34,8 @@ import {
   Monitor,
   Maximize,
   Scaling,
+  MousePointer2,
+  CaseSensitive,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -59,7 +61,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import type { AppSettings, ThemeColors, User, Role, Employee, ActivityLog } from '@/lib/types';
+import type { AppSettings, ThemeColors, User, Role, Employee, ActivityLog, TextTransform } from '@/lib/types';
 import withAuth from '@/hooks/withAuth';
 import { useAppContext } from '@/context/app-provider';
 import { useAuth } from '@/hooks/use-auth';
@@ -84,21 +86,73 @@ const themes = [
   { name: 'custom', color: 'bg-gradient-to-br from-gray-400 to-gray-800', label: 'Custom Architect' },
 ];
 
+/** Utility to convert HSL variable string to Hex for input type color */
+function hslToHex(hsl: string): string {
+    const parts = hsl.split(' ');
+    if (parts.length < 3) return '#000000';
+    const h = parseInt(parts[0]);
+    const s = parseInt(parts[1].replace('%', ''));
+    const l = parseInt(parts[2].replace('%', ''));
+
+    const l_calc = l / 100;
+    const a = s * Math.min(l_calc, 1 - l_calc) / 100;
+    const f = (n: number) => {
+        const k = (n + h / 30) % 12;
+        const color = l_calc - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+        return Math.round(255 * color).toString(16).padStart(2, '0');
+    };
+    return `#${f(0)}${f(8)}${f(4)}`;
+}
+
+/** Utility to convert Hex to HSL variable string */
+function hexToHsl(hex: string): string {
+    let r = parseInt(hex.slice(1, 3), 16) / 255;
+    let g = parseInt(hex.slice(3, 5), 16) / 255;
+    let b = parseInt(hex.slice(5, 7), 16) / 255;
+
+    let max = Math.max(r, g, b), min = Math.min(r, g, b);
+    let h = 0, s, l = (max + min) / 2;
+
+    if (max === min) {
+        h = s = 0;
+    } else {
+        let d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+            case g: h = (b - r) / d + 2; break;
+            case b: h = (r - g) / d + 4; break;
+        }
+        h /= 6;
+    }
+
+    return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+}
+
 function ColorPicker({ label, value, onChange }: { label: string, value: string, onChange: (val: string) => void }) {
+    const hex = useMemo(() => hslToHex(value), [value]);
+    
     return (
         <div className="space-y-2">
             <Label className="text-[10px] font-bold uppercase tracking-wider opacity-70">{label}</Label>
-            <div className="flex items-center gap-2">
-                <div 
-                    className="w-10 h-10 rounded-lg border shadow-sm shrink-0" 
-                    style={{ backgroundColor: `hsl(${value})` }}
-                />
-                <Input 
-                    value={value} 
-                    onChange={e => onChange(e.target.value)} 
-                    placeholder="e.g. 220 80% 50%"
-                    className="h-9 text-xs font-mono"
-                />
+            <div className="flex items-center gap-3 bg-muted/20 p-2 rounded-xl border border-white/10 group hover:border-primary/30 transition-all">
+                <div className="relative shrink-0 w-10 h-10 overflow-hidden rounded-lg shadow-lg border-2 border-white/20">
+                    <input 
+                        type="color" 
+                        value={hex} 
+                        onChange={e => onChange(hexToHsl(e.target.value))}
+                        className="absolute inset-0 w-[150%] h-[150%] -translate-x-1/4 -translate-y-1/4 cursor-pointer"
+                    />
+                </div>
+                <div className="flex-1 space-y-0.5">
+                    <p className="text-[9px] font-black uppercase tracking-tighter opacity-40">HSL Variable</p>
+                    <Input 
+                        value={value} 
+                        onChange={e => onChange(e.target.value)} 
+                        className="h-6 text-[10px] font-mono border-none bg-transparent p-0 focus-visible:ring-0 shadow-none"
+                    />
+                </div>
+                <MousePointer2 className="w-3 h-3 opacity-0 group-hover:opacity-40 transition-opacity" />
             </div>
         </div>
     );
@@ -166,7 +220,7 @@ function AdminPowerSuite() {
         users, setUsers, 
         roles, setRoles, 
         employees, setEmployees,
-        activityLogs, setActivityLogs,
+        activityLogs,
         excelFiles, setExcelFiles,
         items, setItems,
         expenses, setExpenses,
@@ -635,8 +689,9 @@ function AdminPowerSuite() {
 }
 
 function DashboardSettingsSuite({ draft, onChange }: { draft: AppSettings, onChange: (path: string, val: any) => void }) {
-    const { t, language } = useTranslation();
+    const { t } = useTranslation();
     const config = draft.dashboard;
+    const sidebar = draft.sidebar;
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-top-4 duration-500">
@@ -657,15 +712,27 @@ function DashboardSettingsSuite({ draft, onChange }: { draft: AppSettings, onCha
                                 min={0} max={40} step={1}
                                 onValueChange={([val]) => onChange('dashboard.cardRadius', val)}
                             />
-                            <p className="text-[9px] text-muted-foreground italic">Lower values create sharp, industrial corners. Higher values provide a soft, organic feel.</p>
+                        </div>
+                        <div className="space-y-4 pt-4 border-t border-white/5">
+                            <Label className="text-[10px] font-black uppercase tracking-widest opacity-60 flex items-center gap-2">
+                                <CaseSensitive className="w-3.5 h-3.5" /> Text Transformation (Paragraph)
+                            </Label>
+                            <Select value={config.textTransform} onValueChange={(val: TextTransform) => onChange('dashboard.textTransform', val)}>
+                                <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="none">Default (None)</SelectItem>
+                                    <SelectItem value="uppercase">ALL UPPERCASE</SelectItem>
+                                    <SelectItem value="capitalize">Capitalize First Letter</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                     </CardContent>
                 </Card>
 
                 <Card className="border-none shadow-sm bg-card/68 backdrop-blur-sm">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Scaling className="w-4 h-4"/> Dashboard Typography</CardTitle>
-                        <CardDescription>Calibrate the information density of the main hub.</CardDescription>
+                        <CardTitle className="flex items-center gap-2"><Scaling className="w-4 h-4"/> Main Hub Typography</CardTitle>
+                        <CardDescription>Calibrate the information density of the main terminal hub.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="space-y-4">
@@ -678,19 +745,51 @@ function DashboardSettingsSuite({ draft, onChange }: { draft: AppSettings, onCha
                                 min={1} max={72} step={1}
                                 onValueChange={([val]) => onChange('dashboard.fontSize', val)}
                             />
-                            <p className="text-[9px] text-muted-foreground italic">Range: 1px to 72px. Standard operational size is 12px.</p>
                         </div>
                     </CardContent>
                 </Card>
 
-                <Card className="border-none shadow-sm bg-card/68 backdrop-blur-sm lg:col-span-2">
+                <Card className="border-none shadow-sm bg-card/68 backdrop-blur-sm">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Palette className="w-4 h-4"/> Dashboard Chroma</CardTitle>
-                        <CardDescription>Define specific color overrides for dashboard text and primary visual elements.</CardDescription>
+                        <CardTitle className="flex items-center gap-2"><Monitor className="w-4 h-4"/> Command Sidebar Configuration</CardTitle>
+                        <CardDescription>Customize the navigation interface density and styling.</CardDescription>
                     </CardHeader>
-                    <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                    <CardContent className="space-y-6">
+                        <div className="space-y-4">
+                            <div className="flex justify-between items-center">
+                                <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Sidebar Font Size</Label>
+                                <Badge variant="outline" className="font-mono text-[10px]">{sidebar.fontSize}px</Badge>
+                            </div>
+                            <Slider 
+                                value={[sidebar.fontSize]} 
+                                min={8} max={24} step={1}
+                                onValueChange={([val]) => onChange('sidebar.fontSize', val)}
+                            />
+                        </div>
+                        <div className="space-y-4 pt-4 border-t border-white/5">
+                            <Label className="text-[10px] font-black uppercase tracking-widest opacity-60 flex items-center gap-2">
+                                <CaseSensitive className="w-3.5 h-3.5" /> Sidebar Text Case
+                            </Label>
+                            <Select value={sidebar.textTransform} onValueChange={(val: TextTransform) => onChange('sidebar.textTransform', val)}>
+                                <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="none">Default (None)</SelectItem>
+                                    <SelectItem value="uppercase">ALL UPPERCASE</SelectItem>
+                                    <SelectItem value="capitalize">Capitalize First Letter</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="border-none shadow-sm bg-card/68 backdrop-blur-sm">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Palette className="w-4 h-4"/> Interface Chroma Overrides</CardTitle>
+                        <CardDescription>Visual color picker for main terminal elements.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <ColorPicker label="Dashboard Titles" value={config.titleColor} onChange={v => onChange('dashboard.titleColor', v)} />
-                        <ColorPicker label="Primary Content Text" value={config.textColor} onChange={v => onChange('dashboard.textColor', v)} />
+                        <ColorPicker label="Content Body Text" value={config.textColor} onChange={v => onChange('dashboard.textColor', v)} />
                         <ColorPicker label="Interface Accent" value={config.accentColor} onChange={v => onChange('dashboard.accentColor', v)} />
                     </CardContent>
                 </Card>
@@ -699,7 +798,7 @@ function DashboardSettingsSuite({ draft, onChange }: { draft: AppSettings, onCha
             <Separator className="opacity-20" />
 
             <div className="space-y-4">
-                <h3 className="text-xs font-black uppercase tracking-[0.3em] opacity-40 text-center">Operational Preview Hub</h3>
+                <h3 className="text-xs font-black uppercase tracking-[0.3em] opacity-40 text-center">Operational Architecture Audit (Live Preview)</h3>
                 <div className="p-8 rounded-3xl border-2 border-dashed bg-muted/10 overflow-hidden relative min-h-[400px] flex items-center justify-center">
                     <div className="absolute inset-0 z-0 opacity-20">
                         {draft.mainBackground && <Image src={draft.mainBackground} alt="Preview BG" fill className="object-cover" unoptimized />}
@@ -712,26 +811,35 @@ function DashboardSettingsSuite({ draft, onChange }: { draft: AppSettings, onCha
                             <div className="space-y-2">
                                 <div className="h-2 w-full bg-white/30 rounded" />
                                 <div className="h-2 w-3/4 bg-white/20 rounded" />
-                                <div className="h-2 w-1/2 bg-white/10 rounded" />
                             </div>
                             <div className="pt-4 border-t border-white/5">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-primary-foreground/60">Capabilities Sector</p>
-                                <p className="font-bold opacity-90" style={{ fontSize: `${config.fontSize}px`, color: `hsl(${config.textColor})` }}>Left Navigation Sample</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-primary-foreground/60">Command Sector</p>
+                                <p 
+                                    className="font-bold opacity-90 transition-all" 
+                                    style={{ 
+                                        fontSize: `${sidebar.fontSize}px`, 
+                                        textTransform: sidebar.textTransform as any,
+                                        color: `hsl(${config.textColor})` 
+                                    }}
+                                >
+                                    Navigation Sample Alpha
+                                </p>
                             </div>
                         </div>
 
                         {/* Data Card Mockup */}
                         <div 
-                            className="bg-card/68 backdrop-blur-md border border-white/10 p-6 flex flex-col justify-between shadow-2xl"
+                            className="bg-card/68 backdrop-blur-md border border-white/10 p-6 flex flex-col justify-between shadow-2xl transition-all"
                             style={{ 
                                 borderRadius: `${config.cardRadius}px`,
                                 fontSize: `${config.fontSize}px`,
+                                textTransform: config.textTransform as any,
                                 color: `hsl(${config.textColor})`
                             }}
                         >
                             <div className="space-y-2">
-                                <h4 className="font-black uppercase tracking-widest" style={{ color: `hsl(${config.titleColor})` }}>Main Dashboard Header</h4>
-                                <p className="opacity-80">This sample text represents the body content density of your dashboard at {config.fontSize}px size.</p>
+                                <h4 className="font-black uppercase tracking-widest transition-all" style={{ color: `hsl(${config.titleColor})` }}>Hub Architecture Data</h4>
+                                <p className="opacity-80">This sample text represents the body content density of your terminal hub at {config.fontSize}px size.</p>
                             </div>
                             
                             <div className="mt-6 flex flex-col gap-2">
@@ -739,8 +847,8 @@ function DashboardSettingsSuite({ draft, onChange }: { draft: AppSettings, onCha
                                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: `hsl(${config.accentColor})` }} />
                                     <span className="text-[10px] font-bold uppercase opacity-60">Small Caption Element</span>
                                 </div>
-                                <div className="h-8 w-full rounded flex items-center justify-center font-black uppercase tracking-widest text-[9px]" style={{ backgroundColor: `hsl(${config.accentColor})` }}>
-                                    System Button
+                                <div className="h-8 w-full rounded flex items-center justify-center font-black uppercase tracking-widest text-[9px] transition-all" style={{ backgroundColor: `hsl(${config.accentColor})` }}>
+                                    Confirm Protocol
                                 </div>
                             </div>
                         </div>
@@ -834,7 +942,7 @@ function SettingsPage() {
         <Tabs defaultValue="design" className="w-full">
           <TabsList className="bg-muted/50 p-1 rounded-xl flex overflow-x-auto h-auto mb-6">
             <TabsTrigger value="design" className="py-2 px-4 whitespace-nowrap"><Palette className="mr-2 h-4 w-4" /> {t('design')}</TabsTrigger>
-            <TabsTrigger value="dashboard" className="py-2 px-4 whitespace-nowrap"><Monitor className="mr-2 h-4 w-4" /> Dashboard</TabsTrigger>
+            <TabsTrigger value="dashboard" className="py-2 px-4 whitespace-nowrap"><LayoutTemplate className="mr-2 h-4 w-4" /> Hub Architect</TabsTrigger>
             <TabsTrigger value="images" className="py-2 px-4 whitespace-nowrap"><ImageIconLucide className="mr-2 h-4 w-4" /> {t('images')}</TabsTrigger>
             <TabsTrigger value="language" className="py-2 px-4 whitespace-nowrap"><Languages className="mr-2 h-4 w-4" /> {t('language_text')}</TabsTrigger>
             <TabsTrigger value="pdf" className="py-2 px-4 whitespace-nowrap"><FileText className="mr-2 h-4 w-4" /> {t('pdf_reports')}</TabsTrigger>
@@ -962,7 +1070,7 @@ function SettingsPage() {
                     </div>
                     <Separator />
                     <ColorPicker 
-                        label="Login Button HSL" 
+                        label="Login Button Color" 
                         value={draftSettings.loginButtonColor || draftSettings.lightThemeColors.primary} 
                         onChange={v => updateSetting('loginButtonColor', v)} 
                     />

@@ -147,6 +147,11 @@ export const initialSettings: AppSettings = {
       titleColor: '220 82% 55%',
       textColor: '224 71.4% 4.1%',
       accentColor: '220 13% 91%',
+      textTransform: 'none',
+    },
+    sidebar: {
+      fontSize: 12,
+      textTransform: 'none',
     },
     theme: 'light',
     selectedTheme: 'default',

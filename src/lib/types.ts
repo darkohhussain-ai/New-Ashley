@@ -131,6 +131,11 @@ export type Bonus = {
   notes?: string;
 };
 
+export type BonusData = {
+  totalLoads: number;
+  totalAmount: number;
+};
+
 export type CashWithdrawal = {
   id: string;
   employeeId: string;
@@ -274,12 +279,20 @@ export type SalarySettings = {
     bonusRate: number;
 }
 
+export type TextTransform = 'none' | 'uppercase' | 'capitalize';
+
 export type DashboardSettings = {
   fontSize: number;
   cardRadius: number;
   titleColor: string;
   textColor: string;
   accentColor: string;
+  textTransform: TextTransform;
+};
+
+export type SidebarSettings = {
+  fontSize: number;
+  textTransform: TextTransform;
 };
 
 export type AppSettings = {
@@ -307,6 +320,7 @@ export type AppSettings = {
   salarySettings: SalarySettings;
   reportHeaderColors: ReportHeaderColors;
   dashboard: DashboardSettings;
+  sidebar: SidebarSettings;
   theme: 'light' | 'dark';
   selectedTheme: string;
   language: Language;

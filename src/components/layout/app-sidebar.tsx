@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -232,7 +233,13 @@ export function AppSidebar() {
                               "w-4 h-4 shrink-0 transition-transform duration-300",
                               pathname === item.href ? "scale-110" : "opacity-70"
                           )} />
-                          <span className="font-black text-[12px] uppercase tracking-widest truncate group-data-[collapsible=icon]:hidden">
+                          <span 
+                            className="font-black truncate group-data-[collapsible=icon]:hidden"
+                            style={{ 
+                                fontSize: 'var(--sidebar-custom-font-size)', 
+                                textTransform: 'var(--sidebar-text-transform)' as any 
+                            }}
+                          >
                             {t(item.title)}
                           </span>
                         </Link>

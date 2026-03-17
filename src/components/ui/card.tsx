@@ -37,7 +37,12 @@ const CardTitle = React.forwardRef<
 >(({ className, style, ...props }, ref) => (
   <h3
     ref={ref}
-    style={{ fontSize: 'var(--dashboard-font-size)', color: 'hsl(var(--dashboard-title-color))', ...style }}
+    style={{ 
+        fontSize: 'var(--dashboard-font-size)', 
+        color: 'hsl(var(--dashboard-title-color))', 
+        textTransform: 'var(--dashboard-text-transform)' as any,
+        ...style 
+    }}
     className={cn(
       "font-bold leading-none tracking-tight",
       className
@@ -64,7 +69,12 @@ const CardContent = React.forwardRef<
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, style, ...props }, ref) => (
   <div ref={ref} 
-    style={{ fontSize: 'var(--dashboard-font-size)', color: 'hsl(var(--dashboard-text-color))', ...style }}
+    style={{ 
+        fontSize: 'var(--dashboard-font-size)', 
+        color: 'hsl(var(--dashboard-text-color))', 
+        textTransform: 'var(--dashboard-text-transform)' as any,
+        ...style 
+    }}
     className={cn("p-6 pt-6", className)} {...props} />
 ))
 CardContent.displayName = "CardContent"
