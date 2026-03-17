@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -53,7 +52,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
 
 function DateTimeDisplay() {
   const [time, setTime] = React.useState<Date | null>(null);
@@ -157,20 +155,18 @@ export function AppSidebar() {
   ];
 
   return (
-    <Sidebar side={side} collapsible="icon" className="border-none shadow-2xl bg-black/40 backdrop-blur-2xl print:hidden">
+    <Sidebar side={side} collapsible="icon" className="border-none shadow-2xl bg-sidebar/68 backdrop-blur-2xl print:hidden">
       <SidebarHeader className="p-4 bg-transparent border-b border-white/10">
-        <div className="flex items-center justify-between mb-6">
-            <div className="w-8 h-8 flex items-center justify-center">
-                <SidebarTrigger className="text-white hover:bg-white/20 transition-all" />
-            </div>
-            <div className="group-data-[collapsible=icon]:hidden">
-                <Badge variant="outline" className="text-[8px] font-black tracking-widest border-primary/50 text-primary-foreground uppercase">Terminal Link</Badge>
-            </div>
+        <div className="flex items-center justify-center mb-4">
+            <SidebarTrigger className="text-white hover:bg-white/20 transition-all" />
         </div>
         
-        <div className="group-data-[collapsible=icon]:hidden flex flex-col items-center gap-6 animate-in fade-in slide-in-from-top-2 duration-700">
+        <div className="flex flex-col items-center gap-4 animate-in fade-in slide-in-from-top-2 duration-700">
             {settings.appLogo && (
-                <div className="relative w-full h-28 bg-white rounded-2xl p-4 shadow-2xl ring-4 ring-black/20 overflow-hidden group/logo">
+                <div className={cn(
+                    "relative bg-white rounded-2xl p-2 shadow-2xl ring-4 ring-black/20 overflow-hidden group/logo",
+                    "w-full h-28 group-data-[collapsible=icon]:w-10 group-data-[collapsible=icon]:h-10"
+                )}>
                     <Image
                         src={settings.appLogo}
                         alt="Logo"
@@ -180,20 +176,22 @@ export function AppSidebar() {
                     />
                 </div>
             )}
-            <DateTimeDisplay />
+            <div className="group-data-[collapsible=icon]:hidden">
+                <DateTimeDisplay />
+            </div>
         </div>
       </SidebarHeader>
 
       <SidebarContent className="bg-transparent text-white scrollbar-none">
         {/* Compact User Section */}
-        <div className="px-4 py-4 group-data-[collapsible=icon]:hidden">
-            <div className="bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-white/10 shadow-inner group/user cursor-default">
-                <Avatar className="w-9 h-9 border-2 border-white/20 ring-2 ring-primary/30 group-hover/user:ring-primary transition-all">
+        <div className="px-4 py-4 group-data-[collapsible=icon]:px-2">
+            <div className="bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-white/10 shadow-inner group/user cursor-default group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-1">
+                <Avatar className="w-9 h-9 border-2 border-white/20 ring-2 ring-primary/30 group-hover/user:ring-primary transition-all group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:h-8">
                     <AvatarFallback className="bg-primary/20 text-white font-black text-xs">
                         {user?.username?.charAt(0).toUpperCase()}
                     </AvatarFallback>
                 </Avatar>
-                <div className="flex-1 overflow-hidden">
+                <div className="flex-1 overflow-hidden group-data-[collapsible=icon]:hidden">
                     <p className="text-xs font-black uppercase tracking-widest truncate leading-tight text-white/90">{user?.username}</p>
                     <p className="text-[9px] font-bold text-white/40 uppercase tracking-tighter">Authorized Operator</p>
                 </div>
@@ -201,12 +199,12 @@ export function AppSidebar() {
         </div>
 
         {/* Action Grid */}
-        <div className="px-4 mb-6 grid grid-cols-2 gap-2 group-data-[collapsible=icon]:hidden">
+        <div className="px-4 mb-6 grid grid-cols-2 gap-2 group-data-[collapsible=icon]:grid-cols-1 group-data-[collapsible=icon]:px-2">
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="h-10 w-full bg-white/5 hover:bg-white/15 text-white border border-white/10 rounded-xl flex flex-col items-center justify-center p-0 transition-all hover:border-primary/50">
                         <span className="text-[10px] font-black uppercase tracking-widest">{language === 'ku' ? 'KU' : 'EN'}</span>
-                        <span className="text-[7px] opacity-40 uppercase tracking-tighter">{t('language')}</span>
+                        <span className="text-[7px] opacity-40 uppercase tracking-tighter group-data-[collapsible=icon]:hidden">{t('language')}</span>
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="center" className="bg-black/90 border-white/10 text-white">
@@ -221,7 +219,7 @@ export function AppSidebar() {
                 className="h-10 w-full bg-white/5 hover:bg-white/15 text-white border border-white/10 rounded-xl flex flex-col items-center justify-center p-0 transition-all hover:border-primary/50"
             >
                 {theme === 'light' ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
-                <span className="text-[7px] opacity-40 uppercase tracking-tighter mt-0.5">{t('theme')}</span>
+                <span className="text-[7px] opacity-40 uppercase tracking-tighter mt-0.5 group-data-[collapsible=icon]:hidden">{t('theme')}</span>
             </Button>
 
             <Button 
@@ -230,7 +228,7 @@ export function AppSidebar() {
                 className="h-10 w-full bg-white/5 hover:bg-white/15 text-white border border-white/10 rounded-xl flex flex-col items-center justify-center p-0 transition-all hover:border-primary/50"
             >
                 <Home className="w-3.5 h-3.5" />
-                <span className="text-[7px] opacity-40 uppercase tracking-tighter mt-0.5">{t('home')}</span>
+                <span className="text-[7px] opacity-40 uppercase tracking-tighter mt-0.5 group-data-[collapsible=icon]:hidden">{t('home')}</span>
             </Button>
 
             <Button 
@@ -239,7 +237,7 @@ export function AppSidebar() {
                 className="h-10 w-full bg-white/5 hover:bg-white/15 text-white border border-white/10 rounded-xl flex flex-col items-center justify-center p-0 transition-all hover:border-primary/50"
             >
                 <ArrowLeft className="w-3.5 h-3.5" />
-                <span className="text-[7px] opacity-40 uppercase tracking-tighter mt-0.5">{t('back')}</span>
+                <span className="text-[7px] opacity-40 uppercase tracking-tighter mt-0.5 group-data-[collapsible=icon]:hidden">{t('back')}</span>
             </Button>
 
             <Button 
@@ -248,7 +246,7 @@ export function AppSidebar() {
                 className="h-10 w-full bg-white/5 hover:bg-white/15 text-white border border-white/10 rounded-xl flex flex-col items-center justify-center p-0 transition-all hover:border-primary/50"
             >
                 <Printer className="w-3.5 h-3.5" />
-                <span className="text-[7px] opacity-40 uppercase tracking-tighter mt-0.5">{t('print')}</span>
+                <span className="text-[7px] opacity-40 uppercase tracking-tighter mt-0.5 group-data-[collapsible=icon]:hidden">{t('print')}</span>
             </Button>
 
             <Button 
@@ -257,7 +255,7 @@ export function AppSidebar() {
                 className="h-10 w-full bg-red-500/10 hover:bg-red-500/30 text-red-200 border border-red-500/20 rounded-xl flex flex-col items-center justify-center p-0 transition-all"
             >
                 <LogOut className="w-3.5 h-3.5" />
-                <span className="text-[7px] opacity-40 uppercase tracking-tighter mt-0.5">{t('logout')}</span>
+                <span className="text-[7px] opacity-40 uppercase tracking-tighter mt-0.5 group-data-[collapsible=icon]:hidden">{t('logout')}</span>
             </Button>
         </div>
 
@@ -265,15 +263,12 @@ export function AppSidebar() {
 
         {navigation.map((group) => (
           <SidebarGroup key={group.label} className="py-2">
-            <SidebarGroupLabel className="text-white/20 text-[9px] uppercase font-black tracking-[0.3em] px-6 mb-2 group-data-[collapsible=icon]:hidden">
-                {t(group.label.toLowerCase()) || group.label}
-            </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {group.items
                   .filter((item) => hasPermission(item.permission))
                   .map((item) => (
-                    <SidebarMenuItem key={item.href} className="px-3 mb-1">
+                    <SidebarMenuItem key={item.href} className="px-3 mb-1 group-data-[collapsible=icon]:px-1">
                       <SidebarMenuButton
                         asChild
                         isActive={pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))}
@@ -284,7 +279,7 @@ export function AppSidebar() {
                             "group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:h-11"
                         )}
                       >
-                        <Link href={item.href} className="flex items-center gap-3 px-3 group-data-[collapsible=icon]:justify-center">
+                        <Link href={item.href} className="flex items-center gap-3 px-3 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0">
                           <item.icon className={cn(
                               "w-4 h-4 shrink-0 transition-transform duration-300",
                               pathname === item.href ? "scale-110" : "opacity-70"
@@ -301,15 +296,8 @@ export function AppSidebar() {
           </SidebarGroup>
         ))}
       </SidebarContent>
-      <SidebarFooter className="bg-transparent border-t border-white/10 p-4 group-data-[collapsible=icon]:hidden">
-        <div className="flex flex-col items-center gap-1 opacity-20">
-            <div className="text-[10px] text-white font-black uppercase tracking-[0.4em]">
-                DRP CORE
-            </div>
-            <div className="text-[7px] text-white font-bold uppercase tracking-widest">
-                VER 2.9.5 // NEXUS
-            </div>
-        </div>
+      <SidebarFooter className="bg-transparent p-4 h-12 flex items-center justify-center">
+        {/* Footer text removed per user request */}
       </SidebarFooter>
     </Sidebar>
   );
