@@ -53,6 +53,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 
 function DateTimeDisplay() {
   const [time, setTime] = React.useState<Date | null>(null);
@@ -279,7 +280,7 @@ export function AppSidebar() {
                         tooltip={t(item.title)}
                         className={cn(
                             "rounded-xl transition-all duration-300 hover:bg-white/10 h-11 border border-transparent",
-                            "data-[active=true]:bg-white data-[active=true]:text-black data-[active=true]:shadow-2xl data-[active=true]:border-white/20",
+                            "data-[active=true]:bg-white data-[active=true]:font-black data-[active=true]:text-black data-[active=true]:shadow-2xl data-[active=true]:border-white/20",
                             "group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:h-11"
                         )}
                       >
