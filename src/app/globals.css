@@ -116,6 +116,7 @@
   }
   body {
     @apply bg-transparent text-foreground font-sans;
+    font-size: 12px;
     word-spacing: normal;
   }
   @keyframes highlight {
