@@ -29,7 +29,6 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -62,15 +61,15 @@ function DateTimeDisplay() {
     return () => clearInterval(timer);
   }, []);
 
-  if (!time) return <div className="h-6 animate-pulse bg-white/10 rounded w-full" />;
+  if (!time) return <div className="h-6 animate-pulse bg-muted rounded w-full" />;
 
   return (
-    <div className="flex flex-col items-center gap-0.5 text-white/70">
+    <div className="flex flex-col items-center gap-0.5 text-sidebar-foreground/70">
       <div className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.2em] opacity-60">
         <Calendar className="w-2.5 h-2.5" />
         <span>{format(time, 'MMM d, yyyy')}</span>
       </div>
-      <div className="flex items-center gap-1.5 text-sm font-black tabular-nums text-white tracking-widest">
+      <div className="flex items-center gap-1.5 text-sm font-black tabular-nums text-sidebar-foreground tracking-widest">
         <Clock className="w-3 h-3" />
         <span>{format(time, 'HH:mm:ss')}</span>
       </div>
@@ -156,15 +155,15 @@ export function AppSidebar() {
 
   return (
     <Sidebar side={side} collapsible="icon" className="border-none shadow-2xl bg-sidebar/68 backdrop-blur-2xl print:hidden">
-      <SidebarHeader className="p-4 bg-transparent border-b border-white/10">
+      <SidebarHeader className="p-4 bg-transparent border-b border-sidebar-border">
         <div className="flex items-center justify-center mb-4">
-            <SidebarTrigger className="text-white hover:bg-white/20 transition-all" />
+            <SidebarTrigger className="text-sidebar-foreground hover:bg-sidebar-accent transition-all" />
         </div>
         
         <div className="flex flex-col items-center gap-4 animate-in fade-in slide-in-from-top-2 duration-700">
             {settings.appLogo && (
                 <div className={cn(
-                    "relative bg-white rounded-2xl p-2 shadow-2xl ring-4 ring-black/20 overflow-hidden group/logo",
+                    "relative bg-white rounded-2xl p-2 shadow-2xl ring-4 ring-black/5 overflow-hidden group/logo",
                     "w-full h-28 group-data-[collapsible=icon]:w-10 group-data-[collapsible=icon]:h-10"
                 )}>
                     <Image
@@ -182,18 +181,18 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="bg-transparent text-white scrollbar-none">
+      <SidebarContent className="bg-transparent scrollbar-none">
         {/* Compact User Section */}
         <div className="px-4 py-4 group-data-[collapsible=icon]:px-2">
-            <div className="bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-white/10 shadow-inner group/user cursor-default group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-1">
-                <Avatar className="w-9 h-9 border-2 border-white/20 ring-2 ring-primary/30 group-hover/user:ring-primary transition-all group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:h-8">
-                    <AvatarFallback className="bg-primary/20 text-white font-black text-xs">
+            <div className="bg-sidebar-accent/30 rounded-xl p-3 flex items-center gap-3 border border-sidebar-border shadow-inner group/user cursor-default group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-1">
+                <Avatar className="w-9 h-9 border-2 border-sidebar-border ring-2 ring-primary/30 group-hover/user:ring-primary transition-all group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:h-8">
+                    <AvatarFallback className="bg-primary/20 text-sidebar-foreground font-black text-xs">
                         {user?.username?.charAt(0).toUpperCase()}
                     </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 overflow-hidden group-data-[collapsible=icon]:hidden">
-                    <p className="text-xs font-black uppercase tracking-widest truncate leading-tight text-white/90">{user?.username}</p>
-                    <p className="text-[9px] font-bold text-white/40 uppercase tracking-tighter">Authorized Operator</p>
+                    <p className="text-xs font-black uppercase tracking-widest truncate leading-tight text-sidebar-foreground/90">{user?.username}</p>
+                    <p className="text-[9px] font-bold text-sidebar-foreground/40 uppercase tracking-tighter">Authorized Operator</p>
                 </div>
             </div>
         </div>
@@ -202,21 +201,21 @@ export function AppSidebar() {
         <div className="px-4 mb-6 grid grid-cols-2 gap-2 group-data-[collapsible=icon]:grid-cols-1 group-data-[collapsible=icon]:px-2">
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-10 w-full bg-white/5 hover:bg-white/15 text-white border border-white/10 rounded-xl flex flex-col items-center justify-center p-0 transition-all hover:border-primary/50">
+                    <Button variant="ghost" className="h-10 w-full bg-sidebar-accent/20 hover:bg-sidebar-accent text-sidebar-foreground border border-sidebar-border rounded-xl flex flex-col items-center justify-center p-0 transition-all hover:border-primary/50">
                         <span className="text-[10px] font-black uppercase tracking-widest">{language === 'ku' ? 'KU' : 'EN'}</span>
                         <span className="text-[7px] opacity-40 uppercase tracking-tighter group-data-[collapsible=icon]:hidden">{t('language')}</span>
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="center" className="bg-black/90 border-white/10 text-white">
-                    <DropdownMenuItem onClick={() => setLanguage('en')} className="text-xs font-bold hover:bg-white/10">English</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setLanguage('ku')} className="text-xs font-bold hover:bg-white/10">کوردی</DropdownMenuItem>
+                <DropdownMenuContent align="center" className="bg-popover border-border text-popover-foreground">
+                    <DropdownMenuItem onClick={() => setLanguage('en')} className="text-xs font-bold">English</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setLanguage('ku')} className="text-xs font-bold">کوردی</DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
 
             <Button 
                 variant="ghost" 
                 onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-                className="h-10 w-full bg-white/5 hover:bg-white/15 text-white border border-white/10 rounded-xl flex flex-col items-center justify-center p-0 transition-all hover:border-primary/50"
+                className="h-10 w-full bg-sidebar-accent/20 hover:bg-sidebar-accent text-sidebar-foreground border border-sidebar-border rounded-xl flex flex-col items-center justify-center p-0 transition-all hover:border-primary/50"
             >
                 {theme === 'light' ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
                 <span className="text-[7px] opacity-40 uppercase tracking-tighter mt-0.5 group-data-[collapsible=icon]:hidden">{t('theme')}</span>
@@ -225,7 +224,7 @@ export function AppSidebar() {
             <Button 
                 variant="ghost" 
                 onClick={() => router.push('/')}
-                className="h-10 w-full bg-white/5 hover:bg-white/15 text-white border border-white/10 rounded-xl flex flex-col items-center justify-center p-0 transition-all hover:border-primary/50"
+                className="h-10 w-full bg-sidebar-accent/20 hover:bg-sidebar-accent text-sidebar-foreground border border-sidebar-border rounded-xl flex flex-col items-center justify-center p-0 transition-all hover:border-primary/50"
             >
                 <Home className="w-3.5 h-3.5" />
                 <span className="text-[7px] opacity-40 uppercase tracking-tighter mt-0.5 group-data-[collapsible=icon]:hidden">{t('home')}</span>
@@ -234,7 +233,7 @@ export function AppSidebar() {
             <Button 
                 variant="ghost" 
                 onClick={() => router.back()}
-                className="h-10 w-full bg-white/5 hover:bg-white/15 text-white border border-white/10 rounded-xl flex flex-col items-center justify-center p-0 transition-all hover:border-primary/50"
+                className="h-10 w-full bg-sidebar-accent/20 hover:bg-sidebar-accent text-sidebar-foreground border border-sidebar-border rounded-xl flex flex-col items-center justify-center p-0 transition-all hover:border-primary/50"
             >
                 <ArrowLeft className="w-3.5 h-3.5" />
                 <span className="text-[7px] opacity-40 uppercase tracking-tighter mt-0.5 group-data-[collapsible=icon]:hidden">{t('back')}</span>
@@ -243,7 +242,7 @@ export function AppSidebar() {
             <Button 
                 variant="ghost" 
                 onClick={() => window.print()}
-                className="h-10 w-full bg-white/5 hover:bg-white/15 text-white border border-white/10 rounded-xl flex flex-col items-center justify-center p-0 transition-all hover:border-primary/50"
+                className="h-10 w-full bg-sidebar-accent/20 hover:bg-sidebar-accent text-sidebar-foreground border border-sidebar-border rounded-xl flex flex-col items-center justify-center p-0 transition-all hover:border-primary/50"
             >
                 <Printer className="w-3.5 h-3.5" />
                 <span className="text-[7px] opacity-40 uppercase tracking-tighter mt-0.5 group-data-[collapsible=icon]:hidden">{t('print')}</span>
@@ -252,14 +251,14 @@ export function AppSidebar() {
             <Button 
                 variant="ghost" 
                 onClick={logout}
-                className="h-10 w-full bg-red-500/10 hover:bg-red-500/30 text-red-200 border border-red-500/20 rounded-xl flex flex-col items-center justify-center p-0 transition-all"
+                className="h-10 w-full bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/20 rounded-xl flex flex-col items-center justify-center p-0 transition-all"
             >
                 <LogOut className="w-3.5 h-3.5" />
                 <span className="text-[7px] opacity-40 uppercase tracking-tighter mt-0.5 group-data-[collapsible=icon]:hidden">{t('logout')}</span>
             </Button>
         </div>
 
-        <Separator className="bg-white/10 mb-4 mx-4 w-auto group-data-[collapsible=icon]:hidden" />
+        <Separator className="bg-sidebar-border mb-4 mx-4 w-auto group-data-[collapsible=icon]:hidden" />
 
         {navigation.map((group) => (
           <SidebarGroup key={group.label} className="py-2">
@@ -274,8 +273,8 @@ export function AppSidebar() {
                         isActive={pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))}
                         tooltip={t(item.title)}
                         className={cn(
-                            "rounded-xl transition-all duration-300 hover:bg-white/10 h-11 border border-transparent",
-                            "data-[active=true]:bg-white data-[active=true]:font-black data-[active=true]:text-black data-[active=true]:shadow-2xl data-[active=true]:border-white/20",
+                            "rounded-xl transition-all duration-300 hover:bg-sidebar-accent h-11 border border-transparent",
+                            "data-[active=true]:bg-sidebar-primary data-[active=true]:text-sidebar-primary-foreground data-[active=true]:shadow-lg",
                             "group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:h-11"
                         )}
                       >
@@ -297,7 +296,6 @@ export function AppSidebar() {
         ))}
       </SidebarContent>
       <SidebarFooter className="bg-transparent p-4 h-12 flex items-center justify-center">
-        {/* Footer text removed per user request */}
       </SidebarFooter>
     </Sidebar>
   );
