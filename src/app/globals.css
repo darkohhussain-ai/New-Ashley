@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -29,6 +30,13 @@
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.8rem;
+
+    /* Dashboard Customization Variables */
+    --dashboard-font-size: 12px;
+    --dashboard-radius: 12px;
+    --dashboard-title-color: 220 82% 55%;
+    --dashboard-text-color: 224 71.4% 4.1%;
+    --dashboard-accent-color: 220 13% 91%;
 
     /* Sidebar variables */
     --sidebar-background: hsl(var(--card));
@@ -116,7 +124,6 @@
   }
   body {
     @apply bg-transparent text-foreground font-sans;
-    font-size: 12px;
     word-spacing: normal;
   }
   @keyframes highlight {

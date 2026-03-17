@@ -1,3 +1,4 @@
+
 'use client';
 
 import './globals.css';
@@ -21,9 +22,8 @@ function DynamicThemeInjector() {
     const { settings } = useAppContext();
     const { theme } = useTheme();
 
-    if (settings.selectedTheme !== 'custom') return null;
-
     const colors = theme === 'dark' ? settings.darkThemeColors : settings.lightThemeColors;
+    const dashboard = settings.dashboard;
 
     const styleString = `
         :root {
@@ -40,6 +40,13 @@ function DynamicThemeInjector() {
             --huana-highlight: ${colors.huanaHighlight};
             --location-occupied-border: ${colors.locationOccupiedBorder};
             --location-occupied-bg: ${colors.locationOccupiedBg};
+
+            /* Dashboard Injections */
+            --dashboard-font-size: ${dashboard?.fontSize || 12}px;
+            --dashboard-radius: ${dashboard?.cardRadius || 12}px;
+            --dashboard-title-color: ${dashboard?.titleColor || colors.primary};
+            --dashboard-text-color: ${dashboard?.textColor || colors.foreground};
+            --dashboard-accent-color: ${dashboard?.accentColor || colors.accent};
         }
     `;
 

@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -27,9 +28,12 @@ import {
   ShieldAlert,
   Database,
   Download,
-  Upload as UploadIcon,
   RefreshCw,
   Bomb,
+  LayoutTemplate,
+  Monitor,
+  Maximize,
+  Scaling,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -49,11 +53,12 @@ import { useTranslation } from '@/hooks/use-translation';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
 import type { AppSettings, ThemeColors, User, Role, Employee, ActivityLog } from '@/lib/types';
 import withAuth from '@/hooks/withAuth';
 import { useAppContext } from '@/context/app-provider';
@@ -112,7 +117,6 @@ function ImageControl({
     onValueChange: (val: string) => void,
     onFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void 
 }) {
-    const { t } = useTranslation();
     return (
         <Card className="border-none shadow-sm bg-card/68 backdrop-blur-sm">
             <CardHeader className="pb-3">
@@ -630,6 +634,123 @@ function AdminPowerSuite() {
     );
 }
 
+function DashboardSettingsSuite({ draft, onChange }: { draft: AppSettings, onChange: (path: string, val: any) => void }) {
+    const { t, language } = useTranslation();
+    const config = draft.dashboard;
+
+    return (
+        <div className="space-y-8 animate-in fade-in slide-in-from-top-4 duration-500">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card className="border-none shadow-sm bg-card/68 backdrop-blur-sm">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Maximize className="w-4 h-4"/> Card Architecture</CardTitle>
+                        <CardDescription>Adjust the geometric sharpness and structure of terminal cards.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="space-y-4">
+                            <div className="flex justify-between items-center">
+                                <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Corner Radius (Sharpness)</Label>
+                                <Badge variant="outline" className="font-mono text-[10px]">{config.cardRadius}px</Badge>
+                            </div>
+                            <Slider 
+                                value={[config.cardRadius]} 
+                                min={0} max={40} step={1}
+                                onValueChange={([val]) => onChange('dashboard.cardRadius', val)}
+                            />
+                            <p className="text-[9px] text-muted-foreground italic">Lower values create sharp, industrial corners. Higher values provide a soft, organic feel.</p>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="border-none shadow-sm bg-card/68 backdrop-blur-sm">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Scaling className="w-4 h-4"/> Dashboard Typography</CardTitle>
+                        <CardDescription>Calibrate the information density of the main hub.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="space-y-4">
+                            <div className="flex justify-between items-center">
+                                <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Global Dashboard Font Size</Label>
+                                <Badge variant="outline" className="font-mono text-[10px]">{config.fontSize}px</Badge>
+                            </div>
+                            <Slider 
+                                value={[config.fontSize]} 
+                                min={1} max={72} step={1}
+                                onValueChange={([val]) => onChange('dashboard.fontSize', val)}
+                            />
+                            <p className="text-[9px] text-muted-foreground italic">Range: 1px to 72px. Standard operational size is 12px.</p>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="border-none shadow-sm bg-card/68 backdrop-blur-sm lg:col-span-2">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Palette className="w-4 h-4"/> Dashboard Chroma</CardTitle>
+                        <CardDescription>Define specific color overrides for dashboard text and primary visual elements.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                        <ColorPicker label="Dashboard Titles" value={config.titleColor} onChange={v => onChange('dashboard.titleColor', v)} />
+                        <ColorPicker label="Primary Content Text" value={config.textColor} onChange={v => onChange('dashboard.textColor', v)} />
+                        <ColorPicker label="Interface Accent" value={config.accentColor} onChange={v => onChange('dashboard.accentColor', v)} />
+                    </CardContent>
+                </Card>
+            </div>
+
+            <Separator className="opacity-20" />
+
+            <div className="space-y-4">
+                <h3 className="text-xs font-black uppercase tracking-[0.3em] opacity-40 text-center">Operational Preview Hub</h3>
+                <div className="p-8 rounded-3xl border-2 border-dashed bg-muted/10 overflow-hidden relative min-h-[400px] flex items-center justify-center">
+                    <div className="absolute inset-0 z-0 opacity-20">
+                        {draft.mainBackground && <Image src={draft.mainBackground} alt="Preview BG" fill className="object-cover" unoptimized />}
+                    </div>
+                    
+                    <div className="relative z-10 w-full max-w-2xl grid grid-cols-1 md:grid-cols-2 gap-6 p-4">
+                        {/* Sidebar Mockup */}
+                        <div className="bg-primary/50 backdrop-blur-xl border border-white/10 rounded-2xl p-4 space-y-4 shadow-2xl">
+                            <div className="w-8 h-8 rounded-lg bg-white/20" />
+                            <div className="space-y-2">
+                                <div className="h-2 w-full bg-white/30 rounded" />
+                                <div className="h-2 w-3/4 bg-white/20 rounded" />
+                                <div className="h-2 w-1/2 bg-white/10 rounded" />
+                            </div>
+                            <div className="pt-4 border-t border-white/5">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-primary-foreground/60">Capabilities Sector</p>
+                                <p className="font-bold opacity-90" style={{ fontSize: `${config.fontSize}px`, color: `hsl(${config.textColor})` }}>Left Navigation Sample</p>
+                            </div>
+                        </div>
+
+                        {/* Data Card Mockup */}
+                        <div 
+                            className="bg-card/68 backdrop-blur-md border border-white/10 p-6 flex flex-col justify-between shadow-2xl"
+                            style={{ 
+                                borderRadius: `${config.cardRadius}px`,
+                                fontSize: `${config.fontSize}px`,
+                                color: `hsl(${config.textColor})`
+                            }}
+                        >
+                            <div className="space-y-2">
+                                <h4 className="font-black uppercase tracking-widest" style={{ color: `hsl(${config.titleColor})` }}>Main Dashboard Header</h4>
+                                <p className="opacity-80">This sample text represents the body content density of your dashboard at {config.fontSize}px size.</p>
+                            </div>
+                            
+                            <div className="mt-6 flex flex-col gap-2">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: `hsl(${config.accentColor})` }} />
+                                    <span className="text-[10px] font-bold uppercase opacity-60">Small Caption Element</span>
+                                </div>
+                                <div className="h-8 w-full rounded flex items-center justify-center font-black uppercase tracking-widest text-[9px]" style={{ backgroundColor: `hsl(${config.accentColor})` }}>
+                                    System Button
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 function SettingsPage() {
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -711,15 +832,16 @@ function SettingsPage() {
     <div className="min-h-screen bg-background text-foreground flex flex-col pb-24">
       <main className="flex-1 overflow-y-auto p-4 md:p-6 w-full">
         <Tabs defaultValue="design" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-5 h-auto p-1 bg-muted/50 rounded-xl">
-            <TabsTrigger value="design" className="py-2"><Palette className="mr-2 h-4 w-4" /> {t('design')}</TabsTrigger>
-            <TabsTrigger value="images" className="py-2"><ImageIconLucide className="mr-2 h-4 w-4" /> {t('images')}</TabsTrigger>
-            <TabsTrigger value="language" className="py-2"><Languages className="mr-2 h-4 w-4" /> {t('language_text')}</TabsTrigger>
-            <TabsTrigger value="pdf" className="py-2"><FileText className="mr-2 h-4 w-4" /> {t('pdf_reports')}</TabsTrigger>
-            {isAdmin && <TabsTrigger value="admin" className="py-2"><ShieldCheck className="mr-2 h-4 w-4" /> Admin</TabsTrigger>}
+          <TabsList className="bg-muted/50 p-1 rounded-xl flex overflow-x-auto h-auto mb-6">
+            <TabsTrigger value="design" className="py-2 px-4 whitespace-nowrap"><Palette className="mr-2 h-4 w-4" /> {t('design')}</TabsTrigger>
+            <TabsTrigger value="dashboard" className="py-2 px-4 whitespace-nowrap"><Monitor className="mr-2 h-4 w-4" /> Dashboard</TabsTrigger>
+            <TabsTrigger value="images" className="py-2 px-4 whitespace-nowrap"><ImageIconLucide className="mr-2 h-4 w-4" /> {t('images')}</TabsTrigger>
+            <TabsTrigger value="language" className="py-2 px-4 whitespace-nowrap"><Languages className="mr-2 h-4 w-4" /> {t('language_text')}</TabsTrigger>
+            <TabsTrigger value="pdf" className="py-2 px-4 whitespace-nowrap"><FileText className="mr-2 h-4 w-4" /> {t('pdf_reports')}</TabsTrigger>
+            {isAdmin && <TabsTrigger value="admin" className="py-2 px-4 whitespace-nowrap"><ShieldCheck className="mr-2 h-4 w-4" /> Admin</TabsTrigger>}
           </TabsList>
 
-          <TabsContent value="design" className="pt-6 space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
+          <TabsContent value="design" className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
             <Card className="border-none shadow-sm bg-card/68 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle>Global Theme Architecture</CardTitle>
@@ -781,7 +903,11 @@ function SettingsPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="images" className="pt-6 space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
+          <TabsContent value="dashboard">
+              <DashboardSettingsSuite draft={draftSettings} onChange={updateSetting} />
+          </TabsContent>
+
+          <TabsContent value="images" className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <ImageControl 
                     label={t('app_logo')} 
@@ -844,7 +970,7 @@ function SettingsPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="language" className="pt-6 space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
+          <TabsContent value="language" className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card className="border-none shadow-sm bg-card/68 backdrop-blur-sm">
                     <CardHeader>
@@ -900,7 +1026,7 @@ function SettingsPage() {
              </div>
           </TabsContent>
 
-          <TabsContent value="pdf" className="pt-6 space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
+          <TabsContent value="pdf" className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <ImageControl 
                     label="Print Header" 
@@ -919,7 +1045,7 @@ function SettingsPage() {
              </div>
           </TabsContent>
 
-          <TabsContent value="admin" className="pt-6 space-y-8 animate-in fade-in slide-in-from-top-4 duration-500">
+          <TabsContent value="admin" className="space-y-8 animate-in fade-in slide-in-from-top-4 duration-500">
               <AdminPowerSuite />
           </TabsContent>
         </Tabs>

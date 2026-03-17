@@ -1,3 +1,4 @@
+
 import { Employee, User, Role, AppSettings, AllPdfSettings, PdfSettings, ThemeColors, BranchColors, AnswerOption } from '@/lib/types';
 import { adminPermissions, adminAssistantPermissions, viewerPermissions, employeePermissions, financeManagerPermissions, inventoryManagerPermissions, hrManagerPermissions } from '@/lib/permissions';
 import en from '@/locales/en.json';
@@ -139,6 +140,13 @@ export const initialSettings: AppSettings = {
         placementStorage: '#22c55e',
         marketingFeedback: '#06b6d4',
         employees: '#ec4899',
+    },
+    dashboard: {
+      fontSize: 12,
+      cardRadius: 12,
+      titleColor: '220 82% 55%',
+      textColor: '224 71.4% 4.1%',
+      accentColor: '220 13% 91%',
     },
     theme: 'light',
     selectedTheme: 'default',

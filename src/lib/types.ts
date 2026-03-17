@@ -274,6 +274,14 @@ export type SalarySettings = {
     bonusRate: number;
 }
 
+export type DashboardSettings = {
+  fontSize: number;
+  cardRadius: number;
+  titleColor: string;
+  textColor: string;
+  accentColor: string;
+};
+
 export type AppSettings = {
   appLogo: string | null;
   mainBackground: string | null;
@@ -298,6 +306,7 @@ export type AppSettings = {
   darkThemeColors: ThemeColors;
   salarySettings: SalarySettings;
   reportHeaderColors: ReportHeaderColors;
+  dashboard: DashboardSettings;
   theme: 'light' | 'dark';
   selectedTheme: string;
   language: Language;
