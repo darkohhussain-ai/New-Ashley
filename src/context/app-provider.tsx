@@ -30,7 +30,6 @@ import { setDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlo
 import { initialData, initialSettings } from './initial-data';
 import { format } from 'date-fns';
 
-// Define the shape of our application state
 interface AppState {
     employees: Employee[];
     setEmployees: React.Dispatch<React.SetStateAction<Employee[]>>;
@@ -76,10 +75,8 @@ interface AppState {
     exportStateAsJson: () => void;
 }
 
-// Create the context
 const AppContext = createContext<AppState | undefined>(undefined);
 
-// Helper to manage a single collection from the root of Firestore with LocalStorage Mirroring
 function useFirestoreCollection<T extends {id: string}>(collectionName: string, initialFallback: T[]) {
     const db = useFirestore();
     
@@ -88,7 +85,7 @@ function useFirestoreCollection<T extends {id: string}>(collectionName: string, 
         return collection(db, collectionName);
     }, [db, collectionName]);
     
-    const { data, isLoading, error } = useCollection<T>(collectionRef);
+    const { data, isLoading } = useCollection<T>(collectionRef);
 
     const [localData, setLocalData] = useState<T[]>(() => {
         if (typeof window !== 'undefined') {
@@ -99,7 +96,7 @@ function useFirestoreCollection<T extends {id: string}>(collectionName: string, 
     });
 
      useEffect(() => {
-        if (data) {
+        if (data && data.length > 0) {
             setLocalData(data);
             localStorage.setItem(`ashley_local_${collectionName}`, JSON.stringify(data));
         }
@@ -117,14 +114,12 @@ function useFirestoreCollection<T extends {id: string}>(collectionName: string, 
         const currentDataMap = new Map(currentData.map(item => [item.id, item]));
         const newDataMap = new Map(newData.map(item => [item.id, item]));
 
-        // Deletions
         for (const id of currentDataMap.keys()) {
             if (!newDataMap.has(id)) {
                 deleteDocumentNonBlocking(doc(collectionRef, id));
             }
         }
         
-        // Additions and Updates
         for (const [id, item] of newDataMap.entries()) {
             const existingItem = currentDataMap.get(id);
             if (!existingItem) {
@@ -135,16 +130,13 @@ function useFirestoreCollection<T extends {id: string}>(collectionName: string, 
         }
     }, [collectionRef, localData, collectionName]);
     
-    return [localData || [], setter, isLoading, error] as const;
+    return [localData || [], setter, isLoading] as const;
 }
 
-
-// The provider component
 export function AppProvider({ children }: { children: ReactNode }) {
     const { isUserLoading } = useUser();
     const db = useFirestore();
 
-    // App Data Collections with localStorage shadowing
     const [employees, setEmployees, isEmployeesLoading] = useFirestoreCollection<Employee>('employees', initialData.employees);
     const [excelFiles, setExcelFiles, isExcelFilesLoading] = useFirestoreCollection<ExcelFile>('excelFiles', initialData.excelFiles);
     const [items, setItems, isItemsLoading] = useFirestoreCollection<Item>('items', initialData.items);
@@ -165,7 +157,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const [soldItemsLists, setSoldItemsLists, isSoldItemsListsLoading] = useFirestoreCollection<SoldItemsList>('soldItemsLists', initialData.soldItemsLists);
     const [activityLogs, setActivityLogs, isActivityLogsLoading] = useFirestoreCollection<ActivityLog>('activityLogs', initialData.activityLogs);
     
-    // Settings Singleton Document with localStorage mirroring
     const settingsDocRef = useMemoFirebase(() => db ? doc(db, 'settings', 'main') : null, [db]);
     const { data: firestoreSettings, isLoading: isSettingsLoading } = useDoc<AppSettings>(settingsDocRef);
     
@@ -185,10 +176,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 pdfSettings: {
                     ...initialSettings.pdfSettings,
                     ...(firestoreSettings.pdfSettings || {}),
-                    report: { ...initialSettings.pdfSettings.report, ...(firestoreSettings.pdfSettings?.report || {}) },
-                    invoice: { ...initialSettings.pdfSettings.invoice, ...(firestoreSettings.pdfSettings?.invoice || {}) },
-                    card: { ...initialSettings.pdfSettings.card, ...(firestoreSettings.pdfSettings?.card || {}) },
-                    datasheet: { ...initialSettings.pdfSettings.datasheet, ...(firestoreSettings.pdfSettings?.datasheet || {}) },
                 },
                 lightThemeColors: { ...initialSettings.lightThemeColors, ...(firestoreSettings.lightThemeColors || {}) },
                 darkThemeColors: { ...initialSettings.darkThemeColors, ...(firestoreSettings.darkThemeColors || {}) },
@@ -197,7 +184,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
                     en: { ...initialSettings.translations.en, ...(firestoreSettings.translations?.en || {}) },
                     ku: { ...initialSettings.translations.ku, ...(firestoreSettings.translations?.ku || {}) },
                 },
-                reportHeaderColors: { ...initialSettings.reportHeaderColors, ...(firestoreSettings.reportHeaderColors || {}) },
             };
             setLocalSettings(mergedSettings);
             localStorage.setItem('ashley_terminal_settings', JSON.stringify(mergedSettings));
@@ -208,7 +194,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const newSettings = value instanceof Function ? value(settings) : value;
         setLocalSettings(newSettings); 
         localStorage.setItem('ashley_terminal_settings', JSON.stringify(newSettings));
-        
         if (settingsDocRef) {
             setDocumentNonBlocking(settingsDocRef, JSON.parse(JSON.stringify(newSettings)), { merge: true });
         }
@@ -216,28 +201,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const exportStateAsJson = useCallback(() => {
         const data = {
-            employees,
-            excelFiles,
-            items,
-            locations,
-            expenses,
-            expenseReports,
-            overtime,
-            bonuses,
-            withdrawals,
-            itemCategories,
-            transfers,
-            transferItems,
-            orderRequests,
-            marketingFeedbacks,
-            evaluationQuestions,
-            users,
-            roles,
-            soldItemsLists,
-            activityLogs,
-            settings,
-            timestamp: new Date().toISOString(),
-            exportSource: "Ashley Terminal Automatic Backup"
+            employees, excelFiles, items, locations, expenses, expenseReports, 
+            overtime, bonuses, withdrawals, itemCategories, transfers, 
+            transferItems, orderRequests, marketingFeedbacks, 
+            evaluationQuestions, users, roles, soldItemsLists, activityLogs, settings
         };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
@@ -248,80 +215,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-    }, [
-        employees, excelFiles, items, locations, expenses, expenseReports, 
-        overtime, bonuses, withdrawals, itemCategories, transfers, 
-        transferItems, orderRequests, marketingFeedbacks, 
-        evaluationQuestions, users, roles, soldItemsLists, activityLogs, settings
-    ]);
+    }, [employees, excelFiles, items, locations, expenses, expenseReports, overtime, bonuses, withdrawals, itemCategories, transfers, transferItems, orderRequests, marketingFeedbacks, evaluationQuestions, users, roles, soldItemsLists, activityLogs, settings]);
     
-    // Safeguard effect to prevent user lockout
-    useEffect(() => {
-        if (!isUsersLoading && users && users.length === 0 && db) {
-            const usersCol = collection(db, 'users');
-            initialData.users.forEach(user => {
-                const userDoc = doc(usersCol, user.id);
-                setDocumentNonBlocking(userDoc, user, { merge: false });
-            });
-            const rolesCol = collection(db, 'roles');
-            initialData.roles.forEach(role => {
-                const roleDoc = doc(rolesCol, role.id);
-                setDocumentNonBlocking(roleDoc, role, { merge: false });
-            });
-        }
-    }, [isUsersLoading, users, db]);
-
     const isLoading = isUserLoading || isSettingsLoading || isEmployeesLoading || isExcelFilesLoading || isItemsLoading || isLocationsLoading || isExpensesLoading || isExpenseReportsLoading || isOvertimeLoading || isBonusesLoading || isWithdrawalsLoading || isItemCategoriesLoading || isTransfersLoading || isTransferItemsLoading || isOrderRequestsLoading || isMarketingFeedbacksLoading || isEvaluationQuestionsLoading || isUsersLoading || isRolesLoading || isSoldItemsListsLoading || isActivityLogsLoading;
 
     const value = useMemo<AppState>(() => ({
-        employees, setEmployees,
-        excelFiles, setExcelFiles,
-        items, setItems,
-        locations, setLocations,
-        expenses, setExpenses,
-        expenseReports, setExpenseReports,
-        overtime, setOvertime,
-        bonuses, setBonuses,
-        withdrawals, setWithdrawals,
-        itemCategories, setItemCategories,
-        transfers, setTransfers,
-        transferItems, setTransferItems,
-        orderRequests, setOrderRequests,
-        marketingFeedbacks, setMarketingFeedbacks,
-        evaluationQuestions, setEvaluationQuestions,
-        users, setUsers,
-        roles, setRoles,
-        soldItemsLists, setSoldItemsLists,
-        activityLogs, setActivityLogs,
-        settings, 
-        setSettings: setSettings,
-        isLoading,
-        exportStateAsJson
-    }), [
-        employees, setEmployees,
-        excelFiles, setExcelFiles,
-        items, setItems,
-        locations, setLocations,
-        expenses, setExpenses,
-        expenseReports, setExpenseReports,
-        overtime, setOvertime,
-        bonuses, setBonuses,
-        withdrawals, setWithdrawals,
-        itemCategories, setItemCategories,
-        transfers, setTransfers,
-        transferItems, setTransferItems,
-        orderRequests, setOrderRequests,
-        marketingFeedbacks, setMarketingFeedbacks,
-        evaluationQuestions, setEvaluationQuestions,
-        users, setUsers,
-        roles, setRoles,
-        soldItemsLists, setSoldItemsLists,
-        activityLogs, setActivityLogs,
-        settings,
-        setSettings,
-        isLoading,
-        exportStateAsJson
-    ]);
+        employees, setEmployees, excelFiles, setExcelFiles, items, setItems,
+        locations, setLocations, expenses, setExpenses, expenseReports, setExpenseReports,
+        overtime, setOvertime, bonuses, setBonuses, withdrawals, setWithdrawals,
+        itemCategories, setItemCategories, transfers, setTransfers, transferItems, setTransferItems,
+        orderRequests, setOrderRequests, marketingFeedbacks, setMarketingFeedbacks,
+        evaluationQuestions, setEvaluationQuestions, users, setUsers, roles, setRoles,
+        soldItemsLists, setSoldItemsLists, activityLogs, setActivityLogs,
+        settings, setSettings, isLoading, exportStateAsJson
+    }), [employees, setEmployees, excelFiles, setExcelFiles, items, setItems, locations, setLocations, expenses, setExpenses, expenseReports, setExpenseReports, overtime, setOvertime, bonuses, setBonuses, withdrawals, setWithdrawals, itemCategories, setItemCategories, transfers, setTransfers, transferItems, setTransferItems, orderRequests, setOrderRequests, marketingFeedbacks, setMarketingFeedbacks, evaluationQuestions, setEvaluationQuestions, users, setUsers, roles, setRoles, soldItemsLists, setSoldItemsLists, activityLogs, setActivityLogs, settings, setSettings, isLoading, exportStateAsJson]);
 
     return (
         <AppContext.Provider value={value}>

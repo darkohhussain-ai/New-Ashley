@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Truck, ArrowLeft, Inbox, ChevronRight, ClipboardList, FileText, ListChecks } from 'lucide-react';
+import { Truck, ArrowLeft, Inbox, ClipboardList, FileText, ListChecks } from 'lucide-react';
 import Image from 'next/image';
 import { useAppContext } from '@/context/app-provider';
 import { useTranslation } from '@/hooks/use-translation';
@@ -19,13 +19,11 @@ export default function PublicTransmitPage() {
   const { settings, transferItems, transfers } = useAppContext();
   const [activeCity, setActiveCity] = useState<string | null>(null);
 
-  // Staged Items (Not yet assigned to a transfer)
   const stagedItems = useMemo(() => {
     if (!activeCity) return [];
     return transferItems.filter(item => !item.transferId && item.destination === activeCity);
   }, [transferItems, activeCity]);
 
-  // Completed Transfers (Archived slips)
   const cityTransfers = useMemo(() => {
     if (!activeCity) return [];
     return transfers
@@ -42,7 +40,6 @@ export default function PublicTransmitPage() {
 
   return (
     <div className="relative min-h-screen w-full flex flex-col bg-slate-100 overflow-x-hidden">
-      {/* Background Layer */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
         {settings.loginBackgroundEmbed ? (
           <div className="relative w-full h-full overflow-hidden">
@@ -70,7 +67,7 @@ export default function PublicTransmitPage() {
                 <Image src={settings.appLogo} alt="Logo" fill className="object-contain" unoptimized />
               </div>
             )}
-            <h1 className="text-[12px] font-bold uppercase tracking-wider text-slate-900">ASHLEY STAFF | Transmission Center</h1>
+            <h1 className="text-[12px] font-bold uppercase tracking-wider text-slate-900">ASHLEY STAFF | Transmission Hub</h1>
           </div>
           <Link href="/login">
             <Button variant="ghost" size="sm" className="text-[10px] font-bold uppercase tracking-widest text-slate-600 hover:text-slate-900">
@@ -85,7 +82,7 @@ export default function PublicTransmitPage() {
           {!activeCity ? (
             <div className="p-8 space-y-8 flex-1 flex flex-col justify-center">
               <div className="text-center space-y-2">
-                <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-amber-600">Select City / شار هەڵبژێرە</h2>
+                <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-amber-600">Regional Node Selection / شار هەڵبژێرە</h2>
                 <div className="h-0.5 w-12 bg-amber-500/40 mx-auto rounded-full" />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
@@ -97,7 +94,7 @@ export default function PublicTransmitPage() {
                     onClick={() => setActiveCity(city)}
                   >
                     {city}
-                    <span className="text-[10px] font-medium opacity-40">View Cargo</span>
+                    <span className="text-[10px] font-medium opacity-40">Access Lists</span>
                   </Button>
                 ))}
               </div>
@@ -120,7 +117,7 @@ export default function PublicTransmitPage() {
                   className="text-[10px] font-bold uppercase tracking-widest text-slate-600"
                   onClick={() => setActiveCity(null)}
                 >
-                  <ArrowLeft className="mr-2 w-3.5 h-3.5" /> Change City
+                  <ArrowLeft className="mr-2 w-3.5 h-3.5" /> Switch City
                 </Button>
               </header>
               
@@ -132,7 +129,7 @@ export default function PublicTransmitPage() {
                         <ClipboardList className="w-3.5 h-3.5 mr-2" /> Staged Cargo ({stagedItems.length})
                       </TabsTrigger>
                       <TabsTrigger value="history" className="text-[10px] font-bold uppercase flex-1">
-                        <FileText className="w-3.5 h-3.5 mr-2" /> Slips & Invoices ({cityTransfers.length})
+                        <FileText className="w-3.5 h-3.5 mr-2" /> Slip Archive ({cityTransfers.length})
                       </TabsTrigger>
                     </TabsList>
                   </div>
@@ -142,9 +139,9 @@ export default function PublicTransmitPage() {
                       <Table>
                         <TableHeader className="bg-slate-100/50 sticky top-0 z-10 border-b border-slate-200">
                           <TableRow>
-                            <TableHead className="w-[60px] text-[10px] uppercase font-bold text-slate-900 text-center">A</TableHead>
-                            <TableHead className="w-[60px] text-[10px] uppercase font-bold text-slate-900 text-center">B</TableHead>
-                            <TableHead className="text-[10px] uppercase font-bold text-slate-900">Model Identity</TableHead>
+                            <TableHead className="w-[60px] text-[10px] uppercase font-bold text-slate-900 text-center">Audit A</TableHead>
+                            <TableHead className="w-[60px] text-[10px] uppercase font-bold text-slate-900 text-center">Audit B</TableHead>
+                            <TableHead className="text-[10px] uppercase font-bold text-slate-900">Model Name</TableHead>
                             <TableHead className="w-[80px] text-[10px] uppercase font-bold text-slate-900 text-center">QTY</TableHead>
                             <TableHead className="w-[140px] text-[10px] uppercase font-bold text-slate-900">Ref Invoice</TableHead>
                           </TableRow>
@@ -171,7 +168,7 @@ export default function PublicTransmitPage() {
                               <TableCell colSpan={5} className="h-80 text-center">
                                 <div className="flex flex-col items-center justify-center space-y-4 opacity-20">
                                   <Inbox className="w-14 h-14 text-slate-900" />
-                                  <p className="text-[11px] font-bold uppercase tracking-widest text-slate-900">No staged cargo for {activeCity}</p>
+                                  <p className="text-[11px] font-bold uppercase tracking-widest text-slate-900">No staged cargo currently found for {activeCity}</p>
                                 </div>
                               </TableCell>
                             </TableRow>
@@ -186,10 +183,10 @@ export default function PublicTransmitPage() {
                       <Table>
                         <TableHeader className="bg-slate-100/50 sticky top-0 z-10 border-b border-slate-200">
                           <TableRow>
-                            <TableHead className="w-[120px] text-[10px] uppercase font-bold text-slate-900">Date</TableHead>
-                            <TableHead className="text-[10px] uppercase font-bold text-slate-900">Slip Name</TableHead>
-                            <TableHead className="w-[100px] text-[10px] uppercase font-bold text-slate-900 text-center">Items</TableHead>
-                            <TableHead className="w-[140px] text-[10px] uppercase font-bold text-slate-900 text-right">Invoice ID</TableHead>
+                            <TableHead className="w-[120px] text-[10px] uppercase font-bold text-slate-900">Transfer Date</TableHead>
+                            <TableHead className="text-[10px] uppercase font-bold text-slate-900">Cargo Identification</TableHead>
+                            <TableHead className="w-[100px] text-[10px] uppercase font-bold text-slate-900 text-center">Cluster Count</TableHead>
+                            <TableHead className="w-[140px] text-[10px] uppercase font-bold text-slate-900 text-right">Invoice Serial</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -215,7 +212,7 @@ export default function PublicTransmitPage() {
                               <TableCell colSpan={4} className="h-80 text-center">
                                 <div className="flex flex-col items-center justify-center space-y-4 opacity-20">
                                   <ListChecks className="w-14 h-14 text-slate-900" />
-                                  <p className="text-[11px] font-bold uppercase tracking-widest text-slate-900">No archived slips for {activeCity}</p>
+                                  <p className="text-[11px] font-bold uppercase tracking-widest text-slate-900">No completed slips found for {activeCity}</p>
                                 </div>
                               </TableCell>
                             </TableRow>
@@ -233,7 +230,7 @@ export default function PublicTransmitPage() {
 
       <footer className="relative z-10 py-8 text-center border-t border-slate-200 bg-white/40 backdrop-blur-sm mt-auto">
         <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-500">
-          ASHLEY STAFF LOGISTICS NODE | GLOBAL TRANSMIT
+          ASHLEY STAFF LOGISTICS NODE | GLOBAL TRANSMIT PORTAL
         </p>
       </footer>
     </div>

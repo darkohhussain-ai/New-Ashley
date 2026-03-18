@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -13,16 +14,15 @@ export function BackupReminder() {
   const { user } = useAuth();
 
   useEffect(() => {
-    // Only show reminder if data is loaded AND a user is actually logged in
-    if (isLoading || !user) return;
+    // SECURITY: Only show backup reminder to authenticated Administrators (non-anonymous)
+    if (isLoading || !user || user.isAnonymous) return;
 
     const lastBackup = localStorage.getItem('ashley_last_backup_date');
     const now = new Date().getTime();
     const lastTime = lastBackup ? new Date(lastBackup).getTime() : 0;
     
-    // LOGIC: Show reminder only if 24 hours (86,400,000 ms) have passed since the last backup.
+    // Cycle check: 24 hours (86,400,000 ms)
     if (now - lastTime >= 86400000) {
-      // Show reminder 3 seconds after terminal is ready
       const timer = setTimeout(() => setIsOpen(true), 3000);
       return () => clearTimeout(timer);
     }
@@ -37,7 +37,6 @@ export function BackupReminder() {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="max-w-md bg-orange-50/95 backdrop-blur-xl border-none shadow-2xl p-0 overflow-hidden rounded-2xl animate-in zoom-in-95 duration-300">
-        {/* High-Visibility Orange Header Sector */}
         <div className="bg-orange-500 p-5 flex items-center gap-4 text-white shadow-lg">
             <div className="p-2.5 bg-white/20 rounded-xl shadow-inner border border-white/10">
                 <DatabaseBackup className="w-6 h-6" />
