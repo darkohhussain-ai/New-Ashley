@@ -1,10 +1,8 @@
-
-
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Archive, Calendar as CalendarIcon, Truck, User, Eye, Search, Inbox, Printer, FileSpreadsheet } from 'lucide-react';
+import { ArrowLeft, Archive, Calendar as CalendarIcon, Truck, User, Eye, Search, Printer, FileSpreadsheet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { format, parseISO, isSameMonth, subMonths, startOfMonth } from 'date-fns';
@@ -48,17 +46,17 @@ export default function TransferArchivePage() {
         });
       }
       
-      itemsToDisplay = transfers.filter(t => {
-        const invoiceMatch = t.invoiceNumber?.toString().padStart(6, '0').includes(searchQuery);
-        const modelMatch = transferIdsWithMatchingItems.has(t.id);
+      itemsToDisplay = transfers.filter(tr => {
+        const invoiceMatch = tr.invoiceNumber?.toString().padStart(6, '0').includes(searchQuery);
+        const modelMatch = transferIdsWithMatchingItems.has(tr.id);
         return invoiceMatch || modelMatch;
       });
 
     } else if (selectedMonth) {
-      itemsToDisplay = transfers.filter(t => 
-        t.transferDate && 
-        !isNaN(parseISO(t.transferDate).getTime()) && 
-        isSameMonth(parseISO(t.transferDate), selectedMonth)
+      itemsToDisplay = transfers.filter(tr => 
+        tr.transferDate && 
+        !isNaN(parseISO(tr.transferDate).getTime()) && 
+        isSameMonth(parseISO(tr.transferDate), selectedMonth)
       );
     }
     
@@ -82,12 +80,12 @@ export default function TransferArchivePage() {
         (item.model.toLowerCase().includes(queryLower) || item.invoiceNo?.toLowerCase().includes(queryLower))
       )
       .map(item => {
-        const transfer = transfers.find(t => t.id === item.transferId);
+        const tr = transfers.find(t => t.id === item.transferId);
         return {
           ...item,
-          transferCargoName: transfer?.cargoName || 'N/A',
-          transferDate: transfer?.transferDate,
-          transferId: transfer?.id
+          transferCargoName: tr?.cargoName || 'N/A',
+          transferDate: tr?.transferDate,
+          transferId: tr?.id
         };
       })
       .sort((a,b) => {
@@ -104,14 +102,14 @@ export default function TransferArchivePage() {
   const handleExportExcel = () => {
     if (!sortedTransfers || sortedTransfers.length === 0) return;
 
-    const dataToExport = sortedTransfers.map(t => ({
-      [t('invoice_no')]: t.invoiceNumber ? t.invoiceNumber.toString().padStart(6, '0') : 'N/A',
-      [t('cargo_name')]: t.cargoName,
-      [t('destination')]: t.destinationCity,
-      [t('date')]: t.transferDate ? format(parseISO(t.transferDate), 'yyyy-MM-dd') : 'N/A',
-      [t('driver')]: t.driverName,
-      [t('manager')]: t.warehouseManagerName,
-      [t('items_count')]: t.itemIds.length
+    const dataToExport = sortedTransfers.map(tr => ({
+      [t('invoice_no')]: tr.invoiceNumber ? tr.invoiceNumber.toString().padStart(6, '0') : 'N/A',
+      [t('cargo_name')]: tr.cargoName,
+      [t('destination')]: tr.destinationCity,
+      [t('date')]: tr.transferDate ? format(parseISO(tr.transferDate), 'yyyy-MM-dd') : 'N/A',
+      [t('driver')]: tr.driverName,
+      [t('manager')]: tr.warehouseManagerName,
+      [t('items_count')]: tr.itemIds.length
     }));
     
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
@@ -140,28 +138,28 @@ export default function TransferArchivePage() {
             </div>
         ) : sortedTransfers.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {sortedTransfers.map(transfer => (
-                <Card key={transfer.id} className="hover:border-primary/50 hover:shadow-lg transition-all h-full flex flex-col">
+            {sortedTransfers.map(tr => (
+                <Card key={tr.id} className="hover:border-primary/50 hover:shadow-lg transition-all h-full flex flex-col">
                     <CardHeader>
                         <div className="flex justify-between items-start">
                             <div>
-                                <CardTitle className="text-lg leading-tight">{transfer.cargoName}</CardTitle>
-                                <CardDescription>{t('to_destination')}: {transfer.destinationCity}</CardDescription>
+                                <CardTitle className="text-lg leading-tight">{tr.cargoName}</CardTitle>
+                                <CardDescription>{t('to_destination')}: {tr.destinationCity}</CardDescription>
                             </div>
                              <span className="text-xs font-mono text-muted-foreground mt-1">
-                                #{transfer.invoiceNumber ? transfer.invoiceNumber.toString().padStart(6, '0') : 'N/A'}
+                                #{tr.invoiceNumber ? tr.invoiceNumber.toString().padStart(6, '0') : 'N/A'}
                              </span>
                         </div>
                     </CardHeader>
                     <CardContent className="flex-grow space-y-3 text-sm text-muted-foreground">
-                    <p className="flex items-center gap-2"><CalendarIcon className="w-4 h-4 text-primary" /> {transfer.transferDate ? format(parseISO(transfer.transferDate), 'PPP') : 'N/A'}</p>
-                    <p className="flex items-center gap-2"><Truck className="w-4 h-4 text-primary" /> {t('driver')}: {transfer.driverName}</p>
-                    <p className="flex items-center gap-2"><User className="w-4 h-4 text-primary" /> {t('manager')}: {transfer.warehouseManagerName}</p>
+                    <p className="flex items-center gap-2"><CalendarIcon className="w-4 h-4 text-primary" /> {tr.transferDate ? format(parseISO(tr.transferDate), 'PPP') : 'N/A'}</p>
+                    <p className="flex items-center gap-2"><Truck className="w-4 h-4 text-primary" /> {t('driver')}: {tr.driverName}</p>
+                    <p className="flex items-center gap-2"><User className="w-4 h-4 text-primary" /> {t('manager')}: {tr.warehouseManagerName}</p>
                     </CardContent>
                     <CardContent className="flex justify-between items-center print:hidden">
-                        <p className="font-bold text-sm text-primary">{transfer.itemIds.length} {t('items_lowercase')}</p>
+                        <p className="font-bold text-sm text-primary">{tr.itemIds.length} {t('items_lowercase')}</p>
                         <Button asChild variant="outline" size="sm">
-                            <Link href={`/transmit/archive/${transfer.id}`}>
+                            <Link href={`/transmit/archive/${tr.id}`}>
                                 <Eye className="mr-2 h-4 w-4"/> {t('view')}
                             </Link>
                         </Button>

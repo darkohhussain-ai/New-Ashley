@@ -1,25 +1,23 @@
-
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import Link from 'next/link';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Loader2, FileText, CheckCircle, Save, Calendar, Search, Trash2 } from 'lucide-react';
+import { ArrowLeft, Loader2, FileText, CheckCircle, Save, Calendar, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
-import { format, formatISO, parseISO } from 'date-fns';
-import { cn } from '@/lib/utils';
+import { format, formatISO } from 'date-fns';
 import { useAppContext } from '@/context/app-provider';
-import type { Item, StorageLocation, ExcelFile } from '@/lib/types';
+import type { Item, ExcelFile } from '@/lib/types';
 import { parsePdfInventory, type ExtractedItem } from '@/ai/flows/parse-pdf-inventory-flow';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import * as pdfjsLib from 'pdfjs-dist';
+import { useTranslation } from '@/hooks/use-translation';
 
 // Configure PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
@@ -265,9 +263,4 @@ export default function ImportPdfPage() {
       )}
     </div>
   );
-}
-
-function useTranslation() {
-  const { t } = useAppContext();
-  return { t };
 }
