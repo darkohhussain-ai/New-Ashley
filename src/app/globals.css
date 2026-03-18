@@ -114,6 +114,10 @@
   body {
     @apply bg-transparent text-foreground font-sans;
     word-spacing: normal;
+    font-size: 12px;
+  }
+  html, body {
+    background: transparent !important;
   }
 }
 
@@ -145,16 +149,16 @@
   from { transform: translateX(100%); }
   to { transform: translateX(0); }
 }
-@keyframes fade-in-down {
-  0% {
+@keyframes fadeInDown {
+  from {
     opacity: 0;
     transform: translateY(-10px);
   }
-  100% {
+  to {
     opacity: 1;
     transform: translateY(0);
   }
 }
 .animate-marquee { animation: marquee 25s linear infinite; }
 .animate-marquee2 { animation: marquee2 25s linear infinite; }
-.animate-fade-in-down { animation: fade-in-down 0.5s ease-out; }
+.animate-fade-in-down { animation: fadeInDown 0.5s ease-out; }
