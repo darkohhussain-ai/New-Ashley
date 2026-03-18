@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, ReactNode, useMemo, useEffect, useState, useCallback } from 'react';
@@ -27,6 +28,7 @@ import {
 } from '@/lib/types';
 import { setDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { initialData, initialSettings } from './initial-data';
+import { format } from 'date-fns';
 
 // Define the shape of our application state
 interface AppState {
@@ -71,12 +73,13 @@ interface AppState {
     settings: AppSettings;
     setSettings: (value: React.SetStateAction<AppSettings>) => Promise<void>;
     isLoading: boolean;
+    exportStateAsJson: () => void;
 }
 
 // Create the context
 const AppContext = createContext<AppState | undefined>(undefined);
 
-// Helper to manage a single collection from the root of Firestore
+// Helper to manage a single collection from the root of Firestore with LocalStorage Mirroring
 function useFirestoreCollection<T extends {id: string}>(collectionName: string, initialFallback: T[]) {
     const db = useFirestore();
     
@@ -87,25 +90,29 @@ function useFirestoreCollection<T extends {id: string}>(collectionName: string, 
     
     const { data, isLoading, error } = useCollection<T>(collectionRef);
 
-    const [localData, setLocalData] = useState<T[]>(data ?? initialFallback);
+    const [localData, setLocalData] = useState<T[]>(() => {
+        if (typeof window !== 'undefined') {
+            const cached = localStorage.getItem(`ashley_local_${collectionName}`);
+            return cached ? JSON.parse(cached) : initialFallback;
+        }
+        return initialFallback;
+    });
 
      useEffect(() => {
         if (data) {
             setLocalData(data);
+            localStorage.setItem(`ashley_local_${collectionName}`, JSON.stringify(data));
         }
-    }, [data]);
+    }, [data, collectionName]);
     
     const setter = useCallback((newDataOrFn: React.SetStateAction<T[]>) => {
-         if (!collectionRef) {
-            // Update local state if offline
-            setLocalData(newDataOrFn);
-            return;
-        }
-
         const currentData = localData || [];
         const newData = typeof newDataOrFn === 'function' ? (newDataOrFn as (prevState: T[]) => T[])(currentData) : newDataOrFn;
 
         setLocalData(newData);
+        localStorage.setItem(`ashley_local_${collectionName}`, JSON.stringify(newData));
+
+        if (!collectionRef) return;
 
         const currentDataMap = new Map(currentData.map(item => [item.id, item]));
         const newDataMap = new Map(newData.map(item => [item.id, item]));
@@ -126,7 +133,7 @@ function useFirestoreCollection<T extends {id: string}>(collectionName: string, 
                 updateDocumentNonBlocking(doc(collectionRef, id), item);
             }
         }
-    }, [collectionRef, localData]);
+    }, [collectionRef, localData, collectionName]);
     
     return [localData || [], setter, isLoading, error] as const;
 }
@@ -197,12 +204,51 @@ export function AppProvider({ children }: { children: ReactNode }) {
             setDocumentNonBlocking(settingsDocRef, JSON.parse(JSON.stringify(newSettings)), { merge: true });
         }
     }, [settingsDocRef, settings]);
+
+    const exportStateAsJson = useCallback(() => {
+        const data = {
+            employees,
+            excelFiles,
+            items,
+            locations,
+            expenses,
+            expenseReports,
+            overtime,
+            bonuses,
+            withdrawals,
+            itemCategories,
+            transfers,
+            transferItems,
+            orderRequests,
+            marketingFeedbacks,
+            evaluationQuestions,
+            users,
+            roles,
+            soldItemsLists,
+            activityLogs,
+            settings,
+            timestamp: new Date().toISOString(),
+            exportSource: "Ashley Terminal Automatic Backup"
+        };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Ashley_Nexus_Backup_${format(new Date(), 'yyyy-MM-dd_HHmm')}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }, [
+        employees, excelFiles, items, locations, expenses, expenseReports, 
+        overtime, bonuses, withdrawals, itemCategories, transfers, 
+        transferItems, orderRequests, marketingFeedbacks, 
+        evaluationQuestions, users, roles, soldItemsLists, activityLogs, settings
+    ]);
     
     // This effect is a safeguard to prevent user lockout.
-    // If no users are found in the database, it seeds the initial users.
     useEffect(() => {
         if (!isUsersLoading && users && users.length === 0 && db) {
-            console.log("No users found. Seeding initial users to prevent lockout.");
             const usersCol = collection(db, 'users');
             initialData.users.forEach(user => {
                 const userDoc = doc(usersCol, user.id);
@@ -241,6 +287,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         settings, 
         setSettings: setSettings,
         isLoading,
+        exportStateAsJson
     }), [
         employees, setEmployees,
         excelFiles, setExcelFiles,
@@ -263,7 +310,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         activityLogs, setActivityLogs,
         settings,
         setSettings,
-        isLoading
+        isLoading,
+        exportStateAsJson
     ]);
 
     return (

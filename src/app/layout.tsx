@@ -1,3 +1,4 @@
+
 'use client';
 
 import './globals.css';
@@ -16,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/app-sidebar';
+import { BackupReminder } from '@/components/shared/backup-reminder';
 
 function DynamicThemeInjector() {
     const { settings } = useAppContext();
@@ -152,6 +154,8 @@ function AppContent({ children }: { children: React.ReactNode }) {
                 <div key={pathname} className="animate-fade-in-down flex-1 overflow-auto">
                     {children}
                 </div>
+                
+                <BackupReminder />
             </SidebarInset>
         </SidebarProvider>
     );
