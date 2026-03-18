@@ -149,14 +149,19 @@ export default function LoginPage() {
 
       <main className="relative z-10 flex-1 w-full max-w-7xl mx-auto p-4 md:p-8 flex flex-col justify-center items-center">
         <div className="flex flex-col gap-4 w-full max-w-md animate-in fade-in zoom-in-95 duration-700">
+          {/* Transmission Lists Button - Amber/Yellow Theme */}
           <Dialog onOpenChange={(open) => !open && setActiveTransmissionCity(null)}>
             <DialogTrigger asChild>
-              <Button variant="outline" size="lg" className="h-16 w-full bg-card/68 backdrop-blur-md border-primary/20 hover:bg-primary/10 text-[12px] font-bold uppercase tracking-wider flex flex-col gap-1 shadow-2xl">
-                <div className="flex items-center gap-2">
-                  <ListChecks className="w-4 h-4 text-primary" />
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="h-20 w-full bg-amber-500/10 backdrop-blur-md border-amber-500/30 hover:bg-amber-500/20 text-[12px] font-bold uppercase tracking-wider flex flex-col gap-1 shadow-2xl transition-all hover:scale-[1.02]"
+              >
+                <div className="flex items-center gap-2 text-amber-500">
+                  <ListChecks className="w-5 h-5" />
                   Transmission Lists
                 </div>
-                <span className="text-[10px] font-medium opacity-60 normal-case">لیستی گواستنەوەکان</span>
+                <span className="text-[10px] font-medium opacity-80 text-white normal-case">لیستی گواستنەوەکان</span>
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-4xl bg-card/68 backdrop-blur-xl border-primary/20 max-h-[85vh] overflow-hidden flex flex-col p-0">
@@ -236,14 +241,19 @@ export default function LoginPage() {
             </DialogContent>
           </Dialog>
 
+          {/* Inventory Audit Button - Emerald Green Theme */}
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="outline" size="lg" className="h-16 w-full bg-card/68 backdrop-blur-md border-primary/20 hover:bg-primary/10 text-[12px] font-bold uppercase tracking-wider flex flex-col gap-1 shadow-2xl">
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-primary" />
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="h-20 w-full bg-emerald-500/10 backdrop-blur-md border-emerald-500/30 hover:bg-emerald-500/20 text-[12px] font-bold uppercase tracking-wider flex flex-col gap-1 shadow-2xl transition-all hover:scale-[1.02]"
+              >
+                <div className="flex items-center gap-2 text-emerald-500">
+                  <Search className="w-5 h-5" />
                   Inventory Audit
                 </div>
-                <span className="text-[10px] font-medium opacity-60 normal-case">پشکنینی کۆگا</span>
+                <span className="text-[10px] font-medium opacity-80 text-white normal-case">پشکنینی کۆگا</span>
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-3xl bg-card/68 backdrop-blur-xl border-primary/20 max-h-[85vh] overflow-hidden flex flex-col">
