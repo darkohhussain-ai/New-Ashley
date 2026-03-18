@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useMemo, useRef, useEffect, useState } from 'react';
@@ -13,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { TransmitReportPdf } from '@/components/transmit/TransmitReportPdf';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAppContext } from '@/context/app-provider';
-import type { Transfer, ItemForTransfer, BranchColors, ActivityLog } from '@/lib/types';
+import type { Transfer, ItemForTransfer, ActivityLog } from '@/lib/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -112,11 +111,9 @@ export default function ViewTransferPage() {
 
   const handleDelete = () => {
     if (!transfer || !transferItems || !transfers) return;
-    // Disassociate items
     setTransferItems(prev => prev.map(item =>
         item.transferId === transfer.id ? { ...item, transferId: null } : item
     ));
-    // Delete transfer
     setTransfers(prev => prev.filter(t => t.id !== transfer.id));
 
     if (user) {
@@ -160,7 +157,7 @@ export default function ViewTransferPage() {
       'Invoice No': item.invoiceNo || 'N/A',
       'Storage': item.storage || 'N/A',
       'Notes': item.notes || 'N/A',
-      'Request Date': item.requestDate ? format(parseISO(item.requestDate), 'yyyy-MM-dd') : 'N/A',
+      'Request Date': item.requestDate ? format(parseISO(item.requestDate), 'dd/MM/yyyy') : 'N/A',
     }));
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
@@ -203,7 +200,7 @@ export default function ViewTransferPage() {
                                 <PopoverTrigger asChild>
                                     <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !editableTransfer?.transferDate && "text-muted-foreground")}>
                                         <Calendar className="mr-2 h-4 w-4" />
-                                        {editableTransfer?.transferDate ? format(parseISO(editableTransfer.transferDate), 'PPP') : <span>{t('pick_a_date')}</span>}
+                                        {editableTransfer?.transferDate ? format(parseISO(editableTransfer.transferDate), 'dd/MM/yyyy') : <span>{t('pick_a_date')}</span>}
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-auto p-0">
@@ -218,7 +215,7 @@ export default function ViewTransferPage() {
                                 </PopoverContent>
                             </Popover>
                         ) : (
-                            <p className="flex gap-2 items-center"><Calendar className="w-4 h-4 text-primary"/> {format(parseISO(transfer.transferDate), 'PPP')}</p>
+                            <p className="flex gap-2 items-center"><Calendar className="w-4 h-4 text-primary"/> {format(parseISO(transfer.transferDate), 'dd/MM/yyyy')}</p>
                         )}
                     </div>
                      <div className="space-y-1">

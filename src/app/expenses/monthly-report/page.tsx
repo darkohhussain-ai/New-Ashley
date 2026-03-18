@@ -1,10 +1,9 @@
 
-
 'use client';
 
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Calendar as CalendarIcon, FileSpreadsheet, Printer, Loader2, BarChart } from 'lucide-react';
+import { ArrowLeft, Calendar as CalendarIcon, FileSpreadsheet, Printer, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -36,13 +35,9 @@ export default function MonthlyExpenseReportPage() {
   const isReadOnly = !hasPermission('page:admin');
   const { toast } = useToast();
   
-  const { pdfSettings, customFont } = settings;
-
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   
   useEffect(() => {
-    // Only set date on client-side
     setSelectedDate(new Date());
   }, []);
 
@@ -142,18 +137,6 @@ export default function MonthlyExpenseReportPage() {
     
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
 
-    const totals: {[key: string]: any} = {
-        [t('employee')]: t('grand_total'),
-        [t('total_expenses')]: monthlyData.grandTotal,
-        [t('taxi_expenses')]: monthlyData.summary.reduce((sum, item) => sum + item.taxiTotal, 0),
-        [t('purchases_buying_items')]: monthlyData.summary.reduce((sum, item) => sum + item.purchasesTotal, 0),
-    };
-    sortedTaxiSubtypes.forEach(subType => {
-        totals[t(subType.toLowerCase().replace(/\s/g, '_'))] = monthlyData.summary.reduce((sum, item) => sum + (item.taxiBreakdown[subType] || 0), 0);
-    });
-
-    XLSX.utils.sheet_add_json(worksheet, [totals], { skipHeader: true, origin: -1 });
-
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Monthly Expenses');
 
@@ -165,80 +148,37 @@ export default function MonthlyExpenseReportPage() {
   }
   
   const PageContent = () => (
-      <>
-       {isLoading ? (
-            <div className="space-y-6"><Skeleton className="h-64 w-full" /></div>
-            ) : monthlyData.summary.length > 0 ? (
-            <div className="space-y-8">
-                <Card className="print:shadow-none print:border-none">
-                    <CardHeader>
-                        <div className="text-center">
-                            <h1 className="text-2xl">{t('monthly_expense_report')}</h1>
-                            <p className="text-muted-foreground">{selectedDate ? format(selectedDate, 'MMMM yyyy') : ''}</p>
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                       <Accordion type="single" collapsible className="w-full">
-                          {monthlyData.summary.map(item => (
-                            <AccordionItem value={item.employeeId} key={item.employeeId}>
-                              <AccordionTrigger className="hover:no-underline text-base">
-                                <div className="flex justify-between w-full pr-4">
-                                  <span dir={language === 'ku' ? 'rtl' : 'ltr'}>{item.employeeName}</span>
-                                  <span className="font-semibold">{isReadOnly ? '***' : formatCurrency(item.totalAmount)}</span>
-                                </div>
-                              </AccordionTrigger>
-                              <AccordionContent>
-                                <div className="p-4 bg-muted/50 rounded-md">
-                                  <Table>
-                                    <TableBody>
-                                      {item.taxiTotal > 0 && (
-                                        <>
-                                          <TableRow>
-                                            <TableCell className="font-medium pl-4">{t('taxi_expenses')}</TableCell>
-                                            <TableCell className="text-right">{isReadOnly ? '***' : formatCurrency(item.taxiTotal)}</TableCell>
-                                          </TableRow>
-                                          {Object.entries(item.taxiBreakdown).map(([subType, amount]) => (
-                                            <TableRow key={subType} className="text-sm">
-                                              <TableCell className="text-muted-foreground pl-8">- {t(subType.toLowerCase().replace(/\s/g, '_'))}</TableCell>
-                                              <TableCell className="text-right text-muted-foreground">{isReadOnly ? '***' : formatCurrency(amount)}</TableCell>
-                                            </TableRow>
-                                          ))}
-                                        </>
-                                      )}
-                                      {item.purchasesTotal > 0 && (
-                                        <TableRow>
-                                          <TableCell className="font-medium pl-4">{t('purchases_buying_items')}</TableCell>
-                                          <TableCell className="text-right">{isReadOnly ? '***' : formatCurrency(item.purchasesTotal)}</TableCell>
-                                        </TableRow>
-                                      )}
-                                    </TableBody>
-                                  </Table>
-                                </div>
-                              </AccordionContent>
-                            </AccordionItem>
-                          ))}
-                       </Accordion>
-                       <div className="flex justify-end font-bold text-lg mt-4 pr-4">
-                          <span>{t('grand_total')}:</span>
-                          <span className="text-primary ml-2">{isReadOnly ? '***' : formatCurrency(monthlyData.grandTotal)}</span>
-                       </div>
-                    </CardContent>
-                </Card>
-            </div>
-            ) : (
-            <div className="text-center py-16 border-2 border-dashed rounded-lg print:hidden">
-                <CalendarIcon className="mx-auto h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-4 text-lg font-medium">{t('no_expenses_found')}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">{t('no_expenses_found_for_month', {month: selectedDate ? format(selectedDate, 'MMMM yyyy') : 'the selected month'})}</p>
-            </div>
-            )}
-      </>
+      <div className="space-y-4">
+          <Table>
+            <TableHeader>
+                <TableRow>
+                    <TableHead>{t('employee')}</TableHead>
+                    <TableHead className="text-right">{t('amount')}</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {monthlyData.summary.map(item => (
+                    <TableRow key={item.employeeId}>
+                        <TableCell dir={language === 'ku' ? 'rtl' : 'ltr'}>{item.employeeName}</TableCell>
+                        <TableCell className="text-right font-semibold">{isReadOnly ? '***' : formatCurrency(item.totalAmount)}</TableCell>
+                    </TableRow>
+                ))}
+            </TableBody>
+          </Table>
+          <div className="flex justify-end font-bold text-lg mt-4 pr-4 border-t pt-4">
+            <span>{t('grand_total')}:</span>
+            <span className="text-primary ml-2">{isReadOnly ? '***' : formatCurrency(monthlyData.grandTotal)}</span>
+          </div>
+      </div>
   );
 
   return (
     <>
       <div className="hidden print:block">
-        <ReportWrapper>
+        <ReportWrapper
+          title={t('monthly_expense_report')}
+          date={selectedDate}
+        >
           <PageContent />
         </ReportWrapper>
       </div>
@@ -277,10 +217,52 @@ export default function MonthlyExpenseReportPage() {
         </header>
 
         <main className="flex-1 overflow-y-auto px-4 md:px-8">
-            <PageContent />
+            <Accordion type="single" collapsible className="w-full">
+                {monthlyData.summary.map(item => (
+                <AccordionItem value={item.employeeId} key={item.employeeId}>
+                    <AccordionTrigger className="hover:no-underline text-base">
+                    <div className="flex justify-between w-full pr-4">
+                        <span dir={language === 'ku' ? 'rtl' : 'ltr'}>{item.employeeName}</span>
+                        <span className="font-semibold">{isReadOnly ? '***' : formatCurrency(item.totalAmount)}</span>
+                    </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                    <div className="p-4 bg-muted/50 rounded-md">
+                        <Table>
+                        <TableBody>
+                            {item.taxiTotal > 0 && (
+                            <>
+                                <TableRow>
+                                <TableCell className="font-medium pl-4">{t('taxi_expenses')}</TableCell>
+                                <TableCell className="text-right">{isReadOnly ? '***' : formatCurrency(item.taxiTotal)}</TableCell>
+                                </TableRow>
+                                {Object.entries(item.taxiBreakdown).map(([subType, amount]) => (
+                                <TableRow key={subType} className="text-sm">
+                                    <TableCell className="text-muted-foreground pl-8">- {t(subType.toLowerCase().replace(/\s/g, '_'))}</TableCell>
+                                    <TableCell className="text-right text-muted-foreground">{isReadOnly ? '***' : formatCurrency(amount)}</TableCell>
+                                </TableRow>
+                                ))}
+                            </>
+                            )}
+                            {item.purchasesTotal > 0 && (
+                            <TableRow>
+                                <TableCell className="font-medium pl-4">{t('purchases_buying_items')}</TableCell>
+                                <TableCell className="text-right">{isReadOnly ? '***' : formatCurrency(item.purchasesTotal)}</TableCell>
+                            </TableRow>
+                            )}
+                        </TableBody>
+                        </Table>
+                    </div>
+                    </AccordionContent>
+                </AccordionItem>
+                ))}
+            </Accordion>
+            <div className="flex justify-end font-bold text-lg mt-4 pr-4">
+                <span>{t('grand_total')}:</span>
+                <span className="text-primary ml-2">{isReadOnly ? '***' : formatCurrency(monthlyData.grandTotal)}</span>
+            </div>
         </main>
       </div>
     </>
   );
 }
-

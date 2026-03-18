@@ -1,7 +1,7 @@
+
 'use client';
 import { CashWithdrawal, AppSettings } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
-import { format } from 'date-fns';
 import { useMemo } from 'react';
 import { useTranslation } from '@/hooks/use-translation';
 import { ReportWrapper } from '@/components/reports/ReportWrapper';
@@ -19,7 +19,7 @@ export const CashWithdrawalReportPdf = ({ records, date, settings, getEmployeeNa
     return (
         <ReportWrapper
             title={t('daily_cash_withdrawals')}
-            date={format(date, 'PPPP')}
+            date={date}
         >
             <Table>
                 <TableHeader>

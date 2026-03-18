@@ -1,8 +1,7 @@
 
 'use client';
-import { Expense, AppSettings, Employee } from '@/lib/types';
+import { Expense, AppSettings } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
-import { format } from 'date-fns';
 import { useMemo, Fragment } from 'react';
 import { useTranslation } from '@/hooks/use-translation';
 import { ReportWrapper } from '@/components/reports/ReportWrapper';
@@ -42,7 +41,7 @@ export function DailyExpenseReportPdf({ records, date, settings, getEmployeeName
   return (
     <ReportWrapper
       title={t('daily_expense_report')}
-      date={format(date, 'PPPP')}
+      date={date}
     >
       <Table className="pdf-table text-xs border">
         <TableHeader>

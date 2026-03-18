@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Calendar as CalendarIcon, FileDown, Printer, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { useAppContext } from '@/context/app-provider';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslation } from '@/hooks/use-translation';
@@ -150,19 +150,13 @@ export default function MonthlyReportPage() {
         {isLoading ? (
             <div className="space-y-6"><Skeleton className="h-64 w-full" /></div>
           ) : monthlyReportData.records.length > 0 ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('summary_for_month', { month: selectedDate ? format(selectedDate, 'MMMM yyyy') : ''})}</CardTitle>
-                <CardDescription>{t('summary_for_month_desc')}</CardDescription>
-              </CardHeader>
-              <CardContent>
+            <div className="space-y-4">
                 <FullMonthlyReportPdf
                   records={monthlyReportData.records}
                   grandTotals={grandTotals}
                   getEmployeeName={getEmployeeName}
                 />
-              </CardContent>
-            </Card>
+            </div>
           ) : (
             <div className="text-center py-16 border-2 border-dashed rounded-lg print:hidden">
                 <CalendarIcon className="mx-auto h-12 w-12 text-muted-foreground" />
@@ -178,7 +172,7 @@ export default function MonthlyReportPage() {
       <div className="hidden print:block">
         <ReportWrapper
           title={t('monthly_reports')}
-          date={selectedDate ? format(selectedDate, 'MMMM yyyy') : ''}
+          date={selectedDate}
         >
           <PageContent />
         </ReportWrapper>
@@ -216,5 +210,3 @@ export default function MonthlyReportPage() {
     </>
   );
 }
-
-    

@@ -1,5 +1,6 @@
+
 'use client';
-import { ItemForTransfer, Transfer, PdfSettings, BranchColors } from '@/lib/types';
+import { ItemForTransfer, Transfer, PdfSettings } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useTranslation } from '@/hooks/use-translation';
 import { format, parseISO } from 'date-fns';
@@ -16,8 +17,6 @@ export const TransmitReportPdf = ({ transfer, items, settings, invoiceNumber, to
     const { t, language } = useTranslation();
     const useKurdish = language === 'ku';
     
-    const formattedDate = transfer.transferDate ? format(parseISO(transfer.transferDate), 'PPP') : 'N/A';
-    
     const titleTemplate = settings.titleTemplate || t('INVOICE') + ' #{invoiceNumber}';
     const finalTitle = titleTemplate
         .replace('{city}', transfer.destinationCity || '')
@@ -26,7 +25,7 @@ export const TransmitReportPdf = ({ transfer, items, settings, invoiceNumber, to
     return (
         <ReportWrapper
             title={finalTitle}
-            date={formattedDate}
+            date={transfer.transferDate}
         >
             <section className="grid grid-cols-2 gap-4 my-4 text-[10px] leading-snug">
                  <div>
