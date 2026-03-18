@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { Loader2, Building2, Search, User, Mail, Smartphone, Truck, MapPin, ListChecks, Inbox } from 'lucide-react';
+import { Loader2, Building2, Search, User, Mail, Smartphone, Truck, MapPin, ListChecks, Inbox, ArrowLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 import { useAppContext } from '@/context/app-provider';
 import { useTranslation } from '@/hooks/use-translation';
@@ -18,7 +18,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 
@@ -28,13 +27,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
-  const { settings, itemCategories, transferItems, items, locations } = useAppContext();
+  const { settings, transferItems, items, locations } = useAppContext();
   const { toast } = useToast();
   const router = useRouter();
 
-  // Search state for Location Audit
+  // Dialog State
+  const [activeTransmissionCity, setActiveTransmissionCity] = useState<string | null>(null);
   const [locationSearchQuery, setLocationSearchQuery] = useState('');
-  const [selectedCityTab, setSelectedCityTab] = useState('Erbil');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,21 +61,17 @@ export default function LoginPage() {
   }, [settings.loginBackgroundEmbed]);
 
   const branches = [
-    { name: 'Erbil', code: 'EBL-01', desc: 'Main Logistics Hub & Distribution Center' },
-    { name: 'Baghdad', code: 'BGW-02', desc: 'Central Operations & Inventory Node' },
-    { name: 'Diwan', code: 'DWN-03', desc: 'Regional Warehouse & Transit Station' },
-    { name: 'Dohuk', code: 'DHK-04', desc: 'Northern Gateway & Cargo Terminal' }
+    { name: 'Erbil', code: 'EBL-01', desc: 'Main Logistics Hub & Distribution Center', color: 'border-orange-500/30' },
+    { name: 'Baghdad', code: 'BGW-02', desc: 'Central Operations & Inventory Node', color: 'border-blue-500/30' },
+    { name: 'Diwan', code: 'DWN-03', desc: 'Regional Warehouse & Transit Station', color: 'border-emerald-500/30' },
+    { name: 'Dohuk', code: 'DHK-04', desc: 'Northern Gateway & Cargo Terminal', color: 'border-purple-500/30' }
   ];
 
   // Logic for Transmission Lists (Staged Items)
-  const stagedItemsByCity = useMemo(() => {
-    const cities = ["Erbil", "Baghdad", "Diwan", "Dohuk"];
-    const map: Record<string, any[]> = {};
-    cities.forEach(city => {
-      map[city] = transferItems.filter(item => !item.transferId && item.destination === city);
-    });
-    return map;
-  }, [transferItems]);
+  const stagedItemsForCity = useMemo(() => {
+    if (!activeTransmissionCity) return [];
+    return transferItems.filter(item => !item.transferId && item.destination === activeTransmissionCity);
+  }, [transferItems, activeTransmissionCity]);
 
   // Logic for Location Search
   const locationResults = useMemo(() => {
@@ -172,154 +167,179 @@ export default function LoginPage() {
       </header>
 
       {/* MAIN CONTENT AREA */}
-      <main className="relative z-10 flex-1 w-full max-w-7xl mx-auto p-4 md:p-8 space-y-12">
+      <main className="relative z-10 flex-1 w-full max-w-7xl mx-auto p-4 md:p-8 flex flex-col justify-center gap-12">
         
-        {/* HERO ACTIONS - CENTERED BUTTONS */}
-        <section className="text-center space-y-8 pt-12 animate-in fade-in slide-in-from-top-4 duration-1000">
+        {/* HERO ACTIONS - CENTERED COMMANDS */}
+        <section className="text-center space-y-10 animate-in fade-in slide-in-from-top-4 duration-1000 py-12">
           <div className="space-y-4">
             <Badge variant="outline" className="px-4 py-1 border-primary/30 text-primary font-black uppercase tracking-[0.3em] text-[10px] bg-primary/5">
-              Operational Integrity
+              Secure Terminal Node
             </Badge>
-            <h2 className="text-4xl md:text-6xl font-black tracking-tighter text-white uppercase italic">
-              Enterprise Resource <span className="text-primary not-italic">Management</span>
+            <h2 className="text-5xl md:text-7xl font-black tracking-tighter text-white uppercase italic">
+              LOGISTICS <span className="text-primary not-italic">COMMAND</span>
             </h2>
             <p className="max-w-2xl mx-auto text-sm md:text-base text-gray-300 font-medium leading-relaxed opacity-80">
-              Unified logistics, financial synchronization, and warehouse intelligence for high-performance corporate environments.
+              High-performance synchronization across the regional warehouse architecture. Access critical transmission lists and inventory positioning.
             </p>
           </div>
 
-          {/* TWO PRIMARY COMMAND BUTTONS */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Dialog>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+            {/* TRANSMISSION LISTS DIALOG */}
+            <Dialog onOpenChange={(open) => !open && setActiveTransmissionCity(null)}>
               <DialogTrigger asChild>
-                <Button size="lg" className="h-14 px-10 bg-primary/20 backdrop-blur-md border border-primary/30 hover:bg-primary/40 text-primary font-black uppercase tracking-widest text-xs shadow-2xl group">
-                  <ListChecks className="mr-3 w-5 h-5 group-hover:scale-110 transition-transform" />
+                <Button size="lg" className="h-16 px-12 bg-primary/20 backdrop-blur-md border border-primary/30 hover:bg-primary/40 text-primary font-black uppercase tracking-widest text-sm shadow-2xl group transition-all hover:scale-105">
+                  <ListChecks className="mr-3 w-6 h-6 group-hover:scale-110 transition-transform" />
                   Transmission Lists
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-4xl bg-card/68 backdrop-blur-xl border-primary/20 max-h-[85vh] overflow-hidden flex flex-col">
-                <DialogHeader>
-                  <DialogTitle className="text-lg flex items-center gap-2">
-                    <Truck className="w-5 h-5 text-primary" /> Transmission Intelligence
+              <DialogContent className="max-w-4xl bg-card/68 backdrop-blur-xl border-primary/20 max-h-[85vh] overflow-hidden flex flex-col p-0">
+                <DialogHeader className="p-6 pb-2">
+                  <DialogTitle className="text-xl flex items-center gap-2">
+                    <Truck className="w-6 h-6 text-primary" /> 
+                    {activeTransmissionCity ? `Transmission: ${activeTransmissionCity}` : "Regional Nodes"}
                   </DialogTitle>
-                  <DialogDescription className="text-xs uppercase tracking-widest opacity-60">Real-time staged items across regional terminals.</DialogDescription>
+                  <DialogDescription className="text-xs uppercase tracking-widest opacity-60">
+                    {activeTransmissionCity ? `Verifying staged cargo for ${activeTransmissionCity} terminal.` : "Select a regional hub to audit pending transmissions."}
+                  </DialogDescription>
                 </DialogHeader>
-                <Tabs defaultValue="Erbil" className="w-full flex-1 flex flex-col overflow-hidden">
-                  <TabsList className="bg-muted/30 p-1 rounded-xl mb-4 self-center">
-                    {["Erbil", "Baghdad", "Diwan", "Dohuk"].map(city => (
-                      <TabsTrigger key={city} value={city} className="text-[10px] font-black uppercase tracking-widest px-6 py-2">
-                        {city}
-                      </TabsTrigger>
-                    ))}
-                  </TabsList>
-                  {["Erbil", "Baghdad", "Diwan", "Dohuk"].map(city => (
-                    <TabsContent key={city} value={city} className="flex-1 overflow-auto pr-2 scrollbar-none">
-                      <div className="border rounded-xl bg-muted/10">
-                        <Table>
-                          <TableHeader className="bg-primary/10">
-                            <TableRow>
-                              <TableHead className="w-[50px] text-[9px] uppercase font-black">Select</TableHead>
-                              <TableHead className="text-[9px] uppercase font-black">Model Name</TableHead>
-                              <TableHead className="w-[80px] text-[9px] uppercase font-black text-center">QTY</TableHead>
-                              <TableHead className="w-[120px] text-[9px] uppercase font-black">Invoice #</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {stagedItemsByCity[city]?.length > 0 ? (
-                              stagedItemsByCity[city].map((item) => (
-                                <TableRow key={item.id} className="hover:bg-primary/5 transition-colors border-primary/5">
-                                  <TableCell className="p-4 text-center">
-                                    <Checkbox className="border-primary/30 data-[state=checked]:bg-primary" />
-                                  </TableCell>
-                                  <TableCell className="font-bold text-[11px] text-white/90">{item.model}</TableCell>
-                                  <TableCell className="text-center font-mono text-[11px] text-primary">{item.quantity}</TableCell>
-                                  <TableCell className="text-[10px] font-mono opacity-60">#{item.invoiceNo || 'PENDING'}</TableCell>
-                                </TableRow>
-                              ))
-                            ) : (
+                
+                <div className="flex-1 overflow-hidden p-6 pt-2 flex flex-col">
+                  {!activeTransmissionCity ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4">
+                      {["Erbil", "Baghdad", "Diwan", "Dohuk"].map((city) => (
+                        <Button 
+                          key={city} 
+                          variant="outline" 
+                          className="h-24 bg-muted/10 border-primary/10 hover:border-primary/40 hover:bg-primary/5 flex items-center justify-between px-8 text-lg font-black uppercase tracking-tighter group"
+                          onClick={() => setActiveTransmissionCity(city)}
+                        >
+                          {city}
+                          <ChevronRight className="w-5 h-5 opacity-40 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                        </Button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col h-full space-y-4">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="w-fit text-[9px] font-black uppercase tracking-widest opacity-60 hover:opacity-100 p-0"
+                        onClick={() => setActiveTransmissionCity(null)}
+                      >
+                        <ArrowLeft className="mr-2 w-3 h-3" /> Back to Nodes
+                      </Button>
+                      
+                      <div className="border rounded-xl bg-muted/10 overflow-hidden flex-1">
+                        <div className="max-h-[50vh] overflow-auto scrollbar-none">
+                          <Table>
+                            <TableHeader className="bg-primary/10 sticky top-0 z-10">
                               <TableRow>
-                                <TableCell colSpan={4} className="h-32 text-center">
-                                  <div className="flex flex-col items-center justify-center space-y-2 opacity-20">
-                                    <Inbox className="w-8 h-8" />
-                                    <p className="text-[10px] font-black uppercase tracking-widest">No Staged Items for {city}</p>
-                                  </div>
-                                </TableCell>
+                                <TableHead className="w-[50px] text-[9px] uppercase font-black">Audit</TableHead>
+                                <TableHead className="text-[9px] uppercase font-black">Model Designation</TableHead>
+                                <TableHead className="w-[80px] text-[9px] uppercase font-black text-center">QTY</TableHead>
+                                <TableHead className="w-[140px] text-[9px] uppercase font-black">Invoice #</TableHead>
                               </TableRow>
-                            )}
-                          </TableBody>
-                        </Table>
+                            </TableHeader>
+                            <TableBody>
+                              {stagedItemsForCity.length > 0 ? (
+                                stagedItemsForCity.map((item) => (
+                                  <TableRow key={item.id} className="hover:bg-primary/5 transition-colors border-primary/5">
+                                    <TableCell className="p-4 text-center">
+                                      <Checkbox className="border-primary/30 data-[state=checked]:bg-primary" />
+                                    </TableCell>
+                                    <TableCell className="font-bold text-[11px] text-white/90">{item.model}</TableCell>
+                                    <TableCell className="text-center font-mono text-[11px] text-primary">{item.quantity}</TableCell>
+                                    <TableCell className="text-[10px] font-mono opacity-60">#{item.invoiceNo || 'STAGING'}</TableCell>
+                                  </TableRow>
+                                ))
+                              ) : (
+                                <TableRow>
+                                  <TableCell colSpan={4} className="h-48 text-center">
+                                    <div className="flex flex-col items-center justify-center space-y-3 opacity-20">
+                                      <Inbox className="w-10 h-10" />
+                                      <p className="text-[10px] font-black uppercase tracking-widest">No Items Staged for {activeTransmissionCity}</p>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              )}
+                            </TableBody>
+                          </Table>
+                        </div>
                       </div>
-                    </TabsContent>
-                  ))}
-                </Tabs>
+                    </div>
+                  )}
+                </div>
               </DialogContent>
             </Dialog>
 
+            {/* LOCATION SEARCH DIALOG */}
             <Dialog>
               <DialogTrigger asChild>
-                <Button size="lg" variant="outline" className="h-14 px-10 bg-white/5 backdrop-blur-md border-white/10 hover:bg-white/10 text-white font-black uppercase tracking-widest text-xs shadow-2xl group">
-                  <MapPin className="mr-3 w-5 h-5 group-hover:scale-110 transition-transform text-primary" />
+                <Button size="lg" variant="outline" className="h-16 px-12 bg-white/5 backdrop-blur-md border-white/10 hover:bg-white/10 text-white font-black uppercase tracking-widest text-sm shadow-2xl group transition-all hover:scale-105">
+                  <MapPin className="mr-3 w-6 h-6 group-hover:scale-110 transition-transform text-primary" />
                   Location Search
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-3xl bg-card/68 backdrop-blur-xl border-primary/20 max-h-[85vh] overflow-hidden flex flex-col">
                 <DialogHeader>
-                  <DialogTitle className="text-lg flex items-center gap-2">
-                    <Search className="w-5 h-5 text-primary" /> Location Audit Engine
+                  <DialogTitle className="text-xl flex items-center gap-2">
+                    <Search className="w-6 h-6 text-primary" /> Inventory Positioning Audit
                   </DialogTitle>
-                  <DialogDescription className="text-xs uppercase tracking-widest opacity-60">Identify item positioning across all warehouse nodes.</DialogDescription>
+                  <DialogDescription className="text-[10px] uppercase tracking-widest opacity-60">Identify precise item coordinates across the operational architecture.</DialogDescription>
                 </DialogHeader>
                 
-                <div className="space-y-6 pt-4">
+                <div className="space-y-6 pt-4 flex-1 flex flex-col overflow-hidden">
                   <div className="relative">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary opacity-60" />
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary opacity-60" />
                     <Input 
                       placeholder="ENTER MODEL NAME OR SKU DESIGNATION..." 
                       value={locationSearchQuery}
                       onChange={(e) => setLocationSearchQuery(e.target.value)}
-                      className="h-12 pl-12 bg-muted/20 border-primary/20 text-xs font-black tracking-widest uppercase focus-visible:ring-primary"
+                      className="h-14 pl-12 bg-muted/20 border-primary/20 text-xs font-black tracking-widest uppercase focus-visible:ring-primary shadow-inner"
                     />
                   </div>
 
-                  <div className="border rounded-xl bg-muted/10 overflow-hidden">
-                    <Table>
-                      <TableHeader className="bg-primary/10">
-                        <TableRow>
-                          <TableHead className="text-[9px] uppercase font-black">Designation</TableHead>
-                          <TableHead className="text-[9px] uppercase font-black">Warehouse Node</TableHead>
-                          <TableHead className="w-[80px] text-[9px] uppercase font-black text-center">QTY</TableHead>
-                          <TableHead className="w-[120px] text-[9px] uppercase font-black">Invoice Link</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {locationResults.length > 0 ? (
-                          locationResults.map((item) => (
-                            <TableRow key={item.id} className="hover:bg-primary/5 transition-colors border-primary/5">
-                              <TableCell className="font-bold text-[11px] text-white/90">{item.model}</TableCell>
-                              <TableCell>
-                                <Badge variant="outline" className="border-primary/30 text-primary bg-primary/5 text-[9px] font-black uppercase">
-                                  <MapPin className="mr-1 w-2 h-2" /> {item.locationName}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-center font-mono text-[11px] text-primary">{item.quantity}</TableCell>
-                              <TableCell className="text-[10px] font-mono opacity-60">#{item.invoiceNo}</TableCell>
-                            </TableRow>
-                          ))
-                        ) : (
+                  <div className="border rounded-xl bg-muted/10 overflow-hidden flex-1">
+                    <div className="max-h-[55vh] overflow-auto scrollbar-none">
+                      <Table>
+                        <TableHeader className="bg-primary/10 sticky top-0 z-10">
                           <TableRow>
-                            <TableCell colSpan={4} className="h-48 text-center">
-                              <div className="flex flex-col items-center justify-center space-y-3 opacity-20">
-                                <Search className="w-10 h-10" />
-                                <div className="space-y-1">
-                                  <p className="text-[10px] font-black uppercase tracking-[0.2em]">Audit Sequence Ready</p>
-                                  <p className="text-[8px] font-bold opacity-60 uppercase">Enter search criteria to begin nexus verification.</p>
-                                </div>
-                              </div>
-                            </TableCell>
+                            <TableHead className="text-[9px] uppercase font-black">Model Designation</TableHead>
+                            <TableHead className="text-[9px] uppercase font-black">Position</TableHead>
+                            <TableHead className="w-[80px] text-[9px] uppercase font-black text-center">QTY</TableHead>
+                            <TableHead className="w-[140px] text-[9px] uppercase font-black">Linked Invoice</TableHead>
                           </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
+                        </TableHeader>
+                        <TableBody>
+                          {locationResults.length > 0 ? (
+                            locationResults.map((item) => (
+                              <TableRow key={item.id} className="hover:bg-primary/5 transition-colors border-primary/5">
+                                <TableCell className="font-bold text-[11px] text-white/90 py-4">{item.model}</TableCell>
+                                <TableCell>
+                                  <Badge variant="outline" className="border-primary/30 text-primary bg-primary/5 text-[9px] font-black uppercase px-2 py-0.5">
+                                    <MapPin className="mr-1 w-2.5 h-2.5" /> {item.locationName}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-center font-mono text-[11px] text-primary">{item.quantity}</TableCell>
+                                <TableCell className="text-[10px] font-mono opacity-60">#{item.invoiceNo}</TableCell>
+                              </TableRow>
+                            ))
+                          ) : (
+                            <TableRow>
+                              <TableCell colSpan={4} className="h-64 text-center">
+                                <div className="flex flex-col items-center justify-center space-y-4 opacity-20">
+                                  <Search className="w-12 h-12" />
+                                  <div className="space-y-1">
+                                    <p className="text-[11px] font-black uppercase tracking-[0.3em]">Audit Sequence Ready</p>
+                                    <p className="text-[9px] font-bold opacity-60 uppercase">Enter search parameters to initiate nexus scan.</p>
+                                  </div>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
                   </div>
                 </div>
               </DialogContent>
@@ -327,139 +347,37 @@ export default function LoginPage() {
           </div>
         </section>
 
-        {/* SECTION 1: BRANCHES */}
-        <section className="space-y-6">
+        {/* BOTTOM SECTION: BRANCHES */}
+        <section className="space-y-8 pb-12">
           <div className="flex items-center gap-4">
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-            <h3 className="text-xs font-black uppercase tracking-[0.4em] text-primary whitespace-nowrap">Global Branch Nodes</h3>
+            <h3 className="text-[10px] font-black uppercase tracking-[0.5em] text-primary whitespace-nowrap opacity-60">Regional Operational Nodes</h3>
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {branches.map((branch, i) => (
-              <Card key={branch.name} className="bg-card/68 backdrop-blur-md border-primary/10 hover:border-primary/40 transition-all duration-500 hover:-translate-y-1 group">
+              <Card key={branch.name} className={cn("bg-card/68 backdrop-blur-md border border-white/5 hover:border-primary/40 transition-all duration-500 hover:-translate-y-2 group cursor-default", branch.color)}>
                 <CardHeader className="pb-2">
                   <div className="flex justify-between items-start">
-                    <Building2 className="w-5 h-5 text-primary opacity-60 group-hover:opacity-100 transition-opacity" />
-                    <span className="text-[9px] font-mono text-muted-foreground opacity-50">{branch.code}</span>
+                    <Building2 className="w-6 h-6 text-primary opacity-60 group-hover:opacity-100 transition-opacity" />
+                    <span className="text-[10px] font-mono text-muted-foreground opacity-40">{branch.code}</span>
                   </div>
-                  <CardTitle className="text-lg font-black uppercase tracking-tight text-white">{branch.name}</CardTitle>
+                  <CardTitle className="text-xl font-black uppercase tracking-tight text-white mt-2">{branch.name}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-[11px] text-muted-foreground leading-snug">{branch.desc}</p>
+                  <p className="text-[11px] text-muted-foreground leading-snug font-medium opacity-80">{branch.desc}</p>
                 </CardContent>
                 <div className="h-1 w-0 bg-primary group-hover:w-full transition-all duration-700" />
               </Card>
             ))}
           </div>
         </section>
-
-        {/* SECTION 2: WAREHOUSE SEARCH */}
-        <section className="space-y-6">
-          <div className="flex items-center gap-4">
-            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-            <h3 className="text-xs font-black uppercase tracking-[0.4em] text-primary whitespace-nowrap">Warehouse Inventory Audit</h3>
-            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-          </div>
-
-          <Card className="bg-card/68 backdrop-blur-md border-primary/20 shadow-2xl overflow-hidden">
-            <CardHeader className="bg-primary/5 border-b border-primary/10">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Search className="w-4 h-4 text-foreground" /> Nexus Quick-Search
-              </CardTitle>
-              <CardDescription className="text-[10px]">Verify item status across the global inventory architecture.</CardDescription>
-            </CardHeader>
-            <CardContent className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="space-y-2">
-                <Label className="text-[9px] uppercase font-black tracking-widest opacity-60">Item Designation (Name)</Label>
-                <Input placeholder="e.g. Luxury Leather Sofa" className="bg-muted/30 border-primary/10 h-10 text-foreground" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[9px] uppercase font-black tracking-widest opacity-60">System SKU (Code)</Label>
-                <Input placeholder="e.g. SKU-9920-X" className="bg-muted/30 border-primary/10 h-10 text-foreground" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[9px] uppercase font-black tracking-widest opacity-60">Inventory Sector (Category)</Label>
-                <Select>
-                  <SelectTrigger className="bg-muted/30 border-primary/10 h-10 text-foreground">
-                    <SelectValue placeholder="Select Category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {itemCategories.map(cat => (
-                      <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-            <CardFooter className="bg-primary/5 p-4 flex justify-end">
-              <Button variant="outline" className="font-black uppercase tracking-widest text-[10px] border-primary/20 hover:bg-primary hover:text-white transition-all">
-                Execute Inventory Query
-              </Button>
-            </CardFooter>
-          </Card>
-        </section>
-
-        {/* SECTION 3: ABOUT ME */}
-        <section className="space-y-6 pb-12">
-          <div className="flex items-center gap-4">
-            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-            <h3 className="text-xs font-black uppercase tracking-[0.4em] text-primary whitespace-nowrap">Architect Identity</h3>
-            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-          </div>
-
-          <Card className="bg-card/68 backdrop-blur-md border-white/5 overflow-hidden">
-            <div className="grid grid-cols-1 lg:grid-cols-12">
-              <div className="lg:col-span-4 relative h-64 lg:h-auto bg-muted/20">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Avatar className="w-40 h-40 border-4 border-primary/20 shadow-2xl">
-                    <AvatarImage src="" />
-                    <AvatarFallback className="bg-primary/10 text-primary">
-                      <User className="w-20 h-20 opacity-20" />
-                    </AvatarFallback>
-                  </Avatar>
-                </div>
-                <div className="absolute bottom-4 left-4 right-4 text-center">
-                  <Badge className="bg-primary text-white uppercase font-black text-[8px] tracking-widest">System Owner</Badge>
-                </div>
-              </div>
-              <div className="lg:col-span-8 p-8 space-y-6">
-                <div>
-                  <h4 className="text-2xl font-black uppercase tracking-tighter text-white">Project Engineering <span className="text-primary">Leadership</span></h4>
-                  <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
-                    This terminal is the culmination of advanced full-stack engineering, designed to bridge the gap between traditional warehouse operations and digital real-time intelligence. Every module is optimized for high-throughput operational environments.
-                  </p>
-                </div>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-white/5">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                      <Mail className="w-4 h-4" />
-                    </div>
-                    <div className="space-y-0.5">
-                      <p className="text-[9px] uppercase font-black opacity-40">Direct Contact</p>
-                      <p className="text-xs font-bold text-white">architect@ashley-erp.com</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                      <Smartphone className="w-4 h-4" />
-                    </div>
-                    <div className="space-y-0.5">
-                      <p className="text-[9px] uppercase font-black opacity-40">Technical Liaison</p>
-                      <p className="text-xs font-bold text-white">+964 (0) 7XX XXX XXXX</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </Card>
-        </section>
       </main>
 
       {/* FOOTER */}
-      <footer className="relative z-10 py-6 text-center border-t border-white/5 bg-black/40">
-        <p className="text-[9px] font-black uppercase tracking-[0.5em] text-muted-foreground opacity-40">
+      <footer className="relative z-10 py-8 text-center border-t border-white/5 bg-black/40">
+        <p className="text-[10px] font-black uppercase tracking-[0.6em] text-muted-foreground opacity-30">
           © {new Date().getFullYear()} Ashley Enterprise Logistics • Secured Infrastructure Node
         </p>
       </footer>
