@@ -5,13 +5,16 @@ import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useAppContext } from '@/context/app-provider';
 import { Download, DatabaseBackup, AlertCircle } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
 
 export function BackupReminder() {
   const [isOpen, setIsOpen] = useState(false);
   const { exportStateAsJson, isLoading } = useAppContext();
+  const { user } = useAuth();
 
   useEffect(() => {
-    if (isLoading) return;
+    // Only show reminder if data is loaded AND a user is actually logged in
+    if (isLoading || !user) return;
 
     const lastBackup = localStorage.getItem('ashley_last_backup_date');
     const now = new Date().getTime();
@@ -23,7 +26,7 @@ export function BackupReminder() {
       const timer = setTimeout(() => setIsOpen(true), 3000);
       return () => clearTimeout(timer);
     }
-  }, [isLoading]);
+  }, [isLoading, user]);
 
   const handleDownload = () => {
     exportStateAsJson();

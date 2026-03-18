@@ -85,6 +85,11 @@ export function AppSidebar() {
 
   const side = language === 'ku' ? 'right' : 'left';
 
+  const handleLogout = async () => {
+    await logout();
+    router.push('/login');
+  };
+
   const navigation = [
     {
       items: [
@@ -205,7 +210,7 @@ export function AppSidebar() {
 
             <Button 
                 variant="ghost" 
-                onClick={logout}
+                onClick={handleLogout}
                 className="h-10 w-full bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/20 rounded-xl flex flex-col items-center justify-center p-0 transition-all"
             >
                 <LogOut className="w-3.5 h-3.5" />
