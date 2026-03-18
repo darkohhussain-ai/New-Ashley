@@ -1,4 +1,3 @@
-
 'use client';
 
 import './globals.css';
@@ -61,12 +60,12 @@ function DynamicThemeInjector() {
 
 function CustomFontInjector() {
     const { settings } = useAppContext();
-    const fontBody = settings.fontFamily || 'Arial';
+    const fontBody = settings.fontFamily || 'Inter, system-ui, sans-serif';
     const customFont = settings.customFont;
 
     let fontStyles = `
         :root {
-            --font-body: "${fontBody}", sans-serif;
+            --font-body: "${fontBody}";
         }
     `;
 
@@ -77,7 +76,7 @@ function CustomFontInjector() {
                 src: url(${customFont});
             }
             :root {
-                --font-body: 'CustomAppFont', "${fontBody}", sans-serif;
+                --font-body: 'CustomAppFont', "${fontBody}";
             }
         `;
     }
@@ -141,7 +140,6 @@ function AppContent({ children }: { children: React.ReactNode }) {
             {!isLoginPage && <AppSidebar />}
             
             <SidebarInset className="flex flex-col relative bg-transparent overflow-hidden">
-                {/* Floating Mobile Trigger */}
                 {!isLoginPage && (
                     <div className={cn(
                         "fixed top-4 z-50 md:hidden",

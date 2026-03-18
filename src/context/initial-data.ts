@@ -1,4 +1,3 @@
-
 import { Employee, User, Role, AppSettings, AllPdfSettings, PdfSettings, ThemeColors, BranchColors, AnswerOption } from '@/lib/types';
 import { adminPermissions, adminAssistantPermissions, viewerPermissions, employeePermissions, financeManagerPermissions, inventoryManagerPermissions, hrManagerPermissions } from '@/lib/permissions';
 import en from '@/locales/en.json';
@@ -118,8 +117,8 @@ export const initialSettings: AppSettings = {
     loginButtonColor: null,
     dashboardBanner: "https://images.unsplash.com/photo-1685973323988-666a38e0acc2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
     dashboardBannerHeight: 150,
-    newsTickerText: 'Welcome to the Ashley DRP Manager! This is your scrolling news ticker for corporate announcements.',
-    fontFamily: 'Arial',
+    newsTickerText: 'Welcome to the ASHLEY STAFF Manager!',
+    fontFamily: 'Inter, system-ui, sans-serif',
     customFont: null,
     printHeaderImage: null,
     printFooterImage: null,

@@ -1,11 +1,9 @@
-
 'use client';
 
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
-  LayoutDashboard,
   CreditCard,
   PackagePlus,
   Box,
@@ -18,7 +16,6 @@ import {
   Home,
   ArrowLeft,
   Printer,
-  Languages,
   Sun,
   Moon,
   LogOut,
@@ -51,7 +48,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
 
 function DateTimeDisplay() {
   const [time, setTime] = React.useState<Date | null>(null);
@@ -70,7 +66,7 @@ function DateTimeDisplay() {
         <Calendar className="w-2.5 h-2.5" />
         <span>{format(time, 'MMM d, yyyy')}</span>
       </div>
-      <div className="flex items-center gap-1.5 text-[12px] font-black tabular-nums tracking-widest">
+      <div className="flex items-center gap-1.5 text-[12px] font-medium tracking-widest">
         <Clock className="w-3 h-3" />
         <span>{format(time, 'HH:mm:ss')}</span>
       </div>
@@ -92,7 +88,7 @@ export function AppSidebar() {
   const navigation = [
     {
       items: [
-        { title: 'Dashboard', icon: LayoutDashboard, href: '/', permission: 'admin:all' },
+        { title: 'Dashboard', icon: Home, href: '/', permission: 'admin:all' },
         { title: 'ashley_employees_management', icon: CreditCard, href: '/ashley-expenses', permission: 'page:ashley-expenses:view' },
         { title: 'transmit_cargo', icon: PackagePlus, href: '/transmit', permission: 'page:transmit:view' },
         { title: 'placement_storage', icon: Box, href: '/items', permission: 'page:items:view' },
@@ -114,20 +110,28 @@ export function AppSidebar() {
         <div className="flex flex-col items-center gap-4 animate-in fade-in slide-in-from-top-2 duration-700">
             {settings.appLogo && (
                 <div className={cn(
-                    "relative bg-white rounded-2xl p-2 shadow-2xl ring-4 ring-black/5 overflow-hidden group/logo",
-                    "w-full h-28 group-data-[collapsible=icon]:w-10 group-data-[collapsible=icon]:h-10"
+                    "relative flex items-center justify-center transition-all duration-500",
+                    "w-full px-2 group-data-[collapsible=icon]:px-0"
                 )}>
-                    <Image
-                        src={settings.appLogo}
-                        alt="Logo"
-                        fill
-                        className="object-contain transition-transform group-hover/logo:scale-110 duration-500"
-                        unoptimized
-                    />
+                    <div className="relative w-12 h-12 bg-white rounded-xl p-1.5 shadow-xl ring-2 ring-primary/20 overflow-hidden">
+                        <Image
+                            src={settings.appLogo}
+                            alt="Logo"
+                            fill
+                            className="object-contain"
+                            unoptimized
+                        />
+                    </div>
+                    {state === "expanded" && (
+                        <div className="ml-3 flex flex-col items-start overflow-hidden">
+                            <span className="text-[11px] font-bold uppercase tracking-widest text-primary whitespace-nowrap">ASHLEY STAFF</span>
+                            <span className="text-[8px] font-medium uppercase opacity-40">System Node</span>
+                        </div>
+                    )}
                 </div>
             )}
             {state === "expanded" && (
-                <div className="animate-in fade-in duration-500">
+                <div className="animate-in fade-in duration-500 mt-2">
                     <DateTimeDisplay />
                 </div>
             )}
@@ -138,13 +142,13 @@ export function AppSidebar() {
         <div className="px-4 py-4 group-data-[collapsible=icon]:px-2">
             <div className="bg-sidebar-accent/30 rounded-xl p-3 flex items-center gap-3 border border-sidebar-border shadow-inner group/user cursor-default group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-1">
                 <Avatar className="w-9 h-9 border-2 border-sidebar-border ring-2 ring-primary/30 group-hover/user:ring-primary transition-all group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:h-8">
-                    <AvatarFallback className="bg-primary/20 font-black text-[10px]">
+                    <AvatarFallback className="bg-primary/20 font-bold text-[10px]">
                         {user?.username?.charAt(0).toUpperCase()}
                     </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 overflow-hidden group-data-[collapsible=icon]:hidden">
-                    <p className="text-[12px] font-black uppercase tracking-widest truncate leading-tight">{user?.username}</p>
-                    <p className="text-[9px] font-bold opacity-40 uppercase tracking-tighter">Authorized Operator</p>
+                    <p className="text-[11px] font-bold uppercase tracking-wider truncate leading-tight">{user?.username}</p>
+                    <p className="text-[8px] font-medium opacity-40 uppercase tracking-tighter">Verified Access</p>
                 </div>
             </div>
         </div>
@@ -153,13 +157,13 @@ export function AppSidebar() {
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="h-10 w-full bg-sidebar-accent/20 hover:bg-sidebar-accent border border-sidebar-border rounded-xl flex flex-col items-center justify-center p-0 transition-all hover:border-primary/50">
-                        <span className="text-[10px] font-black uppercase tracking-widest">{language === 'ku' ? 'KU' : 'EN'}</span>
+                        <span className="text-[10px] font-bold uppercase tracking-widest">{language === 'ku' ? 'KU' : 'EN'}</span>
                         <span className="text-[7px] opacity-40 uppercase tracking-tighter group-data-[collapsible=icon]:hidden">{t('language')}</span>
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="center" className="bg-popover border-border text-popover-foreground">
-                    <DropdownMenuItem onClick={() => setLanguage('en')} className="text-[12px] font-bold">English</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setLanguage('ku')} className="text-[12px] font-bold">کوردی</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setLanguage('en')} className="text-[11px] font-bold">English</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setLanguage('ku')} className="text-[11px] font-bold">کوردی</DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
 
@@ -223,18 +227,18 @@ export function AppSidebar() {
                         isActive={pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))}
                         tooltip={t(item.title)}
                         className={cn(
-                            "rounded-xl transition-all duration-300 hover:bg-sidebar-accent h-11 border border-transparent",
+                            "rounded-xl transition-all duration-300 hover:bg-sidebar-accent h-11 border border-transparent flex items-center justify-start group-data-[collapsible=icon]:justify-center",
                             "data-[active=true]:bg-sidebar-primary data-[active=true]:text-sidebar-primary-foreground data-[active=true]:shadow-lg",
-                            "group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:h-11"
+                            "group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:h-11"
                         )}
                       >
-                        <Link href={item.href} className="flex items-center gap-3 px-3 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0">
+                        <Link href={item.href} className="flex items-center gap-3 px-3 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center">
                           <item.icon className={cn(
                               "w-4 h-4 shrink-0 transition-transform duration-300",
                               pathname === item.href ? "scale-110" : "opacity-70"
                           )} />
                           <span 
-                            className="font-black truncate group-data-[collapsible=icon]:hidden"
+                            className="font-bold truncate group-data-[collapsible=icon]:hidden"
                             style={{ 
                                 fontSize: 'var(--sidebar-custom-font-size)', 
                                 textTransform: 'var(--sidebar-text-transform)' as any 
