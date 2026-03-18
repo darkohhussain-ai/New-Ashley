@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -5,20 +6,32 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Truck, ArrowLeft, Inbox, ChevronRight } from 'lucide-react';
+import { Truck, ArrowLeft, Inbox, ChevronRight, ClipboardList, FileText, ListChecks } from 'lucide-react';
 import Image from 'next/image';
 import { useAppContext } from '@/context/app-provider';
 import { useTranslation } from '@/hooks/use-translation';
+import { Badge } from '@/components/ui/badge';
+import { format, parseISO } from 'date-fns';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function PublicTransmitPage() {
   const { t } = useTranslation();
-  const { settings, transferItems } = useAppContext();
+  const { settings, transferItems, transfers } = useAppContext();
   const [activeCity, setActiveCity] = useState<string | null>(null);
 
+  // Staged Items (Not yet assigned to a transfer)
   const stagedItems = useMemo(() => {
     if (!activeCity) return [];
     return transferItems.filter(item => !item.transferId && item.destination === activeCity);
   }, [transferItems, activeCity]);
+
+  // Completed Transfers (Archived slips)
+  const cityTransfers = useMemo(() => {
+    if (!activeCity) return [];
+    return transfers
+      .filter(t => t.destinationCity === activeCity)
+      .sort((a, b) => parseISO(b.transferDate).getTime() - parseISO(a.transferDate).getTime());
+  }, [transfers, activeCity]);
 
   const backgroundEmbedSrc = useMemo(() => {
     if (!settings.loginBackgroundEmbed) return '';
@@ -29,7 +42,7 @@ export default function PublicTransmitPage() {
 
   return (
     <div className="relative min-h-screen w-full flex flex-col bg-slate-100 overflow-x-hidden">
-      {/* Cinematic Background Layer */}
+      {/* Background Layer */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
         {settings.loginBackgroundEmbed ? (
           <div className="relative w-full h-full overflow-hidden">
@@ -57,7 +70,7 @@ export default function PublicTransmitPage() {
                 <Image src={settings.appLogo} alt="Logo" fill className="object-contain" unoptimized />
               </div>
             )}
-            <h1 className="text-[12px] font-bold uppercase tracking-wider text-slate-900">Transmission Lists / لیستی گواستنەوەکان</h1>
+            <h1 className="text-[12px] font-bold uppercase tracking-wider text-slate-900">ASHLEY STAFF | Transmission Center</h1>
           </div>
           <Link href="/login">
             <Button variant="ghost" size="sm" className="text-[10px] font-bold uppercase tracking-widest text-slate-600 hover:text-slate-900">
@@ -67,24 +80,24 @@ export default function PublicTransmitPage() {
         </div>
       </header>
 
-      <main className="relative z-10 flex-1 w-full max-w-5xl mx-auto p-4 md:p-8">
-        <div className="bg-white/80 backdrop-blur-xl border-2 border-white/60 rounded-2xl shadow-2xl overflow-hidden min-h-[60vh] flex flex-col animate-in fade-in zoom-in-95 duration-500">
+      <main className="relative z-10 flex-1 w-full max-w-6xl mx-auto p-4 md:p-8">
+        <div className="bg-white/80 backdrop-blur-xl border-2 border-white/60 rounded-2xl shadow-2xl overflow-hidden min-h-[70vh] flex flex-col animate-in fade-in zoom-in-95 duration-500">
           {!activeCity ? (
             <div className="p-8 space-y-8 flex-1 flex flex-col justify-center">
               <div className="text-center space-y-2">
-                <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-amber-600">Select Destination / شار هەڵبژێرە</h2>
+                <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-amber-600">Select City / شار هەڵبژێرە</h2>
                 <div className="h-0.5 w-12 bg-amber-500/40 mx-auto rounded-full" />
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto w-full">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
                 {["Erbil", "Baghdad", "Diwan", "Dohuk"].map((city) => (
                   <Button 
                     key={city} 
                     variant="outline" 
-                    className="h-20 bg-slate-50/50 border-2 border-white/60 hover:border-primary/40 hover:bg-primary/5 flex items-center justify-between px-8 text-sm font-bold uppercase tracking-tight text-slate-900 group transition-all"
+                    className="h-24 bg-white/50 border-2 border-white/60 hover:border-primary/40 hover:bg-white flex flex-col items-center justify-center gap-1 text-sm font-bold uppercase tracking-tight text-slate-900 shadow-sm transition-all hover:scale-[1.02]"
                     onClick={() => setActiveCity(city)}
                   >
                     {city}
-                    <ChevronRight className="w-5 h-5 opacity-40 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                    <span className="text-[10px] font-medium opacity-40">View Cargo</span>
                   </Button>
                 ))}
               </div>
@@ -93,58 +106,125 @@ export default function PublicTransmitPage() {
             <div className="flex flex-col h-full">
               <header className="p-6 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <Truck className="w-5 h-5 text-primary" />
+                  <div className="p-2 bg-amber-500/10 rounded-lg border border-amber-500/20">
+                    <Truck className="w-5 h-5 text-amber-600" />
                   </div>
                   <div>
-                    <h2 className="text-sm font-bold uppercase tracking-widest text-slate-900">{activeCity} Node</h2>
-                    <p className="text-[10px] text-slate-500 uppercase font-bold">Staged Cargo Audit</p>
+                    <h2 className="text-sm font-bold uppercase tracking-widest text-slate-900">{activeCity} Terminal</h2>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase">Logistics Oversight</p>
                   </div>
                 </div>
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="text-[10px] font-bold uppercase tracking-widest text-slate-600 hover:text-slate-900"
+                  className="text-[10px] font-bold uppercase tracking-widest text-slate-600"
                   onClick={() => setActiveCity(null)}
                 >
-                  <ArrowLeft className="mr-2 w-3.5 h-3.5" /> Back / گەڕانەوە
+                  <ArrowLeft className="mr-2 w-3.5 h-3.5" /> Change City
                 </Button>
               </header>
               
-              <div className="flex-1 p-0 overflow-auto">
-                <Table>
-                  <TableHeader className="bg-slate-100/50 sticky top-0 z-10 border-b border-slate-200">
-                    <TableRow>
-                      <TableHead className="w-[60px] text-[10px] uppercase font-bold text-slate-900 text-center">Audit</TableHead>
-                      <TableHead className="text-[10px] uppercase font-bold text-slate-900">Model Name</TableHead>
-                      <TableHead className="w-[100px] text-[10px] uppercase font-bold text-slate-900 text-center">QTY</TableHead>
-                      <TableHead className="w-[160px] text-[10px] uppercase font-bold text-slate-900">Invoice Ref</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {stagedItems.length > 0 ? (
-                      stagedItems.map((item) => (
-                        <TableRow key={item.id} className="hover:bg-slate-50 transition-colors border-slate-100">
-                          <TableCell className="p-4 text-center">
-                            <Checkbox className="border-slate-300 data-[state=checked]:bg-primary" />
-                          </TableCell>
-                          <TableCell className="font-bold text-[12px] text-slate-900">{item.model}</TableCell>
-                          <TableCell className="text-center font-bold text-[12px] text-primary">{item.quantity}</TableCell>
-                          <TableCell className="text-[11px] text-slate-500 font-bold">#{item.invoiceNo || 'PENDING'}</TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={4} className="h-96 text-center">
-                          <div className="flex flex-col items-center justify-center space-y-4 opacity-20">
-                            <Inbox className="w-12 h-12 text-slate-900" />
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-900">Empty Sector for {activeCity}</p>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
+              <div className="flex-1">
+                <Tabs defaultValue="staged" className="w-full">
+                  <div className="px-6 pt-4">
+                    <TabsList className="bg-slate-100/50 p-1 border border-slate-200 h-10 w-full max-w-md">
+                      <TabsTrigger value="staged" className="text-[10px] font-bold uppercase flex-1">
+                        <ClipboardList className="w-3.5 h-3.5 mr-2" /> Staged Cargo ({stagedItems.length})
+                      </TabsTrigger>
+                      <TabsTrigger value="history" className="text-[10px] font-bold uppercase flex-1">
+                        <FileText className="w-3.5 h-3.5 mr-2" /> Slips & Invoices ({cityTransfers.length})
+                      </TabsTrigger>
+                    </TabsList>
+                  </div>
+
+                  <TabsContent value="staged" className="m-0 p-0 animate-in fade-in duration-300">
+                    <div className="overflow-auto">
+                      <Table>
+                        <TableHeader className="bg-slate-100/50 sticky top-0 z-10 border-b border-slate-200">
+                          <TableRow>
+                            <TableHead className="w-[60px] text-[10px] uppercase font-bold text-slate-900 text-center">A</TableHead>
+                            <TableHead className="w-[60px] text-[10px] uppercase font-bold text-slate-900 text-center">B</TableHead>
+                            <TableHead className="text-[10px] uppercase font-bold text-slate-900">Model Identity</TableHead>
+                            <TableHead className="w-[80px] text-[10px] uppercase font-bold text-slate-900 text-center">QTY</TableHead>
+                            <TableHead className="w-[140px] text-[10px] uppercase font-bold text-slate-900">Ref Invoice</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {stagedItems.length > 0 ? (
+                            stagedItems.map((item) => (
+                              <TableRow key={item.id} className="hover:bg-slate-50 transition-colors border-slate-100 h-14">
+                                <TableCell className="text-center">
+                                  <Checkbox className="border-slate-300 data-[state=checked]:bg-amber-500" />
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <Checkbox className="border-slate-300 data-[state=checked]:bg-emerald-500" />
+                                </TableCell>
+                                <TableCell className="font-bold text-[12px] text-slate-900">{item.model}</TableCell>
+                                <TableCell className="text-center font-bold text-[12px] text-primary">{item.quantity}</TableCell>
+                                <TableCell className="text-[11px] text-slate-500 font-bold uppercase">
+                                  {item.invoiceNo ? `#${item.invoiceNo}` : <span className="opacity-30">PENDING</span>}
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          ) : (
+                            <TableRow>
+                              <TableCell colSpan={5} className="h-80 text-center">
+                                <div className="flex flex-col items-center justify-center space-y-4 opacity-20">
+                                  <Inbox className="w-14 h-14 text-slate-900" />
+                                  <p className="text-[11px] font-bold uppercase tracking-widest text-slate-900">No staged cargo for {activeCity}</p>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="history" className="m-0 p-0 animate-in fade-in duration-300">
+                    <div className="overflow-auto">
+                      <Table>
+                        <TableHeader className="bg-slate-100/50 sticky top-0 z-10 border-b border-slate-200">
+                          <TableRow>
+                            <TableHead className="w-[120px] text-[10px] uppercase font-bold text-slate-900">Date</TableHead>
+                            <TableHead className="text-[10px] uppercase font-bold text-slate-900">Slip Name</TableHead>
+                            <TableHead className="w-[100px] text-[10px] uppercase font-bold text-slate-900 text-center">Items</TableHead>
+                            <TableHead className="w-[140px] text-[10px] uppercase font-bold text-slate-900 text-right">Invoice ID</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {cityTransfers.length > 0 ? (
+                            cityTransfers.map((transfer) => (
+                              <TableRow key={transfer.id} className="hover:bg-slate-50 transition-colors border-slate-100 h-14">
+                                <TableCell className="text-[11px] font-bold text-slate-500">
+                                  {format(parseISO(transfer.transferDate), 'dd/MM/yyyy')}
+                                </TableCell>
+                                <TableCell className="font-bold text-[12px] text-slate-900">
+                                  {transfer.cargoName}
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <Badge variant="outline" className="text-[10px] font-bold">{transfer.itemIds.length}</Badge>
+                                </TableCell>
+                                <TableCell className="text-right text-[11px] font-mono font-bold text-primary">
+                                  #{transfer.invoiceNumber.toString().padStart(6, '0')}
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          ) : (
+                            <TableRow>
+                              <TableCell colSpan={4} className="h-80 text-center">
+                                <div className="flex flex-col items-center justify-center space-y-4 opacity-20">
+                                  <ListChecks className="w-14 h-14 text-slate-900" />
+                                  <p className="text-[11px] font-bold uppercase tracking-widest text-slate-900">No archived slips for {activeCity}</p>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </div>
             </div>
           )}
@@ -153,7 +233,7 @@ export default function PublicTransmitPage() {
 
       <footer className="relative z-10 py-8 text-center border-t border-slate-200 bg-white/40 backdrop-blur-sm mt-auto">
         <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-500">
-          ASHLEY STAFF LOGISTICS NODE
+          ASHLEY STAFF LOGISTICS NODE | GLOBAL TRANSMIT
         </p>
       </footer>
     </div>

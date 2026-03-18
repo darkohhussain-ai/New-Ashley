@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -7,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Loader2, Search, ListChecks, ArrowRight } from 'lucide-react';
+import { Loader2, Search, ListChecks, ArrowRight, ShieldCheck } from 'lucide-react';
 import Image from 'next/image';
 import { useAppContext } from '@/context/app-provider';
 import { useTranslation } from '@/hooks/use-translation';
@@ -29,13 +30,13 @@ export default function LoginPage() {
     setIsLoading(false);
 
     if (success) {
-      toast({ title: 'Access Granted', description: 'Welcome back.' });
+      toast({ title: 'Access Granted', description: 'Terminal Synchronized.' });
       router.push('/');
     } else {
       toast({
         variant: 'destructive',
         title: 'Authentication Failed',
-        description: 'Invalid credentials.',
+        description: 'Invalid Credentials.',
       });
     }
   };
@@ -77,7 +78,7 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] z-[1]" />
       </div>
 
-      {/* Modern Metal Header Bar - LIGHT */}
+      {/* Login Bar */}
       <header className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-xl border-b-2 border-white/60 shadow-md">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -126,31 +127,31 @@ export default function LoginPage() {
       <main className="relative z-10 flex-1 w-full max-w-7xl mx-auto p-4 md:p-8 flex flex-col justify-center items-center">
         <div className="flex flex-col gap-6 w-full max-w-md animate-in fade-in zoom-in-95 duration-700">
           
-          <Link href="/public-transmit" className="w-full">
+          <Link href="/public-transmit" className="w-full group">
             <Button 
               variant="outline" 
               size="lg" 
-              className="h-24 w-full bg-white/80 backdrop-blur-md border-2 border-white/60 hover:border-amber-500/40 hover:bg-amber-50/50 text-[13px] font-bold uppercase tracking-widest flex flex-col gap-1.5 shadow-xl transition-all hover:scale-[1.02] group"
+              className="h-28 w-full bg-white/80 backdrop-blur-md border-2 border-white/60 hover:border-amber-500/40 hover:bg-white text-[13px] font-bold uppercase tracking-widest flex flex-col gap-2 shadow-xl transition-all hover:scale-[1.02]"
             >
-              <div className="flex items-center gap-2 text-amber-600 group-hover:text-amber-700 transition-colors">
+              <div className="flex items-center gap-2 text-amber-600">
                 <ListChecks className="w-6 h-6" />
                 Transmission Lists
               </div>
-              <span className="text-[11px] font-medium text-slate-600 normal-case">لیستی گواستنەوەکان</span>
+              <span className="text-[11px] font-medium text-slate-500 normal-case">لیستی گواستنەوەکان</span>
             </Button>
           </Link>
 
-          <Link href="/public-inventory" className="w-full">
+          <Link href="/public-inventory" className="w-full group">
             <Button 
               variant="outline" 
               size="lg" 
-              className="h-24 w-full bg-white/80 backdrop-blur-md border-2 border-white/60 hover:border-emerald-500/40 hover:bg-emerald-50/50 text-[13px] font-bold uppercase tracking-widest flex flex-col gap-1.5 shadow-xl transition-all hover:scale-[1.02] group"
+              className="h-28 w-full bg-white/80 backdrop-blur-md border-2 border-white/60 hover:border-emerald-500/40 hover:bg-white text-[13px] font-bold uppercase tracking-widest flex flex-col gap-2 shadow-xl transition-all hover:scale-[1.02]"
             >
-              <div className="flex items-center gap-2 text-emerald-600 group-hover:text-emerald-700 transition-colors">
+              <div className="flex items-center gap-2 text-emerald-600">
                 <Search className="w-6 h-6" />
                 Inventory Audit
               </div>
-              <span className="text-[11px] font-medium text-slate-600 normal-case">پشکنینی کۆگا</span>
+              <span className="text-[11px] font-medium text-slate-500 normal-case">پشکنینی کۆگا</span>
             </Button>
           </Link>
         </div>
