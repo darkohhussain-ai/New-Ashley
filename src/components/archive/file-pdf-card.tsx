@@ -5,6 +5,7 @@ import { format, parseISO } from 'date-fns';
 import type { Employee, ExcelFile, Item, StorageLocation } from "@/lib/types";
 import { ReportWrapper } from "../reports/ReportWrapper";
 import { useTranslation } from "@/hooks/use-translation";
+import { cn } from "@/lib/utils";
 
 type FileReportPdfProps = {
   file: ExcelFile;
@@ -15,54 +16,80 @@ type FileReportPdfProps = {
   themeColor: string;
 };
 
-export function FilePdfCard({ file, items, employee, locations, themeColor }: FileReportPdfProps) {
-    const { t } = useTranslation();
+export function FilePdfCard({ file, items, employee, locations }: FileReportPdfProps) {
+    const { t, language } = useTranslation();
+    const useKurdish = language === 'ku';
 
     const getLocationName = (id?: string) => locations?.find(l => l.id === id)?.name || 'N/A';
 
     return (
         <ReportWrapper
             title={file.storageName}
-            date={file.date ? format(parseISO(file.date), 'PPP') : 'N/A'}
+            date={file.date ? format(parseISO(file.date), 'dd/MM/yyyy') : 'N/A'}
         >
-            <div className="grid grid-cols-2 gap-4 mb-6 text-xs">
-                <div><p className="text-gray-500">{t('employee')}</p><p className="font-medium">{employee.name}</p></div>
-                <div><p className="text-gray-500">{t('source_location')}</p><p className="font-medium">{file.source}</p></div>
-                <div><p className="text-gray-500">{t('category_name')}</p><p className="font-medium">{file.categoryName}</p></div>
-                <div><p className="text-gray-500">{t('file_type')}</p><p className="font-medium">{file.type}</p></div>
+            <div className={cn("grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 text-[10px] uppercase font-bold tracking-tight", useKurdish && "text-right")} dir={useKurdish ? 'rtl' : 'ltr'}>
+                <div className="p-3 bg-slate-50 border rounded-xl">
+                    <p className="opacity-40 mb-1">{t('storekeeper')}</p>
+                    <p className="text-slate-900">{employee.name}</p>
+                </div>
+                <div className="p-3 bg-slate-50 border rounded-xl">
+                    <p className="opacity-40 mb-1">{t('source_location')}</p>
+                    <p className="text-slate-900">{file.source}</p>
+                </div>
+                <div className="p-3 bg-slate-50 border rounded-xl">
+                    <p className="opacity-40 mb-1">{t('category_name')}</p>
+                    <p className="text-slate-900">{file.categoryName}</p>
+                </div>
+                <div className="p-3 bg-slate-50 border rounded-xl">
+                    <p className="opacity-40 mb-1">{t('type')}</p>
+                    <p className="text-slate-900">{file.type}</p>
+                </div>
             </div>
 
-             <div className="overflow-x-auto">
-                <Table className="pdf-table">
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Model</TableHead>
-                            <TableHead>Qty</TableHead>
-                            <TableHead>Storage Status</TableHead>
-                            <TableHead>Condition</TableHead>
-                            <TableHead>Qty / Cond.</TableHead>
-                            <TableHead>Location</TableHead>
-                            <TableHead>Notes</TableHead>
+             <div className="overflow-x-auto border-2 border-slate-200 rounded-2xl shadow-sm">
+                <Table className="w-full">
+                    <TableHeader className="bg-slate-100">
+                        <TableRow className="hover:bg-transparent border-b-2 border-slate-200">
+                            <TableHead className="text-[9px] font-black text-slate-900 uppercase h-10 px-3">Model Identity</TableHead>
+                            <TableHead className="text-[9px] font-black text-slate-900 uppercase h-10 px-3 text-center w-16">QTY</TableHead>
+                            <TableHead className="text-[9px] font-black text-slate-900 uppercase h-10 px-3 text-center">Verification</TableHead>
+                            <TableHead className="text-[9px] font-black text-slate-900 uppercase h-10 px-3 text-center">Condition</TableHead>
+                            <TableHead className="text-[9px] font-black text-slate-900 uppercase h-10 px-3">Position</TableHead>
+                            <TableHead className="text-[9px] font-black text-slate-900 uppercase h-10 px-3">Audit Notes</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {items?.map((item, index) => (
-                            <TableRow key={item.id}>
-                                <TableCell className="font-medium py-1">{item.model}</TableCell>
-                                <TableCell className="py-1">{item.quantity}</TableCell>
-                                <TableCell className="py-1">{t(item.storageStatus?.toLowerCase() || '') || item.storageStatus || 'N/A'}</TableCell>
-                                <TableCell className="py-1">{t(item.modelCondition?.toLowerCase() || '') || item.modelCondition || 'N/A'}</TableCell>
-                                <TableCell className="py-1">{item.quantityPerCondition ?? 'N/A'}</TableCell>
-                                <TableCell className="py-1">{getLocationName(item.locationId)}</TableCell>
-                                <TableCell className="text-gray-600 py-1 text-xs">{item.notes || 'N/A'}</TableCell>
+                        {items?.map((item) => (
+                            <TableRow key={item.id} className="border-b border-slate-100 hover:bg-slate-50/50">
+                                <TableCell className="py-2.5 px-3 font-bold text-[11px] text-slate-900">{item.model}</TableCell>
+                                <TableCell className="py-2.5 px-3 text-center font-black text-[12px] text-primary">{item.quantity}</TableCell>
+                                <TableCell className="py-2.5 px-3 text-center text-[10px] font-bold">
+                                    {item.storageStatus ? (
+                                        <span className={cn(
+                                            "px-2 py-0.5 rounded-full border",
+                                            item.storageStatus === 'Correct' ? "bg-emerald-50 text-emerald-700 border-emerald-100" : "bg-amber-50 text-amber-700 border-amber-100"
+                                        )}>
+                                            {item.storageStatus}
+                                        </span>
+                                    ) : '-'}
+                                </TableCell>
+                                <TableCell className="py-2.5 px-3 text-center text-[10px] font-bold">
+                                    {item.modelCondition || '-'}
+                                </TableCell>
+                                <TableCell className="py-2.5 px-3 font-mono font-bold text-[10px] text-slate-600">
+                                    {getLocationName(item.locationId)}
+                                </TableCell>
+                                <TableCell className="py-2.5 px-3 text-slate-500 text-[10px] leading-tight max-w-[200px]">
+                                    {item.notes || '-'}
+                                </TableCell>
                             </TableRow>
                         ))}
                         {(!items || items.length === 0) && (
-                            <TableRow><TableCell colSpan={7} className="text-center h-24">No items found.</TableCell></TableRow>
+                            <TableRow><TableCell colSpan={6} className="h-32 text-center text-slate-400 font-bold uppercase tracking-widest text-[10px]">No data records found</TableCell></TableRow>
                         )}
                     </TableBody>
                 </Table>
               </div>
         </ReportWrapper>
     );
-};
+}

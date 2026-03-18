@@ -1,11 +1,10 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Cell, ResponsiveContainer } from 'recharts';
-import { ArrowLeft, User, Calendar as CalendarIcon, Building, FileText, MapPin, Edit, Trash2, Save, X, ArrowUpDown, ArrowDown, ArrowUp, ChevronLeft, ChevronRight, Search, Upload, Printer } from 'lucide-react';
+import { ArrowLeft, User, Calendar as CalendarIcon, Building, FileText, MapPin, Edit, Trash2, Save, X, ArrowUpDown, ArrowDown, ArrowUp, ChevronLeft, ChevronRight, Search, Upload, Printer, FileType } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -294,7 +293,7 @@ export default function FileDetailPage() {
       // Items that are not part of this file
       ...prevAllItems.filter(item => item.fileId !== fileId),
       // Items that are not deleted
-      ...prevAllItems.filter(item => item.fileId === fileId && !deletedItemIds.includes(item.id))
+      ...prevAllItems.filter(item => fileId === item.fileId && !deletedItemIds.includes(item.id))
                      .map(oldItem => updatedItems.find(upd => upd.id === oldItem.id) || oldItem),
       // New items
       ...newItems
@@ -534,6 +533,11 @@ export default function FileDetailPage() {
                     </>
                 ) : (
                     <>
+                    <Button variant="outline" asChild>
+                        <Link href={`/pdf/archive/${file.id}`} target="_blank">
+                            <FileType className="mr-2 h-4 w-4" /> PDF View
+                        </Link>
+                    </Button>
                     <Button onClick={() => setIsEditing(true)}><Edit className="mr-2"/>{t('edit')}</Button>
                     <Button variant="outline" size="icon" onClick={handlePrint}><Printer className="h-4 w-4" /></Button>
                     <AlertDialog>
