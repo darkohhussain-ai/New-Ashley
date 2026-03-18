@@ -144,7 +144,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const { isUserLoading } = useUser();
     const db = useFirestore();
 
-    // App Data Collections
+    // App Data Collections with localStorage shadowing
     const [employees, setEmployees, isEmployeesLoading] = useFirestoreCollection<Employee>('employees', initialData.employees);
     const [excelFiles, setExcelFiles, isExcelFilesLoading] = useFirestoreCollection<ExcelFile>('excelFiles', initialData.excelFiles);
     const [items, setItems, isItemsLoading] = useFirestoreCollection<Item>('items', initialData.items);
@@ -165,10 +165,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const [soldItemsLists, setSoldItemsLists, isSoldItemsListsLoading] = useFirestoreCollection<SoldItemsList>('soldItemsLists', initialData.soldItemsLists);
     const [activityLogs, setActivityLogs, isActivityLogsLoading] = useFirestoreCollection<ActivityLog>('activityLogs', initialData.activityLogs);
     
-    // Settings Singleton Document
+    // Settings Singleton Document with localStorage mirroring
     const settingsDocRef = useMemoFirebase(() => db ? doc(db, 'settings', 'main') : null, [db]);
     const { data: firestoreSettings, isLoading: isSettingsLoading } = useDoc<AppSettings>(settingsDocRef);
-    const [settings, setLocalSettings] = useState<AppSettings>(initialSettings);
+    
+    const [settings, setLocalSettings] = useState<AppSettings>(() => {
+        if (typeof window !== 'undefined') {
+            const cached = localStorage.getItem('ashley_terminal_settings');
+            return cached ? JSON.parse(cached) : initialSettings;
+        }
+        return initialSettings;
+    });
     
     useEffect(() => {
         if (firestoreSettings) {
@@ -193,12 +200,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 reportHeaderColors: { ...initialSettings.reportHeaderColors, ...(firestoreSettings.reportHeaderColors || {}) },
             };
             setLocalSettings(mergedSettings);
+            localStorage.setItem('ashley_terminal_settings', JSON.stringify(mergedSettings));
         }
     }, [firestoreSettings]);
 
     const setSettings = useCallback(async (value: React.SetStateAction<AppSettings>) => {
         const newSettings = value instanceof Function ? value(settings) : value;
         setLocalSettings(newSettings); 
+        localStorage.setItem('ashley_terminal_settings', JSON.stringify(newSettings));
         
         if (settingsDocRef) {
             setDocumentNonBlocking(settingsDocRef, JSON.parse(JSON.stringify(newSettings)), { merge: true });
@@ -246,7 +255,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         evaluationQuestions, users, roles, soldItemsLists, activityLogs, settings
     ]);
     
-    // This effect is a safeguard to prevent user lockout.
+    // Safeguard effect to prevent user lockout
     useEffect(() => {
         if (!isUsersLoading && users && users.length === 0 && db) {
             const usersCol = collection(db, 'users');
