@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Loader2, Search, ListChecks } from 'lucide-react';
+import { Loader2, Search, ListChecks, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import { useAppContext } from '@/context/app-provider';
 import { useTranslation } from '@/hooks/use-translation';
@@ -48,7 +48,7 @@ export default function LoginPage() {
   }, [settings.loginBackgroundEmbed]);
 
   return (
-    <div className="relative min-h-screen w-full flex flex-col bg-black overflow-x-hidden">
+    <div className="relative min-h-screen w-full flex flex-col bg-slate-100 overflow-x-hidden">
       {/* Cinematic Background Layer */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
         {settings.loginBackgroundEmbed ? (
@@ -72,22 +72,22 @@ export default function LoginPage() {
             unoptimized
           />
         ) : (
-          <div className="absolute inset-0 bg-slate-900" />
+          <div className="absolute inset-0 bg-slate-200" />
         )}
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] z-[1]" />
+        <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] z-[1]" />
       </div>
 
-      {/* Modern Metal Header Bar */}
-      <header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-xl border-b-2 border-white/20 shadow-lg">
+      {/* Modern Metal Header Bar - LIGHT */}
+      <header className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-xl border-b-2 border-white/60 shadow-md">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             {settings.appLogo && (
-              <div className="relative w-10 h-10 bg-white rounded-lg p-1 border-2 border-white/30 shadow-md">
+              <div className="relative w-10 h-10 bg-white rounded-lg p-1 border border-slate-200 shadow-sm">
                 <Image src={settings.appLogo} alt="Logo" fill className="object-contain" unoptimized />
               </div>
             )}
             <div className="flex flex-col">
-              <h1 className="text-[12px] font-bold uppercase tracking-wider text-primary leading-none">ASHLEY STAFF | ستافی ئاشلی</h1>
+              <h1 className="text-[12px] font-bold uppercase tracking-wider text-slate-900 leading-none">ASHLEY STAFF | ستافی ئاشلی</h1>
             </div>
           </div>
 
@@ -98,7 +98,7 @@ export default function LoginPage() {
                 placeholder="ID"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="h-9 w-32 bg-muted/20 border-white/20 text-[11px] placeholder:text-muted-foreground/50"
+                className="h-9 w-32 bg-slate-50/50 border-slate-200 text-[11px] text-slate-900 placeholder:text-slate-400"
                 required
               />
               <Input
@@ -106,14 +106,14 @@ export default function LoginPage() {
                 placeholder="Key"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="h-9 w-32 bg-muted/20 border-white/20 text-[11px] placeholder:text-muted-foreground/50"
+                className="h-9 w-32 bg-slate-50/50 border-slate-200 text-[11px] text-slate-900 placeholder:text-slate-400"
                 required
               />
             </div>
             <Button 
               type="submit" 
               size="sm" 
-              className="h-9 px-6 font-bold uppercase text-[11px] border-2 border-white/10 hover:border-white/40 transition-all shadow-md"
+              className="h-9 px-6 font-bold uppercase text-[11px] shadow-sm"
               disabled={isLoading}
             >
               {isLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : "Access / چوونەژوورەوە"}
@@ -130,13 +130,13 @@ export default function LoginPage() {
             <Button 
               variant="outline" 
               size="lg" 
-              className="h-24 w-full bg-amber-500/10 backdrop-blur-md border-2 border-white/30 hover:border-white/60 hover:bg-amber-500/20 text-[13px] font-bold uppercase tracking-widest flex flex-col gap-1.5 shadow-2xl transition-all hover:scale-[1.02] group"
+              className="h-24 w-full bg-white/80 backdrop-blur-md border-2 border-white/60 hover:border-amber-500/40 hover:bg-amber-50/50 text-[13px] font-bold uppercase tracking-widest flex flex-col gap-1.5 shadow-xl transition-all hover:scale-[1.02] group"
             >
-              <div className="flex items-center gap-2 text-amber-500 group-hover:text-amber-400 transition-colors">
+              <div className="flex items-center gap-2 text-amber-600 group-hover:text-amber-700 transition-colors">
                 <ListChecks className="w-6 h-6" />
                 Transmission Lists
               </div>
-              <span className="text-[11px] font-medium opacity-80 text-white normal-case">لیستی گواستنەوەکان</span>
+              <span className="text-[11px] font-medium text-slate-600 normal-case">لیستی گواستنەوەکان</span>
             </Button>
           </Link>
 
@@ -144,20 +144,20 @@ export default function LoginPage() {
             <Button 
               variant="outline" 
               size="lg" 
-              className="h-24 w-full bg-emerald-500/10 backdrop-blur-md border-2 border-white/30 hover:border-white/60 hover:bg-emerald-500/20 text-[13px] font-bold uppercase tracking-widest flex flex-col gap-1.5 shadow-2xl transition-all hover:scale-[1.02] group"
+              className="h-24 w-full bg-white/80 backdrop-blur-md border-2 border-white/60 hover:border-emerald-500/40 hover:bg-emerald-50/50 text-[13px] font-bold uppercase tracking-widest flex flex-col gap-1.5 shadow-xl transition-all hover:scale-[1.02] group"
             >
-              <div className="flex items-center gap-2 text-emerald-500 group-hover:text-emerald-400 transition-colors">
+              <div className="flex items-center gap-2 text-emerald-600 group-hover:text-emerald-700 transition-colors">
                 <Search className="w-6 h-6" />
                 Inventory Audit
               </div>
-              <span className="text-[11px] font-medium opacity-80 text-white normal-case">پشکنینی کۆگا</span>
+              <span className="text-[11px] font-medium text-slate-600 normal-case">پشکنینی کۆگا</span>
             </Button>
           </Link>
         </div>
       </main>
 
-      <footer className="relative z-10 py-8 text-center border-t border-white/10 bg-black/40 backdrop-blur-sm">
-        <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground opacity-50">
+      <footer className="relative z-10 py-8 text-center border-t border-slate-200 bg-white/40 backdrop-blur-sm mt-auto">
+        <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-500">
           © {new Date().getFullYear()} ASHLEY STAFF SYSTEM | ستافی ئاشلی
         </p>
       </footer>
