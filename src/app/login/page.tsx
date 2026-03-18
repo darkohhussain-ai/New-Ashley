@@ -75,6 +75,7 @@ export default function LoginPage() {
 
   return (
     <div className="relative min-h-screen w-full flex flex-col bg-black overflow-x-hidden">
+      {/* Cinematic Background Layer */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
         {settings.loginBackgroundEmbed ? (
           <div className="relative w-full h-full overflow-hidden">
@@ -102,17 +103,18 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] z-[1]" />
       </div>
 
-      <header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-xl border-b border-primary/10">
+      {/* Modern Metal Header Bar */}
+      <header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-xl border-b-2 border-white/20 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             {settings.appLogo && (
-              <div className="relative w-10 h-10 bg-white rounded-lg p-1 border border-primary/10">
+              <div className="relative w-10 h-10 bg-white rounded-lg p-1 border-2 border-white/30 shadow-md">
                 <Image src={settings.appLogo} alt="Logo" fill className="object-contain" unoptimized />
               </div>
             )}
             <div className="flex flex-col">
-              <h1 className="text-[11px] font-bold uppercase tracking-widest text-primary leading-none">ASHLEY STAFF</h1>
-              <span className="text-[9px] font-medium text-muted-foreground mt-1">ستافی ئاشلی</span>
+              <h1 className="text-[12px] font-bold uppercase tracking-wider text-primary leading-none">ASHLEY STAFF</h1>
+              <span className="text-[10px] font-medium text-muted-foreground mt-1">ستافی ئاشلی</span>
             </div>
           </div>
 
@@ -123,7 +125,7 @@ export default function LoginPage() {
                 placeholder="ID"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="h-8 w-28 bg-muted/50 border-primary/10 text-[10px]"
+                className="h-9 w-32 bg-muted/20 border-white/20 text-[11px] placeholder:text-muted-foreground/50"
                 required
               />
               <Input
@@ -131,14 +133,14 @@ export default function LoginPage() {
                 placeholder="Key"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="h-8 w-28 bg-muted/50 border-primary/10 text-[10px]"
+                className="h-9 w-32 bg-muted/20 border-white/20 text-[11px] placeholder:text-muted-foreground/50"
                 required
               />
             </div>
             <Button 
               type="submit" 
               size="sm" 
-              className="h-8 px-4 font-bold uppercase text-[10px]"
+              className="h-9 px-6 font-bold uppercase text-[11px] border-2 border-white/10 hover:border-white/40 transition-all shadow-md"
               disabled={isLoading}
             >
               {isLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : "Access / چوونەژوورەوە"}
@@ -147,43 +149,45 @@ export default function LoginPage() {
         </div>
       </header>
 
+      {/* Main Interactive Stage */}
       <main className="relative z-10 flex-1 w-full max-w-7xl mx-auto p-4 md:p-8 flex flex-col justify-center items-center">
-        <div className="flex flex-col gap-4 w-full max-w-md animate-in fade-in zoom-in-95 duration-700">
-          {/* Transmission Lists Button - Amber/Yellow Theme */}
+        <div className="flex flex-col gap-6 w-full max-w-md animate-in fade-in zoom-in-95 duration-700">
+          
+          {/* Transmission Lists Module - Metal Frame */}
           <Dialog onOpenChange={(open) => !open && setActiveTransmissionCity(null)}>
             <DialogTrigger asChild>
               <Button 
                 variant="outline" 
                 size="lg" 
-                className="h-20 w-full bg-amber-500/10 backdrop-blur-md border-amber-500/30 hover:bg-amber-500/20 text-[12px] font-bold uppercase tracking-wider flex flex-col gap-1 shadow-2xl transition-all hover:scale-[1.02]"
+                className="h-24 w-full bg-amber-500/10 backdrop-blur-md border-2 border-white/30 hover:border-white/60 hover:bg-amber-500/20 text-[13px] font-bold uppercase tracking-widest flex flex-col gap-1.5 shadow-2xl transition-all hover:scale-[1.02] group"
               >
-                <div className="flex items-center gap-2 text-amber-500">
-                  <ListChecks className="w-5 h-5" />
+                <div className="flex items-center gap-2 text-amber-500 group-hover:text-amber-400 transition-colors">
+                  <ListChecks className="w-6 h-6" />
                   Transmission Lists
                 </div>
-                <span className="text-[10px] font-medium opacity-80 text-white normal-case">لیستی گواستنەوەکان</span>
+                <span className="text-[11px] font-medium opacity-80 text-white normal-case">لیستی گواستنەوەکان</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl bg-card/68 backdrop-blur-xl border-primary/20 max-h-[85vh] overflow-hidden flex flex-col p-0">
-              <header className="p-6 pb-2">
-                <DialogTitle className="text-sm uppercase flex items-center gap-2">
+            <DialogContent className="max-w-4xl bg-card/68 backdrop-blur-xl border-2 border-white/30 shadow-2xl max-h-[85vh] overflow-hidden flex flex-col p-0">
+              <header className="p-6 pb-2 border-b border-white/10">
+                <DialogTitle className="text-[12px] uppercase font-bold flex items-center gap-2">
                   <Truck className="w-4 h-4 text-primary" /> 
                   {activeTransmissionCity || "Select City / شار هەڵبژێرە"}
                 </DialogTitle>
               </header>
               
-              <div className="flex-1 overflow-hidden p-6 pt-2 flex flex-col">
+              <div className="flex-1 overflow-hidden p-6 pt-4 flex flex-col">
                 {!activeTransmissionCity ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 py-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-2">
                     {["Erbil", "Baghdad", "Diwan", "Dohuk"].map((city) => (
                       <Button 
                         key={city} 
                         variant="outline" 
-                        className="h-16 bg-muted/10 border-primary/10 hover:border-primary/40 hover:bg-primary/5 flex items-center justify-between px-6 text-sm font-bold uppercase tracking-tight group"
+                        className="h-20 bg-muted/10 border-2 border-white/10 hover:border-white/40 hover:bg-primary/5 flex items-center justify-between px-8 text-sm font-bold uppercase tracking-tight group"
                         onClick={() => setActiveTransmissionCity(city)}
                       >
                         {city}
-                        <ChevronRight className="w-4 h-4 opacity-40 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                        <ChevronRight className="w-5 h-5 opacity-40 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
                       </Button>
                     ))}
                   </div>
@@ -192,41 +196,41 @@ export default function LoginPage() {
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      className="w-fit text-[10px] font-bold uppercase tracking-widest opacity-60 hover:opacity-100 p-0"
+                      className="w-fit text-[11px] font-bold uppercase tracking-widest opacity-60 hover:opacity-100 p-0"
                       onClick={() => setActiveTransmissionCity(null)}
                     >
-                      <ArrowLeft className="mr-2 w-3 h-3" /> Back / گەڕانەوە
+                      <ArrowLeft className="mr-2 w-3.5 h-3.5" /> Back / گەڕانەوە
                     </Button>
                     
-                    <div className="border rounded-lg bg-muted/10 overflow-hidden flex-1">
+                    <div className="border-2 border-white/10 rounded-xl bg-muted/10 overflow-hidden flex-1 shadow-inner">
                       <div className="max-h-[50vh] overflow-auto">
                         <Table>
-                          <TableHeader className="bg-primary/10 sticky top-0 z-10">
+                          <TableHeader className="bg-primary/10 sticky top-0 z-10 border-b border-white/10">
                             <TableRow>
-                              <TableHead className="w-[50px] text-[9px] uppercase font-bold text-center">Audit</TableHead>
-                              <TableHead className="text-[9px] uppercase font-bold">Model</TableHead>
-                              <TableHead className="w-[80px] text-[9px] uppercase font-bold text-center">QTY</TableHead>
-                              <TableHead className="w-[140px] text-[9px] uppercase font-bold">Invoice</TableHead>
+                              <TableHead className="w-[60px] text-[10px] uppercase font-bold text-center">Audit</TableHead>
+                              <TableHead className="text-[10px] uppercase font-bold">Model</TableHead>
+                              <TableHead className="w-[100px] text-[10px] uppercase font-bold text-center">QTY</TableHead>
+                              <TableHead className="w-[160px] text-[10px] uppercase font-bold">Invoice</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {stagedItemsForCity.length > 0 ? (
                               stagedItemsForCity.map((item) => (
-                                <TableRow key={item.id} className="hover:bg-primary/5 transition-colors border-primary/5">
-                                  <TableCell className="p-3 text-center">
-                                    <Checkbox className="border-primary/30" />
+                                <TableRow key={item.id} className="hover:bg-white/5 transition-colors border-white/5">
+                                  <TableCell className="p-4 text-center">
+                                    <Checkbox className="border-white/30 data-[state=checked]:bg-primary" />
                                   </TableCell>
-                                  <TableCell className="font-bold text-[11px] text-white/90">{item.model}</TableCell>
-                                  <TableCell className="text-center font-medium text-[11px] text-primary">{item.quantity}</TableCell>
-                                  <TableCell className="text-[10px] opacity-60">#{item.invoiceNo || 'PENDING'}</TableCell>
+                                  <TableCell className="font-bold text-[12px] text-white/90">{item.model}</TableCell>
+                                  <TableCell className="text-center font-medium text-[12px] text-primary">{item.quantity}</TableCell>
+                                  <TableCell className="text-[11px] opacity-60">#{item.invoiceNo || 'PENDING'}</TableCell>
                                 </TableRow>
                               ))
                             ) : (
                               <TableRow>
-                                <TableCell colSpan={4} className="h-48 text-center">
-                                  <div className="flex flex-col items-center justify-center space-y-3 opacity-20">
-                                    <Inbox className="w-8 h-8" />
-                                    <p className="text-[9px] font-bold uppercase tracking-widest text-white">No Active Cargo</p>
+                                <TableCell colSpan={4} className="h-64 text-center">
+                                  <div className="flex flex-col items-center justify-center space-y-4 opacity-20">
+                                    <Inbox className="w-10 h-10" />
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-white">No Active Cargo for {activeTransmissionCity}</p>
                                   </div>
                                 </TableCell>
                               </TableRow>
@@ -241,68 +245,68 @@ export default function LoginPage() {
             </DialogContent>
           </Dialog>
 
-          {/* Inventory Audit Button - Emerald Green Theme */}
+          {/* Inventory Audit Module - Metal Frame */}
           <Dialog>
             <DialogTrigger asChild>
               <Button 
                 variant="outline" 
                 size="lg" 
-                className="h-20 w-full bg-emerald-500/10 backdrop-blur-md border-emerald-500/30 hover:bg-emerald-500/20 text-[12px] font-bold uppercase tracking-wider flex flex-col gap-1 shadow-2xl transition-all hover:scale-[1.02]"
+                className="h-24 w-full bg-emerald-500/10 backdrop-blur-md border-2 border-white/30 hover:border-white/60 hover:bg-emerald-500/20 text-[13px] font-bold uppercase tracking-widest flex flex-col gap-1.5 shadow-2xl transition-all hover:scale-[1.02] group"
               >
-                <div className="flex items-center gap-2 text-emerald-500">
-                  <Search className="w-5 h-5" />
+                <div className="flex items-center gap-2 text-emerald-500 group-hover:text-emerald-400 transition-colors">
+                  <Search className="w-6 h-6" />
                   Inventory Audit
                 </div>
-                <span className="text-[10px] font-medium opacity-80 text-white normal-case">پشکنینی کۆگا</span>
+                <span className="text-[11px] font-medium opacity-80 text-white normal-case">پشکنینی کۆگا</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-3xl bg-card/68 backdrop-blur-xl border-primary/20 max-h-[85vh] overflow-hidden flex flex-col">
-              <header>
-                <DialogTitle className="text-sm uppercase flex items-center gap-2">
+            <DialogContent className="max-w-3xl bg-card/68 backdrop-blur-xl border-2 border-white/30 shadow-2xl max-h-[85vh] overflow-hidden flex flex-col">
+              <header className="border-b border-white/10 pb-4">
+                <DialogTitle className="text-[12px] uppercase font-bold flex items-center gap-2">
                   <Search className="w-4 h-4 text-primary" /> Global Search / گەڕانی گشتی
                 </DialogTitle>
               </header>
               
-              <div className="space-y-4 pt-4 flex-1 flex flex-col overflow-hidden">
+              <div className="space-y-6 pt-6 flex-1 flex flex-col overflow-hidden">
                 <div className="relative">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary opacity-60" />
+                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-primary opacity-60" />
                   <Input 
                     placeholder="ENTER MODEL NAME... / ناوی مۆدێل بنووسە" 
                     value={locationSearchQuery}
                     onChange={(e) => setLocationSearchQuery(e.target.value)}
-                    className="h-12 pl-12 bg-muted/20 border-primary/20 text-[11px] font-bold uppercase tracking-widest"
+                    className="h-14 pl-14 bg-muted/20 border-2 border-white/10 focus:border-primary/50 text-[12px] font-bold uppercase tracking-widest rounded-xl transition-all"
                   />
                 </div>
 
-                <div className="border rounded-lg bg-muted/10 overflow-hidden flex-1">
+                <div className="border-2 border-white/10 rounded-xl bg-muted/10 overflow-hidden flex-1 shadow-inner">
                   <div className="max-h-[55vh] overflow-auto">
                     <Table>
-                      <TableHeader className="bg-primary/10 sticky top-0 z-10">
+                      <TableHeader className="bg-primary/10 sticky top-0 z-10 border-b border-white/10">
                         <TableRow>
-                          <TableHead className="text-[9px] uppercase font-bold">Model</TableHead>
-                          <TableHead className="text-[9px] uppercase font-bold">Position</TableHead>
-                          <TableHead className="w-[80px] text-[9px] uppercase font-bold text-center">QTY</TableHead>
+                          <TableHead className="text-[10px] uppercase font-bold">Model</TableHead>
+                          <TableHead className="text-[10px] uppercase font-bold">Position</TableHead>
+                          <TableHead className="w-[100px] text-[10px] uppercase font-bold text-center">QTY</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {locationResults.length > 0 ? (
                           locationResults.map((item) => (
-                            <TableRow key={item.id} className="hover:bg-primary/5 transition-colors border-primary/5">
-                              <TableCell className="font-bold text-[11px] text-white/90 py-3">{item.model}</TableCell>
+                            <TableRow key={item.id} className="hover:bg-white/5 transition-colors border-white/5">
+                              <TableCell className="font-bold text-[12px] text-white/90 py-4">{item.model}</TableCell>
                               <TableCell>
-                                <Badge variant="outline" className="border-primary/30 text-primary bg-primary/5 text-[9px] font-bold uppercase px-2 py-0.5">
-                                  <MapPin className="mr-1 w-2.5 h-2.5" /> {item.locationName}
+                                <Badge variant="outline" className="border-primary/40 text-primary bg-primary/5 text-[10px] font-bold uppercase px-3 py-1">
+                                  <MapPin className="mr-1.5 w-3 h-3" /> {item.locationName}
                                 </Badge>
                               </TableCell>
-                              <TableCell className="text-center font-medium text-[11px] text-primary">{item.quantity}</TableCell>
+                              <TableCell className="text-center font-bold text-[12px] text-primary">{item.quantity}</TableCell>
                             </TableRow>
                           ))
                         ) : (
                           <TableRow>
-                            <TableCell colSpan={3} className="h-64 text-center">
+                            <TableCell colSpan={3} className="h-80 text-center">
                               <div className="flex flex-col items-center justify-center space-y-4 opacity-20">
-                                <Search className="w-10 h-10" />
-                                <p className="text-[10px] font-bold uppercase tracking-widest text-white">No Results Found</p>
+                                <Search className="w-12 h-12" />
+                                <p className="text-[11px] font-bold uppercase tracking-widest text-white">Input query to start audit...</p>
                               </div>
                             </TableCell>
                           </TableRow>
@@ -317,8 +321,8 @@ export default function LoginPage() {
         </div>
       </main>
 
-      <footer className="relative z-10 py-6 text-center border-t border-white/5 bg-black/40">
-        <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground opacity-40">
+      <footer className="relative z-10 py-8 text-center border-t border-white/10 bg-black/40 backdrop-blur-sm">
+        <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground opacity-50">
           © {new Date().getFullYear()} ASHLEY STAFF SYSTEM | ستافی ئاشلی
         </p>
       </footer>
