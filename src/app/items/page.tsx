@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -10,6 +11,7 @@ import {
   Loader2,
   Calendar,
   ArrowLeft,
+  FileSearch,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/use-translation';
@@ -105,6 +107,14 @@ function ItemsPage() {
       permission: 'page:items:import',
       color: 'text-orange-500',
       hoverColor: 'hover:bg-orange-500/10',
+    },
+    {
+      title: t('import_pdf_data'),
+      icon: FileSearch,
+      href: '/import-pdf',
+      permission: 'page:items:import',
+      color: 'text-emerald-500',
+      hoverColor: 'hover:bg-emerald-500/10',
     },
     {
       title: t('excel_archive'),

@@ -1,3 +1,4 @@
+
 {
   "name": "ashley-staff",
   "version": "0.1.0",
@@ -60,7 +61,8 @@
     "html2canvas": "latest",
     "jspdf": "latest",
     "jspdf-autotable": "latest",
-    "xlsx": "latest"
+    "xlsx": "latest",
+    "pdfjs-dist": "4.4.168"
   },
   "devDependencies": {
     "@types/jspdf": "latest",

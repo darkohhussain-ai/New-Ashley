@@ -62,6 +62,7 @@ export type ExcelFile = {
 export type Item = {
   id:string;
   fileId: string;
+  name?: string;
   model: string;
   quantity: number;
   notes?: string;

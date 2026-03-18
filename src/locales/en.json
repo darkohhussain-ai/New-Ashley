@@ -762,5 +762,6 @@
   "request_for_model_updated": "The request for {model} has been updated.",
   "edit_request": "Edit Request",
   "confirm_delete_request": "Are you sure you want to delete the request for {model}?",
-  "no_requests_for_month": "No order requests were found for this month."
+  "no_requests_for_month": "No order requests were found for this month.",
+  "import_pdf_data": "Import PDF Data"
 }
