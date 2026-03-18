@@ -6,15 +6,11 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { Loader2, Search, Truck, MapPin, ListChecks, Inbox, ArrowLeft, ChevronRight } from 'lucide-react';
+import Link from 'next/link';
+import { Loader2, Search, ListChecks } from 'lucide-react';
 import Image from 'next/image';
 import { useAppContext } from '@/context/app-provider';
 import { useTranslation } from '@/hooks/use-translation';
-import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 export default function LoginPage() {
   const { t } = useTranslation();
@@ -22,12 +18,9 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
-  const { settings, transferItems, items, locations } = useAppContext();
+  const { settings } = useAppContext();
   const { toast } = useToast();
   const router = useRouter();
-
-  const [activeTransmissionCity, setActiveTransmissionCity] = useState<string | null>(null);
-  const [locationSearchQuery, setLocationSearchQuery] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,25 +39,6 @@ export default function LoginPage() {
       });
     }
   };
-
-  const stagedItemsForCity = useMemo(() => {
-    if (!activeTransmissionCity) return [];
-    return transferItems.filter(item => !item.transferId && item.destination === activeTransmissionCity);
-  }, [transferItems, activeTransmissionCity]);
-
-  const locationResults = useMemo(() => {
-    if (!locationSearchQuery.trim()) return [];
-    const query = locationSearchQuery.toLowerCase();
-    return items.filter(item => 
-      item.model.toLowerCase().includes(query)
-    ).map(item => {
-      const loc = locations.find(l => l.id === item.locationId);
-      return {
-        ...item,
-        locationName: loc?.name || 'Unknown',
-      };
-    });
-  }, [locationSearchQuery, items, locations]);
 
   const backgroundEmbedSrc = useMemo(() => {
     if (!settings.loginBackgroundEmbed) return '';
@@ -113,8 +87,7 @@ export default function LoginPage() {
               </div>
             )}
             <div className="flex flex-col">
-              <h1 className="text-[12px] font-bold uppercase tracking-wider text-primary leading-none">ASHLEY STAFF</h1>
-              <span className="text-[10px] font-medium text-muted-foreground mt-1">ستافی ئاشلی</span>
+              <h1 className="text-[12px] font-bold uppercase tracking-wider text-primary leading-none">ASHLEY STAFF | ستافی ئاشلی</h1>
             </div>
           </div>
 
@@ -153,171 +126,33 @@ export default function LoginPage() {
       <main className="relative z-10 flex-1 w-full max-w-7xl mx-auto p-4 md:p-8 flex flex-col justify-center items-center">
         <div className="flex flex-col gap-6 w-full max-w-md animate-in fade-in zoom-in-95 duration-700">
           
-          {/* Transmission Lists Module - Metal Frame */}
-          <Dialog onOpenChange={(open) => !open && setActiveTransmissionCity(null)}>
-            <DialogTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="lg" 
-                className="h-24 w-full bg-amber-500/10 backdrop-blur-md border-2 border-white/30 hover:border-white/60 hover:bg-amber-500/20 text-[13px] font-bold uppercase tracking-widest flex flex-col gap-1.5 shadow-2xl transition-all hover:scale-[1.02] group"
-              >
-                <div className="flex items-center gap-2 text-amber-500 group-hover:text-amber-400 transition-colors">
-                  <ListChecks className="w-6 h-6" />
-                  Transmission Lists
-                </div>
-                <span className="text-[11px] font-medium opacity-80 text-white normal-case">لیستی گواستنەوەکان</span>
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl bg-card/68 backdrop-blur-xl border-2 border-white/30 shadow-2xl max-h-[85vh] overflow-hidden flex flex-col p-0">
-              <header className="p-6 pb-2 border-b border-white/10">
-                <DialogTitle className="text-[12px] uppercase font-bold flex items-center gap-2">
-                  <Truck className="w-4 h-4 text-primary" /> 
-                  {activeTransmissionCity || "Select City / شار هەڵبژێرە"}
-                </DialogTitle>
-              </header>
-              
-              <div className="flex-1 overflow-hidden p-6 pt-4 flex flex-col">
-                {!activeTransmissionCity ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-2">
-                    {["Erbil", "Baghdad", "Diwan", "Dohuk"].map((city) => (
-                      <Button 
-                        key={city} 
-                        variant="outline" 
-                        className="h-20 bg-muted/10 border-2 border-white/10 hover:border-white/40 hover:bg-primary/5 flex items-center justify-between px-8 text-sm font-bold uppercase tracking-tight group"
-                        onClick={() => setActiveTransmissionCity(city)}
-                      >
-                        {city}
-                        <ChevronRight className="w-5 h-5 opacity-40 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
-                      </Button>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex flex-col h-full space-y-4">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="w-fit text-[11px] font-bold uppercase tracking-widest opacity-60 hover:opacity-100 p-0"
-                      onClick={() => setActiveTransmissionCity(null)}
-                    >
-                      <ArrowLeft className="mr-2 w-3.5 h-3.5" /> Back / گەڕانەوە
-                    </Button>
-                    
-                    <div className="border-2 border-white/10 rounded-xl bg-muted/10 overflow-hidden flex-1 shadow-inner">
-                      <div className="max-h-[50vh] overflow-auto">
-                        <Table>
-                          <TableHeader className="bg-primary/10 sticky top-0 z-10 border-b border-white/10">
-                            <TableRow>
-                              <TableHead className="w-[60px] text-[10px] uppercase font-bold text-center">Audit</TableHead>
-                              <TableHead className="text-[10px] uppercase font-bold">Model</TableHead>
-                              <TableHead className="w-[100px] text-[10px] uppercase font-bold text-center">QTY</TableHead>
-                              <TableHead className="w-[160px] text-[10px] uppercase font-bold">Invoice</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {stagedItemsForCity.length > 0 ? (
-                              stagedItemsForCity.map((item) => (
-                                <TableRow key={item.id} className="hover:bg-white/5 transition-colors border-white/5">
-                                  <TableCell className="p-4 text-center">
-                                    <Checkbox className="border-white/30 data-[state=checked]:bg-primary" />
-                                  </TableCell>
-                                  <TableCell className="font-bold text-[12px] text-white/90">{item.model}</TableCell>
-                                  <TableCell className="text-center font-medium text-[12px] text-primary">{item.quantity}</TableCell>
-                                  <TableCell className="text-[11px] opacity-60">#{item.invoiceNo || 'PENDING'}</TableCell>
-                                </TableRow>
-                              ))
-                            ) : (
-                              <TableRow>
-                                <TableCell colSpan={4} className="h-64 text-center">
-                                  <div className="flex flex-col items-center justify-center space-y-4 opacity-20">
-                                    <Inbox className="w-10 h-10" />
-                                    <p className="text-[10px] font-bold uppercase tracking-widest text-white">No Active Cargo for {activeTransmissionCity}</p>
-                                  </div>
-                                </TableCell>
-                              </TableRow>
-                            )}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    </div>
-                  </div>
-                )}
+          <Link href="/public-transmit" className="w-full">
+            <Button 
+              variant="outline" 
+              size="lg" 
+              className="h-24 w-full bg-amber-500/10 backdrop-blur-md border-2 border-white/30 hover:border-white/60 hover:bg-amber-500/20 text-[13px] font-bold uppercase tracking-widest flex flex-col gap-1.5 shadow-2xl transition-all hover:scale-[1.02] group"
+            >
+              <div className="flex items-center gap-2 text-amber-500 group-hover:text-amber-400 transition-colors">
+                <ListChecks className="w-6 h-6" />
+                Transmission Lists
               </div>
-            </DialogContent>
-          </Dialog>
+              <span className="text-[11px] font-medium opacity-80 text-white normal-case">لیستی گواستنەوەکان</span>
+            </Button>
+          </Link>
 
-          {/* Inventory Audit Module - Metal Frame */}
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="lg" 
-                className="h-24 w-full bg-emerald-500/10 backdrop-blur-md border-2 border-white/30 hover:border-white/60 hover:bg-emerald-500/20 text-[13px] font-bold uppercase tracking-widest flex flex-col gap-1.5 shadow-2xl transition-all hover:scale-[1.02] group"
-              >
-                <div className="flex items-center gap-2 text-emerald-500 group-hover:text-emerald-400 transition-colors">
-                  <Search className="w-6 h-6" />
-                  Inventory Audit
-                </div>
-                <span className="text-[11px] font-medium opacity-80 text-white normal-case">پشکنینی کۆگا</span>
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-3xl bg-card/68 backdrop-blur-xl border-2 border-white/30 shadow-2xl max-h-[85vh] overflow-hidden flex flex-col">
-              <header className="border-b border-white/10 pb-4">
-                <DialogTitle className="text-[12px] uppercase font-bold flex items-center gap-2">
-                  <Search className="w-4 h-4 text-primary" /> Global Search / گەڕانی گشتی
-                </DialogTitle>
-              </header>
-              
-              <div className="space-y-6 pt-6 flex-1 flex flex-col overflow-hidden">
-                <div className="relative">
-                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-primary opacity-60" />
-                  <Input 
-                    placeholder="ENTER MODEL NAME... / ناوی مۆدێل بنووسە" 
-                    value={locationSearchQuery}
-                    onChange={(e) => setLocationSearchQuery(e.target.value)}
-                    className="h-14 pl-14 bg-muted/20 border-2 border-white/10 focus:border-primary/50 text-[12px] font-bold uppercase tracking-widest rounded-xl transition-all"
-                  />
-                </div>
-
-                <div className="border-2 border-white/10 rounded-xl bg-muted/10 overflow-hidden flex-1 shadow-inner">
-                  <div className="max-h-[55vh] overflow-auto">
-                    <Table>
-                      <TableHeader className="bg-primary/10 sticky top-0 z-10 border-b border-white/10">
-                        <TableRow>
-                          <TableHead className="text-[10px] uppercase font-bold">Model</TableHead>
-                          <TableHead className="text-[10px] uppercase font-bold">Position</TableHead>
-                          <TableHead className="w-[100px] text-[10px] uppercase font-bold text-center">QTY</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {locationResults.length > 0 ? (
-                          locationResults.map((item) => (
-                            <TableRow key={item.id} className="hover:bg-white/5 transition-colors border-white/5">
-                              <TableCell className="font-bold text-[12px] text-white/90 py-4">{item.model}</TableCell>
-                              <TableCell>
-                                <Badge variant="outline" className="border-primary/40 text-primary bg-primary/5 text-[10px] font-bold uppercase px-3 py-1">
-                                  <MapPin className="mr-1.5 w-3 h-3" /> {item.locationName}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-center font-bold text-[12px] text-primary">{item.quantity}</TableCell>
-                            </TableRow>
-                          ))
-                        ) : (
-                          <TableRow>
-                            <TableCell colSpan={3} className="h-80 text-center">
-                              <div className="flex flex-col items-center justify-center space-y-4 opacity-20">
-                                <Search className="w-12 h-12" />
-                                <p className="text-[11px] font-bold uppercase tracking-widest text-white">Input query to start audit...</p>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </div>
+          <Link href="/public-inventory" className="w-full">
+            <Button 
+              variant="outline" 
+              size="lg" 
+              className="h-24 w-full bg-emerald-500/10 backdrop-blur-md border-2 border-white/30 hover:border-white/60 hover:bg-emerald-500/20 text-[13px] font-bold uppercase tracking-widest flex flex-col gap-1.5 shadow-2xl transition-all hover:scale-[1.02] group"
+            >
+              <div className="flex items-center gap-2 text-emerald-500 group-hover:text-emerald-400 transition-colors">
+                <Search className="w-6 h-6" />
+                Inventory Audit
               </div>
-            </DialogContent>
-          </Dialog>
+              <span className="text-[11px] font-medium opacity-80 text-white normal-case">پشکنینی کۆگا</span>
+            </Button>
+          </Link>
         </div>
       </main>
 
