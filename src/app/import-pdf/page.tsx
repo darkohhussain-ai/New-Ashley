@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Loader2, FileText, CheckCircle, Save, Calendar, Trash2 } from 'lucide-react';
+import { ArrowLeft, Loader2, FileText, CheckCircle, Save, Calendar, Trash2, Database } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -18,6 +19,7 @@ import { parsePdfInventory, type ExtractedItem } from '@/ai/flows/parse-pdf-inve
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import * as pdfjsLib from 'pdfjs-dist';
 import { useTranslation } from '@/hooks/use-translation';
+import { cn } from '@/lib/utils';
 
 // Configure PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
@@ -109,19 +111,29 @@ export default function ImportPdfPage() {
       type: 'imported'
     };
     
-    const newItems: Item[] = extractedItems.map(item => {
+    // De-duplicate items by model within this import session
+    const uniqueItemsMap = new Map<string, ExtractedItem>();
+    extractedItems.forEach(item => {
+        if (!uniqueItemsMap.has(item.model)) {
+            uniqueItemsMap.set(item.model, item);
+        }
+    });
+
+    const newItems: Item[] = Array.from(uniqueItemsMap.values()).map(item => {
       // Try to match location string to existing location ID
       const matchedLocation = locations.find(l => l.name.toLowerCase() === item.location.toLowerCase());
       
       return {
         id: crypto.randomUUID(),
         fileId: fileId,
-        name: item.name,
         model: item.model,
         quantity: item.quantity,
-        notes: `${item.category ? `[${item.category}] ` : ''}${item.notes || ''}`.trim(),
-        locationId: matchedLocation?.id || undefined
-      };
+        notes: item.notes,
+        locationId: matchedLocation?.id,
+        // Map status/warehouse_status to existing schema
+        modelCondition: (item.status === 'Wrapped' || item.status === 'Damaged') ? item.status : '',
+        storageStatus: (item.warehouse_status === 'Correct' || item.warehouse_status === 'Less' || item.warehouse_status === 'More') ? item.warehouse_status : ''
+      } as Item;
     });
 
     setExcelFiles(prev => [...prev, fileData]);
@@ -142,23 +154,23 @@ export default function ImportPdfPage() {
           <Button variant="outline" size="icon" onClick={() => step === 'review' ? setStep('upload') : router.push('/items')}>
             <ArrowLeft />
           </Button>
-          <h1 className="text-2xl md:text-3xl font-bold">Import PDF Data / هاوردەکردنی PDF</h1>
+          <h1 className="text-2xl md:text-3xl font-black uppercase tracking-tight">Import PDF Data / هاوردەکردنی PDF</h1>
         </div>
       </header>
 
       {step === 'upload' ? (
-        <Card className="max-w-2xl mx-auto border-2 border-white/60 bg-white/80 backdrop-blur-xl shadow-2xl">
-          <CardHeader>
-            <CardTitle>Source Document Configuration</CardTitle>
-            <CardDescription>Upload a warehouse list or invoice PDF. Our AI will analyze the text and extract operational data.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
+        <Card className="max-w-2xl mx-auto border-2 border-white/60 bg-white/80 backdrop-blur-xl shadow-2xl overflow-hidden rounded-2xl">
+          <div className="bg-primary/5 p-6 border-b">
+            <CardTitle className="text-base font-black uppercase tracking-widest text-primary">Source Document Protocol</CardTitle>
+            <CardDescription className="text-xs">Upload a warehouse report. Our AI will perform structured extraction across all pages.</CardDescription>
+          </div>
+          <CardContent className="space-y-6 p-6">
             <div className="space-y-2">
-              <Label>Select PDF File</Label>
-              <div className="border-2 border-dashed rounded-2xl p-8 text-center bg-muted/20 hover:bg-muted/30 transition-all cursor-pointer relative">
+              <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">1. Select Document</Label>
+              <div className="border-2 border-dashed rounded-2xl p-8 text-center bg-muted/20 hover:bg-muted/30 transition-all cursor-pointer relative group">
                 <input type="file" onChange={handleFileChange} accept=".pdf" className="absolute inset-0 opacity-0 cursor-pointer" />
-                <FileText className="w-12 h-12 mx-auto mb-4 opacity-20" />
-                <p className="text-sm font-bold uppercase tracking-widest opacity-60">
+                <FileText className="w-12 h-12 mx-auto mb-4 opacity-20 group-hover:opacity-40 transition-opacity" />
+                <p className="text-[11px] font-bold uppercase tracking-widest">
                   {file ? file.name : "Drop PDF here or click to browse"}
                 </p>
                 {file && <CheckCircle className="w-5 h-5 text-green-500 absolute top-4 right-4" />}
@@ -167,20 +179,20 @@ export default function ImportPdfPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                    <Label>{t('storekeeper')}</Label>
+                    <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">2. Staff Anchor</Label>
                     <Select onValueChange={setStorekeeperId} value={storekeeperId}>
-                        <SelectTrigger><SelectValue placeholder="Select staff member" /></SelectTrigger>
+                        <SelectTrigger className="h-11 rounded-xl"><SelectValue placeholder="Select member" /></SelectTrigger>
                         <SelectContent>
-                        {employees?.map(emp => (
+                        {employees?.filter(e => e.isActive !== false).map(emp => (
                             <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>
                         ))}
                         </SelectContent>
                     </Select>
                 </div>
                 <div className="space-y-2">
-                    <Label>{t('source_location')}</Label>
+                    <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">3. Target Warehouse</Label>
                     <Select onValueChange={setSource} value={source}>
-                        <SelectTrigger><SelectValue placeholder="Select target warehouse" /></SelectTrigger>
+                        <SelectTrigger className="h-11 rounded-xl"><SelectValue placeholder="Select location" /></SelectTrigger>
                         <SelectContent>
                         {sources.map(s => (
                             <SelectItem key={s} value={s}>{s}</SelectItem>
@@ -190,66 +202,79 @@ export default function ImportPdfPage() {
                 </div>
             </div>
              <div className="space-y-2">
-              <Label>Import Category Name</Label>
-              <Input value={categoryName} onChange={(e) => setCategoryName(e.target.value)} placeholder="e.g. New Shipment Arrived" />
+              <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">4. Report Category</Label>
+              <Input value={categoryName} onChange={(e) => setCategoryName(e.target.value)} placeholder="e.g. Monthly Inventory Audit" className="h-11 rounded-xl" />
             </div>
             
             <div className="space-y-2">
-              <Label>Filing Date</Label>
+              <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">5. Filing Date</Label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-left font-normal">
-                    <Calendar className="mr-2 h-4 w-4" />
-                    {date ? format(date, 'PPP') : <span>Pick a date</span>}
+                  <Button variant="outline" className="w-full h-11 justify-start text-left font-normal rounded-xl">
+                    <Calendar className="mr-2 h-4 w-4 opacity-40" />
+                    {date ? format(date, 'dd/MM/yyyy') : <span>Pick a date</span>}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
+                <PopoverContent className="w-auto p-0 rounded-2xl border-none shadow-2xl">
                   <CalendarComponent mode="single" selected={date} onSelect={setDate} initialFocus />
                 </PopoverContent>
               </Popover>
             </div>
             
-            <Button onClick={handleProcessPdf} disabled={isProcessing || !file || !storekeeperId || !source || !date || !categoryName} className="w-full h-12 font-black uppercase tracking-widest">
-              {isProcessing ? <Loader2 className="animate-spin mr-2" /> : "Start AI Extraction / دەستپێکردن"}
+            <Button onClick={handleProcessPdf} disabled={isProcessing || !file || !storekeeperId || !source || !date || !categoryName} className="w-full h-12 font-black uppercase tracking-widest rounded-xl shadow-xl shadow-primary/20">
+              {isProcessing ? <Loader2 className="animate-spin mr-2" /> : <Database className="w-4 h-4 mr-2" />}
+              Initiate Extraction / دەستپێکردن
             </Button>
           </CardContent>
         </Card>
       ) : (
-        <Card className="border-2 border-white/60 bg-white/80 backdrop-blur-xl shadow-2xl animate-in fade-in zoom-in-95 duration-500">
-          <CardHeader className="flex flex-row items-center justify-between">
+        <Card className="border-2 border-white/60 bg-white/80 backdrop-blur-xl shadow-2xl animate-in fade-in zoom-in-95 duration-500 rounded-2xl overflow-hidden">
+          <CardHeader className="flex flex-row items-center justify-between bg-primary/5 p-6 border-b">
             <div>
-              <CardTitle>AI Extraction Review</CardTitle>
-              <CardDescription>We found {extractedItems.length} items. Verify the data below before saving to inventory.</CardDescription>
+              <CardTitle className="text-base font-black uppercase tracking-widest text-primary">Audit Sector: Review Extracted Data</CardTitle>
+              <CardDescription className="text-xs">Identified {extractedItems.length} unique data clusters. Please verify the mapping before committing to ERP.</CardDescription>
             </div>
-            <Button onClick={handleFinalSave} size="lg" className="bg-primary shadow-xl font-black uppercase tracking-widest">
-              <Save className="mr-2 h-4 w-4" /> Apply to Inventory
+            <Button onClick={handleFinalSave} size="lg" className="bg-primary shadow-xl font-black uppercase tracking-widest rounded-xl px-8 h-12">
+              <Save className="mr-2 h-4 w-4" /> Commit to Inventory
             </Button>
           </CardHeader>
-          <CardContent>
-            <div className="border rounded-2xl overflow-hidden bg-white/30">
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
               <Table>
-                <TableHeader className="bg-slate-100">
+                <TableHeader className="bg-slate-100/50">
                   <TableRow>
-                    <TableHead className="text-[10px] font-black uppercase">Item Name</TableHead>
-                    <TableHead className="text-[10px] font-black uppercase">Model</TableHead>
-                    <TableHead className="text-[10px] font-black uppercase">QTY</TableHead>
-                    <TableHead className="text-[10px] font-black uppercase">Category</TableHead>
-                    <TableHead className="text-[10px] font-black uppercase">Location</TableHead>
-                    <TableHead className="text-[10px] font-black uppercase">Modifications</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase tracking-tighter h-12 px-6">Model ID</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase tracking-tighter h-12 text-center">QTY</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase tracking-tighter h-12 text-center">Item Status</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase tracking-tighter h-12 text-center">Warehouse Status</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase tracking-tighter h-12">Location</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase tracking-tighter h-12">Remarks</TableHead>
                     <TableHead className="w-12"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {extractedItems.map((item, index) => (
-                    <TableRow key={index} className="hover:bg-slate-50 transition-colors">
-                      <TableCell className="font-bold text-[12px]">{item.name}</TableCell>
-                      <TableCell className="font-mono text-[11px] text-primary">{item.model}</TableCell>
-                      <TableCell className="font-black text-[13px]">{item.quantity}</TableCell>
-                      <TableCell className="text-[11px] opacity-60 uppercase">{item.category}</TableCell>
-                      <TableCell className="font-bold text-[11px] text-slate-600">{item.location}</TableCell>
-                      <TableCell className="text-[11px] text-slate-500 italic max-w-[200px] truncate">{item.notes}</TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeExtractedItem(index)}>
+                    <TableRow key={index} className="hover:bg-slate-50 transition-colors border-slate-100 h-14">
+                      <TableCell className="font-bold text-[12px] text-slate-900 px-6">{item.model}</TableCell>
+                      <TableCell className="text-center font-black text-[13px] text-primary">{item.quantity}</TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant="outline" className="text-[9px] font-black uppercase border-slate-200">
+                            {item.status || 'unknown'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant="outline" className={cn(
+                            "text-[9px] font-black uppercase border-slate-200",
+                            item.warehouse_status === 'Correct' && "bg-green-50 text-green-700 border-green-100",
+                            (item.warehouse_status === 'Less' || item.warehouse_status === 'More') && "bg-amber-50 text-amber-700 border-amber-100"
+                        )}>
+                            {item.warehouse_status || 'not set'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-mono text-[10px] font-bold text-slate-600 uppercase tracking-tighter">{item.location}</TableCell>
+                      <TableCell className="text-[11px] text-slate-500 max-w-[250px] truncate" dir="rtl">{item.notes}</TableCell>
+                      <TableCell className="pr-6">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => removeExtractedItem(index)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </TableCell>
