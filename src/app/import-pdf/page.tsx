@@ -20,9 +20,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import * as pdfjsLib from 'pdfjs-dist';
 import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
-// Configure PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// Configure PDF.js worker using a reliable CDN that supports ESM (.mjs)
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
 const sources = ["Showroom", "Ashley Store", "Huana Store"];
 
@@ -58,7 +59,8 @@ export default function ImportPdfPage() {
 
   const extractTextFromPdf = async (file: File): Promise<string> => {
     const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+    const pdf = await loadingTask.promise;
     let fullText = '';
     
     for (let i = 1; i <= pdf.numPages; i++) {
@@ -181,7 +183,7 @@ export default function ImportPdfPage() {
                 <div className="space-y-2">
                     <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">2. Staff Anchor</Label>
                     <Select onValueChange={setStorekeeperId} value={storekeeperId}>
-                        <SelectTrigger className="h-11 rounded-xl"><SelectValue placeholder="Select member" /></SelectTrigger>
+                        <SelectTrigger className="h-11 rounded-xl bg-white"><SelectValue placeholder="Select member" /></SelectTrigger>
                         <SelectContent>
                         {employees?.filter(e => e.isActive !== false).map(emp => (
                             <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>
@@ -192,7 +194,7 @@ export default function ImportPdfPage() {
                 <div className="space-y-2">
                     <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">3. Target Warehouse</Label>
                     <Select onValueChange={setSource} value={source}>
-                        <SelectTrigger className="h-11 rounded-xl"><SelectValue placeholder="Select location" /></SelectTrigger>
+                        <SelectTrigger className="h-11 rounded-xl bg-white"><SelectValue placeholder="Select location" /></SelectTrigger>
                         <SelectContent>
                         {sources.map(s => (
                             <SelectItem key={s} value={s}>{s}</SelectItem>
@@ -203,14 +205,14 @@ export default function ImportPdfPage() {
             </div>
              <div className="space-y-2">
               <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">4. Report Category</Label>
-              <Input value={categoryName} onChange={(e) => setCategoryName(e.target.value)} placeholder="e.g. Monthly Inventory Audit" className="h-11 rounded-xl" />
+              <Input value={categoryName} onChange={(e) => setCategoryName(e.target.value)} placeholder="e.g. Monthly Inventory Audit" className="h-11 rounded-xl bg-white" />
             </div>
             
             <div className="space-y-2">
               <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">5. Filing Date</Label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full h-11 justify-start text-left font-normal rounded-xl">
+                  <Button variant="outline" className="w-full h-11 justify-start text-left font-normal rounded-xl bg-white">
                     <Calendar className="mr-2 h-4 w-4 opacity-40" />
                     {date ? format(date, 'dd/MM/yyyy') : <span>Pick a date</span>}
                   </Button>
