@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -19,6 +20,7 @@ import {
   Sun,
   Moon,
   LogOut,
+  ShieldAlert,
 } from 'lucide-react';
 
 import {
@@ -58,15 +60,15 @@ function DateTimeDisplay() {
     return () => clearInterval(timer);
   }, []);
 
-  if (!time) return <div className="h-6 animate-pulse bg-muted rounded w-full" />;
+  if (!time) return <div className="h-6 animate-pulse bg-muted/20 rounded w-full" />;
 
   return (
-    <div className="flex flex-col items-center gap-0.5 opacity-70">
-      <div className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.2em] opacity-60">
+    <div className="flex flex-col items-center gap-0.5 opacity-80 text-white">
+      <div className="flex items-center gap-1.5 text-[8px] font-black uppercase tracking-[0.2em] opacity-60">
         <Calendar className="w-2.5 h-2.5" />
         <span>{format(time, 'MMM d, yyyy')}</span>
       </div>
-      <div className="flex items-center gap-1.5 text-[12px] font-medium tracking-widest">
+      <div className="flex items-center gap-1.5 text-[11px] font-black tracking-widest">
         <Clock className="w-3 h-3" />
         <span>{format(time, 'HH:mm:ss')}</span>
       </div>
@@ -106,10 +108,16 @@ export function AppSidebar() {
   ];
 
   return (
-    <Sidebar side={side} collapsible="icon" className="border-none shadow-2xl bg-sidebar/68 backdrop-blur-2xl print:hidden">
-      <SidebarHeader className="p-4 bg-transparent border-b border-sidebar-border">
-        <div className="flex items-center justify-center mb-4">
-            <SidebarTrigger className="hover:bg-sidebar-accent transition-all" />
+    <Sidebar side={side} collapsible="icon" className="border-none shadow-2xl bg-sidebar/68 backdrop-blur-2xl print:hidden overflow-hidden">
+      <SidebarHeader className="p-4 bg-transparent border-b border-white/10">
+        <div className="flex items-center justify-between mb-4 px-1">
+            <SidebarTrigger className="text-white hover:bg-white/10 transition-all h-8 w-8" />
+            {state === "expanded" && (
+                <div className="flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                    <span className="text-[8px] font-black uppercase tracking-widest text-white/60">Node Online</span>
+                </div>
+            )}
         </div>
         
         <div className="flex flex-col items-center gap-4 animate-in fade-in slide-in-from-top-2 duration-700">
@@ -118,7 +126,7 @@ export function AppSidebar() {
                     "relative flex items-center justify-center transition-all duration-500",
                     "w-full px-2 group-data-[collapsible=icon]:px-0"
                 )}>
-                    <div className="relative w-12 h-12 bg-white rounded-xl p-1.5 shadow-xl ring-2 ring-primary/20 overflow-hidden">
+                    <div className="relative w-10 h-10 bg-white rounded-xl p-1.5 shadow-2xl ring-2 ring-white/20 overflow-hidden">
                         <Image
                             src={settings.appLogo}
                             alt="Logo"
@@ -129,14 +137,14 @@ export function AppSidebar() {
                     </div>
                     {state === "expanded" && (
                         <div className="ml-3 flex flex-col items-start overflow-hidden">
-                            <span className="text-[11px] font-bold uppercase tracking-widest text-primary whitespace-nowrap">ASHLEY STAFF</span>
-                            <span className="text-[8px] font-medium uppercase opacity-40">System Node</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-white whitespace-nowrap">ASHLEY STAFF</span>
+                            <span className="text-[7px] font-bold uppercase text-white/40">Terminal Node</span>
                         </div>
                     )}
                 </div>
             )}
             {state === "expanded" && (
-                <div className="animate-in fade-in duration-500 mt-2">
+                <div className="animate-in fade-in duration-500 mt-1">
                     <DateTimeDisplay />
                 </div>
             )}
@@ -144,106 +152,76 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent className="bg-transparent scrollbar-none">
-        <div className="px-4 py-4 group-data-[collapsible=icon]:px-2">
-            <div className="bg-sidebar-accent/30 rounded-xl p-3 flex items-center gap-3 border border-sidebar-border shadow-inner group/user cursor-default group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-1">
-                <Avatar className="w-9 h-9 border-2 border-sidebar-border ring-2 ring-primary/30 group-hover/user:ring-primary transition-all group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:h-8">
-                    <AvatarFallback className="bg-primary/20 font-bold text-[10px]">
+        <div className="px-3 py-4 group-data-[collapsible=icon]:px-1">
+            <div className="bg-white/10 rounded-xl p-2.5 flex items-center gap-2.5 border border-white/5 shadow-inner group/user cursor-default group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-1">
+                <Avatar className="w-8 h-8 border-2 border-white/20 ring-2 ring-white/10 group-hover/user:ring-white/30 transition-all group-data-[collapsible=icon]:w-7 group-data-[collapsible=icon]:h-7">
+                    <AvatarFallback className="bg-white text-primary font-black text-[9px]">
                         {user?.username?.charAt(0).toUpperCase()}
                     </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 overflow-hidden group-data-[collapsible=icon]:hidden">
-                    <p className="text-[11px] font-bold uppercase tracking-wider truncate leading-tight">{user?.username}</p>
-                    <p className="text-[8px] font-medium opacity-40 uppercase tracking-tighter">Verified Access</p>
+                    <p className="text-[10px] font-black uppercase tracking-wider truncate leading-tight text-white">{user?.username}</p>
+                    <p className="text-[7px] font-bold text-white/40 uppercase tracking-tighter">Encrypted Session</p>
                 </div>
             </div>
         </div>
 
-        <div className="px-4 mb-6 grid grid-cols-2 gap-2 group-data-[collapsible=icon]:grid-cols-1 group-data-[collapsible=icon]:px-2">
+        <div className="px-3 mb-6 grid grid-cols-3 gap-1.5 group-data-[collapsible=icon]:grid-cols-1 group-data-[collapsible=icon]:px-1.5">
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-10 w-full bg-sidebar-accent/20 hover:bg-sidebar-accent border border-sidebar-border rounded-xl flex flex-col items-center justify-center p-0 transition-all hover:border-primary/50">
-                        <span className="text-[10px] font-bold uppercase tracking-widest">{language === 'ku' ? 'KU' : 'EN'}</span>
-                        <span className="text-[7px] opacity-40 uppercase tracking-tighter group-data-[collapsible=icon]:hidden">{t('language')}</span>
+                    <Button variant="ghost" className="h-9 w-full bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-xl flex flex-col items-center justify-center p-0 transition-all">
+                        <span className="text-[9px] font-black uppercase tracking-widest">{language === 'ku' ? 'KU' : 'EN'}</span>
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="center" className="bg-popover border-border text-popover-foreground">
-                    <DropdownMenuItem onClick={() => setLanguage('en')} className="text-[11px] font-bold">English</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setLanguage('ku')} className="text-[11px] font-bold">کوردی</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setLanguage('en')} className="text-[10px] font-black uppercase">English</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setLanguage('ku')} className="text-[10px] font-black uppercase">کوردی</DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
 
             <Button 
                 variant="ghost" 
                 onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-                className="h-10 w-full bg-sidebar-accent/20 hover:bg-sidebar-accent border border-sidebar-border rounded-xl flex flex-col items-center justify-center p-0 transition-all hover:border-primary/50"
+                className="h-9 w-full bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-xl flex flex-col items-center justify-center p-0 transition-all"
             >
-                {theme === 'light' ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
-                <span className="text-[7px] opacity-40 uppercase tracking-tighter mt-0.5 group-data-[collapsible=icon]:hidden">{t('theme')}</span>
-            </Button>
-
-            <Button 
-                variant="ghost" 
-                onClick={() => router.push('/')}
-                className="h-10 w-full bg-sidebar-accent/20 hover:bg-sidebar-accent border border-sidebar-border rounded-xl flex flex-col items-center justify-center p-0 transition-all hover:border-primary/50"
-            >
-                <Home className="w-3.5 h-3.5" />
-                <span className="text-[7px] opacity-40 uppercase tracking-tighter mt-0.5 group-data-[collapsible=icon]:hidden">{t('home')}</span>
-            </Button>
-
-            <Button 
-                variant="ghost" 
-                onClick={() => router.back()}
-                className="h-10 w-full bg-sidebar-accent/20 hover:bg-sidebar-accent border border-sidebar-border rounded-xl flex flex-col items-center justify-center p-0 transition-all hover:border-primary/50"
-            >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                <span className="text-[7px] opacity-40 uppercase tracking-tighter mt-0.5 group-data-[collapsible=icon]:hidden">{t('back')}</span>
-            </Button>
-
-            <Button 
-                variant="ghost" 
-                onClick={() => window.print()}
-                className="h-10 w-full bg-sidebar-accent/20 hover:bg-sidebar-accent border border-sidebar-border rounded-xl flex flex-col items-center justify-center p-0 transition-all hover:border-primary/50"
-            >
-                <Printer className="w-3.5 h-3.5" />
-                <span className="text-[7px] opacity-40 uppercase tracking-tighter mt-0.5 group-data-[collapsible=icon]:hidden">{t('print')}</span>
+                {theme === 'light' ? <Moon className="w-3 h-3" /> : <Sun className="w-3 h-3" />}
             </Button>
 
             <Button 
                 variant="ghost" 
                 onClick={handleLogout}
-                className="h-10 w-full bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/20 rounded-xl flex flex-col items-center justify-center p-0 transition-all"
+                className="h-9 w-full bg-red-500/20 hover:bg-red-500/40 text-red-200 border border-red-500/20 rounded-xl flex flex-col items-center justify-center p-0 transition-all"
             >
-                <LogOut className="w-3.5 h-3.5" />
-                <span className="text-[7px] opacity-40 uppercase tracking-tighter mt-0.5 group-data-[collapsible=icon]:hidden">{t('logout')}</span>
+                <LogOut className="w-3 h-3" />
             </Button>
         </div>
 
-        <Separator className="bg-sidebar-border mb-4 mx-4 w-auto group-data-[collapsible=icon]:hidden" />
+        <Separator className="bg-white/10 mb-4 mx-3 w-auto group-data-[collapsible=icon]:hidden" />
 
         {navigation.map((group, gIndex) => (
-          <div key={gIndex} className="py-2">
+          <div key={gIndex} className="py-1">
               <SidebarMenu>
                 {group.items
                   .filter((item) => hasPermission(item.permission))
                   .map((item) => (
-                    <SidebarMenuItem key={item.href} className="px-3 mb-1 group-data-[collapsible=icon]:px-1">
+                    <SidebarMenuItem key={item.href} className="px-2.5 mb-1 group-data-[collapsible=icon]:px-1">
                       <SidebarMenuButton
                         asChild
                         isActive={pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))}
                         tooltip={t(item.title)}
                         className={cn(
-                            "rounded-xl transition-all duration-300 hover:bg-sidebar-accent h-11 border border-transparent flex items-center justify-start group-data-[collapsible=icon]:justify-center",
-                            "data-[active=true]:bg-sidebar-primary data-[active=true]:text-sidebar-primary-foreground data-[active=true]:shadow-lg",
-                            "group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:h-11"
+                            "rounded-xl transition-all duration-300 hover:bg-white/10 h-10 border border-transparent flex items-center justify-start group-data-[collapsible=icon]:justify-center",
+                            "data-[active=true]:bg-white data-[active=true]:text-primary data-[active=true]:shadow-2xl data-[active=true]:border-white/20",
+                            "group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:h-10"
                         )}
                       >
-                        <Link href={item.href} className="flex items-center gap-3 px-3 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center">
+                        <Link href={item.href} className="flex items-center gap-2.5 px-2.5 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center">
                           <item.icon className={cn(
-                              "w-4 h-4 shrink-0 transition-transform duration-300",
-                              pathname === item.href ? "scale-110" : "opacity-70"
+                              "w-3.5 h-3.5 shrink-0 transition-transform duration-300",
+                              pathname === item.href ? "scale-110" : "opacity-60 text-white"
                           )} />
                           <span 
-                            className="font-bold truncate group-data-[collapsible=icon]:hidden"
+                            className="font-black truncate group-data-[collapsible=icon]:hidden tracking-tight"
                             style={{ 
                                 fontSize: 'var(--sidebar-custom-font-size)', 
                                 textTransform: 'var(--sidebar-text-transform)' as any 
@@ -259,7 +237,8 @@ export function AppSidebar() {
           </div>
         ))}
       </SidebarContent>
-      <SidebarFooter className="bg-transparent p-4 h-12 flex items-center justify-center">
+      <SidebarFooter className="bg-transparent p-4 h-10 flex items-center justify-center border-t border-white/5">
+         <span className="text-[7px] font-black uppercase tracking-[0.3em] text-white/30">System v2.5 Alpha</span>
       </SidebarFooter>
     </Sidebar>
   );

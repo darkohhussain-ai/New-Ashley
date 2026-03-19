@@ -27,13 +27,14 @@ function DynamicThemeInjector() {
     const dashboard = settings.dashboard;
     const sidebar = settings.sidebar || { fontSize: 12, textTransform: 'none' };
 
+    // CHROMATIC GLASS LOGIC: Map --card to theme primary HSL components for colored transparency
     const styleString = `
         :root {
             --background: ${colors.background};
             --foreground: ${colors.foreground};
             --primary: ${colors.primary};
             --accent: ${colors.accent};
-            --card: ${colors.card};
+            --card: ${colors.primary}; /* Adaptive Card Base */
             --title-bar-bg: ${colors.titleBar || colors.primary};
             --card-header-bg: ${colors.accent};
             --table-header-bg: ${colors.primary};
@@ -54,6 +55,7 @@ function DynamicThemeInjector() {
             /* Sidebar Injections */
             --sidebar-custom-font-size: ${sidebar.fontSize}px;
             --sidebar-text-transform: ${sidebar.textTransform};
+            --sidebar-background: ${colors.primary};
         }
     `;
 

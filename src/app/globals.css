@@ -41,14 +41,14 @@
     --dashboard-accent-color: 220 13% 91%;
 
     /* Sidebar variables */
-    --sidebar-background: hsl(var(--card));
-    --sidebar-foreground: hsl(var(--card-foreground));
-    --sidebar-primary: hsl(var(--primary));
-    --sidebar-primary-foreground: hsl(var(--primary-foreground));
-    --sidebar-accent: hsl(var(--accent));
-    --sidebar-accent-foreground: hsl(var(--accent-foreground));
-    --sidebar-border: hsl(var(--border));
-    --sidebar-ring: hsl(var(--ring));
+    --sidebar-background: hsl(var(--primary));
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 0 0% 100%;
+    --sidebar-primary-foreground: 220 82% 55%;
+    --sidebar-accent: 0 0% 100% / 0.1;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 100% / 0.1;
+    --sidebar-ring: 0 0% 100%;
     
     /* Custom Status Colors */
     --status-correct-bg: 142 90% 92%;
@@ -84,14 +84,14 @@
     --ring: 217.2 91.2% 59.8%;
 
     /* Sidebar variables */
-    --sidebar-background: hsl(var(--card));
-    --sidebar-foreground: hsl(var(--card-foreground));
-    --sidebar-primary: hsl(var(--primary));
-    --sidebar-primary-foreground: hsl(var(--primary-foreground));
-    --sidebar-accent: hsl(var(--accent));
-    --sidebar-accent-foreground: hsl(var(--accent-foreground));
-    --sidebar-border: hsl(var(--border));
-    --sidebar-ring: hsl(var(--ring));
+    --sidebar-background: hsl(var(--primary));
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 210 40% 98%;
+    --sidebar-primary-foreground: 222.2 84% 4.9%;
+    --sidebar-accent: 210 40% 98% / 0.1;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 210 40% 98% / 0.1;
+    --sidebar-ring: 217.2 91.2% 59.8%;
 
     /* Custom Status Colors */
     --status-correct-bg: 142 76% 15%; 
