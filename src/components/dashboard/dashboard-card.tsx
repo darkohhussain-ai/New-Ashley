@@ -1,8 +1,7 @@
-
 'use client';
 
 import Link from 'next/link';
-import { Card, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -15,12 +14,17 @@ type DashboardCardProps = {
 
 export function DashboardCard({ title, icon: Icon, href, color }: DashboardCardProps) {
   return (
-    <Link href={href} className="group block" passHref>
-      <Card className="h-32 flex flex-col items-center justify-center text-center p-3 transition-transform transform hover:-translate-y-1 hover:shadow-xl border-none shadow-sm">
-        <div className={cn('p-2.5 rounded-full text-white mb-2.5', color)}>
-          <Icon className="w-6 h-6" />
+    <Link href={href} className="group block">
+      <Card className="h-28 flex flex-col items-center justify-center text-center p-4 transition-all duration-200 hover:shadow-soft-md hover:-translate-y-0.5 border-border/60">
+        <div className={cn(
+          'p-2.5 rounded-xl text-white mb-3 transition-transform duration-200 group-hover:scale-105',
+          color
+        )}>
+          <Icon className="w-5 h-5" />
         </div>
-        <CardTitle className="text-sm font-bold leading-tight px-2">{title}</CardTitle>
+        <span className="text-sm font-medium text-foreground leading-tight line-clamp-2 px-1">
+          {title}
+        </span>
       </Card>
     </Link>
   );

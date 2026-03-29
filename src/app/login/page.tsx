@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -8,10 +7,11 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Loader2, Search, ListChecks, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Loader2, Search, ListChecks, Lock, User } from 'lucide-react';
 import Image from 'next/image';
 import { useAppContext } from '@/context/app-provider';
 import { useTranslation } from '@/hooks/use-translation';
+import { Card, CardContent } from '@/components/ui/card';
 
 export default function LoginPage() {
   const { t } = useTranslation();
@@ -30,13 +30,13 @@ export default function LoginPage() {
     setIsLoading(false);
 
     if (success) {
-      toast({ title: 'Access Granted', description: 'Terminal Synchronized.' });
+      toast({ title: 'Access Granted', description: 'Welcome back!' });
       router.push('/');
     } else {
       toast({
         variant: 'destructive',
         title: 'Authentication Failed',
-        description: 'Invalid Credentials.',
+        description: 'Invalid credentials. Please try again.',
       });
     }
   };
@@ -49,9 +49,9 @@ export default function LoginPage() {
   }, [settings.loginBackgroundEmbed]);
 
   return (
-    <div className="relative min-h-screen w-full flex flex-col bg-slate-100 overflow-x-hidden">
-      {/* Cinematic Background Layer */}
-      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+    <div className="relative min-h-screen w-full flex bg-background overflow-hidden">
+      {/* Background Layer */}
+      <div className="fixed inset-0 z-0">
         {settings.loginBackgroundEmbed ? (
           <div className="relative w-full h-full overflow-hidden">
             <iframe
@@ -61,105 +61,148 @@ export default function LoginPage() {
               allow="autoplay; encrypted-media"
               title="Background Video"
             />
+            <div className="absolute inset-0 bg-background/60 backdrop-blur-sm" />
           </div>
         ) : settings.loginBackground ? (
-          <Image
-            key={settings.loginBackground}
-            src={settings.loginBackground}
-            alt="Login background"
-            fill
-            className="object-cover"
-            priority
-            unoptimized
-          />
+          <>
+            <Image
+              key={settings.loginBackground}
+              src={settings.loginBackground}
+              alt="Login background"
+              fill
+              className="object-cover"
+              priority
+              unoptimized
+            />
+            <div className="absolute inset-0 bg-background/60 backdrop-blur-sm" />
+          </>
         ) : (
-          <div className="absolute inset-0 bg-slate-200" />
+          <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-muted" />
         )}
-        <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] z-[1]" />
       </div>
 
-      {/* Login Bar */}
-      <header className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-xl border-b-2 border-white/60 shadow-md">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+      {/* Main Content */}
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center p-6 md:p-12">
+        <div className="w-full max-w-md animate-fade-in-down">
+          {/* Logo and Brand */}
+          <div className="flex flex-col items-center mb-8">
             {settings.appLogo && (
-              <div className="relative w-10 h-10 bg-white rounded-lg p-1 border border-slate-200 shadow-sm">
-                <Image src={settings.appLogo} alt="Logo" fill className="object-contain" unoptimized />
+              <div className="relative w-16 h-16 mb-4">
+                <div className="absolute inset-0 bg-card rounded-2xl shadow-soft" />
+                <div className="relative w-full h-full p-2.5">
+                  <Image 
+                    src={settings.appLogo} 
+                    alt="Logo" 
+                    fill 
+                    className="object-contain" 
+                    unoptimized 
+                  />
+                </div>
               </div>
             )}
-            <div className="flex flex-col">
-              <h1 className="text-[12px] font-bold uppercase tracking-wider text-slate-900 leading-none">ASHLEY STAFF | ستافی ئاشلی</h1>
-            </div>
+            <h1 className="text-xl font-semibold text-foreground tracking-tight">
+              ASHLEY STAFF
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Staff Management System
+            </p>
           </div>
 
-          <form onSubmit={handleLogin} className="flex items-center gap-2">
-            <div className="hidden md:flex items-center gap-2">
-              <Input
-                type="text"
-                placeholder="ID"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="h-9 w-32 bg-slate-50/50 border-slate-200 text-[11px] text-slate-900 placeholder:text-slate-400"
-                required
-              />
-              <Input
-                type="password"
-                placeholder="Key"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="h-9 w-32 bg-slate-50/50 border-slate-200 text-[11px] text-slate-900 placeholder:text-slate-400"
-                required
-              />
+          {/* Login Card */}
+          <Card className="shadow-soft-lg border-border/30">
+            <CardContent className="p-8">
+              <form onSubmit={handleLogin} className="space-y-5">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">
+                    Username
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      placeholder="Enter your ID"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="password"
+                      placeholder="Enter your password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <Button 
+                  type="submit" 
+                  className="w-full h-12 text-sm font-medium"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    "Sign In"
+                  )}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+
+          {/* Quick Access Links */}
+          <div className="mt-8 space-y-3">
+            <p className="text-xs text-center text-muted-foreground uppercase tracking-wider font-medium">
+              Quick Access
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <Link href="/public-transmit" className="group">
+                <Card className="p-4 transition-all duration-200 hover:shadow-soft-lg hover:border-primary/20 cursor-pointer">
+                  <div className="flex flex-col items-center gap-2 text-center">
+                    <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-600 group-hover:bg-amber-500/15 transition-colors">
+                      <ListChecks className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Transmit Lists</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">View shipments</p>
+                    </div>
+                  </div>
+                </Card>
+              </Link>
+
+              <Link href="/public-inventory" className="group">
+                <Card className="p-4 transition-all duration-200 hover:shadow-soft-lg hover:border-primary/20 cursor-pointer">
+                  <div className="flex flex-col items-center gap-2 text-center">
+                    <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 group-hover:bg-emerald-500/15 transition-colors">
+                      <Search className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Inventory</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Check stock</p>
+                    </div>
+                  </div>
+                </Card>
+              </Link>
             </div>
-            <Button 
-              type="submit" 
-              size="sm" 
-              className="h-9 px-6 font-bold uppercase text-[11px] shadow-sm"
-              disabled={isLoading}
-            >
-              {isLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : "Access / چوونەژوورەوە"}
-            </Button>
-          </form>
+          </div>
         </div>
-      </header>
+      </div>
 
-      {/* Main Interactive Stage */}
-      <main className="relative z-10 flex-1 w-full max-w-7xl mx-auto p-4 md:p-8 flex flex-col justify-center items-center">
-        <div className="flex flex-col gap-6 w-full max-w-md animate-in fade-in zoom-in-95 duration-700">
-          
-          <Link href="/public-transmit" className="w-full group">
-            <Button 
-              variant="outline" 
-              size="lg" 
-              className="h-28 w-full bg-white/80 backdrop-blur-md border-2 border-white/60 hover:border-amber-500/40 hover:bg-white text-[13px] font-bold uppercase tracking-widest flex flex-col gap-2 shadow-xl transition-all hover:scale-[1.02]"
-            >
-              <div className="flex items-center gap-2 text-amber-600">
-                <ListChecks className="w-6 h-6" />
-                Transmission Lists
-              </div>
-              <span className="text-[11px] font-medium text-slate-500 normal-case">لیستی گواستنەوەکان</span>
-            </Button>
-          </Link>
-
-          <Link href="/public-inventory" className="w-full group">
-            <Button 
-              variant="outline" 
-              size="lg" 
-              className="h-28 w-full bg-white/80 backdrop-blur-md border-2 border-white/60 hover:border-emerald-500/40 hover:bg-white text-[13px] font-bold uppercase tracking-widest flex flex-col gap-2 shadow-xl transition-all hover:scale-[1.02]"
-            >
-              <div className="flex items-center gap-2 text-emerald-600">
-                <Search className="w-6 h-6" />
-                Inventory Audit
-              </div>
-              <span className="text-[11px] font-medium text-slate-500 normal-case">پشکنینی کۆگا</span>
-            </Button>
-          </Link>
-        </div>
-      </main>
-
-      <footer className="relative z-10 py-8 text-center border-t border-slate-200 bg-white/40 backdrop-blur-sm mt-auto">
-        <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-500">
-          © {new Date().getFullYear()} ASHLEY STAFF SYSTEM | ستافی ئاشلی
+      {/* Footer */}
+      <footer className="fixed bottom-0 left-0 right-0 z-10 py-4 text-center">
+        <p className="text-xs text-muted-foreground">
+          {new Date().getFullYear()} Ashley Staff System
         </p>
       </footer>
     </div>

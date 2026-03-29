@@ -1,4 +1,3 @@
-
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
@@ -11,7 +10,7 @@ const Card = React.forwardRef<
     ref={ref}
     style={{ borderRadius: 'var(--dashboard-radius)', ...style }}
     className={cn(
-      "border bg-card/68 backdrop-blur-md text-card-foreground shadow-sm overflow-hidden",
+      "bg-card text-card-foreground border border-border/60 shadow-soft-sm transition-all duration-200 overflow-hidden",
       className
     )}
     {...props}
@@ -25,7 +24,7 @@ const CardHeader = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("flex flex-col space-y-1.5 p-6 bg-[hsl(var(--card-header-bg))]/30", className)}
+    className={cn("flex flex-col space-y-1.5 p-5", className)}
     {...props}
   />
 ))
@@ -38,13 +37,12 @@ const CardTitle = React.forwardRef<
   <h3
     ref={ref}
     style={{ 
-        fontSize: 'var(--dashboard-font-size)', 
-        color: 'hsl(var(--dashboard-title-color))', 
-        textTransform: 'var(--dashboard-text-transform)' as any,
-        ...style 
+      color: 'hsl(var(--dashboard-title-color))', 
+      textTransform: 'var(--dashboard-text-transform)' as React.CSSProperties['textTransform'],
+      ...style 
     }}
     className={cn(
-      "font-bold leading-none tracking-tight",
+      "text-base font-semibold leading-none tracking-tight",
       className
     )}
     {...props}
@@ -58,7 +56,7 @@ const CardDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <p
     ref={ref}
-    className={cn("text-[12px] text-muted-foreground/80", className)}
+    className={cn("text-sm text-muted-foreground", className)}
     {...props}
   />
 ))
@@ -68,14 +66,16 @@ const CardContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, style, ...props }, ref) => (
-  <div ref={ref} 
+  <div 
+    ref={ref} 
     style={{ 
-        fontSize: 'var(--dashboard-font-size)', 
-        color: 'hsl(var(--dashboard-text-color))', 
-        textTransform: 'var(--dashboard-text-transform)' as any,
-        ...style 
+      color: 'hsl(var(--dashboard-text-color))', 
+      textTransform: 'var(--dashboard-text-transform)' as React.CSSProperties['textTransform'],
+      ...style 
     }}
-    className={cn("p-6 pt-6", className)} {...props} />
+    className={cn("p-5 pt-0 text-sm", className)} 
+    {...props} 
+  />
 ))
 CardContent.displayName = "CardContent"
 
@@ -85,7 +85,7 @@ const CardFooter = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("flex items-center p-6 pt-0 text-[12px]", className)}
+    className={cn("flex items-center p-5 pt-0 text-sm", className)}
     {...props}
   />
 ))

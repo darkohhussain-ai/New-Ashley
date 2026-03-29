@@ -91,17 +91,16 @@ const NewsTicker = () => {
         return null;
     }
     
-    return (
-        <div className="relative flex items-center overflow-x-hidden bg-primary/80 text-primary-foreground py-1.5 border-t border-white/10">
-            <div className="animate-marquee whitespace-nowrap">
-                <span className="mx-4 text-[10px] font-black uppercase tracking-[0.2em]">{settings.newsTickerText}</span>
-            </div>
-
-            <div className="absolute inset-y-0 flex items-center animate-marquee2 whitespace-nowrap">
-                 <span className="mx-4 text-[10px] font-black uppercase tracking-[0.2em]">{settings.newsTickerText}</span>
-            </div>
-        </div>
-    );
+return (
+  <div className="relative flex items-center overflow-x-hidden bg-primary text-primary-foreground py-2">
+  <div className="animate-marquee whitespace-nowrap">
+    <span className="mx-6 text-xs font-medium tracking-wide">{settings.newsTickerText}</span>
+  </div>
+  <div className="absolute inset-y-0 flex items-center animate-marquee2 whitespace-nowrap">
+    <span className="mx-6 text-xs font-medium tracking-wide">{settings.newsTickerText}</span>
+  </div>
+  </div>
+  );
 };
 
 
@@ -121,77 +120,97 @@ export function DashboardClient() {
       return null;
   }
 
-  return (
-    <div className="flex flex-col min-h-full">
-      <main className="w-full p-4 md:p-6 space-y-6 flex-1">
-        {settings.dashboardBanner && (
-            <div className="relative w-full rounded-xl overflow-hidden animate-fade-in-down shadow-sm"
-                style={{ height: `${settings.dashboardBannerHeight - 20}px` }}
-            >
-                <Image
-                    key={settings.dashboardBanner}
-                    src={settings.dashboardBanner}
-                    alt="Dashboard Banner"
-                    fill
-                    className="object-cover"
-                    unoptimized
-                />
-            </div>
-        )}
-
-        {hasPermission('admin:all') && (
-            <div className="animate-fade-in-down" style={{ animationDelay: '100ms' }}>
-                <FinancialSummaries />
-            </div>
-        )}
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {hasPermission('page:transmit:view') && (
-                <div className="animate-fade-in-down" style={{ animationDelay: '200ms' }}>
-                    <StagedItemsSummary />
-                </div>
-            )}
-            {hasPermission('admin:all') && (
-                <div className="animate-fade-in-down" style={{ animationDelay: '150ms' }}>
-                    <OrderRequestsSummary />
-                </div>
-            )}
-        </div>
-
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            {hasPermission('admin:all') && (
-                <Link href="/ashley-expenses" className="block animate-fade-in-down hover:-translate-y-1 transition-transform" style={{ animationDelay: '300ms' }}>
-                    <MonthlyFinancialChart />
-                </Link>
-            )}
-            {hasPermission('page:items:view') && (
-                  <Link href="/items" className="block animate-fade-in-down hover:-translate-y-1 transition-transform" style={{ animationDelay: '400ms' }}>
-                    <StorageSummaryChart />
-                </Link>
-            )}
-        </div>
-
-         <Card className="animate-fade-in-down border-none shadow-sm" style={{ animationDelay: '500ms' }}>
-            <CardHeader className="py-3 px-4">
-                <CardTitle className="text-base">{t('services')}</CardTitle>
-                <CardDescription className="text-[11px]">{t('select_service')}</CardDescription>
-            </CardHeader>
-            <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 p-4">
-                {menuItems.map((item) => (
-                    <DashboardCard
-                    key={item.title}
-                    title={t(item.title)}
-                    icon={item.icon}
-                    href={item.href}
-                    color={item.color}
-                    />
-                ))}
-            </CardContent>
-        </Card>
-      </main>
-      <div className="sticky bottom-0 z-20">
-        <NewsTicker />
-      </div>
+return (
+  <div className="flex flex-col min-h-full bg-background">
+  <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 flex-1">
+  {/* Banner */}
+  {settings.dashboardBanner && (
+  <div 
+    className="relative w-full rounded-2xl overflow-hidden animate-fade-in-up shadow-soft-md"
+    style={{ height: `${Math.max(settings.dashboardBannerHeight - 20, 120)}px` }}
+  >
+    <Image
+      key={settings.dashboardBanner}
+      src={settings.dashboardBanner}
+      alt="Dashboard Banner"
+      fill
+      className="object-cover"
+      unoptimized
+    />
+  </div>
+  )}
+  
+  {/* Financial Summaries */}
+  {hasPermission('admin:all') && (
+  <section className="animate-fade-in-up stagger-1">
+    <FinancialSummaries />
+  </section>
+  )}
+  
+  {/* Summary Cards Row */}
+  <section className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+  {hasPermission('page:transmit:view') && (
+    <div className="animate-fade-in-up stagger-2">
+      <StagedItemsSummary />
     </div>
+  )}
+  {hasPermission('admin:all') && (
+    <div className="animate-fade-in-up stagger-3">
+      <OrderRequestsSummary />
+    </div>
+  )}
+  </section>
+  
+  {/* Charts Row */}
+  <section className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+  {hasPermission('admin:all') && (
+    <Link 
+      href="/ashley-expenses" 
+      className="block animate-fade-in-up stagger-4 group"
+    >
+      <div className="transition-all duration-200 hover:shadow-soft-lg hover:-translate-y-0.5 rounded-2xl">
+        <MonthlyFinancialChart />
+      </div>
+    </Link>
+  )}
+  {hasPermission('page:items:view') && (
+    <Link 
+      href="/items" 
+      className="block animate-fade-in-up stagger-5 group"
+    >
+      <div className="transition-all duration-200 hover:shadow-soft-lg hover:-translate-y-0.5 rounded-2xl">
+        <StorageSummaryChart />
+      </div>
+    </Link>
+  )}
+  </section>
+  
+  {/* Quick Access Services */}
+  <section className="animate-fade-in-up" style={{ animationDelay: '300ms' }}>
+  <Card className="shadow-soft-sm">
+    <CardHeader className="pb-3">
+      <CardTitle className="text-base font-semibold">{t('services')}</CardTitle>
+      <CardDescription className="text-sm">{t('select_service')}</CardDescription>
+    </CardHeader>
+    <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 pt-0">
+      {menuItems.map((item, index) => (
+        <DashboardCard
+          key={item.title}
+          title={t(item.title)}
+          icon={item.icon}
+          href={item.href}
+          color={item.color}
+        />
+      ))}
+    </CardContent>
+  </Card>
+  </section>
+  </main>
+  
+  {/* News Ticker */}
+  <div className="sticky bottom-0 z-20">
+  <NewsTicker />
+  </div>
+  </div>
   );
 }

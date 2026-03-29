@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -12,15 +11,11 @@ import {
   Users,
   UserCircle,
   Settings,
-  Calendar,
-  Clock,
   Home,
-  ArrowLeft,
-  Printer,
   Sun,
   Moon,
   LogOut,
-  ShieldAlert,
+  ChevronLeft,
 } from 'lucide-react';
 
 import {
@@ -39,7 +34,6 @@ import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
 import { useAppContext } from '@/context/app-provider';
 import { useTheme } from '@/components/shared/theme-provider';
-import { format } from 'date-fns';
 import Image from 'next/image';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
@@ -50,31 +44,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-
-function DateTimeDisplay() {
-  const [time, setTime] = React.useState<Date | null>(null);
-
-  React.useEffect(() => {
-    setTime(new Date());
-    const timer = setInterval(() => setTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  if (!time) return <div className="h-6 animate-pulse bg-muted/20 rounded w-full" />;
-
-  return (
-    <div className="flex flex-col items-center gap-0.5 opacity-80 text-white">
-      <div className="flex items-center gap-1.5 text-[8px] font-black uppercase tracking-[0.2em] opacity-60">
-        <Calendar className="w-2.5 h-2.5" />
-        <span>{format(time, 'MMM d, yyyy')}</span>
-      </div>
-      <div className="flex items-center gap-1.5 text-[11px] font-black tracking-widest">
-        <Clock className="w-3 h-3" />
-        <span>{format(time, 'HH:mm:ss')}</span>
-      </div>
-    </div>
-  );
-}
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 export function AppSidebar() {
   const { t, language, setLanguage } = useTranslation();
@@ -86,6 +61,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
 
   const side = language === 'ku' ? 'right' : 'left';
+  const isCollapsed = state === 'collapsed';
 
   const handleLogout = async () => {
     await logout();
@@ -93,153 +69,183 @@ export function AppSidebar() {
   };
 
   const navigation = [
-    {
-      items: [
-        { title: 'Dashboard', icon: Home, href: '/', permission: 'admin:all' },
-        { title: 'ashley_employees_management', icon: CreditCard, href: '/ashley-expenses', permission: 'page:ashley-expenses:view' },
-        { title: 'transmit_cargo', icon: PackagePlus, href: '/transmit', permission: 'page:transmit:view' },
-        { title: 'placement_storage', icon: Box, href: '/items', permission: 'page:items:view' },
-        { title: 'marketing_feedback', icon: Star, href: '/marketing-feedback', permission: 'page:marketing-feedback:view' },
-        { title: 'employees', icon: Users, href: '/employees', permission: 'page:employees:view' },
-        { title: 'my_account', icon: UserCircle, href: '/account', permission: 'page:account' },
-        { title: 'settings', icon: Settings, href: '/settings', permission: 'page:settings' },
-      ],
-    },
+    { title: 'Dashboard', icon: Home, href: '/', permission: 'admin:all' },
+    { title: 'ashley_employees_management', icon: CreditCard, href: '/ashley-expenses', permission: 'page:ashley-expenses:view' },
+    { title: 'transmit_cargo', icon: PackagePlus, href: '/transmit', permission: 'page:transmit:view' },
+    { title: 'placement_storage', icon: Box, href: '/items', permission: 'page:items:view' },
+    { title: 'marketing_feedback', icon: Star, href: '/marketing-feedback', permission: 'page:marketing-feedback:view' },
+    { title: 'employees', icon: Users, href: '/employees', permission: 'page:employees:view' },
+    { title: 'my_account', icon: UserCircle, href: '/account', permission: 'page:account' },
+    { title: 'settings', icon: Settings, href: '/settings', permission: 'page:settings' },
   ];
 
   return (
-    <Sidebar side={side} collapsible="icon" className="border-none shadow-2xl bg-sidebar/68 backdrop-blur-2xl print:hidden overflow-hidden">
-      <SidebarHeader className="p-4 bg-transparent border-b border-white/10">
-        <div className="flex items-center justify-between mb-4 px-1">
-            <SidebarTrigger className="text-white hover:bg-white/10 transition-all h-8 w-8" />
-            {state === "expanded" && (
-                <div className="flex items-center gap-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                    <span className="text-[8px] font-black uppercase tracking-widest text-white/60">Node Online</span>
-                </div>
-            )}
-        </div>
-        
-        <div className="flex flex-col items-center gap-4 animate-in fade-in slide-in-from-top-2 duration-700">
+    <TooltipProvider delayDuration={0}>
+      <Sidebar 
+        side={side} 
+        collapsible="icon" 
+        className="border-none bg-sidebar print:hidden"
+      >
+        {/* Header */}
+        <SidebarHeader className="p-4 border-b border-sidebar-border">
+          <div className={cn(
+            "flex items-center gap-3",
+            isCollapsed && "justify-center"
+          )}>
             {settings.appLogo && (
-                <div className={cn(
-                    "relative flex items-center justify-center transition-all duration-500",
-                    "w-full px-2 group-data-[collapsible=icon]:px-0"
-                )}>
-                    <div className="relative w-10 h-10 bg-white rounded-xl p-1.5 shadow-2xl ring-2 ring-white/20 overflow-hidden">
-                        <Image
-                            src={settings.appLogo}
-                            alt="Logo"
-                            fill
-                            className="object-contain"
-                            unoptimized
-                        />
-                    </div>
-                    {state === "expanded" && (
-                        <div className="ml-3 flex flex-col items-start overflow-hidden">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-white whitespace-nowrap">ASHLEY STAFF</span>
-                            <span className="text-[7px] font-bold uppercase text-white/40">Terminal Node</span>
-                        </div>
-                    )}
-                </div>
+              <div className="relative w-9 h-9 shrink-0 bg-white rounded-xl overflow-hidden shadow-sm">
+                <Image
+                  src={settings.appLogo}
+                  alt="Logo"
+                  fill
+                  className="object-contain p-1.5"
+                  unoptimized
+                />
+              </div>
             )}
-            {state === "expanded" && (
-                <div className="animate-in fade-in duration-500 mt-1">
-                    <DateTimeDisplay />
-                </div>
+            {!isCollapsed && (
+              <div className="flex flex-col min-w-0">
+                <span className="text-sm font-semibold text-sidebar-foreground truncate">
+                  Ashley Staff
+                </span>
+                <span className="text-xs text-sidebar-foreground/50">
+                  Management
+                </span>
+              </div>
             )}
-        </div>
-      </SidebarHeader>
+          </div>
+        </SidebarHeader>
 
-      <SidebarContent className="bg-transparent scrollbar-none">
-        <div className="px-3 py-4 group-data-[collapsible=icon]:px-1">
-            <div className="bg-white/10 rounded-xl p-2.5 flex items-center gap-2.5 border border-white/5 shadow-inner group/user cursor-default group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-1">
-                <Avatar className="w-8 h-8 border-2 border-white/20 ring-2 ring-white/10 group-hover/user:ring-white/30 transition-all group-data-[collapsible=icon]:w-7 group-data-[collapsible=icon]:h-7">
-                    <AvatarFallback className="bg-white text-primary font-black text-[9px]">
-                        {user?.username?.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 overflow-hidden group-data-[collapsible=icon]:hidden">
-                    <p className="text-[10px] font-black uppercase tracking-wider truncate leading-tight text-white">{user?.username}</p>
-                    <p className="text-[7px] font-bold text-white/40 uppercase tracking-tighter">Encrypted Session</p>
-                </div>
-            </div>
+        {/* User Profile */}
+        <div className={cn("p-3", isCollapsed && "px-2")}>
+          <div className={cn(
+            "flex items-center gap-3 p-2.5 rounded-xl bg-sidebar-accent transition-colors",
+            isCollapsed && "justify-center p-2"
+          )}>
+            <Avatar className="w-8 h-8 shrink-0 ring-2 ring-sidebar-foreground/10">
+              <AvatarFallback className="bg-primary text-primary-foreground text-xs font-medium">
+                {user?.username?.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            {!isCollapsed && (
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-sidebar-foreground truncate">
+                  {user?.username}
+                </p>
+                <p className="text-xs text-sidebar-foreground/50">
+                  Active
+                </p>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="px-3 mb-6 grid grid-cols-3 gap-1.5 group-data-[collapsible=icon]:grid-cols-1 group-data-[collapsible=icon]:px-1.5">
+        {/* Navigation */}
+        <SidebarContent className="px-3">
+          <SidebarMenu className="space-y-1">
+            {navigation
+              .filter((item) => hasPermission(item.permission))
+              .map((item) => {
+                const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+                
+                return (
+                  <SidebarMenuItem key={item.href}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <SidebarMenuButton
+                          asChild
+                          isActive={isActive}
+                          className={cn(
+                            "h-10 rounded-xl transition-all duration-200",
+                            "hover:bg-sidebar-accent",
+                            isActive && "bg-sidebar-foreground text-sidebar hover:bg-sidebar-foreground",
+                            isCollapsed && "justify-center px-0"
+                          )}
+                        >
+                          <Link href={item.href} className="flex items-center gap-3 px-3">
+                            <item.icon className={cn(
+                              "w-4 h-4 shrink-0",
+                              isActive ? "text-sidebar" : "text-sidebar-foreground/70"
+                            )} />
+                            {!isCollapsed && (
+                              <span className={cn(
+                                "text-sm truncate",
+                                isActive ? "font-medium" : "text-sidebar-foreground/90"
+                              )}>
+                                {t(item.title)}
+                              </span>
+                            )}
+                          </Link>
+                        </SidebarMenuButton>
+                      </TooltipTrigger>
+                      {isCollapsed && (
+                        <TooltipContent side={language === 'ku' ? 'left' : 'right'} className="font-medium">
+                          {t(item.title)}
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </SidebarMenuItem>
+                );
+              })}
+          </SidebarMenu>
+        </SidebarContent>
+
+        {/* Footer Actions */}
+        <SidebarFooter className="p-3 border-t border-sidebar-border mt-auto">
+          <div className={cn(
+            "flex items-center gap-1.5",
+            isCollapsed ? "flex-col" : "justify-between"
+          )}>
+            {/* Language Toggle */}
             <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-9 w-full bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-xl flex flex-col items-center justify-center p-0 transition-all">
-                        <span className="text-[9px] font-black uppercase tracking-widest">{language === 'ku' ? 'KU' : 'EN'}</span>
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="center" className="bg-popover border-border text-popover-foreground">
-                    <DropdownMenuItem onClick={() => setLanguage('en')} className="text-[10px] font-black uppercase">English</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setLanguage('ku')} className="text-[10px] font-black uppercase">کوردی</DropdownMenuItem>
-                </DropdownMenuContent>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  className="h-9 w-9 rounded-lg bg-sidebar-accent hover:bg-sidebar-accent/80 text-sidebar-foreground"
+                >
+                  <span className="text-xs font-semibold">{language.toUpperCase()}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="center" className="min-w-[100px]">
+                <DropdownMenuItem onClick={() => setLanguage('en')} className="text-sm">
+                  English
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setLanguage('ku')} className="text-sm">
+                  Kurdish
+                </DropdownMenuItem>
+              </DropdownMenuContent>
             </DropdownMenu>
 
+            {/* Theme Toggle */}
             <Button 
-                variant="ghost" 
-                onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-                className="h-9 w-full bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-xl flex flex-col items-center justify-center p-0 transition-all"
+              variant="ghost" 
+              size="icon"
+              onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+              className="h-9 w-9 rounded-lg bg-sidebar-accent hover:bg-sidebar-accent/80 text-sidebar-foreground"
             >
-                {theme === 'light' ? <Moon className="w-3 h-3" /> : <Sun className="w-3 h-3" />}
+              {theme === 'light' ? (
+                <Moon className="w-4 h-4" />
+              ) : (
+                <Sun className="w-4 h-4" />
+              )}
             </Button>
 
+            {/* Collapse Toggle */}
+            <SidebarTrigger className="h-9 w-9 rounded-lg bg-sidebar-accent hover:bg-sidebar-accent/80 text-sidebar-foreground" />
+
+            {/* Logout */}
             <Button 
-                variant="ghost" 
-                onClick={handleLogout}
-                className="h-9 w-full bg-red-500/20 hover:bg-red-500/40 text-red-200 border border-red-500/20 rounded-xl flex flex-col items-center justify-center p-0 transition-all"
+              variant="ghost" 
+              size="icon"
+              onClick={handleLogout}
+              className="h-9 w-9 rounded-lg bg-destructive/10 hover:bg-destructive/20 text-destructive"
             >
-                <LogOut className="w-3 h-3" />
+              <LogOut className="w-4 h-4" />
             </Button>
-        </div>
-
-        <Separator className="bg-white/10 mb-4 mx-3 w-auto group-data-[collapsible=icon]:hidden" />
-
-        {navigation.map((group, gIndex) => (
-          <div key={gIndex} className="py-1">
-              <SidebarMenu>
-                {group.items
-                  .filter((item) => hasPermission(item.permission))
-                  .map((item) => (
-                    <SidebarMenuItem key={item.href} className="px-2.5 mb-1 group-data-[collapsible=icon]:px-1">
-                      <SidebarMenuButton
-                        asChild
-                        isActive={pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))}
-                        tooltip={t(item.title)}
-                        className={cn(
-                            "rounded-xl transition-all duration-300 hover:bg-white/10 h-10 border border-transparent flex items-center justify-start group-data-[collapsible=icon]:justify-center",
-                            "data-[active=true]:bg-white data-[active=true]:text-primary data-[active=true]:shadow-2xl data-[active=true]:border-white/20",
-                            "group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:h-10"
-                        )}
-                      >
-                        <Link href={item.href} className="flex items-center gap-2.5 px-2.5 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center">
-                          <item.icon className={cn(
-                              "w-3.5 h-3.5 shrink-0 transition-transform duration-300",
-                              pathname === item.href ? "scale-110" : "opacity-60 text-white"
-                          )} />
-                          <span 
-                            className="font-black truncate group-data-[collapsible=icon]:hidden tracking-tight"
-                            style={{ 
-                                fontSize: 'var(--sidebar-custom-font-size)', 
-                                textTransform: 'var(--sidebar-text-transform)' as any 
-                            }}
-                          >
-                            {t(item.title)}
-                          </span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-              </SidebarMenu>
           </div>
-        ))}
-      </SidebarContent>
-      <SidebarFooter className="bg-transparent p-4 h-10 flex items-center justify-center border-t border-white/5">
-         <span className="text-[7px] font-black uppercase tracking-[0.3em] text-white/30">System v2.5 Alpha</span>
-      </SidebarFooter>
-    </Sidebar>
+        </SidebarFooter>
+      </Sidebar>
+    </TooltipProvider>
   );
 }
