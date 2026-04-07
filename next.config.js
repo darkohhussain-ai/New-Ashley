@@ -87,10 +87,17 @@ const nextConfig = {
         hostname: 'i.pinimg.com',
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'logos-world.net',
+        port: '',
+        pathname: '/**',
       }
     ],
   },
   allowedDevOrigins: [
+    'localhost:3001',
     'localhost:9002',
     '*.cloudworkstations.dev',
     '*.cluster-*.cloudworkstations.dev'
